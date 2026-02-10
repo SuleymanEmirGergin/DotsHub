@@ -1,0 +1,25 @@
+{
+  "scenario_id": "demo_chest_emergency",
+  "title": "Göğüs ağrısı – Acil (hard override)",
+  "description": "Hasta göğüs baskısı + terleme bildiriyor. Safety Guard hard trigger ile anında ER_NOW döndürülür.",
+  "expected_specialty": "Acil Servis",
+  "expected_urgency": "ER_NOW",
+  "steps": [
+    {
+      "role": "user",
+      "message": "Göğsümde baskı var, sol koluma vuruyor ve terliyorum. Nefes darlığı da var.",
+      "expected_envelope_type": "EMERGENCY"
+    },
+    {
+      "role": "expected_result",
+      "expected_type": "EMERGENCY",
+      "expected_reason_tr": "Acil durum tespit edildi: Göğüs baskısı/ağrısı + terleme/nefes darlığı",
+      "expected_instructions_tr": [
+        "Derhal acil servise başvur veya 112'yi ara.",
+        "Yalnızsan birine haber ver, araç kullanma.",
+        "Belirtiler hızla kötüleşirse gecikme."
+      ],
+      "notes": "İlk mesajda hard_trigger 'chest_pressure_sweating' eşleşir, LLM çağrısı yapılmaz, direkt EMERGENCY döner."
+    }
+  ]
+}

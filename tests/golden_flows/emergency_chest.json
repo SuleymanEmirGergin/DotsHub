@@ -1,0 +1,10 @@
+{
+  "scenario": "Chest pain emergency",
+  "description": "User reports chest pressure + sweating + shortness of breath → immediate EMERGENCY",
+  "input": [
+    { "user_message": "Göğsümde baskı var, terliyorum, nefesim dar", "answer": null }
+  ],
+  "expected": {
+    "final_type": "EMERGENCY"
+  }
+}

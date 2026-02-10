@@ -1,0 +1,24 @@
+{
+  "high": {
+    "min_confidence_fallback": 0.25,
+    "canonicals_any": [
+      "kanli_kusma",
+      "kanli_diski",
+      "bilinc_bulanikligi",
+      "cok_yuksek_ates",
+      "mide_kanamasi"
+    ],
+    "same_day_required": false
+  },
+  "medium": {
+    "canonicals_any": [
+      "ates",
+      "kusma",
+      "siddetli_agri",
+      "nefes_darligi_hafif",
+      "dehidrasyon"
+    ],
+    "same_day_if_true": true
+  },
+  "low": {}
+}

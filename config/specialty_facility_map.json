@@ -1,0 +1,13 @@
+{
+  "ent": ["hospital", "clinic"],
+  "pulmonology": ["hospital", "clinic"],
+  "cardiology": ["hospital", "clinic"],
+  "neurology": ["hospital", "clinic"],
+  "internal_gi": ["hospital", "clinic"],
+  "urology_internal": ["hospital", "clinic"],
+  "dermatology": ["clinic", "hospital"],
+  "ophthalmology": ["hospital", "clinic"],
+  "orthopedics_rheum": ["hospital", "clinic"],
+  "psychiatry": ["hospital", "clinic"],
+  "obgyn": ["hospital", "clinic"]
+}

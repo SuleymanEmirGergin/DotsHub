@@ -1,0 +1,205 @@
+{
+  "version": "0.1.0",
+  "language": "tr-TR",
+  "specialties": [
+    {
+      "id": "ent",
+      "specialty_tr": "Kulak Burun Boğaz (KBB)",
+      "keywords_tr": [
+        "boğaz ağrısı",
+        "yutkunurken ağrı",
+        "geniz akıntısı",
+        "burun tıkanıklığı",
+        "burun akıntısı",
+        "sinüzit",
+        "sinüs",
+        "kulak ağrısı",
+        "kulak tıkanıklığı",
+        "işitme azaldı",
+        "ses kısıklığı",
+        "bademcik",
+        "tonsil"
+      ],
+      "negative_keywords_tr": [
+        "göğüs ağrısı",
+        "nefes alamıyorum"
+      ]
+    },
+    {
+      "id": "pulmonology",
+      "specialty_tr": "Göğüs Hastalıkları",
+      "keywords_tr": [
+        "öksürük",
+        "balgam",
+        "hırıltı",
+        "nefes darlığı",
+        "nefesim daralıyor",
+        "astım",
+        "bronşit",
+        "zatürre",
+        "göğüste tıkanma",
+        "kanlı balgam"
+      ],
+      "negative_keywords_tr": [
+        "göğsümde baskı",
+        "sol kola vuruyor"
+      ]
+    },
+    {
+      "id": "cardiology",
+      "specialty_tr": "Kardiyoloji",
+      "keywords_tr": [
+        "çarpıntı",
+        "kalbim hızlı atıyor",
+        "ritim bozukluğu",
+        "göğüs ağrısı",
+        "göğüste baskı",
+        "nefesim daralıyor (eforla)",
+        "bayılma",
+        "tansiyon"
+      ],
+      "negative_keywords_tr": []
+    },
+    {
+      "id": "neurology",
+      "specialty_tr": "Nöroloji",
+      "keywords_tr": [
+        "baş dönmesi",
+        "oda dönüyor",
+        "sersemlik",
+        "baş ağrısı",
+        "migren",
+        "uyuşma",
+        "karıncalanma",
+        "denge kaybı",
+        "görmede dalgalanma",
+        "titreme"
+      ],
+      "negative_keywords_tr": []
+    },
+    {
+      "id": "internal_gi",
+      "specialty_tr": "Dahiliye (gerekirse Gastroenteroloji)",
+      "keywords_tr": [
+        "karın ağrısı",
+        "mide ağrısı",
+        "bulantı",
+        "kusma",
+        "ishal",
+        "kabızlık",
+        "hazımsızlık",
+        "reflü",
+        "yanma",
+        "gaz",
+        "şişkinlik",
+        "anal ağrı"
+      ],
+      "negative_keywords_tr": []
+    },
+    {
+      "id": "urology_internal",
+      "specialty_tr": "Üroloji (gerekirse Dahiliye)",
+      "keywords_tr": [
+        "idrar yanması",
+        "sık idrara çıkma",
+        "idrar yaparken ağrı",
+        "bel ağrısı",
+        "kasık ağrısı",
+        "idrar renginde değişiklik",
+        "böbrek taşı"
+      ],
+      "negative_keywords_tr": []
+    },
+    {
+      "id": "dermatology",
+      "specialty_tr": "Dermatoloji",
+      "keywords_tr": [
+        "döküntü",
+        "kaşıntı",
+        "kurdeşen",
+        "ürtiker",
+        "egzama",
+        "leke",
+        "kızarıklık",
+        "kabarcık",
+        "sivilce"
+      ],
+      "negative_keywords_tr": [
+        "dudak şişti",
+        "nefes alamıyorum"
+      ]
+    },
+    {
+      "id": "ophthalmology",
+      "specialty_tr": "Göz Hastalıkları",
+      "keywords_tr": [
+        "göz kızarıklığı",
+        "göz ağrısı",
+        "batma",
+        "ışığa hassasiyet",
+        "bulanık görme",
+        "çapaklanma",
+        "görme azaldı"
+      ],
+      "negative_keywords_tr": []
+    },
+    {
+      "id": "orthopedics_rheum",
+      "specialty_tr": "Ortopedi / Romatoloji",
+      "keywords_tr": [
+        "eklem ağrısı",
+        "diz ağrısı",
+        "omuz ağrısı",
+        "bel ağrısı",
+        "şişlik",
+        "hareket kısıtlılığı",
+        "travma",
+        "düştüm",
+        "burkulma",
+        "sabah tutukluğu",
+        "eklem tutukluğu"
+      ],
+      "negative_keywords_tr": []
+    },
+    {
+      "id": "psychiatry",
+      "specialty_tr": "Psikiyatri",
+      "keywords_tr": [
+        "panik",
+        "anksiyete",
+        "kaygı",
+        "uyuyamıyorum",
+        "depresyon",
+        "isteksizlik",
+        "çarpıntı (panik)",
+        "korku"
+      ],
+      "negative_keywords_tr": []
+    },
+    {
+      "id": "obgyn",
+      "specialty_tr": "Kadın Hastalıkları ve Doğum",
+      "keywords_tr": [
+        "adet gecikmesi",
+        "düzensiz kanama",
+        "lekelenme",
+        "hamilelik",
+        "gebelik",
+        "alt karın ağrısı",
+        "yumurtalık",
+        "vajinal akıntı"
+      ],
+      "negative_keywords_tr": []
+    }
+  ],
+  "scoring": {
+    "keyword_match_points": 3,
+    "phrase_match_points": 5,
+    "negative_keyword_penalty": -4,
+    "tie_breakers": [
+      "higher_keyword_score",
+      "use_reasoning_agent_candidate_alignment",
+      "default_to_internal_medicine_if_unclear"
+    ]
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "request": {
+    "endpoint": "/v1/session/sess_demo_04/message",
+    "body": { "user_input_tr": "39" }
+  },
+  "response": {
+    "type": "RESULT",
+    "session_id": "sess_demo_04",
+    "payload": {
+      "recommended_specialty_tr": "Kulak Burun Boğaz (KBB)",
+      "urgency": "SAME_DAY",
+      "candidates_tr": [
+        { "label_tr": "Akut farenjit/tonsillit (olası)", "probability_0_1": 0.60 },
+        { "label_tr": "Viral üst solunum yolu enfeksiyonu (olası)", "probability_0_1": 0.25 }
+      ],
+      "rationale_tr": ["Boğaz ağrısı + yüksek ateş kombinasyonu değerlendirme gerektirebilir."],
+      "emergency_watchouts_tr": ["Nefes darlığı, yutma/solunumda belirgin güçlük olursa acil servise başvur."],
+      "doctor_ready_summary_tr": {
+        "symptoms_tr": ["Boğaz ağrısı", "Yutkunurken yanma", "Ateş (39°C)"],
+        "timeline_tr": "3 gündür",
+        "qa_highlights_tr": ["Ateş ölçümü: 39"],
+        "risk_level": "MEDIUM"
+      }
+    },
+    "meta": {
+      "disclaimer_tr": "Bu uygulama tanı koymaz; bilgilendirme ve yönlendirme amaçlıdır.",
+      "timestamp": "2026-02-08T12:01:20+03:00"
+    }
+  }
+}

@@ -1,0 +1,286 @@
+{
+  "version": "0.1.0",
+  "language": "tr-TR",
+  "rules": {
+    "double_count_policy": "NO_DOUBLE_COUNT_SAME_CANONICAL",
+    "canonical_priority": [
+      "phrase",
+      "keyword"
+    ]
+  },
+  "synonyms": [
+    {
+      "canonical": "baş dönmesi",
+      "type": "symptom",
+      "variants_tr": [
+        "başım dönüyor",
+        "başım döndü",
+        "oda dönüyor",
+        "dengem bozuldu",
+        "sersemledim",
+        "gözüm kararıyor"
+      ]
+    },
+    {
+      "canonical": "bulantı",
+      "type": "symptom",
+      "variants_tr": [
+        "midem bulanıyor",
+        "midem kalkıyor",
+        "içim bulanıyor",
+        "kusacak gibi oluyorum"
+      ]
+    },
+    {
+      "canonical": "kusma",
+      "type": "symptom",
+      "variants_tr": [
+        "kustum",
+        "kusuyorum",
+        "istifra ettim",
+        "çıkardım"
+      ]
+    },
+    {
+      "canonical": "ishal",
+      "type": "symptom",
+      "variants_tr": [
+        "sulu dışkı",
+        "tuvalete çok çıkıyorum",
+        "ishalim",
+        "bağırsaklarım bozuldu"
+      ]
+    },
+    {
+      "canonical": "kabızlık",
+      "type": "symptom",
+      "variants_tr": [
+        "tuvalete çıkamıyorum",
+        "günlerdir yapamıyorum",
+        "sert dışkı"
+      ]
+    },
+    {
+      "canonical": "göğüs ağrısı",
+      "type": "symptom",
+      "variants_tr": [
+        "göğsüm ağrıyor",
+        "göğüste ağrı",
+        "göğsümde ağrı var"
+      ]
+    },
+    {
+      "canonical": "göğüste baskı",
+      "type": "symptom",
+      "variants_tr": [
+        "göğsümde baskı var",
+        "göğsüm sıkışıyor",
+        "göğsümde ağırlık var"
+      ]
+    },
+    {
+      "canonical": "nefes darlığı",
+      "type": "symptom",
+      "variants_tr": [
+        "nefesim daralıyor",
+        "nefes alamıyorum",
+        "boğuluyor gibi oluyorum",
+        "soluk alamıyorum"
+      ]
+    },
+    {
+      "canonical": "çarpıntı",
+      "type": "symptom",
+      "variants_tr": [
+        "kalbim hızlı atıyor",
+        "kalbim küt küt atıyor",
+        "kalp çarpıntısı"
+      ]
+    },
+    {
+      "canonical": "ateş",
+      "type": "symptom",
+      "variants_tr": [
+        "ateşim var",
+        "ateşlendim",
+        "titremem var",
+        "üşüme terleme"
+      ]
+    },
+    {
+      "canonical": "boğaz ağrısı",
+      "type": "symptom",
+      "variants_tr": [
+        "boğazım ağrıyor",
+        "yutkunurken acıyor",
+        "genzim yanıyor"
+      ]
+    },
+    {
+      "canonical": "öksürük",
+      "type": "symptom",
+      "variants_tr": [
+        "öksürüyorum",
+        "öksürüğüm var",
+        "öksürük tuttu"
+      ]
+    },
+    {
+      "canonical": "baş ağrısı",
+      "type": "symptom",
+      "variants_tr": [
+        "başım ağrıyor",
+        "kafam çatlıyor",
+        "migrenim tuttu"
+      ]
+    },
+    {
+      "canonical": "tek taraflı güçsüzlük/uyuşma",
+      "type": "red_flag",
+      "variants_tr": [
+        "kolum tutmuyor",
+        "bacağım tutmuyor",
+        "tek tarafım uyuştu",
+        "yüzüm kaydı"
+      ]
+    },
+    {
+      "canonical": "konuşma bozukluğu",
+      "type": "red_flag",
+      "variants_tr": [
+        "konuşamıyorum",
+        "konuşmam bozuldu",
+        "dilim dolaşıyor"
+      ]
+    },
+    {
+      "canonical": "idrar yanması",
+      "type": "symptom",
+      "variants_tr": [
+        "idrar yaparken yanıyor",
+        "çiş yaparken yanma",
+        "idrar yanması var"
+      ]
+    },
+    {
+      "canonical": "döküntü/ürtiker",
+      "type": "symptom",
+      "variants_tr": [
+        "kurdeşen",
+        "ürtiker",
+        "vücudum kabardı",
+        "kaşıntılı döküntü"
+      ]
+    },
+    {
+      "canonical": "yüz/dudak şişmesi",
+      "type": "red_flag",
+      "variants_tr": [
+        "dudaklarım şişti",
+        "yüzüm şişti",
+        "göz kapaklarım şişti"
+      ]
+    },
+    {
+      "canonical": "intihar/kendine zarar",
+      "type": "red_flag",
+      "variants_tr": [
+        "intihar edeceğim",
+        "kendimi öldürmek istiyorum",
+        "kendime zarar vereceğim"
+      ]
+    },
+    {
+      "canonical": "sık idrara çıkma",
+      "type": "symptom",
+      "variants_tr": [
+        "çok sık idrara çıkıyorum",
+        "sık idrarım geliyor",
+        "idrarım sürekli varmış gibi",
+        "sık sık tuvalete gidiyorum"
+      ]
+    },
+    {
+      "canonical": "kaşıntı",
+      "type": "symptom",
+      "variants_tr": [
+        "kaşıntım var",
+        "çok kaşınıyorum",
+        "cildim kaşınıyor"
+      ]
+    },
+    {
+      "canonical": "kızarıklık",
+      "type": "symptom",
+      "variants_tr": [
+        "cildimde kızarıklık var",
+        "kızardı",
+        "kırmızı lekeler çıktı"
+      ]
+    },
+    {
+      "canonical": "sivilce",
+      "type": "symptom",
+      "variants_tr": [
+        "sivilcem çıktı",
+        "irinli sivilce var",
+        "siyah nokta var"
+      ]
+    },
+    {
+      "canonical": "leke",
+      "type": "symptom",
+      "variants_tr": [
+        "cildimde leke var",
+        "ciltte renk değişikliği var",
+        "tenimde lekelenme var"
+      ]
+    },
+    {
+      "canonical": "kabarcık",
+      "type": "symptom",
+      "variants_tr": [
+        "cildimde kabarcık var",
+        "su dolu kabarcıklar var",
+        "derimde kabarma var"
+      ]
+    },
+    {
+      "canonical": "şişlik",
+      "type": "symptom",
+      "variants_tr": [
+        "eklemde şişlik var",
+        "eklem şişliği",
+        "dizde şişlik",
+        "bilekte şişlik"
+      ]
+    },
+    {
+      "canonical": "eklem tutukluğu",
+      "type": "symptom",
+      "variants_tr": [
+        "eklemlerimde tutukluk var",
+        "sabah tutukluğu yaşıyorum",
+        "hareket ederken eklemim açılmıyor"
+      ]
+    },
+    {
+      "canonical": "anal ağrı",
+      "type": "symptom",
+      "variants_tr": [
+        "makatta ağrı var",
+        "anal bölgede ağrı var",
+        "dışkılarken ağrı oluyor"
+      ]
+    },
+    {
+      "canonical": "kanlı balgam",
+      "type": "red_flag",
+      "variants_tr": [
+        "balgamda kan var",
+        "kanlı balgam çıkarıyorum",
+        "öksürürken kan geliyor"
+      ]
+    }
+  ]
+}

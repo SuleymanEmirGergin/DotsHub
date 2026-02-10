@@ -1,0 +1,179 @@
+{
+    "version": "0.1.0",
+    "notes": [
+        "Rules are deterministic. If any rule matches, return ENVELOPE_EMERGENCY.",
+        "keyword_any is applied on normalized user text (lowercase, Turkish chars preserved).",
+        "canonical_any matches extracted canonicals (normalized)."
+    ],
+    "global": {
+        "min_severity_to_trigger": 2
+    },
+    "rules": [
+        {
+            "id": "stroke_redflags",
+            "severity": 3,
+            "title_tr": "Felç / inme şüphesi",
+            "message_tr": "Ani gelişen yüz-kol-bacak güçsüzlüğü, konuşma bozukluğu veya yüz kayması inme belirtisi olabilir. Vakit kaybetmeden acil yardım çağırın.",
+            "recommendation_tr": "112 / Acil Servis",
+            "keyword_any": [
+                "yüzüm kaydı",
+                "ağzım kaydı",
+                "kolum tutmuyor",
+                "bacağım tutmuyor",
+                "konuşamıyorum",
+                "konuşmam bozuldu",
+                "dilim dolandı",
+                "ani felç"
+            ],
+            "canonical_any": [
+                "ani güç kaybı",
+                "konuşma bozukluğu",
+                "yüz asimetrisi",
+                "bilinç değişikliği"
+            ],
+            "require_any_group": [
+                {
+                    "keyword_any": [
+                        "ani",
+                        "birden"
+                    ]
+                },
+                {
+                    "canonical_any": [
+                        "ani güç kaybı",
+                        "konuşma bozukluğu"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "chest_pain_sob",
+            "severity": 3,
+            "title_tr": "Kalp krizi / ciddi kalp sorunu şüphesi",
+            "message_tr": "Göğüs ağrısı ve nefes darlığı kalple ilgili acil bir durumu gösterebilir. Acil değerlendirme gerekebilir.",
+            "recommendation_tr": "112 / Acil Servis",
+            "keyword_all": [
+                "göğüs",
+                "ağrı"
+            ],
+            "keyword_any": [
+                "nefes darlığı",
+                "terleme",
+                "sol kola vuruyor",
+                "çeneye vuruyor",
+                "bayılacak gibi"
+            ],
+            "canonical_any": [
+                "göğüs ağrısı",
+                "nefes darlığı"
+            ]
+        },
+        {
+            "id": "severe_headache_neuro",
+            "severity": 3,
+            "title_tr": "Ani/şiddetli baş ağrısı + nörolojik bulgu",
+            "message_tr": "Ani ve çok şiddetli baş ağrısı, görme/konuşma bozukluğu veya güç kaybı ile birlikteyse acil değerlendirme gerekir.",
+            "recommendation_tr": "112 / Acil Servis",
+            "keyword_any": [
+                "hayatımın en şiddetli baş ağrısı",
+                "ani baş ağrısı",
+                "enseden vurdu"
+            ],
+            "canonical_any": [
+                "şiddetli baş ağrısı"
+            ],
+            "require_any_group": [
+                {
+                    "keyword_any": [
+                        "bulanık görüyorum",
+                        "çift görüyorum",
+                        "konuşmam bozuldu",
+                        "kolum tutmuyor"
+                    ]
+                },
+                {
+                    "canonical_any": [
+                        "konuşma bozukluğu",
+                        "ani güç kaybı",
+                        "görme bozukluğu"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "suicidal_selfharm",
+            "severity": 3,
+            "title_tr": "Kendine zarar verme riski",
+            "message_tr": "Kendine zarar verme düşünceleri ciddidir. Yalnız kalma; hemen bir yakınından destek iste ve acil yardım/kriz hattı ile görüş.",
+            "recommendation_tr": "112 / Acil Destek",
+            "keyword_any": [
+                "kendime zarar",
+                "intihar",
+                "yaşamak istemiyorum",
+                "kendimi öldürmek"
+            ],
+            "canonical_any": []
+        },
+        {
+            "id": "severe_bleeding",
+            "severity": 3,
+            "title_tr": "Kontrol edilemeyen kanama",
+            "message_tr": "Şiddetli veya durmayan kanama acil müdahale gerektirebilir.",
+            "recommendation_tr": "112 / Acil Servis",
+            "keyword_any": [
+                "kan fışkırıyor",
+                "durmuyor",
+                "çok kan kaybettim",
+                "kanama geçmiyor"
+            ],
+            "canonical_any": [
+                "şiddetli kanama"
+            ]
+        },
+        {
+            "id": "anaphylaxis",
+            "severity": 3,
+            "title_tr": "Ciddi alerjik reaksiyon (Anafilaksi) şüphesi",
+            "message_tr": "Şiddetli alerjik reaksiyon hayati tehlike oluşturabilir. Hemen acil yardım çağırın.",
+            "recommendation_tr": "112 / Acil Servis",
+            "keyword_any": [
+                "dillim şişti",
+                "boğazım şişti",
+                "nefes alamıyorum",
+                "kaşıntı her yerimde"
+            ],
+            "canonical_any": [
+                "anjiyoödem",
+                "nefes darlığı",
+                "yaygın döküntü"
+            ]
+        },
+        {
+            "id": "high_fever_with_red_flags",
+            "severity": 2,
+            "title_tr": "Yüksek ateş + tehlike işaretleri",
+            "message_tr": "Yüksek ateş ve ense sertliği, bilinç bulanıklığı gibi bulgular menenjit veya diğer ciddi enfeksiyonları gösterebilir.",
+            "recommendation_tr": "Acilen doktora başvurun",
+            "keyword_any": [
+                "ateş",
+                "yüksek ateş"
+            ],
+            "require_any_group": [
+                {
+                    "keyword_any": [
+                        "ense sertliği",
+                        "ensem tutuldu",
+                        "bilinç bulanıklığı",
+                        "ışıktan rahatsız"
+                    ]
+                },
+                {
+                    "canonical_any": [
+                        "ense sertliği",
+                        "bilinç değişikliği"
+                    ]
+                }
+            ]
+        }
+    ]
+}

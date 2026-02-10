@@ -1,0 +1,237 @@
+openapi: 3.1.0
+info:
+  title: PreTriage Orchestrator API
+  version: "0.1.0"
+  description: |
+    Primary API contract for integrations.
+    Unified triage endpoint — frontend calls POST /v1/triage/turn
+    and renders based on the response type field.
+servers:
+  - url: http://localhost:8000
+    description: Local development
+x-default-integration-path:
+  backend_app: app.main
+  mobile_endpoint: /v1/triage/turn
+paths:
+  /v1/triage/turn:
+    post:
+      summary: Run one triage turn (single endpoint, single envelope)
+      operationId: triageTurn
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TriageTurnRequest"
+            examples:
+              start:
+                summary: Start new session with symptoms
+                value:
+                  session_id: null
+                  user_message: "Başım ağrıyor"
+                  locale: "tr-TR"
+              answer:
+                summary: Answer a yes/no question
+                value:
+                  session_id: "c2c6e2d3-8d39-4b3d-8e5a-0f2a6e9c8d11"
+                  user_message: ""
+                  answer:
+                    canonical: "bulantı"
+                    value: "yes"
+                  locale: "tr-TR"
+      responses:
+        "200":
+          description: Envelope response (QUESTION/RESULT/EMERGENCY/ERROR)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Envelope"
+              examples:
+                question:
+                  summary: System asks a follow-up question
+                  value:
+                    type: "QUESTION"
+                    session_id: "c2c6e2d3-8d39-4b3d-8e5a-0f2a6e9c8d11"
+                    turn_index: 1
+                    payload:
+                      question_id: "q_001"
+                      canonical: "bulantı"
+                      question_tr: "Mide bulantısı var mı?"
+                      answer_type: "yes_no"
+                      choices_tr: ["yes", "no"]
+                      why_asking_tr: "Migren ve diğer olasılıkları ayırt etmek için."
+                result:
+                  summary: Final triage result
+                  value:
+                    type: "RESULT"
+                    session_id: "c2c6e2d3-8d39-4b3d-8e5a-0f2a6e9c8d11"
+                    turn_index: 3
+                    payload:
+                      urgency: "ROUTINE"
+                      recommended_specialty:
+                        id: "neurology"
+                        name_tr: "Nöroloji"
+                      top_conditions:
+                        - disease_label: "Migraine"
+                          score_0_1: 0.56
+                        - disease_label: "Sinusitis"
+                          score_0_1: 0.22
+                      doctor_ready_summary_tr:
+                        - "Baş ağrısı mevcut."
+                        - "Işığa/sese hassasiyet: evet."
+                        - "Bulantı: evet."
+                      safety_notes_tr:
+                        - "Bu bir ön değerlendirmedir, teşhis değildir."
+                        - "Ani şiddetli baş ağrısı, konuşma bozukluğu, tek taraflı güçsüzlük olursa acile başvur."
+                emergency:
+                  summary: Emergency detected
+                  value:
+                    type: "EMERGENCY"
+                    session_id: "S3"
+                    turn_index: 1
+                    payload:
+                      urgency: "EMERGENCY"
+                      reason_tr: "Göğüs baskısı + nefes darlığı/terleme acil değerlendirme gerektirebilir."
+                      instructions_tr:
+                        - "112'yi ara veya en yakın acile başvur."
+                        - "Yalnızsan bir yakınını haberdar et."
+                        - "Göğüs ağrısı artarsa bekleme."
+
+  /health:
+    get:
+      summary: Health check
+      responses:
+        "200":
+          description: Service status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string }
+                  service: { type: string }
+                  version: { type: string }
+
+components:
+  schemas:
+    TriageTurnRequest:
+      type: object
+      required: [locale]
+      properties:
+        session_id:
+          type: ["string", "null"]
+          description: "null means start new session"
+        locale:
+          type: string
+          default: "tr-TR"
+        user_message:
+          type: string
+          description: "Free text symptoms (empty allowed when answering)"
+        answer:
+          type: ["object", "null"]
+          description: "User answer to the last question"
+          properties:
+            canonical:
+              type: string
+            value:
+              type: string
+
+    Envelope:
+      type: object
+      required: [type, session_id, turn_index, payload]
+      properties:
+        type:
+          type: string
+          enum: ["QUESTION", "RESULT", "EMERGENCY", "ERROR"]
+        session_id:
+          type: string
+        turn_index:
+          type: integer
+        payload:
+          oneOf:
+            - $ref: "#/components/schemas/QuestionPayload"
+            - $ref: "#/components/schemas/ResultPayload"
+            - $ref: "#/components/schemas/EmergencyPayload"
+            - $ref: "#/components/schemas/ErrorPayload"
+        meta:
+          $ref: "#/components/schemas/Meta"
+
+    Meta:
+      type: object
+      properties:
+        disclaimer_tr:
+          type: string
+          default: "Bu uygulama tanı koymaz; bilgilendirme ve yönlendirme amaçlıdır."
+        timestamp:
+          type: string
+          format: date-time
+
+    QuestionPayload:
+      type: object
+      required: [question_id, canonical, question_tr, answer_type]
+      properties:
+        question_id:
+          type: string
+        canonical:
+          type: string
+        question_tr:
+          type: string
+        answer_type:
+          type: string
+          enum: ["yes_no", "free_text", "number", "multi_choice"]
+        choices_tr:
+          type: ["array", "null"]
+          items: { type: string }
+        why_asking_tr:
+          type: ["string", "null"]
+
+    ResultPayload:
+      type: object
+      required: [urgency, recommended_specialty, top_conditions, doctor_ready_summary_tr, safety_notes_tr]
+      properties:
+        urgency:
+          type: string
+          enum: ["EMERGENCY", "SAME_DAY", "ROUTINE"]
+        recommended_specialty:
+          type: object
+          required: [id, name_tr]
+          properties:
+            id: { type: string }
+            name_tr: { type: string }
+        top_conditions:
+          type: array
+          items:
+            type: object
+            required: [disease_label, score_0_1]
+            properties:
+              disease_label: { type: string }
+              score_0_1: { type: number }
+        doctor_ready_summary_tr:
+          type: array
+          items: { type: string }
+        safety_notes_tr:
+          type: array
+          items: { type: string }
+
+    EmergencyPayload:
+      type: object
+      required: [urgency, reason_tr, instructions_tr]
+      properties:
+        urgency:
+          type: string
+          enum: ["EMERGENCY"]
+        reason_tr:
+          type: string
+        instructions_tr:
+          type: array
+          items: { type: string }
+
+    ErrorPayload:
+      type: object
+      required: [code, message_tr]
+      properties:
+        code: { type: string }
+        message_tr: { type: string }
+        retryable:
+          type: boolean
+          default: true

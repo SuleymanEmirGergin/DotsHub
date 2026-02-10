@@ -1,0 +1,139 @@
+name: Tuning Guardrail
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'backend/app/data/synonyms_tr.json'
+      - 'backend/app/data/specialty_keywords_tr.json'
+
+jobs:
+  guardrail:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          
+      - name: Install dependencies
+        run: |
+          cd backend
+          pip install -r requirements.txt
+          pip install supabase
+          
+      - name: Measure deployment impact
+        id: impact
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          cd backend
+          python scripts/measure_deployment_impact.py > impact_output.txt
+          cat impact_output.txt
+          
+      - name: Check guardrail decision
+        id: decision
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          cd backend
+          python scripts/guardrail_decide.py > decision.json
+          cat decision.json
+          
+          SHOULD_ROLLBACK=$(cat decision.json | jq -r '.should_rollback')
+          echo "should_rollback=$SHOULD_ROLLBACK" >> $GITHUB_OUTPUT
+          
+          DEPLOYMENT_ID=$(cat decision.json | jq -r '.deployment_id')
+          echo "deployment_id=$DEPLOYMENT_ID" >> $GITHUB_OUTPUT
+          
+      - name: Update deployment status (rollback pending)
+        if: steps.decision.outputs.should_rollback == 'true'
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          cd backend
+          python scripts/update_deployment_status.py \
+            --deployment-id "${{ steps.decision.outputs.deployment_id }}" \
+            --status "rolled_back_pending"
+            
+      - name: Send alert notification
+        if: steps.decision.outputs.should_rollback == 'true'
+        run: |
+          MESSAGE="⚠️ Tuning Guardrail Alert: Deployment ${{ steps.decision.outputs.deployment_id }} failed checks and will be rolled back."
+          
+          # Slack
+          if [ -n "${{ secrets.SLACK_WEBHOOK_URL }}" ]; then
+            curl -X POST "${{ secrets.SLACK_WEBHOOK_URL }}" \
+              -H 'Content-Type: application/json' \
+              -d "{\"text\":\"$MESSAGE\"}"
+          fi
+          
+          # Discord
+          if [ -n "${{ secrets.DISCORD_WEBHOOK_URL }}" ]; then
+            curl -X POST "${{ secrets.DISCORD_WEBHOOK_URL }}" \
+              -H 'Content-Type: application/json' \
+              -d "{\"content\":\"$MESSAGE\"}"
+          fi
+          
+      - name: Create rollback PR
+        if: steps.decision.outputs.should_rollback == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd backend
+          python scripts/rollback_deployment.py \
+            --deployment-id "${{ steps.decision.outputs.deployment_id }}"
+          
+          git config --global user.name "Guardrail Bot"
+          git config --global user.email "guardrail-bot@dotshub.com"
+          
+          BRANCH_NAME="rollback/deployment-${{ steps.decision.outputs.deployment_id }}"
+          git checkout -b "$BRANCH_NAME"
+          
+          git add app/data/*.json
+          
+          git commit -m "🔄 Rollback deployment ${{ steps.decision.outputs.deployment_id }}
+
+          Automated rollback due to guardrail failure.
+          
+          Deployment ID: ${{ steps.decision.outputs.deployment_id }}
+          Trigger: Guardrail checks failed
+          "
+          
+          git push origin "$BRANCH_NAME"
+          
+          gh pr create \
+            --title "🔄 Rollback: Deployment ${{ steps.decision.outputs.deployment_id }}" \
+            --body "**Automated Rollback**
+            
+            Guardrail checks failed for deployment ${{ steps.decision.outputs.deployment_id }}.
+            
+            **Impact detected:**
+            - See impact measurement report in Actions artifacts
+            
+            **Next steps:**
+            1. Review impact report
+            2. Investigate root cause
+            3. Merge this PR to complete rollback
+            " \
+            --base main \
+            --head "$BRANCH_NAME" \
+            --label "rollback" \
+            --label "urgent"
+            
+      - name: Upload impact report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: impact-report
+          path: backend/impact_output.txt
+          retention-days: 90

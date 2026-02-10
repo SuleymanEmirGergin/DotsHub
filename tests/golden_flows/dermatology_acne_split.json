@@ -1,0 +1,16 @@
+{
+  "scenario": "Dermatology acne split path",
+  "description": "User reports itchy skin and blackheads; dermatology routing after split canonical mapping.",
+  "input": [
+    {
+      "user_message": "Cildimde kaşıntı ve siyah nokta var",
+      "answer": null
+    }
+  ],
+  "expected": {
+    "final_type": "RESULT",
+    "recommended_specialty": "dermatology",
+    "top_condition_contains": "Acne",
+    "urgency": "ROUTINE"
+  }
+}

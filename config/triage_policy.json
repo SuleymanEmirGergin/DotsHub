@@ -1,0 +1,6 @@
+{
+    "max_questions": 5,
+    "min_expected_gain": 0.08,
+    "high_confidence_threshold": 0.85,
+    "allow_same_day_to_continue": true
+}

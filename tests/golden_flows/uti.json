@@ -1,0 +1,14 @@
+{
+  "scenario": "UTI path",
+  "description": "User reports urinary burning + frequent urination, gets urology routing",
+  "input": [
+    { "user_message": "İdrar yaparken yanıyor, çok sık çıkıyorum", "answer": null },
+    { "user_message": "", "answer": { "canonical": "ateş", "value": "no" } }
+  ],
+  "expected": {
+    "final_type": "RESULT",
+    "recommended_specialty": "urology_internal",
+    "top_condition_contains": "Urinary tract infection",
+    "urgency": "ROUTINE"
+  }
+}

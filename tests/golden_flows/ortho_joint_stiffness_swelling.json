@@ -1,0 +1,16 @@
+{
+  "scenario": "Orthopedics joint stiffness and swelling path",
+  "description": "User reports morning joint stiffness + swelling; should route to orthopedics/rheumatology.",
+  "input": [
+    {
+      "user_message": "Eklemlerimde sabah tutukluğu ve şişlik var",
+      "answer": null
+    }
+  ],
+  "expected": {
+    "final_type": "RESULT",
+    "recommended_specialty": "orthopedics_rheum",
+    "top_condition_contains": "Arthritis",
+    "urgency": "ROUTINE"
+  }
+}

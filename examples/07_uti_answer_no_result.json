@@ -1,0 +1,30 @@
+{
+  "request": {
+    "endpoint": "/v1/session/sess_demo_06/message",
+    "body": { "user_input_tr": "Hayır" }
+  },
+  "response": {
+    "type": "RESULT",
+    "session_id": "sess_demo_06",
+    "payload": {
+      "recommended_specialty_tr": "Üroloji (gerekirse Dahiliye)",
+      "urgency": "WITHIN_3_DAYS",
+      "candidates_tr": [
+        { "label_tr": "Alt idrar yolu enfeksiyonu (olası)", "probability_0_1": 0.70 },
+        { "label_tr": "İdrar yolu irritasyonu (olası)", "probability_0_1": 0.15 }
+      ],
+      "rationale_tr": ["İdrar yanması + sık idrara çıkma Üroloji/Dahiliye değerlendirmesi gerektirebilir."],
+      "emergency_watchouts_tr": ["Yüksek ateş, titreme, bel ağrısı eklenirse acil/aynı gün değerlendirme gerekebilir."],
+      "doctor_ready_summary_tr": {
+        "symptoms_tr": ["İdrar yanması", "Sık idrara çıkma"],
+        "timeline_tr": "Yeni başladı (süre belirtilmedi)",
+        "qa_highlights_tr": ["Yüksek ateş/titreme/bel ağrısı yok"],
+        "risk_level": "LOW"
+      }
+    },
+    "meta": {
+      "disclaimer_tr": "Bu uygulama tanı koymaz; bilgilendirme ve yönlendirme amaçlıdır.",
+      "timestamp": "2026-02-08T12:02:15+03:00"
+    }
+  }
+}

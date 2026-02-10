@@ -1,0 +1,22 @@
+{
+  "request": {
+    "endpoint": "/v1/session/start",
+    "body": {
+      "user_input_tr": "İdrar yaparken yanıyor, çok sık tuvalete çıkıyorum.",
+      "profile": { "age": 31, "sex": "female", "chronic_conditions_tr": [], "medications_tr": [], "allergies_tr": [] }
+    }
+  },
+  "response": {
+    "type": "QUESTION",
+    "session_id": "sess_demo_06",
+    "payload": {
+      "question_tr": "Yüksek ateş, titreme veya belinde (sırta vuran) şiddetli ağrı var mı?",
+      "answer_type": "yes_no",
+      "choices_tr": ["Evet", "Hayır"]
+    },
+    "meta": {
+      "disclaimer_tr": "Bu uygulama tanı koymaz; bilgilendirme ve yönlendirme amaçlıdır.",
+      "timestamp": "2026-02-08T12:02:00+03:00"
+    }
+  }
+}

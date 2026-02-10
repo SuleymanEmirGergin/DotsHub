@@ -1,0 +1,58 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Environment
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node / React Native
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.expo/
+dist/
+web-build/
+*.tsbuildinfo
+dashboard/.next/
+
+# Docker
+docker-compose.override.yml
+
+# Database
+*.db
+*.sqlite3
+
+# Redis
+dump.rdb
+
+# Logs
+*.log
+
+# Test / generated reports
+.pytest_cache/
+.mypy_cache/
+backend/reports/.tmp_guardrails/
+backend/tests/.tmp_guardrails/
+backend/reports/kaggle_mapping_validation_*.json

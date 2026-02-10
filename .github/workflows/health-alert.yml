@@ -1,0 +1,157 @@
+name: Admin Health Alert
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch: {}
+
+jobs:
+  check-health:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check admin health
+        env:
+          ADMIN_STATS_URL: ${{ secrets.ADMIN_STATS_URL }}
+          ADMIN_API_KEY: ${{ secrets.ADMIN_API_KEY }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${ADMIN_STATS_URL:-}" ] || [ -z "${ADMIN_API_KEY:-}" ]; then
+            echo "Missing ADMIN_STATS_URL or ADMIN_API_KEY"
+            exit 1
+          fi
+
+          echo "Fetching: $ADMIN_STATS_URL"
+          RESP="$(curl -sS -H "x-admin-key: $ADMIN_API_KEY" "$ADMIN_STATS_URL")"
+          echo "$RESP" > resp.json
+
+          OVERALL="$(python3 - <<'PY'
+          import json
+          d=json.load(open("resp.json"))
+          h=d.get("health") or {}
+          print((h.get("overall") or "INFO").upper())
+          PY
+          )"
+
+          LOW_STATUS="$(python3 - <<'PY'
+          import json
+          d=json.load(open("resp.json"))
+          h=d.get("health") or {}
+          print((h.get("low_conf_status") or "INFO").upper())
+          PY
+          )"
+
+          HIGH_STATUS="$(python3 - <<'PY'
+          import json
+          d=json.load(open("resp.json"))
+          h=d.get("health") or {}
+          print((h.get("high_risk_status") or "INFO").upper())
+          PY
+          )"
+
+          SAMPLES="$(python3 - <<'PY'
+          import json
+          d=json.load(open("resp.json"))
+          h=d.get("health") or {}
+          print(h.get("samples") or 0)
+          PY
+          )"
+
+          LOW_RATE="$(python3 - <<'PY'
+          import json
+          d=json.load(open("resp.json"))
+          h=d.get("health") or {}
+          print(round(float(h.get("low_conf_rate") or 0.0)*100,1))
+          PY
+          )"
+
+          HIGH_RATE="$(python3 - <<'PY'
+          import json
+          d=json.load(open("resp.json"))
+          h=d.get("health") or {}
+          print(round(float(h.get("high_risk_rate") or 0.0)*100,1))
+          PY
+          )"
+
+          TOP_STOP="$(python3 - <<'PY'
+          import json
+          d=json.load(open("resp.json"))
+          arr=d.get("top_stop_reasons") or []
+          print(", ".join([f"{k}({v})" for k,v in arr]) if arr else "-")
+          PY
+          )"
+
+          TOP_CAN="$(python3 - <<'PY'
+          import json
+          d=json.load(open("resp.json"))
+          arr=d.get("top_canonicals") or []
+          print(", ".join([f"{k}({v})" for k,v in arr]) if arr else "-")
+          PY
+          )"
+
+          RECENT="$(python3 - <<'PY'
+          import json
+          d=json.load(open("resp.json"))
+          arr=d.get("recent_problem_sessions") or []
+          if not arr:
+              print("-")
+              raise SystemExit
+          lines=[]
+          for x in arr[:5]:
+              sid=str(x.get("session_id") or "")[:8]
+              et=x.get("envelope_type") or "?"
+              rl=x.get("risk_level") or "-"
+              sr=x.get("stop_reason") or "-"
+              c=x.get("confidence_0_1")
+              cstr="-" if c is None else f"{round(float(c)*100)}%"
+              lines.append(f"{sid} {et} risk={rl} conf={cstr} stop={sr}")
+          print("\\n".join(lines))
+          PY
+          )"
+
+          echo "Overall=$OVERALL low=$LOW_STATUS high=$HIGH_STATUS samples=$SAMPLES low_rate=$LOW_RATE% high_rate=$HIGH_RATE%"
+
+          if [ "$OVERALL" != "WARN" ] && [ "$OVERALL" != "CRIT" ]; then
+            echo "Health is not WARN/CRIT. No alert."
+            exit 0
+          fi
+
+          MSG="TRIAGE HEALTH ${OVERALL}
+          - samples: ${SAMPLES}
+          - low_conf: ${LOW_RATE}% (${LOW_STATUS})
+          - high_risk: ${HIGH_RATE}% (${HIGH_STATUS})
+          - top_stop: ${TOP_STOP}
+          - top_canonicals: ${TOP_CAN}
+          - recent:
+          ${RECENT}
+          - endpoint: ${ADMIN_STATS_URL}"
+
+          if [ -n "${SLACK_WEBHOOK_URL:-}" ]; then
+            curl -sS -X POST -H 'Content-type: application/json' \
+              --data "$(python3 - <<PY
+          import json
+          print(json.dumps({"text": """$MSG"""}))
+          PY
+          )" \
+              "$SLACK_WEBHOOK_URL" >/dev/null
+            echo "Slack alert sent."
+          fi
+
+          if [ -n "${DISCORD_WEBHOOK_URL:-}" ]; then
+            curl -sS -X POST -H 'Content-type: application/json' \
+              --data "$(python3 - <<PY
+          import json
+          print(json.dumps({"content": """$MSG"""}))
+          PY
+          )" \
+              "$DISCORD_WEBHOOK_URL" >/dev/null
+            echo "Discord alert sent."
+          fi
+
+          if [ -z "${SLACK_WEBHOOK_URL:-}" ] && [ -z "${DISCORD_WEBHOOK_URL:-}" ]; then
+            echo "No webhook configured; printing message:"
+            echo "$MSG"
+          fi

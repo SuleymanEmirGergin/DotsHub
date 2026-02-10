@@ -1,0 +1,16 @@
+{
+  "scenario": "Pulmonology hemoptysis path",
+  "description": "User reports coughing blood; should route to pulmonology and keep deterministic result envelope.",
+  "input": [
+    {
+      "user_message": "Öksürürken kan geliyor",
+      "answer": null
+    }
+  ],
+  "expected": {
+    "final_type": "RESULT",
+    "recommended_specialty": "pulmonology",
+    "top_condition_contains": "Tuberculosis",
+    "urgency": "ROUTINE"
+  }
+}

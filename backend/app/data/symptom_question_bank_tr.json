@@ -1,0 +1,382 @@
+{
+  "version": "0.1.0",
+  "language": "tr-TR",
+  "description": "Deterministic question templates for canonical symptoms. Used by question_selector.py for discriminative questioning.",
+  "questions": [
+    {
+      "canonical_symptom": "baş ağrısı",
+      "question_tr": "Baş ağrınız var mı?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "baş dönmesi",
+      "question_tr": "Baş dönmesi veya sersemlik hissediyor musunuz?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "bulantı",
+      "question_tr": "Mide bulantısı var mı?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "kusma",
+      "question_tr": "Kusma oldu mu?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "ishal",
+      "question_tr": "İshal (sulu dışkılama) var mı?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "kabızlık",
+      "question_tr": "Kabızlık şikayetiniz var mı?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "göğüs ağrısı",
+      "question_tr": "Göğsünüzde ağrı hissediyor musunuz?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "göğüste baskı",
+      "question_tr": "Göğsünüzde baskı veya sıkışma hissi var mı?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "nefes darlığı",
+      "question_tr": "Nefes darlığı çekiyor musunuz?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "çarpıntı",
+      "question_tr": "Kalp çarpıntısı hissediyor musunuz?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "ateş",
+      "question_tr": "Ateşiniz var mı veya ateşli hissediyor musunuz?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "boğaz ağrısı",
+      "question_tr": "Boğaz ağrınız var mı?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "öksürük",
+      "question_tr": "Öksürüğünüz var mı?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "idrar yanması",
+      "question_tr": "İdrar yaparken yanma hissediyor musunuz?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "döküntü/ürtiker",
+      "question_tr": "Cildinizde döküntü, kızarıklık veya kaşıntı var mı?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "karın ağrısı",
+      "question_tr": "Karın (mide/bağırsak bölgesi) ağrınız var mı?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "hazımsızlık",
+      "question_tr": "Hazımsızlık veya mide ekşimesi var mı?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "bel/sırt ağrısı",
+      "question_tr": "Bel veya sırt ağrınız var mı?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "boyun ağrısı",
+      "question_tr": "Boyun ağrınız veya sertliğiniz var mı?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "eklem ağrısı",
+      "question_tr": "Eklem ağrınız var mı (diz, kalça, bilek vb.)?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "kas ağrısı",
+      "question_tr": "Kas ağrınız veya kas güçsüzlüğünüz var mı?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "halsizlik",
+      "question_tr": "Halsizlik veya yorgunluk hissediyor musunuz?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "kilo kaybı",
+      "question_tr": "Son zamanlarda fark edilir kilo kaybınız oldu mu?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "kilo artışı",
+      "question_tr": "Son zamanlarda belirgin kilo artışınız oldu mu?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "iştahsızlık",
+      "question_tr": "İştahsızlık şikayetiniz var mı?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "aşırı açlık",
+      "question_tr": "Aşırı açlık hissi yaşıyor musunuz?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "terleme",
+      "question_tr": "Aşırı terleme şikayetiniz var mı?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "titreme/üşüme",
+      "question_tr": "Titreme veya üşüme hissediyor musunuz?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "dehidrasyon",
+      "question_tr": "Ağız kuruluğu veya susuzluk hissediyor musunuz?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "koyu idrar",
+      "question_tr": "İdrarınızın rengi koyulaştı mı?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "sarılık",
+      "question_tr": "Cildiniz veya gözleriniz sarardı mı?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "bulanık görme",
+      "question_tr": "Bulanık görme veya görme bozukluğu var mı?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "depresyon/ruh hali",
+      "question_tr": "Ruh halinizde düşüklük veya depresif duygular var mı?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "anksiyete",
+      "question_tr": "Kaygı veya endişe hissi yaşıyor musunuz?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "konsantrasyon kaybı",
+      "question_tr": "Dikkat dağınıklığı veya konsantrasyon güçlüğü yaşıyor musunuz?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "bilinç değişikliği",
+      "question_tr": "Bilinç bulanıklığı veya dalgınlık yaşıyor musunuz?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "burun tıkanıklığı",
+      "question_tr": "Burun tıkanıklığı veya akıntı var mı?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "sinüs basıncı",
+      "question_tr": "Sinüs bölgesinde (alın/yanak) baskı hissediyor musunuz?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "göz yaşarması",
+      "question_tr": "Gözleriniz sulanıyor mu?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "göz kızarıklığı",
+      "question_tr": "Gözlerinizde kızarıklık var mı?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "göz ağrısı",
+      "question_tr": "Gözlerinizde ağrı var mı?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "kan şekeri düzensizliği",
+      "question_tr": "Kan şekerinizde düzensizlik veya diyabet tanınız var mı?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "lenf bezi şişliği",
+      "question_tr": "Boyun, koltuk altı veya kasıkta şişlik fark ettiniz mi?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "bacak şişliği",
+      "question_tr": "Bacaklarınızda şişlik var mı?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "tiroid büyümesi",
+      "question_tr": "Boynunuzda (tiroid bölgesi) şişlik var mı?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "ödem",
+      "question_tr": "Vücudunuzda ödem (şişlik/su toplanması) var mı?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "kanlı dışkı",
+      "question_tr": "Dışkınızda kan görüyor musunuz?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "mide kanaması",
+      "question_tr": "Kan kusmak veya siyah dışkı gibi belirtileriniz oldu mu?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "karın şişliği",
+      "question_tr": "Karın şişliği veya gaz şikayetiniz var mı?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "morarma",
+      "question_tr": "Kolay morarma veya çürükler fark ettiniz mi?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "koku kaybı",
+      "question_tr": "Koku alma duyunuzda kayıp veya azalma var mı?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "adet düzensizliği",
+      "question_tr": "Adet düzensizliği veya anormal kanama var mı?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "yürüme güçlüğü",
+      "question_tr": "Yürürken ağrı veya güçlük çekiyor musunuz?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "kas erimesi",
+      "question_tr": "Kaslarınızda erime veya güç kaybı fark ettiniz mi?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "ağız yarası",
+      "question_tr": "Ağzınızda veya dilinizde yara var mı?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "burun çevresi yara",
+      "question_tr": "Burun çevresinde yara, kızarıklık veya kabuklanma var mı?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "damar şişliği",
+      "question_tr": "Bacak veya kolda damarlarınızda belirgin şişlik fark ettiniz mi?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "dudak kuruluğu",
+      "question_tr": "Dudaklarınızda belirgin kuruluk veya karıncalanma var mı?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "obezite",
+      "question_tr": "Kilo fazlalığı/obezite ile ilgili daha önce hekim değerlendirmesi aldınız mı?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "soğuk el/ayak",
+      "question_tr": "Ellerde veya ayaklarda sürekli soğukluk hissediyor musunuz?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "tırnak değişikliği",
+      "question_tr": "Tırnaklarınızda renk/şekil değişikliği veya çukurlaşma var mı?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "tırnak iltihabı",
+      "question_tr": "Tırnak çevresinde kızarıklık, şişlik veya iltihap var mı?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "tırnak kırılganlığı",
+      "question_tr": "Tırnaklarınız kolay kırılıyor veya soyuluyor mu?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "uzuv güçsüzlüğü",
+      "question_tr": "Kol veya bacaklarınızda belirgin güçsüzlük hissediyor musunuz?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "uzuv şişliği",
+      "question_tr": "Kol veya bacaklarınızda şişlik fark ediyor musunuz?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "sık idrara çıkma",
+      "question_tr": "Sık sık idrara çıkma ihtiyacı duyuyor musunuz?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "kaşıntı",
+      "question_tr": "Cildinizde kaşıntı hissediyor musunuz?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "kızarıklık",
+      "question_tr": "Cildinizde belirgin kızarıklık var mı?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "sivilce",
+      "question_tr": "Cildinizde iltihaplı sivilce veya siyah nokta var mı?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "leke",
+      "question_tr": "Cildinizde yeni gelişen leke veya renk değişikliği var mı?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "kabarcık",
+      "question_tr": "Cildinizde sıvı dolu kabarcıklar var mı?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "şişlik",
+      "question_tr": "Eklemlerinizde şişlik fark ediyor musunuz?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "eklem tutukluğu",
+      "question_tr": "Eklemlerinizde özellikle sabahları tutukluk hissediyor musunuz?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "anal ağrı",
+      "question_tr": "Anal bölgede veya dışkılama sırasında ağrı var mı?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "kanlı balgam",
+      "question_tr": "Öksürükle birlikte kanlı balgam geliyor mu?",
+      "answer_type": "yes_no"
+    }
+  ]
+}
