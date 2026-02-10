@@ -45,9 +45,40 @@ def _generate_candidates(
     Score each Kaggle disease by overlap with user's TR canonicals.
     Returns top_n candidates sorted by score_0_1 descending.
     """
-    user_set: Set[str] = {c.lower() for c in user_canonicals_tr}
+    user_set: Set[str] = {
+        str(c).strip().lower()
+        for c in user_canonicals_tr
+        if isinstance(c, str) and c.strip()
+    }
     if not user_set:
         return []
+
+    canonical_to_en: Dict[str, List[str]] = {}
+    if runtime.symptom_severity_en:
+        # Preferred path: runtime precomputes this index at startup.
+        candidate_index = getattr(runtime, "canonical_to_en_symptoms", None)
+        if isinstance(candidate_index, dict):
+            canonical_to_en = candidate_index
+
+        # Backward-compat: build once if the runtime does not expose the index.
+        if not canonical_to_en:
+            rebuilt: Dict[str, List[str]] = {}
+            for en, tr in runtime.symptom_map_en_to_tr.items():
+                if not isinstance(tr, str):
+                    continue
+                tr_clean = tr.strip().lower()
+                en_clean = str(en).strip().lower()
+                if not tr_clean or not en_clean:
+                    continue
+                rebuilt.setdefault(tr_clean, []).append(en_clean)
+            canonical_to_en = {
+                canonical: sorted(set(en_list))
+                for canonical, en_list in rebuilt.items()
+            }
+            try:
+                runtime.canonical_to_en_symptoms = canonical_to_en
+            except Exception:
+                pass
 
     scored: List[Tuple[float, str]] = []
 
@@ -67,16 +98,6 @@ def _generate_candidates(
 
         # Optional severity weighting
         if runtime.symptom_severity_en:
-            canonical_to_en = getattr(runtime, "canonical_to_en_symptoms", None) or {}
-            if not canonical_to_en:
-                # Backward-compat fallback for runtimes without reverse index.
-                for en, tr in runtime.symptom_map_en_to_tr.items():
-                    if isinstance(tr, str):
-                        tr_clean = tr.strip().lower()
-                        if tr_clean:
-                            canonical_to_en.setdefault(tr_clean, []).append(
-                                str(en).strip().lower()
-                            )
             severity_sum = 0
             count = 0
             for tr_c in overlap:
