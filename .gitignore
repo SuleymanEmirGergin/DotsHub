@@ -50,6 +50,9 @@ dump.rdb
 # Logs
 *.log
 
+# Local tooling
+.tools/
+
 # Test / generated reports
 .pytest_cache/
 .mypy_cache/
