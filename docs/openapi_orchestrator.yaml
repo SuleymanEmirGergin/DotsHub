@@ -74,8 +74,10 @@ paths:
                       top_conditions:
                         - disease_label: "Migraine"
                           score_0_1: 0.56
+                          disease_description: "A migraine is a headache that can cause severe throbbing pain, usually on one side of the head."
                         - disease_label: "Sinusitis"
                           score_0_1: 0.22
+                          disease_description: "Sinusitis is inflammation of the tissue lining the sinuses."
                       doctor_ready_summary_tr:
                         - "Baş ağrısı mevcut."
                         - "Işığa/sese hassasiyet: evet."
@@ -206,6 +208,7 @@ components:
             properties:
               disease_label: { type: string }
               score_0_1: { type: number }
+              disease_description: { type: string }
         doctor_ready_summary_tr:
           type: array
           items: { type: string }

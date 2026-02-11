@@ -35,6 +35,8 @@ class Runtime:
     synonyms: Dict[str, Any]
     # rules.json (emergency red flags etc.)
     rules_json: Dict[str, Any]
+    # disease_label -> EN description (kaggle_cache/disease_descriptions.json)
+    disease_descriptions_en: Dict[str, str] = field(default_factory=dict)
     # ─── Derived at load time ───
     # disease → set of TR canonicals
     disease_to_trcanonicals: Dict[str, Set[str]] = field(default_factory=dict)
@@ -157,6 +159,18 @@ def load_runtime(data_dir: str = "app/data") -> Runtime:
         pass
 
     symptom_map_en_to_tr = load_json(str(d / "kaggle_cache" / "kaggle_to_canonical.json"))
+    disease_descriptions_en: Dict[str, str] = {}
+    try:
+        descriptions_raw = load_json(str(d / "kaggle_cache" / "disease_descriptions.json"))
+        if isinstance(descriptions_raw, dict):
+            disease_descriptions_en = {
+                str(k): str(v).strip()
+                for k, v in descriptions_raw.items()
+                if isinstance(v, str) and v.strip()
+            }
+    except Exception:
+        pass
+
     disease_to_specialty_raw = load_json(str(d / "disease_to_specialty.json"))
     disease_to_specialty_list: List[Dict[str, Any]] = disease_to_specialty_raw.get("map", [])
 
@@ -170,6 +184,7 @@ def load_runtime(data_dir: str = "app/data") -> Runtime:
         disease_symptom_matrix=disease_symptom_matrix,
         symptom_severity_en=symptom_severity_en,
         symptom_map_en_to_tr=symptom_map_en_to_tr,
+        disease_descriptions_en=disease_descriptions_en,
         disease_to_specialty_list=disease_to_specialty_list,
         specialty_keywords=specialty_keywords,
         stop_rules=stop_rules,

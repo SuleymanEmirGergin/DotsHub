@@ -16,7 +16,7 @@ All deterministic. Same input Ã¢â€ â€™ same output. No LLM.
 """
 
 from __future__ import annotations
-from typing import Any, Dict, List, Set, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 from app.runtime import Runtime
 from app.canonical_extract import extract_canonicals_tr
@@ -159,6 +159,25 @@ def _build_safety_notes(top_specialty_id: str) -> List[str]:
 
 
 # Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Main orchestrator Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+
+
+def _lookup_disease_description(runtime: Runtime, disease_label: str) -> Optional[str]:
+    """Return EN disease description when available; fallback to None."""
+    descriptions = getattr(runtime, "disease_descriptions_en", {})
+    if not isinstance(descriptions, dict):
+        return None
+
+    value = descriptions.get(disease_label)
+    if isinstance(value, str) and value.strip():
+        return value.strip()
+
+    normalized_label = disease_label.strip()
+    if normalized_label != disease_label:
+        value = descriptions.get(normalized_label)
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+
+    return None
 
 
 def run_orchestrator_turn(
@@ -356,11 +375,19 @@ def run_orchestrator_turn(
                 "name_tr": top_spec.get("specialty_tr", top_spec["id"]),
             },
             "top_conditions": [
-                {
-                    "disease_label": c["disease_label"],
-                    "score_0_1": round(float(c["score_0_1"]), 2),
-                }
+                dict(
+                    {
+                        "disease_label": c["disease_label"],
+                        "score_0_1": round(float(c["score_0_1"]), 2),
+                    },
+                    **(
+                        {"disease_description": description}
+                        if description
+                        else {}
+                    ),
+                )
                 for c in candidates[:3]
+                for description in [_lookup_disease_description(runtime, c["disease_label"])]
             ],
             "confidence_0_1": round(conf, 3),
             "confidence_label_tr": conf_label,

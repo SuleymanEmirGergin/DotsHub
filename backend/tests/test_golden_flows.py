@@ -79,6 +79,16 @@ class GoldenFlowTests(unittest.TestCase):
                         f"Expected '{expected_top}' in top conditions: {top_conditions}",
                     )
 
+                for condition in (payload.get("top_conditions") or []):
+                    if not isinstance(condition, dict):
+                        continue
+                    if "disease_description" in condition:
+                        description = condition.get("disease_description")
+                        self.assertTrue(
+                            isinstance(description, str) and bool(description.strip()),
+                            f"Invalid disease_description in condition: {condition}",
+                        )
+
                 expected_urgency = expected.get("urgency")
                 if expected_urgency:
                     self.assertEqual(payload.get("urgency"), expected_urgency)

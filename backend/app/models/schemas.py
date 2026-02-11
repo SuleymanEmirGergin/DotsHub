@@ -164,6 +164,7 @@ class RecommendedSpecialty(BaseModel):
 class TopConditionEntry(BaseModel):
     disease_label: str
     score_0_1: float
+    disease_description: Optional[str] = None
 
 
 # V3 result payload (clinical quality)

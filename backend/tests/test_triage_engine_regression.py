@@ -24,6 +24,36 @@ class TriageEngineRegressionTests(unittest.TestCase):
 
         self.assertEqual(envelope_type, "RESULT")
         self.assertEqual(payload["recommended_specialty"]["id"], "urology_internal")
+        top_conditions = payload.get("top_conditions") or []
+        self.assertTrue(top_conditions)
+        first = top_conditions[0]
+        self.assertTrue(isinstance(first.get("disease_description"), str))
+        self.assertTrue(bool(first.get("disease_description", "").strip()))
+
+    def test_missing_description_map_does_not_break_result_path(self):
+        original_descriptions = self.runtime.disease_descriptions_en
+        try:
+            self.runtime.disease_descriptions_en = {}
+            envelope_type, payload, _ = run_orchestrator_turn(
+                runtime=self.runtime,
+                input_text="idrar yaparken yan\u0131yor, \u00e7ok s\u0131k idrara \u00e7\u0131k\u0131yorum",
+                answers={},
+                asked_canonicals=[],
+                turn_index=1,
+            )
+        finally:
+            self.runtime.disease_descriptions_en = original_descriptions
+
+        self.assertEqual(envelope_type, "RESULT")
+        top_conditions = payload.get("top_conditions") or []
+        self.assertTrue(top_conditions)
+        self.assertTrue(
+            all(
+                "disease_description" not in condition
+                for condition in top_conditions
+                if isinstance(condition, dict)
+            )
+        )
 
     def test_dizziness_nausea_no_crash_valid_envelope(self):
         envelope_type, payload, _ = run_orchestrator_turn(
