@@ -149,6 +149,7 @@ Ops and safety:
 - Config-diff tuning
 - Guardrail checks
 - Automatic rollback
+- Kaggle ingest automation (`docs/KAGGLE_INGEST_AUTOMATION.md`)
 - Slack/Discord alerts
 
 ## Admin and Observability
