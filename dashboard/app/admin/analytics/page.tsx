@@ -1,5 +1,6 @@
 import { requireAdmin } from "@/lib/requireAdmin";
 import { supabaseAdmin } from "@/lib/supabaseServer";
+import { Breadcrumb } from "@/app/components/Breadcrumb";
 
 export const dynamic = "force-dynamic";
 
@@ -13,16 +14,17 @@ function Card({
   return (
     <div
       style={{
-        border: "1px solid #eee",
+        border: "1px solid var(--dash-border)",
         borderRadius: 16,
         padding: 20,
-        background: "white",
+        background: "var(--dash-bg-card)",
+        color: "var(--dash-text)",
       }}
     >
       <div
         style={{
           fontSize: 13,
-          color: "#666",
+          color: "var(--dash-text-muted)",
           marginBottom: 12,
           fontWeight: 600,
         }}
@@ -48,14 +50,15 @@ function Stat({
       style={{
         padding: 18,
         borderRadius: 14,
-        border: "1px solid #eee",
-        backgroundColor: "#fff",
+        border: "1px solid var(--dash-border)",
+        backgroundColor: "var(--dash-bg-card)",
+        color: "var(--dash-text)",
       }}
     >
-      <div style={{ fontSize: 12, color: "#666" }}>{label}</div>
+      <div style={{ fontSize: 12, color: "var(--dash-text-muted)" }}>{label}</div>
       <div style={{ fontSize: 28, fontWeight: 800, marginTop: 4 }}>{value}</div>
       {sub && (
-        <div style={{ fontSize: 12, color: "#999", marginTop: 2 }}>{sub}</div>
+        <div style={{ fontSize: 12, color: "var(--dash-text-muted)", marginTop: 2 }}>{sub}</div>
       )}
     </div>
   );
@@ -124,6 +127,20 @@ export default async function AnalyticsPage() {
     confCounts[k] = (confCounts[k] || 0) + 1;
   });
 
+  // Anonim: son 7 gün günlük oturum sayısı (sadece tarih + count, PII yok)
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  const { data: dailySessions } = await sb
+    .from("triage_sessions")
+    .select("created_at")
+    .gte("created_at", sevenDaysAgo.toISOString());
+  const dailyCounts: Record<string, number> = {};
+  (dailySessions ?? []).forEach((s: any) => {
+    const day = new Date(s.created_at).toISOString().slice(0, 10);
+    dailyCounts[day] = (dailyCounts[day] || 0) + 1;
+  });
+  const dailyRanked = Object.entries(dailyCounts).sort((a, b) => a[0].localeCompare(b[0]));
+
   // Confusion matrix: down feedback with user_selected_specialty
   const { data: confusionRaw } = await sb
     .from("triage_feedback")
@@ -165,7 +182,8 @@ export default async function AnalyticsPage() {
   }
 
   return (
-    <div style={{ padding: 24, maxWidth: 1200, margin: "0 auto" }}>
+    <div style={{ padding: 24, maxWidth: 1200, margin: "0 auto", background: "var(--dash-bg)", color: "var(--dash-text)", minHeight: "100vh" }}>
+      <Breadcrumb items={[{ label: "Admin", href: "/admin/sessions" }, { label: "Analytics" }]} />
       <div
         style={{
           display: "flex",
@@ -177,13 +195,13 @@ export default async function AnalyticsPage() {
         <div style={{ display: "flex", gap: 12 }}>
           <a
             href="/admin/sessions"
-            style={{ fontWeight: 700, color: "#111", textDecoration: "none", fontSize: 13 }}
+            style={{ fontWeight: 700, color: "var(--dash-accent)", textDecoration: "none", fontSize: 13 }}
           >
             Sessions &rarr;
           </a>
           <a
             href="/admin/tuning-report"
-            style={{ fontWeight: 700, color: "#111", textDecoration: "none", fontSize: 13 }}
+            style={{ fontWeight: 700, color: "var(--dash-accent)", textDecoration: "none", fontSize: 13 }}
           >
             Tuning &rarr;
           </a>
@@ -209,6 +227,30 @@ export default async function AnalyticsPage() {
         />
       </div>
 
+      {/* Anonim istatistik: son 7 gün günlük oturum sayısı */}
+      {dailyRanked.length > 0 && (
+        <div style={{ marginTop: 20 }}>
+          <Card title="Anonim istatistik: Son 7 gün (günlük oturum sayısı)">
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {dailyRanked.map(([day, cnt]) => (
+                <div
+                  key={day}
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    padding: "6px 0",
+                    borderBottom: "1px solid var(--dash-border)",
+                  }}
+                >
+                  <span style={{ fontSize: 14 }}>{day}</span>
+                  <span style={{ fontWeight: 700, fontSize: 14 }}>{cnt}</span>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </div>
+      )}
+
       {/* Specialty distribution + Confidence */}
       <div
         style={{
@@ -226,7 +268,7 @@ export default async function AnalyticsPage() {
                 display: "flex",
                 justifyContent: "space-between",
                 padding: "8px 0",
-                borderBottom: "1px solid #f5f5f5",
+                borderBottom: "1px solid var(--dash-border)",
               }}
             >
               <span style={{ fontSize: 14 }}>{name}</span>
@@ -243,7 +285,7 @@ export default async function AnalyticsPage() {
                 display: "flex",
                 justifyContent: "space-between",
                 padding: "8px 0",
-                borderBottom: "1px solid #f5f5f5",
+                borderBottom: "1px solid var(--dash-border)",
               }}
             >
               <span
@@ -270,7 +312,7 @@ export default async function AnalyticsPage() {
       <div style={{ marginTop: 20 }}>
         <Card title="Specialty Confusion Matrix (down feedback with user_selected_specialty)">
           {confusionRows.length === 0 ? (
-            <div style={{ color: "#999", fontSize: 13 }}>
+            <div style={{ color: "var(--dash-text-muted)", fontSize: 13 }}>
               No confusion data yet. Users need to provide
               user_selected_specialty_id in down feedback.
             </div>
@@ -283,7 +325,7 @@ export default async function AnalyticsPage() {
               }}
             >
               <thead>
-                <tr style={{ borderBottom: "2px solid #eee", textAlign: "left" }}>
+                <tr style={{ borderBottom: "2px solid var(--dash-border)", textAlign: "left" }}>
                   <th style={{ padding: 10 }}>Predicted</th>
                   <th style={{ padding: 10 }}>Actual (user)</th>
                   <th style={{ padding: 10 }}>Count</th>
@@ -291,7 +333,7 @@ export default async function AnalyticsPage() {
               </thead>
               <tbody>
                 {confusionRows.map((r, i) => (
-                  <tr key={i} style={{ borderBottom: "1px solid #f5f5f5" }}>
+                  <tr key={i} style={{ borderBottom: "1px solid var(--dash-border)" }}>
                     <td style={{ padding: 10 }}>{r.predicted}</td>
                     <td style={{ padding: 10, fontWeight: 600 }}>{r.actual}</td>
                     <td style={{ padding: 10, fontWeight: 700 }}>{r.cnt}</td>

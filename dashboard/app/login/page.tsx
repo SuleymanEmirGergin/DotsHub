@@ -35,23 +35,24 @@ export default function LoginPage() {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: "#fafafa",
+        background: "var(--dash-bg)",
       }}
     >
       <div
         style={{
-          backgroundColor: "#fff",
+          background: "var(--dash-bg-card)",
           borderRadius: 20,
           padding: 40,
           maxWidth: 400,
           width: "100%",
-          boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
+          boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
+          border: "1px solid var(--dash-border)",
         }}
       >
-        <h1 style={{ fontSize: 24, fontWeight: 800, marginBottom: 6 }}>
+        <h1 style={{ fontSize: 24, fontWeight: 800, marginBottom: 6, color: "var(--dash-text)" }}>
           Admin Login
         </h1>
-        <p style={{ color: "#666", fontSize: 14, marginBottom: 24 }}>
+        <p style={{ color: "var(--dash-text-muted)", fontSize: 14, marginBottom: 24 }}>
           PreTriage Dashboard
         </p>
 
@@ -60,10 +61,11 @@ export default function LoginPage() {
             style={{
               padding: 20,
               borderRadius: 12,
-              backgroundColor: "#E8F5E9",
-              color: "#2E7D32",
+              background: "var(--dash-accent-bg)",
+              color: "var(--dash-text)",
               textAlign: "center",
               fontWeight: 600,
+              border: "1px solid var(--dash-border)",
             }}
           >
             Magic link gönderildi! E-postanı kontrol et.
@@ -80,7 +82,9 @@ export default function LoginPage() {
                 width: "100%",
                 padding: 14,
                 borderRadius: 12,
-                border: "1px solid #ddd",
+                border: "1px solid var(--dash-border)",
+                background: "var(--dash-bg)",
+                color: "var(--dash-text)",
                 fontSize: 15,
                 outline: "none",
                 boxSizing: "border-box",
@@ -95,8 +99,8 @@ export default function LoginPage() {
                 padding: 14,
                 borderRadius: 12,
                 border: "none",
-                backgroundColor: "#111",
-                color: "#fff",
+                background: "var(--dash-accent)",
+                color: "var(--dash-bg)",
                 fontSize: 15,
                 fontWeight: 700,
                 cursor: "pointer",
@@ -105,7 +109,7 @@ export default function LoginPage() {
               Send magic link
             </button>
             {error && (
-              <p style={{ color: "#C62828", marginTop: 12, fontSize: 13 }}>
+              <p style={{ color: "#ef4444", marginTop: 12, fontSize: 13 }}>
                 {error}
               </p>
             )}

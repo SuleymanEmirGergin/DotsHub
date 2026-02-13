@@ -1,6 +1,7 @@
 import { requireAdmin } from "@/lib/requireAdmin";
 import fs from "fs";
 import path from "path";
+import { Breadcrumb } from "@/app/components/Breadcrumb";
 
 export const dynamic = "force-dynamic";
 
@@ -113,12 +114,12 @@ function Sparkline({ data, label }: { data: number[]; label: string }) {
 
     return (
         <div style={{ marginTop: 8 }}>
-            <div style={{ fontSize: 11, color: "#666", marginBottom: 4 }}>{label}</div>
-            <svg width="100%" height="40" viewBox="0 0 100 100" preserveAspectRatio="none" style={{ border: "1px solid #eee", borderRadius: 4, background: "#fafafa" }}>
+            <div style={{ fontSize: 11, color: "var(--dash-text-muted)", marginBottom: 4 }}>{label}</div>
+            <svg width="100%" height="40" viewBox="0 0 100 100" preserveAspectRatio="none" style={{ border: "1px solid var(--dash-border)", borderRadius: 4, background: "var(--dash-accent-bg)" }}>
                 <polyline
                     points={points}
                     fill="none"
-                    stroke="#111"
+                    stroke="var(--dash-accent)"
                     strokeWidth="2"
                     vectorEffect="non-scaling-stroke"
                 />
@@ -158,7 +159,7 @@ export default async function DeploymentImpactPage({ params }: { params: Promise
                         No impact report found for deployment {id}
                     </div>
                     <div style={{ marginTop: 14 }}>
-                        <a href="/admin/deployments" style={{ fontWeight: 800, color: "#111" }}>← Back to deployments</a>
+                        <a href="/admin/deployments" style={{ fontWeight: 800, color: "var(--dash-accent)" }}>← Back to deployments</a>
                     </div>
                 </div>
             </div>
@@ -178,32 +179,33 @@ export default async function DeploymentImpactPage({ params }: { params: Promise
     const confSeries = dailySeries.map((d: any) => d.confidence ?? 0);
 
     return (
-        <div style={{ padding: 24, fontFamily: "ui-sans-serif", background: "#fafafa", minHeight: "100vh" }}>
+        <div style={{ padding: 24, fontFamily: "ui-sans-serif", background: "var(--dash-bg)", color: "var(--dash-text)", minHeight: "100vh" }}>
             <div style={{ maxWidth: 1000, margin: "0 auto" }}>
+                <Breadcrumb items={[{ label: "Admin", href: "/admin/sessions" }, { label: "Deployments", href: "/admin/deployments" }, { label: "Impact" }]} />
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <div>
                         <h1 style={{ fontSize: 26, fontWeight: 900, margin: 0 }}>Impact Report</h1>
-                        <div style={{ color: "#666", marginTop: 4, fontSize: 13 }}>Deployment: {id}</div>
+                        <div style={{ color: "var(--dash-text-muted)", marginTop: 4, fontSize: 13 }}>Deployment: {id}</div>
                     </div>
-                    <a href="/admin/deployments" style={{ fontWeight: 800, color: "#111", textDecoration: "none" }}>
+                    <a href="/admin/deployments" style={{ fontWeight: 800, color: "var(--dash-accent)", textDecoration: "none" }}>
                         ← Deployments
                     </a>
                 </div>
 
                 {/* Impact Commentary */}
-                <div style={{ marginTop: 14, border: "1px solid #eee", borderRadius: 16, padding: 16, background: "white" }}>
+                <div style={{ marginTop: 14, border: "1px solid var(--dash-border)", borderRadius: 16, padding: 16, background: "var(--dash-bg-card)" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                         <div style={{ fontWeight: 900, fontSize: 16 }}>Impact Commentary</div>
                         <SevPill s={commentary.severity} />
                     </div>
 
-                    <div style={{ marginTop: 10, color: "#111" }}>
-                        <div style={{ fontSize: 12, color: "#666" }}>Findings</div>
+                    <div style={{ marginTop: 10, color: "var(--dash-accent)" }}>
+                        <div style={{ fontSize: 12, color: "var(--dash-text-muted)" }}>Findings</div>
                         <ul style={{ marginTop: 8, paddingLeft: 18 }}>
                             {commentary.notes.map((x: string, i: number) => <li key={i} style={{ marginBottom: 6 }}>{x}</li>)}
                         </ul>
 
-                        <div style={{ fontSize: 12, color: "#666", marginTop: 10 }}>Recommended actions</div>
+                        <div style={{ fontSize: 12, color: "var(--dash-text-muted)", marginTop: 10 }}>Recommended actions</div>
                         <ol style={{ marginTop: 8, paddingLeft: 18 }}>
                             {commentary.actions.map((x: string, i: number) => <li key={i} style={{ marginBottom: 6 }}>{x}</li>)}
                         </ol>
@@ -212,7 +214,7 @@ export default async function DeploymentImpactPage({ params }: { params: Promise
 
                 {/* Metrics Grid */}
                 <div style={{ marginTop: 14, display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14 }}>
-                    <div style={{ border: "1px solid #eee", borderRadius: 12, padding: 16, background: "white" }}>
+                    <div style={{ border: "1px solid var(--dash-border)", borderRadius: 12, padding: 16, background: "var(--dash-bg-card)" }}>
                         <div style={{ fontSize: 12, color: "#666", fontWeight: 700 }}>SAMPLE SIZE</div>
                         <div style={{ marginTop: 8, fontSize: 24, fontWeight: 900 }}>
                             {before.total ?? 0} → {after.total ?? 0}
@@ -222,7 +224,7 @@ export default async function DeploymentImpactPage({ params }: { params: Promise
                         </div>
                     </div>
 
-                    <div style={{ border: "1px solid #eee", borderRadius: 12, padding: 16, background: "white" }}>
+                    <div style={{ border: "1px solid var(--dash-border)", borderRadius: 12, padding: 16, background: "var(--dash-bg-card)" }}>
                         <div style={{ fontSize: 12, color: "#666", fontWeight: 700 }}>DOWN-RATE</div>
                         <div style={{ marginTop: 8, fontSize: 24, fontWeight: 900 }}>
                             {((before.down_rate ?? 0) * 100).toFixed(1)}% → {((after.down_rate ?? 0) * 100).toFixed(1)}%
@@ -233,7 +235,7 @@ export default async function DeploymentImpactPage({ params }: { params: Promise
                         <Sparkline data={downRateSeries} label="Last 7 days" />
                     </div>
 
-                    <div style={{ border: "1px solid #eee", borderRadius: 12, padding: 16, background: "white" }}>
+                    <div style={{ border: "1px solid var(--dash-border)", borderRadius: 12, padding: 16, background: "var(--dash-bg-card)" }}>
                         <div style={{ fontSize: 12, color: "#666", fontWeight: 700 }}>AVG CONFIDENCE</div>
                         <div style={{ marginTop: 8, fontSize: 24, fontWeight: 900 }}>
                             {(before.avg_confidence ?? 0).toFixed(3)} → {(after.avg_confidence ?? 0).toFixed(3)}
@@ -244,7 +246,7 @@ export default async function DeploymentImpactPage({ params }: { params: Promise
                         <Sparkline data={confSeries} label="Last 7 days" />
                     </div>
 
-                    <div style={{ border: "1px solid #eee", borderRadius: 12, padding: 16, background: "white" }}>
+                    <div style={{ border: "1px solid var(--dash-border)", borderRadius: 12, padding: 16, background: "var(--dash-bg-card)" }}>
                         <div style={{ fontSize: 12, color: "#666", fontWeight: 700 }}>AVG QUESTIONS</div>
                         <div style={{ marginTop: 8, fontSize: 24, fontWeight: 900 }}>
                             {(before.avg_questions ?? 0).toFixed(1)} → {(after.avg_questions ?? 0).toFixed(1)}

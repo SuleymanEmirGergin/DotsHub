@@ -1,0 +1,33 @@
+/* Theme variables — light by default, overridden when data-theme="dark" */
+:root,
+[data-theme="light"] {
+  --dash-bg: #fafafa;
+  --dash-bg-card: #ffffff;
+  --dash-text: #111111;
+  --dash-text-muted: #666666;
+  --dash-border: #eeeeee;
+  --dash-accent: #111111;
+  --dash-accent-bg: #f3f4f6;
+}
+
+[data-theme="dark"] {
+  --dash-bg: #0f0f0f;
+  --dash-bg-card: #1a1a1a;
+  --dash-text: #fafafa;
+  --dash-text-muted: #a3a3a3;
+  --dash-border: #2a2a2a;
+  --dash-accent: #fafafa;
+  --dash-accent-bg: #262626;
+}
+
+body {
+  background-color: var(--dash-bg);
+  color: var(--dash-text);
+}
+
+/* Optional: use in Tailwind pages for theme-aware panels */
+.dash-panel {
+  background: var(--dash-bg-card);
+  color: var(--dash-text);
+  border-color: var(--dash-border);
+}

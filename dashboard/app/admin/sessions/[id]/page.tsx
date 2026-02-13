@@ -1,5 +1,6 @@
 import { requireAdmin } from "@/lib/requireAdmin";
 import { supabaseAdmin } from "@/lib/supabaseServer";
+import { Breadcrumb } from "@/app/components/Breadcrumb";
 
 export const dynamic = "force-dynamic";
 
@@ -7,13 +8,14 @@ function Pretty({ data }: { data: unknown }) {
   return (
     <pre
       style={{
-        background: "#fafafa",
+        background: "var(--dash-accent-bg)",
         padding: 16,
         borderRadius: 12,
         overflowX: "auto",
         fontSize: 13,
         lineHeight: 1.6,
-        border: "1px solid #eee",
+        border: "1px solid var(--dash-border)",
+        color: "var(--dash-text)",
       }}
     >
       {JSON.stringify(data, null, 2)}
@@ -23,7 +25,7 @@ function Pretty({ data }: { data: unknown }) {
 
 function Bullets({ arr }: { arr: unknown }) {
   if (!Array.isArray(arr) || arr.length === 0) {
-    return <div style={{ color: "#999", padding: 8 }}>-</div>;
+    return <div style={{ color: "var(--dash-text-muted)", padding: 8 }}>-</div>;
   }
   return (
     <ul style={{ marginTop: 8, paddingLeft: 18, marginBottom: 0 }}>
@@ -73,18 +75,22 @@ export default async function SessionDetail({
         padding: 24,
         maxWidth: 1000,
         margin: "0 auto",
+        background: "var(--dash-bg)",
+        color: "var(--dash-text)",
+        minHeight: "100vh",
       }}
     >
+      <Breadcrumb items={[{ label: "Admin", href: "/admin/sessions" }, { label: "Sessions", href: "/admin/sessions" }, { label: "Session detail" }]} />
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <a
           href="/admin/sessions"
-          style={{ color: "#666", textDecoration: "none", fontSize: 14 }}
+          style={{ color: "var(--dash-text-muted)", textDecoration: "none", fontSize: 14 }}
         >
           &larr; Back to sessions
         </a>
         <a
           href={`/admin/sessions/${id}/replay`}
-          style={{ fontWeight: 800, color: "#111", textDecoration: "none" }}
+          style={{ fontWeight: 800, color: "var(--dash-accent)", textDecoration: "none" }}
         >
           Replay →
         </a>
@@ -107,17 +113,17 @@ export default async function SessionDetail({
           style={{
             padding: 18,
             borderRadius: 16,
-            border: "1px solid #eee",
-            backgroundColor: "#fff",
+            border: "1px solid var(--dash-border)",
+            backgroundColor: "var(--dash-bg-card)",
           }}
         >
-          <div style={{ color: "#666", fontSize: 12, marginBottom: 4 }}>
+          <div style={{ color: "var(--dash-text-muted)", fontSize: 12, marginBottom: 4 }}>
             Recommended Specialty
           </div>
           <div style={{ fontSize: 20, fontWeight: 700 }}>
             {session.recommended_specialty_tr ?? "-"}
           </div>
-          <div style={{ color: "#999", fontSize: 12, marginTop: 4 }}>
+          <div style={{ color: "var(--dash-text-muted)", fontSize: 12, marginTop: 4 }}>
             {session.recommended_specialty_id ?? ""}
           </div>
         </div>
@@ -125,11 +131,11 @@ export default async function SessionDetail({
           style={{
             padding: 18,
             borderRadius: 16,
-            border: "1px solid #eee",
-            backgroundColor: "#fff",
+            border: "1px solid var(--dash-border)",
+            backgroundColor: "var(--dash-bg-card)",
           }}
         >
-          <div style={{ color: "#666", fontSize: 12, marginBottom: 4 }}>
+          <div style={{ color: "var(--dash-text-muted)", fontSize: 12, marginBottom: 4 }}>
             Confidence
           </div>
           <div style={{ fontSize: 20, fontWeight: 700 }}>
@@ -139,7 +145,7 @@ export default async function SessionDetail({
               : ""}
           </div>
           {session.confidence_explain_tr && (
-            <div style={{ color: "#666", marginTop: 6, fontSize: 13 }}>
+            <div style={{ color: "var(--dash-text-muted)", marginTop: 6, fontSize: 13 }}>
               {session.confidence_explain_tr}
             </div>
           )}
@@ -159,11 +165,11 @@ export default async function SessionDetail({
           style={{
             padding: 14,
             borderRadius: 12,
-            border: "1px solid #eee",
-            backgroundColor: "#fff",
+            border: "1px solid var(--dash-border)",
+            backgroundColor: "var(--dash-bg-card)",
           }}
         >
-          <div style={{ color: "#666", fontSize: 12, marginBottom: 4 }}>
+          <div style={{ color: "var(--dash-text-muted)", fontSize: 12, marginBottom: 4 }}>
             Stop Reason
           </div>
           <div style={{ fontSize: 14, fontWeight: 600 }}>
@@ -174,11 +180,11 @@ export default async function SessionDetail({
           style={{
             padding: 14,
             borderRadius: 12,
-            border: "1px solid #eee",
-            backgroundColor: "#fff",
+            border: "1px solid var(--dash-border)",
+            backgroundColor: "var(--dash-bg-card)",
           }}
         >
-          <div style={{ color: "#666", fontSize: 12, marginBottom: 4 }}>
+          <div style={{ color: "var(--dash-text-muted)", fontSize: 12, marginBottom: 4 }}>
             Turn Index
           </div>
           <div style={{ fontSize: 14, fontWeight: 600 }}>
@@ -193,8 +199,8 @@ export default async function SessionDetail({
         style={{
           padding: 16,
           borderRadius: 12,
-          background: "#111",
-          color: "white",
+          background: "var(--dash-accent)",
+          color: "var(--dash-bg)",
           fontSize: 14,
           lineHeight: 1.6,
         }}
@@ -222,8 +228,8 @@ export default async function SessionDetail({
         style={{
           padding: 16,
           borderRadius: 16,
-          border: "1px solid #eee",
-          background: "#fff",
+          border: "1px solid var(--dash-border)",
+          background: "var(--dash-bg-card)",
         }}
       >
         <Bullets arr={session.why_specialty_tr} />
@@ -254,9 +260,9 @@ export default async function SessionDetail({
       {events && events.length > 0 ? (
         <div
           style={{
-            background: "#fff",
+            background: "var(--dash-bg-card)",
             borderRadius: 12,
-            border: "1px solid #eee",
+            border: "1px solid var(--dash-border)",
             overflow: "hidden",
           }}
         >
@@ -274,7 +280,7 @@ export default async function SessionDetail({
               <span
                 style={{
                   fontSize: 11,
-                  color: "#999",
+                  color: "var(--dash-text-muted)",
                   whiteSpace: "nowrap",
                   marginTop: 2,
                 }}
@@ -285,7 +291,7 @@ export default async function SessionDetail({
                 style={{
                   fontSize: 12,
                   fontWeight: 600,
-                  color: "#333",
+                  color: "var(--dash-text)",
                   minWidth: 160,
                 }}
               >
@@ -294,7 +300,7 @@ export default async function SessionDetail({
               <pre
                 style={{
                   fontSize: 11,
-                  color: "#666",
+                  color: "var(--dash-text-muted)",
                   margin: 0,
                   whiteSpace: "pre-wrap",
                   flex: 1,
@@ -306,7 +312,7 @@ export default async function SessionDetail({
           ))}
         </div>
       ) : (
-        <div style={{ color: "#999", padding: 16 }}>No events</div>
+        <div style={{ color: "var(--dash-text-muted)", padding: 16 }}>No events</div>
       )}
 
       {/* Feedback */}
@@ -316,7 +322,7 @@ export default async function SessionDetail({
       {feedback && feedback.length > 0 ? (
         <Pretty data={feedback} />
       ) : (
-        <div style={{ color: "#999", padding: 16 }}>No feedback yet</div>
+        <div style={{ color: "var(--dash-text-muted)", padding: 16 }}>No feedback yet</div>
       )}
     </div>
   );

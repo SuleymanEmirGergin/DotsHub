@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useState } from "react";
 
@@ -483,7 +483,7 @@ function SessionDrawer({ sessionId, onClose }: { sessionId: string; onClose: () 
   return (
     <div className="fixed inset-0 z-50">
       <div className="absolute inset-0 bg-black/30" onClick={onClose} />
-      <div className="absolute right-0 top-0 h-full w-full md:w-[720px] bg-white shadow-xl border-l p-4 overflow-auto">
+      <div className="absolute right-0 top-0 h-full w-full md:w-[720px] shadow-xl border-l p-4 overflow-auto dash-panel">
         <div className="flex items-center justify-between mb-4">
           <div className="font-bold">Session {sessionId}</div>
           <button className="rounded-xl border px-3 py-2 text-sm hover:bg-slate-50" onClick={onClose}>

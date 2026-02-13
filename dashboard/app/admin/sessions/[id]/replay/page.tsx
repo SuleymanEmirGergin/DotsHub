@@ -1,7 +1,14 @@
 import { requireAdmin } from "@/lib/requireAdmin";
 import { supabaseAdmin } from "@/lib/supabaseServer";
+import { Breadcrumb } from "@/app/components/Breadcrumb";
 
 export const dynamic = "force-dynamic";
+
+type ReplayEvent = {
+    created_at: string;
+    event_type: string;
+    payload: Record<string, unknown>;
+};
 
 function Pill({ text }: { text: string }) {
     return (
@@ -38,9 +45,35 @@ function Pre({ obj }: { obj: unknown }) {
     );
 }
 
-function EventCard({ e }: { e: { created_at: string; event_type: string; payload: Record<string, unknown> } }) {
+function toRecord(value: unknown): Record<string, unknown> {
+    return value && typeof value === "object" ? (value as Record<string, unknown>) : {};
+}
+
+function asString(value: unknown): string {
+    return typeof value === "string" ? value : "";
+}
+
+function asPrintable(value: unknown): string {
+    if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+        return String(value);
+    }
+    return "";
+}
+
+function EventCard({ e }: { e: ReplayEvent }) {
     const t = String(e.event_type || "");
-    const payload = e.payload ?? {};
+    const payload = toRecord(e.payload);
+    const canonical = asString(payload.canonical);
+    const answerType = asString(payload.answer_type);
+    const confidenceLabel = asString(payload.confidence_label_tr);
+    const confidenceValue = typeof payload.confidence_0_1 === "number" ? payload.confidence_0_1 : null;
+    const stopReason = asString(payload.stop_reason);
+    const turnIndex = asPrintable(payload._turn_index);
+    const specialtyRecord = toRecord(payload.recommended_specialty);
+    const specialtyName = asString(specialtyRecord.name_tr);
+    const shortUserText = asString(payload.text).slice(0, 120);
+    const shortQuestionText = asString(payload.question_tr).slice(0, 120);
+    const answerValue = asPrintable(payload.value);
 
     const label =
         t.startsWith("ENVELOPE_") ? t.replace("ENVELOPE_", "") :
@@ -49,20 +82,20 @@ function EventCard({ e }: { e: { created_at: string; event_type: string; payload
                     t;
 
     const short =
-        t === "USER_MESSAGE" ? (payload.text ? String(payload.text).slice(0, 120) : "") :
-            t === "ENVELOPE_QUESTION" ? (payload.question_tr ? String(payload.question_tr).slice(0, 120) : "") :
-                t === "ANSWER_RECEIVED" ? `${payload.canonical}: ${payload.value}` :
-                    t === "ENVELOPE_RESULT" ? `specialty=${(payload?.recommended_specialty as Record<string, unknown>)?.name_tr ?? "-"}` :
+        t === "USER_MESSAGE" ? shortUserText :
+            t === "ENVELOPE_QUESTION" ? shortQuestionText :
+                t === "ANSWER_RECEIVED" ? `${canonical}: ${answerValue}` :
+                    t === "ENVELOPE_RESULT" ? `specialty=${specialtyName || "-"}` :
                         "";
 
     return (
-        <div style={{ border: "1px solid #eee", borderRadius: 16, padding: 14, background: "white" }}>
+        <div style={{ border: "1px solid var(--dash-border)", borderRadius: 16, padding: 14, background: "var(--dash-bg-card)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center" }}>
                 <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
                     <Pill text={label} />
                     <div style={{ fontWeight: 800 }}>{new Date(e.created_at).toLocaleString()}</div>
                 </div>
-                {(payload as Record<string, unknown>)?._turn_index != null && <Pill text={`turn ${(payload as Record<string, unknown>)._turn_index}`} />}
+                {turnIndex && <Pill text={`turn ${turnIndex}`} />}
             </div>
 
             {short && (
@@ -73,17 +106,17 @@ function EventCard({ e }: { e: { created_at: string; event_type: string; payload
 
             {t === "ENVELOPE_QUESTION" && (
                 <div style={{ marginTop: 10, display: "flex", gap: 10, flexWrap: "wrap" }}>
-                    {payload.canonical && <Pill text={`canonical: ${payload.canonical}`} />}
-                    {payload.answer_type && <Pill text={`type: ${payload.answer_type}`} />}
+                    {canonical && <Pill text={`canonical: ${canonical}`} />}
+                    {answerType && <Pill text={`type: ${answerType}`} />}
                 </div>
             )}
 
             {t === "ENVELOPE_RESULT" && (
                 <div style={{ marginTop: 10, display: "flex", gap: 10, flexWrap: "wrap" }}>
-                    {(payload?.recommended_specialty as Record<string, unknown>)?.name_tr && <Pill text={`branş: ${(payload.recommended_specialty as Record<string, unknown>).name_tr}`} />}
-                    {payload.confidence_label_tr && <Pill text={`confidence: ${payload.confidence_label_tr}`} />}
-                    {typeof payload.confidence_0_1 === "number" && <Pill text={`${Math.round(payload.confidence_0_1 * 100)}%`} />}
-                    {payload.stop_reason && <Pill text={`stop: ${payload.stop_reason}`} />}
+                    {specialtyName && <Pill text={`brans: ${specialtyName}`} />}
+                    {confidenceLabel && <Pill text={`confidence: ${confidenceLabel}`} />}
+                    {confidenceValue != null && <Pill text={`${Math.round(confidenceValue * 100)}%`} />}
+                    {stopReason && <Pill text={`stop: ${stopReason}`} />}
                 </div>
             )}
 
@@ -122,34 +155,34 @@ export default async function SessionReplayPage({
     if (eErr) return <div style={{ padding: 24 }}>Error: {eErr.message}</div>;
 
     return (
-        <div style={{ padding: 24, fontFamily: "ui-sans-serif", background: "#fafafa", minHeight: "100vh" }}>
+        <div style={{ padding: 24, fontFamily: "ui-sans-serif", background: "var(--dash-bg)", color: "var(--dash-text)", minHeight: "100vh" }}>
+            <Breadcrumb items={[{ label: "Admin", href: "/admin/sessions" }, { label: "Sessions", href: "/admin/sessions" }, { label: "Replay" }]} />
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
                 <div>
                     <h1 style={{ fontSize: 26, fontWeight: 900, margin: 0 }}>Session Replay</h1>
-                    <div style={{ color: "#666", marginTop: 6 }}>
-                        {new Date(session.created_at).toLocaleString()} • {session.envelope_type} •{" "}
-                        {session.recommended_specialty_tr ?? "-"} •{" "}
-                        {session.confidence_label_tr ?? "-"}{" "}
+                    <div style={{ color: "var(--dash-text-muted)", marginTop: 6 }}>
+                        {new Date(session.created_at).toLocaleString()} - {session.envelope_type} -{" "}
+                        {session.recommended_specialty_tr ?? "-"} - {session.confidence_label_tr ?? "-"}{" "}
                         {typeof session.confidence_0_1 === "number" ? `(${Math.round(session.confidence_0_1 * 100)}%)` : ""}
                     </div>
                 </div>
 
                 <div style={{ display: "flex", gap: 10 }}>
-                    <a href={`/admin/sessions/${sessionId}`} style={{ fontWeight: 800, color: "#111", textDecoration: "none" }}>
-                        Detail →
+                    <a href={`/admin/sessions/${sessionId}`} style={{ fontWeight: 800, color: "var(--dash-accent)", textDecoration: "none" }}>
+                        Detail {"->"}
                     </a>
-                    <a href="/admin/sessions" style={{ fontWeight: 800, color: "#111", textDecoration: "none" }}>
-                        Sessions →
+                    <a href="/admin/sessions" style={{ fontWeight: 800, color: "var(--dash-accent)", textDecoration: "none" }}>
+                        Sessions {"->"}
                     </a>
-                    <a href="/admin/analytics" style={{ fontWeight: 800, color: "#111", textDecoration: "none" }}>
-                        Analytics →
+                    <a href="/admin/analytics" style={{ fontWeight: 800, color: "var(--dash-accent)", textDecoration: "none" }}>
+                        Analytics {"->"}
                     </a>
                 </div>
             </div>
 
             {Array.isArray(session.why_specialty_tr) && session.why_specialty_tr.length > 0 && (
-                <div style={{ marginTop: 14, border: "1px solid #eee", borderRadius: 16, padding: 14, background: "white" }}>
-                    <div style={{ fontSize: 12, color: "#666" }}>Why this specialty?</div>
+                <div style={{ marginTop: 14, border: "1px solid var(--dash-border)", borderRadius: 16, padding: 14, background: "var(--dash-bg-card)" }}>
+                    <div style={{ fontSize: 12, color: "var(--dash-text-muted)" }}>Why this specialty?</div>
                     <ul style={{ marginTop: 10, paddingLeft: 18 }}>
                         {session.why_specialty_tr.map((x: string, i: number) => (
                             <li key={i} style={{ marginBottom: 6 }}>{String(x)}</li>
@@ -160,7 +193,7 @@ export default async function SessionReplayPage({
 
             <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 12 }}>
                 {(events ?? []).map((e, idx) => (
-                    <EventCard key={idx} e={e as { created_at: string; event_type: string; payload: Record<string, unknown> }} />
+                    <EventCard key={idx} e={e as ReplayEvent} />
                 ))}
             </div>
         </div>

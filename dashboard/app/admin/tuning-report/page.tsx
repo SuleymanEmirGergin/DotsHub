@@ -4,6 +4,7 @@ import {
   getSignedReportUrl,
   fetchJsonFromSignedUrl,
 } from "@/lib/reports";
+import { Breadcrumb } from "@/app/components/Breadcrumb";
 
 export const dynamic = "force-dynamic";
 
@@ -35,13 +36,14 @@ function Card({
   return (
     <div
       style={{
-        border: "1px solid #eee",
+        border: "1px solid var(--dash-border)",
         borderRadius: 16,
         padding: 18,
-        background: "white",
+        background: "var(--dash-bg-card)",
+        color: "var(--dash-text)",
       }}
     >
-      <div style={{ fontSize: 12, color: "#666", marginBottom: 10, fontWeight: 600 }}>
+      <div style={{ fontSize: 12, color: "var(--dash-text-muted)", marginBottom: 10, fontWeight: 600 }}>
         {title}
       </div>
       {children}
@@ -77,7 +79,8 @@ export default async function TuningReportPage({
   }
 
   return (
-    <div style={{ padding: 24, maxWidth: 1400, margin: "0 auto" }}>
+    <div style={{ padding: 24, maxWidth: 1400, margin: "0 auto", background: "var(--dash-bg)", color: "var(--dash-text)", minHeight: "100vh" }}>
+      <Breadcrumb items={[{ label: "Admin", href: "/admin/sessions" }, { label: "Tuning report" }]} />
       <div
         style={{
           display: "flex",
@@ -89,7 +92,7 @@ export default async function TuningReportPage({
           <h1 style={{ fontSize: 26, fontWeight: 900, margin: 0 }}>
             Tuning Report
           </h1>
-          <div style={{ color: "#666", marginTop: 6, fontSize: 13 }}>
+          <div style={{ color: "var(--dash-text-muted)", marginTop: 6, fontSize: 13 }}>
             {report
               ? `Generated: ${report.generated_at} \u2022 Window: ${report.window_days} days`
               : "No report selected"}
@@ -98,13 +101,13 @@ export default async function TuningReportPage({
         <div style={{ display: "flex", gap: 12 }}>
           <a
             href="/admin/analytics"
-            style={{ fontWeight: 700, color: "#111", textDecoration: "none", fontSize: 13 }}
+            style={{ fontWeight: 700, color: "var(--dash-accent)", textDecoration: "none", fontSize: 13 }}
           >
             Analytics &rarr;
           </a>
           <a
             href="/admin/sessions"
-            style={{ fontWeight: 700, color: "#111", textDecoration: "none", fontSize: 13 }}
+            style={{ fontWeight: 700, color: "var(--dash-accent)", textDecoration: "none", fontSize: 13 }}
           >
             Sessions &rarr;
           </a>
@@ -131,7 +134,7 @@ export default async function TuningReportPage({
             }}
           >
             {files.length === 0 && (
-              <div style={{ color: "#999", fontSize: 13 }}>
+              <div style={{ color: "var(--dash-text-muted)", fontSize: 13 }}>
                 No reports in Storage yet. Run tuning_report_upload.py.
               </div>
             )}
@@ -143,9 +146,9 @@ export default async function TuningReportPage({
                   textDecoration: "none",
                   padding: 10,
                   borderRadius: 10,
-                  border: "1px solid #f0f0f0",
-                  background: f.name === selected ? "#111" : "#fff",
-                  color: f.name === selected ? "white" : "#111",
+                  border: "1px solid var(--dash-border)",
+                  background: f.name === selected ? "var(--dash-accent)" : "var(--dash-bg)",
+                  color: f.name === selected ? "var(--dash-bg)" : "var(--dash-text)",
                   fontWeight: 700,
                   fontSize: 12,
                 }}
@@ -160,7 +163,7 @@ export default async function TuningReportPage({
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           {!report ? (
             <Card title="No report">
-              <div style={{ color: "#999" }}>
+              <div style={{ color: "var(--dash-text-muted)" }}>
                 Select a report from the sidebar, or run the upload script.
               </div>
             </Card>

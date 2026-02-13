@@ -1,0 +1,45 @@
+{
+  "common": {
+    "ok": "Tamam",
+    "cancel": "İptal",
+    "back": "Geri",
+    "loading": "Yükleniyor...",
+    "error": "Bir hata oluştu."
+  },
+  "nav": {
+    "admin": "Admin",
+    "sessions": "Oturumlar",
+    "status": "Durum",
+    "analytics": "Analitik",
+    "deployments": "Dağıtımlar",
+    "tuningTasks": "Tuning Görevleri",
+    "tuningReport": "Tuning Raporu",
+    "tuningMetrics": "Tuning Metrikleri",
+    "login": "Giriş",
+    "logout": "Çıkış"
+  },
+  "login": {
+    "title": "Giriş",
+    "email": "E-posta",
+    "password": "Şifre",
+    "submit": "Giriş yap"
+  },
+  "sessions": {
+    "title": "Oturumlar",
+    "id": "ID",
+    "createdAt": "Oluşturulma",
+    "envelopeType": "Zarf tipi",
+    "specialty": "Branş",
+    "confidence": "Güven",
+    "stopReason": "Durdurma nedeni",
+    "exportCsv": "CSV indir"
+  },
+  "status": {
+    "title": "Sistem durumu",
+    "autoRefresh": "Otomatik yenileme"
+  },
+  "tuningTasks": {
+    "title": "Tuning görevleri",
+    "exportCsv": "CSV indir"
+  }
+}

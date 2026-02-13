@@ -1,5 +1,6 @@
 import { requireAdmin } from "@/lib/requireAdmin";
 import { supabaseAdmin } from "@/lib/supabaseServer";
+import { Breadcrumb } from "@/app/components/Breadcrumb";
 import fs from "fs";
 import path from "path";
 
@@ -75,27 +76,28 @@ export default async function TuningMetricsPage() {
     const sortedQuestions = [...questions].sort((a: any, b: any) => (b.effectiveness_0_1 ?? 0) - (a.effectiveness_0_1 ?? 0));
 
     return (
-        <div style={{ padding: 24, fontFamily: "ui-sans-serif", background: "#fafafa", minHeight: "100vh" }}>
+        <div style={{ padding: 24, fontFamily: "ui-sans-serif", background: "var(--dash-bg)", color: "var(--dash-text)", minHeight: "100vh" }}>
             <div style={{ maxWidth: 1400, margin: "0 auto" }}>
+                <Breadcrumb items={[{ label: "Admin", href: "/admin/sessions" }, { label: "Tuning metrics" }]} />
                 <h1 style={{ fontSize: 26, fontWeight: 900, margin: 0 }}>Tuning Metrics</h1>
-                <div style={{ color: "#666", marginTop: 6 }}>
+                <div style={{ color: "var(--dash-text-muted)", marginTop: 6 }}>
                     System performance & question effectiveness
                 </div>
 
                 {/* KPIs */}
                 <div style={{ marginTop: 14, display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14 }}>
-                    <div style={{ border: "1px solid #eee", borderRadius: 12, padding: 16, background: "white" }}>
-                        <div style={{ fontSize: 12, color: "#666", fontWeight: 700 }}>SESSIONS (RECENT)</div>
+                    <div style={{ border: "1px solid var(--dash-border)", borderRadius: 12, padding: 16, background: "var(--dash-bg-card)" }}>
+                        <div style={{ fontSize: 12, color: "var(--dash-text-muted)", fontWeight: 700 }}>SESSIONS (RECENT)</div>
                         <div style={{ marginTop: 8, fontSize: 32, fontWeight: 900 }}>{totalSessions}</div>
                     </div>
 
-                    <div style={{ border: "1px solid #eee", borderRadius: 12, padding: 16, background: "white" }}>
-                        <div style={{ fontSize: 12, color: "#666", fontWeight: 700 }}>AVG CONFIDENCE</div>
+                    <div style={{ border: "1px solid var(--dash-border)", borderRadius: 12, padding: 16, background: "var(--dash-bg-card)" }}>
+                        <div style={{ fontSize: 12, color: "var(--dash-text-muted)", fontWeight: 700 }}>AVG CONFIDENCE</div>
                         <div style={{ marginTop: 8, fontSize: 32, fontWeight: 900 }}>{avgConf.toFixed(3)}</div>
                     </div>
 
-                    <div style={{ border: "1px solid #eee", borderRadius: 12, padding: 16, background: "white" }}>
-                        <div style={{ fontSize: 12, color: "#666", fontWeight: 700 }}>AVG QUESTIONS</div>
+                    <div style={{ border: "1px solid var(--dash-border)", borderRadius: 12, padding: 16, background: "var(--dash-bg-card)" }}>
+                        <div style={{ fontSize: 12, color: "var(--dash-text-muted)", fontWeight: 700 }}>AVG QUESTIONS</div>
                         <div style={{ marginTop: 8, fontSize: 32, fontWeight: 900 }}>{avgQuestions.toFixed(1)}</div>
                     </div>
                 </div>
@@ -103,16 +105,16 @@ export default async function TuningMetricsPage() {
                 {/* Question Effectiveness Table */}
                 <div style={{ marginTop: 20 }}>
                     <h2 style={{ fontSize: 18, fontWeight: 900, margin: 0 }}>Question Effectiveness</h2>
-                    <div style={{ color: "#666", marginTop: 4, fontSize: 13 }}>
+                    <div style={{ color: "var(--dash-text-muted)", marginTop: 4, fontSize: 13 }}>
                         {effectiveness ? `Report generated: ${new Date(effectiveness.generated_at).toLocaleString()}` : "No report available"}
                     </div>
                 </div>
 
                 {questions.length > 0 ? (
-                    <div style={{ marginTop: 14, background: "white", borderRadius: 16, border: "1px solid #eee", overflow: "hidden" }}>
+                    <div style={{ marginTop: 14, background: "var(--dash-bg-card)", borderRadius: 16, border: "1px solid var(--dash-border)", overflow: "hidden" }}>
                         <table style={{ width: "100%", borderCollapse: "collapse" }}>
                             <thead>
-                                <tr style={{ background: "#f9fafb", borderBottom: "1px solid #eee" }}>
+                                <tr style={{ background: "var(--dash-accent-bg)", borderBottom: "1px solid var(--dash-border)" }}>
                                     <th style={{ padding: 12, textAlign: "left", fontWeight: 900, fontSize: 12 }}>Question</th>
                                     <th style={{ padding: 12, textAlign: "left", fontWeight: 900, fontSize: 12 }}>Asked</th>
                                     <th style={{ padding: 12, textAlign: "left", fontWeight: 900, fontSize: 12 }}>Effectiveness</th>
@@ -131,11 +133,11 @@ export default async function TuningMetricsPage() {
                                     const trendData = [eff * 0.9, eff * 0.95, eff, eff * 1.02, eff * 1.01];
 
                                     return (
-                                        <tr key={q.canonical} style={{ borderTop: "1px solid #f3f4f6" }}>
+                                        <tr key={q.canonical} style={{ borderTop: "1px solid var(--dash-border)" }}>
                                             <td style={{ padding: 12, fontSize: 13, fontWeight: 700 }}>
                                                 {q.canonical}
                                             </td>
-                                            <td style={{ padding: 12, fontSize: 12, color: "#666" }}>
+                                            <td style={{ padding: 12, fontSize: 12, color: "var(--dash-text-muted)" }}>
                                                 {q.asked_count}
                                             </td>
                                             <td style={{ padding: 12, fontSize: 13, fontWeight: 900, color }}>
@@ -160,7 +162,7 @@ export default async function TuningMetricsPage() {
                         </table>
                     </div>
                 ) : (
-                    <div style={{ marginTop: 14, padding: 40, textAlign: "center", color: "#9ca3af", background: "white", borderRadius: 16, border: "1px solid #eee" }}>
+                    <div style={{ marginTop: 14, padding: 40, textAlign: "center", color: "var(--dash-text-muted)", background: "var(--dash-bg-card)", borderRadius: 16, border: "1px solid var(--dash-border)" }}>
                         No effectiveness data available. Run question_effectiveness_report.py to generate.
                     </div>
                 )}
