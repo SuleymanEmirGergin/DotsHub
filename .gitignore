@@ -52,6 +52,8 @@ dump.rdb
 
 # Local tooling
 .tools/
+__repo_*/
+dashboard/.npm-cache/
 
 # Test / generated reports
 .pytest_cache/
