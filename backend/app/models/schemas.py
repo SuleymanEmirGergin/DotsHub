@@ -29,6 +29,8 @@ class TriageTurnRequest(BaseModel):
     locale: str = Field("tr-TR")
     user_message: str = Field("", description="Free text symptoms (empty allowed when answering)")
     answer: Optional[TriageAnswer] = Field(None, description="User answer to the last question")
+    lat: Optional[float] = Field(None, description="User latitude for facility discovery (optional)")
+    lon: Optional[float] = Field(None, description="User longitude for facility discovery (optional)")
 
 
 # Legacy request schemas (kept for backward compat)

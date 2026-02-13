@@ -101,6 +101,41 @@
         "keywords": ["intihar", "kendimi öldürmek", "kendime zarar", "ölmek istiyorum"],
         "regex": "\\b(intihar|kendimi\\s*öldürmek|kendime\\s*zarar|ölmek\\s*istiyorum)\\b",
         "action": "ER_NOW"
+      },
+      {
+        "id": "chest_pain_plus_breathlessness",
+        "label": "Göğüs ağrısı/baskı ile birlikte nefes darlığı",
+        "keywords": [
+          "göğüs ağrısı nefes darlığı",
+          "göğsüm ağrıyor nefes alamıyorum",
+          "göğüs baskısı nefes darlığı"
+        ],
+        "regex": "\\b(göğüs(üm|de)?\\s*(ağrı|baskı)).*\\b(nefes\\s*darlığı|nefes\\s*alam(ıyorum|ıyorum)|nefesim\\s*yetmiyor)\\b|\\b(nefes\\s*darlığı|nefes\\s*alamıyorum).*\\b(göğüs(üm|de)?\\s*(ağrı|baskı))\\b",
+        "action": "ER_NOW"
+      },
+      {
+        "id": "blood_in_sputum",
+        "label": "Öksürükle kan / kanlı balgam",
+        "keywords": [
+          "öksürükle kan",
+          "kanlı balgam",
+          "balgamda kan",
+          "kan tükürüyorum",
+          "kanlı öksürük"
+        ],
+        "regex": "\\b(öksürükle\\s*kan|kanlı\\s*balgam|balgamda\\s*kan|kan\\s*tükür(üyorum|düm)|kanlı\\s*öksürük)\\b",
+        "action": "ER_NOW"
+      },
+      {
+        "id": "sudden_severe_headache_vomiting",
+        "label": "Ani çok şiddetli baş ağrısı + kusma",
+        "keywords": [
+          "ani baş ağrısı kusma",
+          "aniden başım ağrıdı kustum",
+          "hayatımın en kötü baş ağrısı kusma"
+        ],
+        "regex": "\\b(ani(den)?\\s*(çok\\s*)?şiddetli\\s*baş\\s*ağrısı|hayatımın\\s*en\\s*(kötü|şiddetli)\\s*baş\\s*ağrısı).*\\b(kusma|kustum|kusuyorum)\\b|\\b(kusma|kustum).*\\b(ani(den)?\\s*baş\\s*ağrısı|şiddetli\\s*baş\\s*ağrısı)\\b",
+        "action": "ER_NOW"
       }
     ],
     "soft_triggers": [
@@ -151,6 +186,26 @@
         "follow_up_questions": [
           "Hasta kaç yaşında?",
           "Uyarılara tepki veriyor mu?"
+        ],
+        "escalate_if_yes": true
+      },
+      {
+        "id": "chest_pain_breathlessness_soft",
+        "label": "Göğüs ağrısı veya baskı ile nefes darlığı birlikteliği",
+        "keywords": ["göğüs ağrısı", "göğüste baskı", "nefes darlığı", "nefesim yetmiyor"],
+        "follow_up_questions": [
+          "Göğüs ağrınız/baskınız ile birlikte nefes darlığı da var mı?",
+          "Terleme veya sol kola yayılan ağrı var mı?"
+        ],
+        "escalate_if_yes": true
+      },
+      {
+        "id": "blood_in_stool_soft",
+        "label": "Dışkıda kan",
+        "keywords": ["dışkıda kan", "kakanızda kan", "tuvalette kan"],
+        "follow_up_questions": [
+          "Dışkınızda taze kan mı yoksa koyu/siyah renk mi görüyorsunuz?",
+          "Miktar ne kadar?"
         ],
         "escalate_if_yes": true
       }

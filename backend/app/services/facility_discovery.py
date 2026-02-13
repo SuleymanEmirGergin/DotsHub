@@ -79,6 +79,8 @@ def discover_facilities(
     city: str,
     specialty_key: str,
     limit: int = 5,
+    lat: Optional[float] = None,
+    lon: Optional[float] = None,
 ) -> Dict[str, Any]:
     if not settings.FACILITY_DISCOVERY_ENABLED:
         return {
@@ -102,6 +104,11 @@ def discover_facilities(
     city = city or DEFAULT_CITY
 
     city_center: Optional[Tuple[float, float]] = None
+    if lat is not None and lon is not None:
+        try:
+            city_center = (float(lat), float(lon))
+        except (TypeError, ValueError):
+            pass
     items: List[Dict[str, Any]] = []
     seen_keys: set[str] = set()
 
@@ -109,16 +116,17 @@ def discover_facilities(
         timeout=settings.FACILITY_DISCOVERY_TIMEOUT_SECONDS,
         trust_env=False,
     ) as client:
-        city_rows, city_query_failed = _query_nominatim(client, q=city, limit=1)
-        if city_query_failed:
-            return {
-                "specialty_id": specialty_key,
-                "city": city,
-                "items": [],
-                "disclaimer": DISCLAIMER_TR,
-            }
-        if city_rows:
-            city_center = _parse_coord(city_rows[0])
+        if city_center is None:
+            city_rows, city_query_failed = _query_nominatim(client, q=city, limit=1)
+            if city_query_failed:
+                return {
+                    "specialty_id": specialty_key,
+                    "city": city,
+                    "items": [],
+                    "disclaimer": DISCLAIMER_TR,
+                }
+            if city_rows:
+                city_center = _parse_coord(city_rows[0])
 
         for tag in tags:
             q = f"{specialty_key} {tag} {city}"
@@ -146,13 +154,15 @@ def discover_facilities(
                 seen_keys.add(dedupe_key)
 
                 row_type = str(row.get("type") or row.get("class") or tag).lower()
+                coords = _parse_coord(row)
                 item: Dict[str, Any] = {
                     "name": name,
                     "type": row_type,
                     "address": display,
                 }
-
-                coords = _parse_coord(row)
+                if coords:
+                    item["lat"] = coords[0]
+                    item["lon"] = coords[1]
                 if city_center and coords:
                     dist = _haversine_km(city_center[0], city_center[1], coords[0], coords[1])
                     item["distance_km"] = round(dist, 1)

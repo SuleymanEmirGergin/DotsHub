@@ -298,10 +298,15 @@ class Orchestrator:
         # Track the asked symptom
         state.asked_symptoms.add(result["canonical_symptom"])
 
+        choices = result.get("choices_tr")
+        if choices is None and result["answer_type"] == "yes_no":
+            choices = ["Evet", "Hayır"]
+        elif choices is None:
+            choices = []
         return QuestionOutput(
             question_tr=result["question_tr"],
             answer_type=result["answer_type"],
-            choices_tr=["Evet", "Hayır"] if result["answer_type"] == "yes_no" else [],
+            choices_tr=choices,
             why_this_question_tr=f"Ayırt edici soru: {result['canonical_symptom']}",
             stop=False,
         )

@@ -9,6 +9,17 @@
       "answer_type": "yes_no"
     },
     {
+      "canonical_symptom": "baş ağrısı süresi",
+      "question_tr": "Ne kadar süredir baş ağrınız var?",
+      "answer_type": "free_text"
+    },
+    {
+      "canonical_symptom": "baş ağrısı sabah artışı",
+      "question_tr": "Baş ağrınız sabahları mı akşamları mı daha çok oluyor?",
+      "answer_type": "choice",
+      "choices_tr": ["Sabahları daha çok", "Akşamları daha çok", "Fark etmiyor"]
+    },
+    {
       "canonical_symptom": "baş dönmesi",
       "question_tr": "Baş dönmesi veya sersemlik hissediyor musunuz?",
       "answer_type": "yes_no"
@@ -24,9 +35,20 @@
       "answer_type": "yes_no"
     },
     {
+      "canonical_symptom": "kusma sıklığı",
+      "question_tr": "Günde yaklaşık kaç kez kusma oluyor?",
+      "answer_type": "choice",
+      "choices_tr": ["1-2 kez", "3-5 kez", "5'ten fazla", "Bilmiyorum"]
+    },
+    {
       "canonical_symptom": "ishal",
       "question_tr": "İshal (sulu dışkılama) var mı?",
       "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "ishal süresi",
+      "question_tr": "Ne kadar süredir ishal şikayetiniz var?",
+      "answer_type": "free_text"
     },
     {
       "canonical_symptom": "kabızlık",
@@ -39,6 +61,17 @@
       "answer_type": "yes_no"
     },
     {
+      "canonical_symptom": "göğüs ağrısı süresi",
+      "question_tr": "Ne kadar süredir göğüs ağrınız var?",
+      "answer_type": "free_text"
+    },
+    {
+      "canonical_symptom": "göğüs ağrısı sabit mi",
+      "question_tr": "Göğüs ağrınız sürekli mi yoksa gelip geçici mi?",
+      "answer_type": "choice",
+      "choices_tr": ["Sürekli (sabit)", "Gelip geçici", "Bazen sürekli bazen gelip geçici"]
+    },
+    {
       "canonical_symptom": "göğüste baskı",
       "question_tr": "Göğsünüzde baskı veya sıkışma hissi var mı?",
       "answer_type": "yes_no"
@@ -47,6 +80,12 @@
       "canonical_symptom": "nefes darlığı",
       "question_tr": "Nefes darlığı çekiyor musunuz?",
       "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "nefes darlığı eforla",
+      "question_tr": "Nefes darlığınız eforla mı yoksa istirahatte mi oluyor?",
+      "answer_type": "choice",
+      "choices_tr": ["Eforla (yürüme, merdiven vb.)", "İstirahatte de", "İkisi de"]
     },
     {
       "canonical_symptom": "çarpıntı",
@@ -59,14 +98,51 @@
       "answer_type": "yes_no"
     },
     {
+      "canonical_symptom": "ateş süresi",
+      "question_tr": "Ne kadar süredir ateşiniz var?",
+      "answer_type": "free_text"
+    },
+    {
+      "canonical_symptom": "ateş derecesi",
+      "question_tr": "Ateşinizi ölçtünüz mü? Kaç derece? (bilmiyorsanız 'bilmiyorum' yazabilirsiniz)",
+      "answer_type": "free_text"
+    },
+    {
       "canonical_symptom": "boğaz ağrısı",
       "question_tr": "Boğaz ağrınız var mı?",
       "answer_type": "yes_no"
     },
     {
+      "canonical_symptom": "boğaz ağrısı süresi",
+      "question_tr": "Ne kadar süredir boğaz ağrınız var?",
+      "answer_type": "free_text"
+    },
+    {
       "canonical_symptom": "öksürük",
       "question_tr": "Öksürüğünüz var mı?",
       "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "balgam",
+      "question_tr": "Balgamınız var mı?",
+      "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "balgam rengi",
+      "question_tr": "Balgam renginiz nasıl?",
+      "answer_type": "choice",
+      "choices_tr": ["Şeffaf / beyaz", "Sarı", "Yeşil", "Kanlı veya pas rengi", "Bilmiyorum"]
+    },
+    {
+      "canonical_symptom": "öksürük süresi",
+      "question_tr": "Ne kadar süredir öksürüyorsunuz?",
+      "answer_type": "free_text"
+    },
+    {
+      "canonical_symptom": "öksürük gece artışı",
+      "question_tr": "Öksürüğünüz geceleri mi gündüzleri mi daha çok oluyor?",
+      "answer_type": "choice",
+      "choices_tr": ["Geceleri daha çok", "Gündüzleri daha çok", "Fark etmiyor"]
     },
     {
       "canonical_symptom": "idrar yanması",
@@ -82,6 +158,23 @@
       "canonical_symptom": "karın ağrısı",
       "question_tr": "Karın (mide/bağırsak bölgesi) ağrınız var mı?",
       "answer_type": "yes_no"
+    },
+    {
+      "canonical_symptom": "ağrı şiddeti",
+      "question_tr": "Ağrınızı 1 (çok hafif) ile 10 (dayanılmaz) arasında nasıl değerlendirirsiniz?",
+      "answer_type": "choice",
+      "choices_tr": ["1-2", "3-4", "5-6", "7-8", "9-10"]
+    },
+    {
+      "canonical_symptom": "karın ağrısı süresi",
+      "question_tr": "Ne kadar süredir karın ağrınız var?",
+      "answer_type": "free_text"
+    },
+    {
+      "canonical_symptom": "karın ağrısı yeri",
+      "question_tr": "Ağrı karnınızın neresinde?",
+      "answer_type": "choice",
+      "choices_tr": ["Sağ üst", "Sol üst", "Sağ alt", "Sol alt", "Orta (göbek çevresi)", "Yayılı / net değil"]
     },
     {
       "canonical_symptom": "hazımsızlık",

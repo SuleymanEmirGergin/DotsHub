@@ -1,0 +1,38 @@
+{
+  "version": "0.1.0",
+  "description": "Belirli belirti setlerinde sorulacak kısa acil kontrol soruları. Bağlam (örn. göğüs ağrısı) varsa bu soru bir kez sorulabilir.",
+  "questions": [
+    {
+      "id": "chest_pain_redflags",
+      "when_canonical_any": ["göğüs ağrısı", "göğüste baskı"],
+      "question_tr": "Şu an nefes darlığı, soğuk terleme veya ağrının sol kola/çeneye yayılması var mı?",
+      "answer_type": "yes_no",
+      "if_yes_escalate": "ER_NOW",
+      "reason_tr": "Kalp krizi belirtisi olabileceği için acil değerlendirme önerilir."
+    },
+    {
+      "id": "headache_redflags",
+      "when_canonical_any": ["baş ağrısı"],
+      "question_tr": "Baş ağrısı ani ve çok şiddetli mi? Kusma veya ışığa hassasiyet eşlik ediyor mu?",
+      "answer_type": "yes_no",
+      "if_yes_escalate": "ER_NOW",
+      "reason_tr": "Beyin kanaması vb. acil durum ihtimali nedeniyle hemen değerlendirme önerilir."
+    },
+    {
+      "id": "abdominal_pain_redflags",
+      "when_canonical_any": ["karın ağrısı"],
+      "question_tr": "Ateşiniz var mı veya kusma/kanlı/siyah dışkı gibi bir belirti eşlik ediyor mu?",
+      "answer_type": "yes_no",
+      "if_yes_escalate": "SAME_DAY",
+      "reason_tr": "Enfeksiyon veya kanama ihtimali nedeniyle bugün değerlendirme önerilir."
+    },
+    {
+      "id": "cough_redflags",
+      "when_canonical_any": ["öksürük", "balgam"],
+      "question_tr": "Öksürükle kan veya pas rengi balgam geliyor mu? Nefes darlığınız belirgin mi?",
+      "answer_type": "yes_no",
+      "if_yes_escalate": "SAME_DAY",
+      "reason_tr": "Akciğer enfeksiyonu veya kanama ihtimali nedeniyle değerlendirme önerilir."
+    }
+  ]
+}

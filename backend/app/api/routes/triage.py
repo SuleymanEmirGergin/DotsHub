@@ -78,7 +78,12 @@ def _extract_specialty_key_from_payload(payload: dict) -> Optional[str]:
     return str(specialty_id)
 
 
-def _build_facility_discovery(envelope_type: str, payload: dict) -> Optional[dict]:
+def _build_facility_discovery(
+    envelope_type: str,
+    payload: dict,
+    lat: Optional[float] = None,
+    lon: Optional[float] = None,
+) -> Optional[dict]:
     if envelope_type != "RESULT":
         return None
 
@@ -87,7 +92,13 @@ def _build_facility_discovery(envelope_type: str, payload: dict) -> Optional[dic
         return None
 
     try:
-        return discover_facilities(city=DEFAULT_CITY, specialty_key=specialty_key, limit=5)
+        return discover_facilities(
+            city=DEFAULT_CITY,
+            specialty_key=specialty_key,
+            limit=5,
+            lat=lat,
+            lon=lon,
+        )
     except Exception as e:
         logger.warning("Facility discovery failed in triage route: %s", e)
         return None
@@ -194,7 +205,9 @@ def _handle_turn_supabase(request: TriageTurnRequest) -> Envelope:
         patch["meta"] = session_meta
 
     update_session(sid, patch)
-    facility_discovery = _build_facility_discovery(envelope_type, client_payload)
+    facility_discovery = _build_facility_discovery(
+        envelope_type, client_payload, lat=request.lat, lon=request.lon
+    )
 
     return Envelope(
         type=envelope_type,
@@ -219,7 +232,9 @@ async def _handle_turn_legacy(request: TriageTurnRequest) -> Envelope:
         answer_canonical=request.answer.canonical if request.answer else None,
         answer_value=request.answer.value if request.answer else None,
     )
-    facility_discovery = _build_facility_discovery(result["type"], result["payload"])
+    facility_discovery = _build_facility_discovery(
+        result["type"], result["payload"], lat=request.lat, lon=request.lon
+    )
     return Envelope(
         type=result["type"],
         session_id=result["session_id"],

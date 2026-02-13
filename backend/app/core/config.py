@@ -35,6 +35,7 @@ class Settings(BaseSettings):
     # App
     APP_ENV: str = "development"
     DEBUG: bool = True
+    # JSON array of allowed CORS origins. In production set explicitly to your app/dashboard URLs.
     CORS_ORIGINS: str = '["http://localhost:8081","http://localhost:19006","http://localhost:3000"]'
     ADMIN_API_KEY: str = ""
 

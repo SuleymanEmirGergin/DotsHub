@@ -49,6 +49,7 @@ class QuestionSelector:
             self._question_bank[q["canonical_symptom"]] = {
                 "question_tr": q["question_tr"],
                 "answer_type": q.get("answer_type", "yes_no"),
+                "choices_tr": q.get("choices_tr"),
             }
 
         # Kaggle-to-canonical mapping
@@ -154,11 +155,14 @@ class QuestionSelector:
             f"(disc={best['disc_score']:.2f}, count={best['count']}/{C})"
         )
 
-        return {
+        out = {
             "canonical_symptom": best["canonical_symptom"],
             "question_tr": bank_entry["question_tr"],
             "answer_type": bank_entry["answer_type"],
         }
+        if bank_entry.get("choices_tr"):
+            out["choices_tr"] = bank_entry["choices_tr"]
+        return out
 
 
 # Singleton
