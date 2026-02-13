@@ -32,6 +32,11 @@ from app.agents.stop_condition import stop_condition_engine, StopConditionStatus
 from app.agents.candidate_generator import candidate_generator
 from app.agents.final_decision import final_decision_engine
 from app.agents.question_selector import question_selector
+from app.agents.red_flag_questions import (
+    get_red_flag_question,
+    get_red_flag_by_id,
+    should_escalate_on_yes,
+)
 from app.models.schemas import (
     SafetyGuardOutput,
     InterpreterOutput,
@@ -120,6 +125,8 @@ class SessionState:
         self._last_asked_canonical: Optional[str] = None  # tracks canonical of last question
         self.raw_texts: List[str] = []  # all user free-text messages
         self.answers: Dict[str, str] = {}  # canonical -> yes/no/value
+        self.asked_red_flag_ids: Set[str] = set()  # red-flag questions already asked
+        self._last_red_flag_id: Optional[str] = None  # last question was this red-flag (for escalate on yes)
 
     def add_message(self, role: str, content: str):
         self.conversation_history.append({"role": role, "content": content})
@@ -673,7 +680,34 @@ class Orchestrator:
             state.raw_texts.append(user_message.strip())
             state.add_message("user", user_message.strip())
 
-        if answer_canonical and answer_value is not None:
+        # Red-flag: last question was red-flag; treat this message as red-flag answer only (do not update canonical answer)
+        consumed_by_red_flag = False
+        if state._last_red_flag_id and (answer_value or (user_message and user_message.strip() and not is_new)):
+            answer_for_redflag = (answer_value or user_message or "").strip()
+            consumed_by_red_flag = True
+            if should_escalate_on_yes(answer_for_redflag):
+                rf = get_red_flag_by_id(state._last_red_flag_id)
+                reason = rf.get("reason_tr", "Acil değerlendirme önerilir.") if rf else "Acil değerlendirme önerilir."
+                state.asked_red_flag_ids.add(state._last_red_flag_id)
+                state._last_red_flag_id = None
+                state.is_complete = True
+                return {
+                    "type": "EMERGENCY",
+                    "session_id": session_id,
+                    "turn_index": state.turn_index,
+                    "payload": {
+                        "urgency": "EMERGENCY",
+                        "reason_tr": reason,
+                        "instructions_tr": [
+                            "Derhal acil servise başvur veya 112'yi ara.",
+                            "Yalnızsan birine haber ver, araç kullanma.",
+                        ],
+                    },
+                }
+            state.asked_red_flag_ids.add(state._last_red_flag_id)
+            state._last_red_flag_id = None
+
+        if not consumed_by_red_flag and answer_canonical and answer_value is not None:
             state.answers[answer_canonical] = answer_value
             state.asked_symptoms.add(answer_canonical)
             state._last_asked_canonical = None
@@ -717,9 +751,9 @@ class Orchestrator:
             state.known_symptoms |= state.get_canonical_symptoms_from_interpreter()
 
         # ── 3. Layer B: Rules scorer ──
-        if user_message and user_message.strip():
+        if user_message and user_message.strip() and not consumed_by_red_flag:
             self._run_scorer(state, user_message)
-        if answer_canonical and answer_value and answer_value.lower() in ("yes", "evet", "var"):
+        if not consumed_by_red_flag and answer_canonical and answer_value and answer_value.lower() in ("yes", "evet", "var"):
             self._run_scorer(state, answer_canonical)
 
         # ── 4. Layer A: Candidate generator ──
@@ -734,9 +768,24 @@ class Orchestrator:
         # ── 7. Stop check ──
         should_stop = self._should_stop_v4(state)
 
-        # Also check: no discriminative question available
+        # Red-flag question (once per matching context) or discriminative question
+        next_q = None
         if not should_stop:
-            next_q = self._run_question_selector(state)
+            red_flag = get_red_flag_question(state.known_symptoms, state.asked_red_flag_ids)
+            if red_flag:
+                state.asked_red_flag_ids.add(red_flag["id"])
+                state._last_red_flag_id = red_flag["id"]
+                next_q = QuestionOutput(
+                    question_tr=red_flag["question_tr"],
+                    answer_type=red_flag.get("answer_type", "yes_no"),
+                    choices_tr=["Evet", "Hayır"],
+                    why_this_question_tr=f"Kontrol: {red_flag['id']}",
+                    stop=False,
+                )
+            if next_q is None:
+                next_q = self._run_question_selector(state)
+                if next_q is not None:
+                    state._last_red_flag_id = None  # normal question, clear red-flag tracking
             if next_q is None:
                 # Try LLM fallback... but if we don't want LLM, mark stop
                 state.stop_reason = "NO_MORE_DISCRIMINATIVE_QUESTIONS"

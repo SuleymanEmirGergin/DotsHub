@@ -57,6 +57,15 @@ def get_red_flag_question(
     return None
 
 
+def get_red_flag_by_id(red_flag_id: str) -> Optional[Dict[str, Any]]:
+    """ID ile red-flag sorusu döndürür (reason_tr vb. için)."""
+    _load()
+    for q in _red_flag_list:
+        if q.get("id") == red_flag_id:
+            return q
+    return None
+
+
 def should_escalate_on_yes(answer_text: str) -> bool:
     """Kullanıcı cevabı 'evet' ise True (acil yönlendirme yapılmalı)."""
     if not answer_text:
