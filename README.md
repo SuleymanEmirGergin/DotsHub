@@ -1,4 +1,4 @@
-﻿# Pre-Triage Agentic AI
+# Pre-Triage Agentic AI
 
 Policy-driven, explainable, safety-first symptom pre-triage system.
 
@@ -24,6 +24,25 @@ guardrails, and rollback support.
 - Primary API contract: `docs/openapi_orchestrator.yaml`
 - Legacy reference contract: `openapi.yaml` (deprecated)
 - `app.api_v5` is experimental and not the default production path
+
+## API & Environment
+
+**Key endpoints**
+
+- `POST /v1/triage/turn` — unified triage turn (rate-limited; returns `X-RateLimit-*` and `X-Request-ID`)
+- `GET /v1/facilities?specialty=&city=&lat=&lon=&limit=` — facility discovery
+- `GET /health` — liveness and Supabase reachability
+- Admin: `GET/POST /v1/admin/*` — admin API (separate rate limit per IP)
+
+**Environment (backend)**
+
+- `REDIS_URL` — optional; when set, rate limiting uses Redis (multi-instance). Omit for in-memory.
+- `RATE_LIMIT_WINDOW_SEC`, `RATE_LIMIT_MAX_REQ` — triage/feedback rate limit (default 60s, 20 req).
+- `ADMIN_RATE_LIMIT_WINDOW_SEC`, `ADMIN_RATE_LIMIT_MAX_REQ` — admin API limit (default 60s, 60 req).
+- `LOG_FORMAT=json` — JSON log lines with `request_id`; `LOG_LEVEL` (e.g. `INFO`).
+- `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` — for persistence and `/health` check.
+- `ADMIN_API_KEY` — for admin API auth (Bearer / `X-API-Key` / `x-admin-key`).
+- `CORS_ORIGINS` — JSON array of allowed origins (e.g. mobile app and dashboard URLs). **Production:** set explicitly to your app/dashboard origins; do not use the default localhost list.
 
 ## Core Philosophy
 
@@ -171,6 +190,28 @@ User Feedback
   -> Pull Request
   -> Guardrail Check
   -> Deploy or Rollback
+```
+
+## Local Backend Regression (CI Parity)
+
+Run the same backend regression chain used by CI:
+
+```bash
+cd backend && python scripts/run_backend_regression.py
+```
+
+## Local Dashboard Quality
+
+Run the dashboard quality gate (TypeScript no-emit check):
+
+```bash
+cd dashboard && npm run lint
+```
+
+Run ESLint (requires network access in environments with offline npm cache policy):
+
+```bash
+cd dashboard && npm run lint:eslint
 ```
 
 ## What This Is Not

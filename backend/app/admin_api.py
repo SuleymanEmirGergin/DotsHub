@@ -7,21 +7,20 @@ Provides endpoints for:
 """
 
 from __future__ import annotations
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Header
 from typing import Any, Dict
 
 from app.tuning_tasks import build_tuning_tasks_from_session
 from app.patchgen import build_synonyms_patch_from_task
 from app.patchgen_keywords import build_keywords_patch_from_task
-from app.core.config import settings
+from app.admin_auth import require_admin_key
 
 router = APIRouter(prefix="/admin/tuning-tasks", tags=["tuning"])
 
 
-def require_admin():
-    """Placeholder admin auth check. Replace with actual auth."""
-    # TODO: Implement proper admin authentication
-    return {"user_id": "admin"}
+def require_admin(x_admin_key: str | None = Header(default=None)):
+    """Require x-admin-key auth for tuning task admin endpoints."""
+    return require_admin_key(x_admin_key)
 
 
 def get_supabase():

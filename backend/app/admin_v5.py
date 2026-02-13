@@ -6,21 +6,16 @@ import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, Header, HTTPException, Query
+from fastapi import APIRouter, Header, Query
 
 from app.db import supabase
-from app.core.config import settings
-
-ADMIN_API_KEY = settings.ADMIN_API_KEY
+from app.admin_auth import require_admin_key
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
 
 def require_admin(x_admin_key: Optional[str]) -> None:
-    if not ADMIN_API_KEY:
-        raise RuntimeError("ADMIN_API_KEY missing")
-    if not x_admin_key or x_admin_key != ADMIN_API_KEY:
-        raise HTTPException(status_code=401, detail="unauthorized")
+    require_admin_key(x_admin_key)
 
 
 HEALTH_THRESH_PATH = Path(__file__).resolve().parents[2] / "config" / "admin_health_thresholds.json"
