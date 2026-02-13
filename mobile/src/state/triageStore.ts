@@ -5,6 +5,7 @@ import type {
   ResultPayload,
   EmergencyPayload,
   Msg,
+  TriageTurnRequest,
 } from "./types";
 
 type TriageState = {
@@ -16,12 +17,15 @@ type TriageState = {
   emergency: EmergencyPayload | null;
   error: { code: string; message_tr: string } | null;
   loading: boolean;
+  /** Last request sent; used for retry when ERROR */
+  lastRequest: TriageTurnRequest | null;
 
   acceptIntro: boolean;
 
   setAcceptIntro: (v: boolean) => void;
   appendMessage: (m: Msg) => void;
   setLoading: (v: boolean) => void;
+  setLastRequest: (r: TriageTurnRequest | null) => void;
   resetSession: () => void;
   applyEnvelope: (env: Envelope) => void;
 };
@@ -35,12 +39,15 @@ export const useTriageStore = create<TriageState>((set, get) => ({
   emergency: null,
   error: null,
   loading: false,
+  lastRequest: null,
 
   acceptIntro: false,
 
   setAcceptIntro: (v) => set({ acceptIntro: v }),
 
   setLoading: (v) => set({ loading: v }),
+
+  setLastRequest: (r) => set({ lastRequest: r }),
 
   appendMessage: (m) => set({ messages: [...get().messages, m] }),
 
@@ -54,6 +61,7 @@ export const useTriageStore = create<TriageState>((set, get) => ({
       emergency: null,
       error: null,
       loading: false,
+      lastRequest: null,
     }),
 
   applyEnvelope: (env) => {
@@ -72,14 +80,14 @@ export const useTriageStore = create<TriageState>((set, get) => ({
 
     if (env.type === "QUESTION") {
       const q = env.payload as QuestionPayload;
-      set({ pendingQuestion: q, result: null, emergency: null, error: null });
+      set({ pendingQuestion: q, result: null, emergency: null, error: null, lastRequest: null });
       get().appendMessage({ role: "assistant", text: q.question_tr });
       return;
     }
 
     if (env.type === "RESULT") {
       const r = env.payload as ResultPayload;
-      set({ result: r, pendingQuestion: null, emergency: null, error: null });
+      set({ result: r, pendingQuestion: null, emergency: null, error: null, lastRequest: null });
       get().appendMessage({
         role: "assistant",
         text: `Önerilen branş: ${r.recommended_specialty.name_tr}`,
@@ -89,12 +97,12 @@ export const useTriageStore = create<TriageState>((set, get) => ({
 
     if (env.type === "EMERGENCY") {
       const e = env.payload as EmergencyPayload;
-      set({ emergency: e, pendingQuestion: null, result: null, error: null });
+      set({ emergency: e, pendingQuestion: null, result: null, error: null, lastRequest: null });
       get().appendMessage({ role: "assistant", text: e.reason_tr });
       return;
     }
 
-    // ERROR
+    // ERROR — keep lastRequest so user can retry
     const err = env.payload as { code: string; message_tr: string };
     set({ error: err, pendingQuestion: null, result: null, emergency: null });
   },

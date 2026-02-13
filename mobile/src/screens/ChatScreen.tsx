@@ -1,4 +1,4 @@
-﻿import React, { useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import {
   FlatList,
   KeyboardAvoidingView,
@@ -20,24 +20,26 @@ const LOADING_TEXT = "Değerlendiriyorum…";
 export default function ChatScreen() {
   const [text, setText] = useState("");
   const flatListRef = useRef<FlatList>(null);
-  const { sessionId, messages, loading, appendMessage, setLoading, applyEnvelope } =
+  const { sessionId, messages, loading, appendMessage, setLoading, setLastRequest, applyEnvelope } =
     useTriageStore();
 
   async function onSend(msg?: string) {
     const t = (msg || text).trim();
     if (!t) return;
 
+    const req = {
+      session_id: sessionId,
+      locale: "tr-TR" as const,
+      user_message: t,
+      answer: null,
+    };
     appendMessage({ role: "user", text: t });
     setText("");
     setLoading(true);
+    setLastRequest(req);
     appendMessage({ role: "assistant", text: LOADING_TEXT });
 
-    const env = await triageTurn({
-      session_id: sessionId,
-      locale: "tr-TR",
-      user_message: t,
-      answer: null,
-    });
+    const env = await triageTurn(req);
     applyEnvelope(env);
   }
 
@@ -52,6 +54,9 @@ export default function ChatScreen() {
           <SectionTitle style={styles.headerTitle}>Ön Değerlendirme</SectionTitle>
           <MutedText>
             Birkaç kısa soru soracağım, daha doğru yönlendireceğim.
+          </MutedText>
+          <MutedText style={styles.locationHint}>
+            Konum paylaşırsanız sonuç ekranında yakındaki sağlık kuruluşları listelenir (isteğe bağlı).
           </MutedText>
         </View>
 
@@ -242,5 +247,10 @@ const styles = StyleSheet.create({
   disclaimer: {
     textAlign: "center",
     marginBottom: tokens.spacing.md,
+  },
+  locationHint: {
+    marginTop: tokens.spacing.xs,
+    fontSize: 12,
+    fontStyle: "italic",
   },
 });

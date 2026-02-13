@@ -1,0 +1,30 @@
+{
+  "common": {
+    "ok": "OK",
+    "cancel": "Cancel",
+    "back": "Back",
+    "next": "Next",
+    "loading": "Loading...",
+    "error": "An error occurred."
+  },
+  "home": {
+    "welcome": "Pre-Triage",
+    "start": "Start"
+  },
+  "chat": {
+    "placeholder": "Type your message...",
+    "send": "Send"
+  },
+  "result": {
+    "title": "Result",
+    "recommendedSpecialty": "Recommended specialty",
+    "confidence": "Confidence",
+    "facilities": "Healthcare facilities",
+    "openOnMap": "Open on map",
+    "moreFacilities": "More facilities"
+  },
+  "summary": {
+    "title": "Summary",
+    "sessionSummary": "Session summary"
+  }
+}

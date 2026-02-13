@@ -1,12 +1,30 @@
-﻿import React from "react";
+import React, { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
+import { triageTurn } from "@/src/api/triageClient";
 import { useTriageStore } from "@/src/state/triageStore";
 import { tokens } from "@/src/ui/designTokens";
 import { Card, PrimaryButton, ScreenContainer, SectionTitle } from "@/src/ui/primitives";
 
 export default function ErrorScreen() {
   const error = useTriageStore((s) => s.error);
+  const lastRequest = useTriageStore((s) => s.lastRequest);
   const resetSession = useTriageStore((s) => s.resetSession);
+  const applyEnvelope = useTriageStore((s) => s.applyEnvelope);
+  const setLoading = useTriageStore((s) => s.setLoading);
+  const [retrying, setRetrying] = useState(false);
+
+  async function handleRetry() {
+    if (!lastRequest || retrying) return;
+    setRetrying(true);
+    setLoading(true);
+    try {
+      const env = await triageTurn(lastRequest);
+      applyEnvelope(env);
+    } finally {
+      setRetrying(false);
+      setLoading(false);
+    }
+  }
 
   return (
     <ScreenContainer style={styles.container}>
@@ -19,6 +37,16 @@ export default function ErrorScreen() {
           </Text>
           {error?.code ? <Text style={styles.code}>Kod: {error.code}</Text> : null}
         </Card>
+
+        {lastRequest ? (
+          <PrimaryButton
+            style={styles.retryButton}
+            onPress={handleRetry}
+            disabled={retrying}
+          >
+            {retrying ? "Tekrar deneniyor…" : "Tekrar dene"}
+          </PrimaryButton>
+        ) : null}
 
         <PrimaryButton style={styles.retryButton} onPress={resetSession}>
           Yeni Oturum Başlat

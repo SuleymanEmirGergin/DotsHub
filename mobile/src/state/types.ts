@@ -9,6 +9,8 @@ export type TriageTurnRequest = {
   locale: "tr-TR";
   user_message: string;
   answer?: { canonical: string; value: string } | null;
+  lat?: number | null;
+  lon?: number | null;
 };
 
 export type QuestionPayload = {

@@ -1,4 +1,4 @@
-﻿import React, { useState } from "react";
+import React, { useState } from "react";
 import {
   Alert,
   Pressable,
@@ -23,6 +23,7 @@ import {
   SectionTitle,
 } from "@/src/ui/primitives";
 import ConfidenceBar from "@/src/ui/ConfidenceBar";
+import { buildSummaryHtml, shareSummaryAsPdf } from "../../../utils/sharePdf";
 
 export default function ResultScreen() {
   const result = useTriageStore((s) => s.result)!;
@@ -43,11 +44,46 @@ export default function ResultScreen() {
   const [fbSent, setFbSent] = useState(false);
   const [comment, setComment] = useState("");
 
-  async function onCopySummary() {
+  const [sharingPdf, setSharingPdf] = useState(false);
+  const disclaimer = "Bu uygulama tanı koymaz; bilgilendirme ve yönlendirme amaçlıdır.";
+
+  async function onShareSummary() {
     try {
-      await Share.share({ message: summaryText });
+      await Share.share({
+        message: summaryText + "\n\n" + disclaimer,
+        title: "Ön-Triyaj Sonuç Özeti",
+      });
     } catch {
-      Alert.alert("Kopyalandı", summaryText);
+      Alert.alert("Hata", "Paylaşım açılamadı.");
+    }
+  }
+
+  async function onSharePdf() {
+    setSharingPdf(true);
+    try {
+      const html = buildSummaryHtml({
+        title: "Ön-Triyaj Asistanı - Sonuç Özeti",
+        specialty: result.recommended_specialty.name_tr,
+        urgency:
+          result.urgency === "ROUTINE"
+            ? "Rutin"
+            : result.urgency === "SAME_DAY"
+              ? "Bugün İçinde"
+              : "Acil",
+        rationale: Array.isArray(result.why_specialty_tr) ? result.why_specialty_tr : undefined,
+        candidates: result.top_conditions.map((c) => ({
+          label: c.disease_label,
+          probability: c.score_0_1,
+        })),
+        summaryLines: result.doctor_ready_summary_tr,
+        disclaimer,
+      });
+      const ok = await shareSummaryAsPdf(html, onShareSummary);
+      if (!ok) Alert.alert("Bilgi", "PDF paylaşımı bu cihazda desteklenmiyor; metin paylaşıldı.");
+    } catch {
+      Alert.alert("Hata", "PDF oluşturulamadı.");
+    } finally {
+      setSharingPdf(false);
     }
   }
 
@@ -116,9 +152,14 @@ export default function ResultScreen() {
         <Card style={styles.cardSpacing}>
           <View style={styles.summaryHeader}>
             <SectionTitle style={styles.summaryTitle}>Doktora gösterilecek özet</SectionTitle>
-            <SecondaryButton onPress={onCopySummary} style={styles.copyButton} textStyle={styles.copyButtonText}>
-              Kopyala
-            </SecondaryButton>
+            <View style={styles.shareRow}>
+              <SecondaryButton onPress={onShareSummary} style={styles.copyButton} textStyle={styles.copyButtonText}>
+                Metin
+              </SecondaryButton>
+              <SecondaryButton onPress={onSharePdf} disabled={sharingPdf} style={styles.copyButton} textStyle={styles.copyButtonText}>
+                {sharingPdf ? "…" : "PDF"}
+              </SecondaryButton>
+            </View>
           </View>
           {result.doctor_ready_summary_tr.map((line, i) => (
             <Text key={i} style={styles.bulletText}>
@@ -275,6 +316,10 @@ const styles = StyleSheet.create({
   summaryTitle: {
     flex: 1,
     marginBottom: 0,
+  },
+  shareRow: {
+    flexDirection: "row",
+    gap: tokens.spacing.xs,
   },
   copyButton: {
     minHeight: 36,

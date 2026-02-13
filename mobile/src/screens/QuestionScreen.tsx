@@ -1,4 +1,4 @@
-﻿import React, { useState } from "react";
+import React, { useState } from "react";
 import {
   Pressable,
   ScrollView,
@@ -24,24 +24,26 @@ const LOADING_TEXT = "Değerlendiriyorum…";
 export default function QuestionScreen() {
   const q = useTriageStore((s) => s.pendingQuestion)!;
   const sessionId = useTriageStore((s) => s.sessionId);
-  const { appendMessage, setLoading, applyEnvelope } = useTriageStore();
+  const { appendMessage, setLoading, setLastRequest, applyEnvelope } = useTriageStore();
 
   const [freeText, setFreeText] = useState("");
 
   async function answer(value: string) {
+    const req = {
+      session_id: sessionId,
+      locale: "tr-TR" as const,
+      user_message: "",
+      answer: { canonical: q.canonical, value },
+    };
     appendMessage({
       role: "user",
       text: value === "yes" ? "Evet" : value === "no" ? "Hayır" : value,
     });
     setLoading(true);
+    setLastRequest(req);
     appendMessage({ role: "assistant", text: LOADING_TEXT });
 
-    const env = await triageTurn({
-      session_id: sessionId,
-      locale: "tr-TR",
-      user_message: "",
-      answer: { canonical: q.canonical, value },
-    });
+    const env = await triageTurn(req);
     applyEnvelope(env);
   }
 

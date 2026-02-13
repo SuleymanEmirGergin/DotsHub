@@ -1,0 +1,30 @@
+{
+  "common": {
+    "ok": "Tamam",
+    "cancel": "İptal",
+    "back": "Geri",
+    "next": "İleri",
+    "loading": "Yükleniyor...",
+    "error": "Bir hata oluştu."
+  },
+  "home": {
+    "welcome": "Ön Triage",
+    "start": "Başla"
+  },
+  "chat": {
+    "placeholder": "Mesajınızı yazın...",
+    "send": "Gönder"
+  },
+  "result": {
+    "title": "Sonuç",
+    "recommendedSpecialty": "Önerilen branş",
+    "confidence": "Güven",
+    "facilities": "Sağlık tesisleri",
+    "openOnMap": "Haritada aç",
+    "moreFacilities": "Daha fazla tesis"
+  },
+  "summary": {
+    "title": "Özet",
+    "sessionSummary": "Oturum özeti"
+  }
+}
