@@ -1,16 +1,33 @@
 import { requireAdmin } from "@/lib/requireAdmin";
 import { supabaseServerAuthed } from "@/lib/supabaseServerAuthed";
 import { supabaseAdmin } from "@/lib/supabaseServer";
+import { Breadcrumb } from "@/app/components/Breadcrumb";
 
 export const dynamic = "force-dynamic";
+
+const SORT_COLUMNS = ["created_at", "envelope_type", "recommended_specialty_tr", "confidence_label_tr", "stop_reason"] as const;
+
+function sessionsTableHref(params: { feedback?: string; sort?: string; order?: string }, col: string) {
+  const nextOrder = params.sort === col && params.order === "desc" ? "asc" : "desc";
+  const sp = new URLSearchParams();
+  if (params.feedback) sp.set("feedback", params.feedback);
+  sp.set("sort", col);
+  sp.set("order", nextOrder);
+  return `/admin/sessions?${sp.toString()}`;
+}
 
 export default async function SessionsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ feedback?: string }>;
+  searchParams: Promise<{ feedback?: string; sort?: string; order?: string }>;
 }) {
   await requireAdmin();
-  const { feedback: feedbackFilter } = await searchParams;
+  const params = await searchParams;
+  const { feedback: feedbackFilter, sort: sortCol, order: orderDir } = params;
+  const sort: (typeof SORT_COLUMNS)[number] = SORT_COLUMNS.includes(sortCol as (typeof SORT_COLUMNS)[number])
+    ? (sortCol as (typeof SORT_COLUMNS)[number])
+    : "created_at";
+  const ascending = orderDir === "asc";
 
   // Use admin client for data fetching (RLS bypass, works without auth setup)
   const sb = supabaseAdmin();
@@ -39,7 +56,7 @@ export default async function SessionsPage({
     .select(
       "id,created_at,envelope_type,recommended_specialty_tr,confidence_label_tr,confidence_0_1,stop_reason",
     )
-    .order("created_at", { ascending: false })
+    .order(sort, { ascending })
     .limit(100);
 
   if (sessionIds) q = q.in("id", sessionIds);
@@ -49,34 +66,49 @@ export default async function SessionsPage({
   if (error) return <div style={{ padding: 24 }}>Error: {error.message}</div>;
 
   return (
-    <div style={{ padding: 24, maxWidth: 1200, margin: "0 auto" }}>
+    <div style={{ padding: 24, maxWidth: 1200, margin: "0 auto", background: "var(--dash-bg)", color: "var(--dash-text)" }}>
+      <Breadcrumb items={[{ label: "Admin", href: "/admin/sessions" }, { label: "Sessions" }]} />
       <div
         style={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
           gap: 12,
+          flexWrap: "wrap",
         }}
       >
         <div>
           <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>Sessions</h1>
-          <p style={{ color: "#666", marginTop: 6 }}>
+          <p style={{ color: "var(--dash-text-muted)", marginTop: 6 }}>
             Last 100 triage sessions
             {feedbackFilter ? ` \u2022 Filter: feedback=${feedbackFilter}` : ""}
           </p>
         </div>
         <div style={{ display: "flex", gap: 10 }}>
           <a
+            href="/admin/status"
+            style={{ textDecoration: "none", color: "var(--dash-text)", fontWeight: 800, fontSize: 13 }}
+          >
+            Sistem durumu
+          </a>
+          <a
             href="/admin/analytics"
-            style={{ textDecoration: "none", color: "#111", fontWeight: 800, fontSize: 13 }}
+            style={{ textDecoration: "none", color: "var(--dash-text)", fontWeight: 800, fontSize: 13 }}
           >
             Analytics &rarr;
           </a>
           <a
             href="/admin/tuning-report"
-            style={{ textDecoration: "none", color: "#111", fontWeight: 800, fontSize: 13 }}
+            style={{ textDecoration: "none", color: "var(--dash-text)", fontWeight: 800, fontSize: 13 }}
           >
             Tuning &rarr;
+          </a>
+          <a
+            href="/api/admin/export/sessions"
+            download
+            style={{ textDecoration: "none", color: "var(--dash-accent)", fontWeight: 700, fontSize: 13 }}
+          >
+            Export CSV
           </a>
         </div>
       </div>
@@ -88,10 +120,10 @@ export default async function SessionsPage({
           style={{
             padding: "8px 16px",
             borderRadius: 10,
-            border: "1px solid #eee",
+            border: "1px solid var(--dash-border)",
             textDecoration: "none",
-            color: !feedbackFilter ? "#fff" : "#111",
-            backgroundColor: !feedbackFilter ? "#111" : "#fff",
+            color: !feedbackFilter ? "var(--dash-bg)" : "var(--dash-text)",
+            backgroundColor: !feedbackFilter ? "var(--dash-accent)" : "var(--dash-bg-card)",
             fontWeight: 700,
             fontSize: 13,
           }}
@@ -103,10 +135,10 @@ export default async function SessionsPage({
           style={{
             padding: "8px 16px",
             borderRadius: 10,
-            border: "1px solid #eee",
+            border: "1px solid var(--dash-border)",
             textDecoration: "none",
             color: feedbackFilter === "down" ? "#fff" : "#b00020",
-            backgroundColor: feedbackFilter === "down" ? "#b00020" : "#fff",
+            backgroundColor: feedbackFilter === "down" ? "#b00020" : "var(--dash-bg-card)",
             fontWeight: 800,
             fontSize: 13,
           }}
@@ -118,10 +150,10 @@ export default async function SessionsPage({
           style={{
             padding: "8px 16px",
             borderRadius: 10,
-            border: "1px solid #eee",
+            border: "1px solid var(--dash-border)",
             textDecoration: "none",
             color: feedbackFilter === "up" ? "#fff" : "#2E7D32",
-            backgroundColor: feedbackFilter === "up" ? "#2E7D32" : "#fff",
+            backgroundColor: feedbackFilter === "up" ? "#2E7D32" : "var(--dash-bg-card)",
             fontWeight: 700,
             fontSize: 13,
           }}
@@ -135,31 +167,52 @@ export default async function SessionsPage({
           width: "100%",
           marginTop: 16,
           borderCollapse: "collapse",
-          backgroundColor: "#fff",
+          backgroundColor: "var(--dash-bg-card)",
           borderRadius: 12,
           overflow: "hidden",
           boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+          border: "1px solid var(--dash-border)",
         }}
       >
         <thead>
           <tr
             style={{
               textAlign: "left",
-              borderBottom: "2px solid #f0f0f0",
-              backgroundColor: "#fafafa",
+              borderBottom: "2px solid var(--dash-border)",
+              backgroundColor: "var(--dash-accent-bg)",
             }}
           >
-            <th style={{ padding: 14, fontSize: 13, color: "#666" }}>Time</th>
-            <th style={{ padding: 14, fontSize: 13, color: "#666" }}>Type</th>
-            <th style={{ padding: 14, fontSize: 13, color: "#666" }}>Specialty</th>
-            <th style={{ padding: 14, fontSize: 13, color: "#666" }}>Confidence</th>
-            <th style={{ padding: 14, fontSize: 13, color: "#666" }}>Stop</th>
-            <th style={{ padding: 14, fontSize: 13, color: "#666" }}></th>
+            <th style={{ padding: 14, fontSize: 13 }}>
+              <a href={sessionsTableHref(params, "created_at")} style={{ color: "var(--dash-accent)", textDecoration: "none", fontWeight: 600 }}>
+                Time {sort === "created_at" && (ascending ? "↑" : "↓")}
+              </a>
+            </th>
+            <th style={{ padding: 14, fontSize: 13 }}>
+              <a href={sessionsTableHref(params, "envelope_type")} style={{ color: "var(--dash-accent)", textDecoration: "none", fontWeight: 600 }}>
+                Type {sort === "envelope_type" && (ascending ? "↑" : "↓")}
+              </a>
+            </th>
+            <th style={{ padding: 14, fontSize: 13 }}>
+              <a href={sessionsTableHref(params, "recommended_specialty_tr")} style={{ color: "var(--dash-accent)", textDecoration: "none", fontWeight: 600 }}>
+                Specialty {sort === "recommended_specialty_tr" && (ascending ? "↑" : "↓")}
+              </a>
+            </th>
+            <th style={{ padding: 14, fontSize: 13 }}>
+              <a href={sessionsTableHref(params, "confidence_label_tr")} style={{ color: "var(--dash-accent)", textDecoration: "none", fontWeight: 600 }}>
+                Confidence {sort === "confidence_label_tr" && (ascending ? "↑" : "↓")}
+              </a>
+            </th>
+            <th style={{ padding: 14, fontSize: 13 }}>
+              <a href={sessionsTableHref(params, "stop_reason")} style={{ color: "var(--dash-accent)", textDecoration: "none", fontWeight: 600 }}>
+                Stop {sort === "stop_reason" && (ascending ? "↑" : "↓")}
+              </a>
+            </th>
+            <th style={{ padding: 14, fontSize: 13, color: "var(--dash-text-muted)" }}></th>
           </tr>
         </thead>
         <tbody>
           {data?.map((s) => (
-            <tr key={s.id} style={{ borderBottom: "1px solid #f3f3f3" }}>
+            <tr key={s.id} style={{ borderBottom: "1px solid var(--dash-border)" }}>
               <td style={{ padding: 14, fontSize: 14 }}>
                 {new Date(s.created_at).toLocaleString("tr-TR")}
               </td>
@@ -197,14 +250,14 @@ export default async function SessionsPage({
                   ? `(${Math.round(s.confidence_0_1 * 100)}%)`
                   : ""}
               </td>
-              <td style={{ padding: 14, fontSize: 14, color: "#888" }}>
+              <td style={{ padding: 14, fontSize: 14, color: "var(--dash-text-muted)" }}>
                 {s.stop_reason ?? "-"}
               </td>
               <td style={{ padding: 14 }}>
                 <a
                   href={`/admin/sessions/${s.id}`}
                   style={{
-                    color: "#111",
+                    color: "var(--dash-accent)",
                     fontWeight: 600,
                     textDecoration: "none",
                     fontSize: 13,
@@ -219,7 +272,7 @@ export default async function SessionsPage({
             <tr>
               <td
                 colSpan={6}
-                style={{ padding: 40, textAlign: "center", color: "#999" }}
+                style={{ padding: 40, textAlign: "center", color: "var(--dash-text-muted)" }}
               >
                 No sessions found.
               </td>

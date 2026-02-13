@@ -1,5 +1,6 @@
 import { requireAdmin } from "@/lib/requireAdmin";
 import { supabaseAdmin } from "@/lib/supabaseServer";
+import { Breadcrumb } from "@/app/components/Breadcrumb";
 import fs from "fs";
 import path from "path";
 
@@ -97,9 +98,9 @@ function FilterChip({ href, active, label }: { href: string; active: boolean; la
             style={{
                 padding: "8px 12px",
                 borderRadius: 999,
-                border: "1px solid #eee",
-                background: active ? "#111" : "white",
-                color: active ? "white" : "#111",
+                border: "1px solid var(--dash-border)",
+                background: active ? "var(--dash-accent)" : "var(--dash-bg-card)",
+                color: active ? "var(--dash-bg)" : "var(--dash-text)",
                 fontWeight: 900,
                 textDecoration: "none",
                 fontSize: 12,
@@ -205,8 +206,9 @@ export default async function DeploymentsPage({
     });
 
     return (
-        <div style={{ padding: 24, fontFamily: "ui-sans-serif", background: "#fafafa", minHeight: "100vh" }}>
+        <div style={{ padding: 24, fontFamily: "ui-sans-serif", background: "var(--dash-bg)", color: "var(--dash-text)", minHeight: "100vh" }}>
             <div style={{ maxWidth: 1400, margin: "0 auto" }}>
+                <Breadcrumb items={[{ label: "Admin", href: "/admin/sessions" }, { label: "Deployments" }]} />
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                     <h1 style={{ fontSize: 26, fontWeight: 900, margin: 0 }}>Deployments</h1>
                     {health?.overall && (
@@ -223,11 +225,11 @@ export default async function DeploymentsPage({
                         </span>
                     )}
                 </div>
-                <div style={{ color: "#666", marginTop: 6 }}>
+                <div style={{ color: "var(--dash-text-muted)", marginTop: 6 }}>
                     Auto tuning & rollback history • showing <b>{sortedRows.length}</b>
                 </div>
                 {health && (
-                    <div style={{ color: "#666", marginTop: 4, fontSize: 13 }}>
+                    <div style={{ color: "var(--dash-text-muted)", marginTop: 4, fontSize: 13 }}>
                         samples: {health.samples} • low_conf: {Math.round((health.low_conf_rate ?? 0) * 100)}% • high_risk: {Math.round((health.high_risk_rate ?? 0) * 100)}%
                     </div>
                 )}
@@ -245,7 +247,7 @@ export default async function DeploymentsPage({
                         label="All"
                     />
 
-                    <span style={{ marginLeft: 8, color: "#666", fontSize: 12, alignSelf: "center" }}>Status:</span>
+                    <span style={{ marginLeft: 8, color: "var(--dash-text-muted)", fontSize: 12, alignSelf: "center" }}>Status:</span>
                     {["all", "applied", "rolled_back_pending", "rolled_back"].map((s) => (
                         <FilterChip
                             key={s}
@@ -255,7 +257,7 @@ export default async function DeploymentsPage({
                         />
                     ))}
 
-                    <span style={{ marginLeft: 8, color: "#666", fontSize: 12, alignSelf: "center" }}>Severity:</span>
+                    <span style={{ marginLeft: 8, color: "var(--dash-text-muted)", fontSize: 12, alignSelf: "center" }}>Severity:</span>
                     {["all", "ok", "info", "warning", "critical"].map((s) => (
                         <FilterChip
                             key={s}
@@ -274,10 +276,10 @@ export default async function DeploymentsPage({
                 )}
 
                 {/* Table */}
-                <div style={{ marginTop: 14, background: "white", borderRadius: 16, border: "1px solid #eee", overflow: "hidden" }}>
+                <div style={{ marginTop: 14, background: "var(--dash-bg-card)", borderRadius: 16, border: "1px solid var(--dash-border)", overflow: "hidden" }}>
                     <table style={{ width: "100%", borderCollapse: "collapse" }}>
                         <thead>
-                            <tr style={{ background: "#f9fafb", borderBottom: "1px solid #eee" }}>
+                            <tr style={{ background: "var(--dash-accent-bg)", borderBottom: "1px solid var(--dash-border)" }}>
                                 <th style={{ padding: 12, textAlign: "left", fontWeight: 900, fontSize: 12 }}>Deployed</th>
                                 <th style={{ padding: 12, textAlign: "left", fontWeight: 900, fontSize: 12 }}>Title</th>
                                 <th style={{ padding: 12, textAlign: "left", fontWeight: 900, fontSize: 12 }}>Status</th>
@@ -287,8 +289,8 @@ export default async function DeploymentsPage({
                         </thead>
                         <tbody>
                             {sortedRows.map((d: any) => (
-                                <tr key={d.id} style={{ borderTop: "1px solid #f3f4f6" }}>
-                                    <td style={{ padding: 12, fontSize: 12, color: "#666" }}>
+                                <tr key={d.id} style={{ borderTop: "1px solid var(--dash-border)" }}>
+                                    <td style={{ padding: 12, fontSize: 12, color: "var(--dash-text-muted)" }}>
                                         {new Date(d.created_at).toLocaleString()}
                                     </td>
                                     <td style={{ padding: 12, fontSize: 14, fontWeight: 700 }}>
@@ -311,7 +313,7 @@ export default async function DeploymentsPage({
                                         {d._sev ? (
                                             <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                                                 <SeverityBadge s={d._sev} />
-                                                <a href={`/admin/deployments/${d.id}/impact`} style={{ fontWeight: 800, color: "#111", textDecoration: "none", fontSize: 12 }}>
+                                                <a href={`/admin/deployments/${d.id}/impact`} style={{ fontWeight: 800, color: "var(--dash-accent)", textDecoration: "none", fontSize: 12 }}>
                                                     View →
                                                 </a>
                                             </div>
@@ -319,7 +321,7 @@ export default async function DeploymentsPage({
                                             <span title="No impact report found" style={{ color: "#9ca3af" }}>—</span>
                                         )}
                                     </td>
-                                    <td style={{ padding: 12, fontSize: 11, fontFamily: "monospace", color: "#666" }}>
+                                    <td style={{ padding: 12, fontSize: 11, fontFamily: "monospace", color: "var(--dash-text-muted)" }}>
                                         {d.git_sha ? d.git_sha.slice(0, 7) : "—"}
                                     </td>
                                 </tr>
@@ -328,7 +330,7 @@ export default async function DeploymentsPage({
                     </table>
 
                     {sortedRows.length === 0 && (
-                        <div style={{ padding: 40, textAlign: "center", color: "#9ca3af" }}>
+                        <div style={{ padding: 40, textAlign: "center", color: "var(--dash-text-muted)" }}>
                             No deployments found
                         </div>
                     )}

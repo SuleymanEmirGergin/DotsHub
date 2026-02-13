@@ -1,5 +1,6 @@
 import { requireAdmin } from "@/lib/requireAdmin";
 import { supabaseAdmin } from "@/lib/supabaseServer";
+import { Breadcrumb } from "@/app/components/Breadcrumb";
 
 export const dynamic = "force-dynamic";
 
@@ -30,22 +31,37 @@ function StatusBadge({ status }: { status: string }) {
     );
 }
 
+const TUNING_SORT_COLUMNS = ["created_at", "task_type", "title", "status"] as const;
+
+function tuningTableHref(params: { status?: string; type?: string; sort?: string; order?: string }, col: string) {
+    const nextOrder = params.sort === col && params.order === "desc" ? "asc" : "desc";
+    const sp = new URLSearchParams();
+    if (params.status && params.status !== "all") sp.set("status", params.status);
+    if (params.type && params.type !== "all") sp.set("type", params.type);
+    sp.set("sort", col);
+    sp.set("order", nextOrder);
+    const s = sp.toString();
+    return s ? `/admin/tuning-tasks?${s}` : "/admin/tuning-tasks";
+}
+
 export default async function TuningTasksPage({
     searchParams,
 }: {
-    searchParams: Promise<{ status?: string; type?: string }>;
+    searchParams: Promise<{ status?: string; type?: string; sort?: string; order?: string }>;
 }) {
     await requireAdmin();
     const params = await searchParams;
     const statusFilter = params.status ?? "all";
     const typeFilter = params.type ?? "all";
+    const sortCol = TUNING_SORT_COLUMNS.includes(params.sort as any) ? params.sort : "created_at";
+    const ascending = params.order === "asc";
 
     const sb = supabaseAdmin();
 
     let q = sb
         .from("tuning_tasks")
         .select("id,created_at,task_type,severity,title,description,status,session_id,patch")
-        .order("created_at", { ascending: false })
+        .order(sortCol, { ascending })
         .limit(100);
 
     if (statusFilter !== "all") {
@@ -62,16 +78,19 @@ export default async function TuningTasksPage({
     const taskCount = tasks?.length ?? 0;
 
     return (
-        <div style={{ padding: 24, fontFamily: "ui-sans-serif", background: "#fafafa", minHeight: "100vh" }}>
+        <div style={{ padding: 24, fontFamily: "ui-sans-serif", background: "var(--dash-bg)", color: "var(--dash-text)", minHeight: "100vh" }}>
             <div style={{ maxWidth: 1400, margin: "0 auto" }}>
+                <Breadcrumb items={[{ label: "Admin", href: "/admin/sessions" }, { label: "Tuning tasks" }]} />
                 <h1 style={{ fontSize: 26, fontWeight: 900, margin: 0 }}>Tuning Tasks</h1>
-                <div style={{ color: "#666", marginTop: 6 }}>
+                <div style={{ color: "var(--dash-text-muted)", marginTop: 6 }}>
                     Auto-generated improvement tasks • showing <b>{taskCount}</b>
+                    {" · "}
+                    <a href="/api/admin/export/tuning-tasks" download style={{ color: "var(--dash-accent)", fontWeight: 700, textDecoration: "none" }}>Export CSV</a>
                 </div>
 
                 {/* Filters */}
                 <div style={{ marginTop: 14, display: "flex", gap: 10, flexWrap: "wrap" }}>
-                    <span style={{ color: "#666", fontSize: 12, alignSelf: "center" }}>Status:</span>
+                    <span style={{ color: "var(--dash-text-muted)", fontSize: 12, alignSelf: "center" }}>Status:</span>
                     {["all", "open", "accepted", "rejected", "done"].map((s) => (
                         <a
                             key={s}
@@ -79,9 +98,9 @@ export default async function TuningTasksPage({
                             style={{
                                 padding: "6px 12px",
                                 borderRadius: 999,
-                                border: "1px solid #eee",
-                                background: statusFilter === s ? "#111" : "white",
-                                color: statusFilter === s ? "white" : "#111",
+                                border: "1px solid var(--dash-border)",
+                                background: statusFilter === s ? "var(--dash-accent)" : "var(--dash-bg-card)",
+                                color: statusFilter === s ? "var(--dash-bg)" : "var(--dash-text)",
                                 fontWeight: 800,
                                 textDecoration: "none",
                                 fontSize: 12,
@@ -91,7 +110,7 @@ export default async function TuningTasksPage({
                         </a>
                     ))}
 
-                    <span style={{ marginLeft: 8, color: "#666", fontSize: 12, alignSelf: "center" }}>Type:</span>
+                    <span style={{ marginLeft: 8, color: "var(--dash-text-muted)", fontSize: 12, alignSelf: "center" }}>Type:</span>
                     {["all", "KEYWORD_MISSING", "SPECIALTY_CONFUSION", "QUESTION_WEAKNESS"].map((t) => (
                         <a
                             key={t}
@@ -99,9 +118,9 @@ export default async function TuningTasksPage({
                             style={{
                                 padding: "6px 12px",
                                 borderRadius: 999,
-                                border: "1px solid #eee",
-                                background: typeFilter === t ? "#111" : "white",
-                                color: typeFilter === t ? "white" : "#111",
+                                border: "1px solid var(--dash-border)",
+                                background: typeFilter === t ? "var(--dash-accent)" : "var(--dash-bg-card)",
+                                color: typeFilter === t ? "var(--dash-bg)" : "var(--dash-text)",
                                 fontWeight: 800,
                                 textDecoration: "none",
                                 fontSize: 12,
@@ -113,15 +132,23 @@ export default async function TuningTasksPage({
                 </div>
 
                 {/* Table */}
-                <div style={{ marginTop: 14, background: "white", borderRadius: 16, border: "1px solid #eee", overflow: "hidden" }}>
+                <div style={{ marginTop: 14, background: "var(--dash-bg-card)", borderRadius: 16, border: "1px solid var(--dash-border)", overflow: "hidden" }}>
                     <table style={{ width: "100%", borderCollapse: "collapse" }}>
                         <thead>
-                            <tr style={{ background: "#f9fafb", borderBottom: "1px solid #eee" }}>
-                                <th style={{ padding: 12, textAlign: "left", fontWeight: 900, fontSize: 12 }}>Created</th>
-                                <th style={{ padding: 12, textAlign: "left", fontWeight: 900, fontSize: 12 }}>Type</th>
-                                <th style={{ padding: 12, textAlign: "left", fontWeight: 900, fontSize: 12 }}>Title</th>
+                            <tr style={{ background: "var(--dash-accent-bg)", borderBottom: "1px solid var(--dash-border)" }}>
+                                <th style={{ padding: 12, textAlign: "left", fontWeight: 900, fontSize: 12 }}>
+                                    <a href={tuningTableHref(params, "created_at")} style={{ color: "var(--dash-accent)", textDecoration: "none" }}>Created {sortCol === "created_at" && (ascending ? "↑" : "↓")}</a>
+                                </th>
+                                <th style={{ padding: 12, textAlign: "left", fontWeight: 900, fontSize: 12 }}>
+                                    <a href={tuningTableHref(params, "task_type")} style={{ color: "var(--dash-accent)", textDecoration: "none" }}>Type {sortCol === "task_type" && (ascending ? "↑" : "↓")}</a>
+                                </th>
+                                <th style={{ padding: 12, textAlign: "left", fontWeight: 900, fontSize: 12 }}>
+                                    <a href={tuningTableHref(params, "title")} style={{ color: "var(--dash-accent)", textDecoration: "none" }}>Title {sortCol === "title" && (ascending ? "↑" : "↓")}</a>
+                                </th>
                                 <th style={{ padding: 12, textAlign: "left", fontWeight: 900, fontSize: 12 }}>Severity</th>
-                                <th style={{ padding: 12, textAlign: "left", fontWeight: 900, fontSize: 12 }}>Status</th>
+                                <th style={{ padding: 12, textAlign: "left", fontWeight: 900, fontSize: 12 }}>
+                                    <a href={tuningTableHref(params, "status")} style={{ color: "var(--dash-accent)", textDecoration: "none" }}>Status {sortCol === "status" && (ascending ? "↑" : "↓")}</a>
+                                </th>
                                 <th style={{ padding: 12, textAlign: "left", fontWeight: 900, fontSize: 12 }}>Patch</th>
                                 <th style={{ padding: 12, textAlign: "left", fontWeight: 900, fontSize: 12 }}>Actions</th>
                             </tr>
@@ -131,8 +158,8 @@ export default async function TuningTasksPage({
                                 const hasPatch = task.patch && Object.keys(task.patch).length > 0;
 
                                 return (
-                                    <tr key={task.id} style={{ borderTop: "1px solid #f3f4f6" }}>
-                                        <td style={{ padding: 12, fontSize: 12, color: "#666" }}>
+                                    <tr key={task.id} style={{ borderTop: "1px solid var(--dash-border)" }}>
+                                        <td style={{ padding: 12, fontSize: 12, color: "var(--dash-text-muted)" }}>
                                             {new Date(task.created_at).toLocaleDateString()}
                                         </td>
                                         <td style={{ padding: 12, fontSize: 12 }}>
@@ -140,7 +167,7 @@ export default async function TuningTasksPage({
                                         </td>
                                         <td style={{ padding: 12, fontSize: 14, fontWeight: 700 }}>
                                             {task.title}
-                                            <div style={{ fontSize: 12, color: "#666", marginTop: 4 }}>
+                                            <div style={{ fontSize: 12, color: "var(--dash-text-muted)", marginTop: 4 }}>
                                                 {task.description.slice(0, 80)}...
                                             </div>
                                         </td>
@@ -162,15 +189,15 @@ export default async function TuningTasksPage({
                                                 {task.session_id && (
                                                     <a
                                                         href={`/admin/sessions/${task.session_id}/replay`}
-                                                        style={{ fontSize: 12, fontWeight: 800, color: "#111", textDecoration: "none" }}
+                                                        style={{ fontSize: 12, fontWeight: 800, color: "var(--dash-text)", textDecoration: "none" }}
                                                     >
                                                         Replay
                                                     </a>
                                                 )}
                                                 {!hasPatch && task.status === "open" && (
                                                     <button
-                                                        onClick={() => fetch(`/v1/admin/tuning-tasks/${task.id}/generate-patch`, { method: "POST" }).then(() => location.reload())}
-                                                        style={{ fontSize: 12, fontWeight: 800, background: "#111", color: "white", border: "none", padding: "4px 8px", borderRadius: 6, cursor: "pointer" }}
+                                                        onClick={() => fetch(`/api/admin/tuning-tasks/${task.id}/generate-patch`, { method: "POST" }).then(() => location.reload())}
+                                                        style={{ fontSize: 12, fontWeight: 800, background: "var(--dash-accent)", color: "var(--dash-bg)", border: "none", padding: "4px 8px", borderRadius: 6, cursor: "pointer" }}
                                                     >
                                                         Generate Patch
                                                     </button>
@@ -184,7 +211,7 @@ export default async function TuningTasksPage({
                     </table>
 
                     {taskCount === 0 && (
-                        <div style={{ padding: 40, textAlign: "center", color: "#9ca3af" }}>
+                        <div style={{ padding: 40, textAlign: "center", color: "var(--dash-text-muted)" }}>
                             No tuning tasks found
                         </div>
                     )}

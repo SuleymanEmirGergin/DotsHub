@@ -8,6 +8,11 @@ export async function GET(request: Request) {
 
   if (code) {
     const cookieStore = await cookies();
+    type CookieToSet = {
+      name: string;
+      value: string;
+      options?: Parameters<typeof cookieStore.set>[2];
+    };
 
     const sb = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -17,8 +22,8 @@ export async function GET(request: Request) {
           getAll() {
             return cookieStore.getAll();
           },
-          setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) =>
+          setAll(cookiesToSet: CookieToSet[]) {
+            cookiesToSet.forEach(({ name, value, options }: CookieToSet) =>
               cookieStore.set(name, value, options),
             );
           },
