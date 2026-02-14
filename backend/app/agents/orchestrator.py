@@ -37,6 +37,12 @@ from app.agents.red_flag_questions import (
     get_red_flag_by_id,
     should_escalate_on_yes,
 )
+from app.agents.context_questions import (
+    get_next_context_question,
+    parse_context_answer,
+)
+from app.free_text_parse import parse_free_text_answer, parsed_to_symptom_item
+from app.core.i18n import get_text
 from app.models.schemas import (
     SafetyGuardOutput,
     InterpreterOutput,
@@ -127,6 +133,10 @@ class SessionState:
         self.answers: Dict[str, str] = {}  # canonical -> yes/no/value
         self.asked_red_flag_ids: Set[str] = set()  # red-flag questions already asked
         self._last_red_flag_id: Optional[str] = None  # last question was this red-flag (for escalate on yes)
+        self.asked_context_ids: Set[str] = set()  # demographic/context questions already asked
+        self._last_context_id: Optional[str] = None  # last question was this context (parse answer into profile)
+        self.parsed_answers: Dict[str, Dict[str, Any]] = {}  # canonical -> {duration_days?, severity_0_10?, timing?}
+        self.locale: str = "tr-TR"  # for i18n (question text, messages)
 
     def add_message(self, role: str, content: str):
         self.conversation_history.append({"role": role, "content": content})
@@ -297,6 +307,9 @@ class Orchestrator:
             disease_candidates=state.disease_candidates,
             known_symptoms=state.known_symptoms | state.denied_symptoms,
             asked_symptoms=state.asked_symptoms,
+            denied_symptoms=state.denied_symptoms,
+            present_symptoms=state.known_symptoms,
+            locale=state.locale,
         )
 
         if result is None:
@@ -353,9 +366,19 @@ class Orchestrator:
         if state.top_specialty:
             top_score = state.top_specialty.get("final_score", state.top_specialty.get("score", 0))
 
+        structured_for_stop = state.structured_symptoms.model_dump() if state.structured_symptoms else {}
+        if state.parsed_answers:
+            extra = []
+            for canon, p in state.parsed_answers.items():
+                item = parsed_to_symptom_item(canon, p)
+                if item:
+                    extra.append(item)
+            if extra:
+                structured_for_stop = dict(structured_for_stop) if structured_for_stop else {}
+                structured_for_stop["symptoms"] = list(structured_for_stop.get("symptoms", [])) + extra
         stop_condition_engine.update_status_from_symptoms(
             state.stop_condition_status,
-            state.structured_symptoms.model_dump() if state.structured_symptoms else None,
+            structured_for_stop or None,
             state.negatives_checked,
             top_score,
         )
@@ -406,8 +429,8 @@ class Orchestrator:
                 ctx.age = profile.age
             if not ctx.sex and profile.sex:
                 ctx.sex = profile.sex
-            if profile.chronic_conditions:
-                ctx.chronic_conditions_tr = list(set(ctx.chronic_conditions_tr + profile.chronic_conditions))
+            if profile.chronic_conditions_tr:
+                ctx.chronic_conditions_tr = list(set(ctx.chronic_conditions_tr + profile.chronic_conditions_tr))
 
         # Initialize known symptoms from interpreter
         state.known_symptoms = state.get_canonical_symptoms_from_interpreter()
@@ -560,7 +583,17 @@ class Orchestrator:
 
     def _should_stop_v4(self, state: SessionState) -> bool:
         """Deterministic stop check using stop_rules.json. Sets state.stop_reason."""
-        max_q = _STOP_RULES.get("max_questions", 6)
+        # Use lower max_questions when scenario suggests emergency (fewer questions, faster result)
+        emergency_ids = {str(s).lower() for s in (_STOP_RULES.get("emergency_specialty_ids") or [])}
+        emergency_kw = _STOP_RULES.get("emergency_disease_keywords") or []
+        is_emergency_scenario = False
+        if state.top_specialty and ((state.top_specialty.get("id") or "").lower() in emergency_ids):
+            is_emergency_scenario = True
+        if state.disease_candidates and emergency_kw:
+            top_label = (state.disease_candidates[0].get("disease_label") or "") or ""
+            if any(kw in top_label for kw in emergency_kw):
+                is_emergency_scenario = True
+        max_q = _STOP_RULES.get("max_questions_emergency", 4) if is_emergency_scenario else _STOP_RULES.get("max_questions", 6)
         conf = _STOP_RULES.get("confidence_rules", {})
         high_disease = conf.get("high_confidence_disease_score", 0.45)
         min_gap = conf.get("min_specialty_score_gap", 2.0)
@@ -607,11 +640,21 @@ class Orchestrator:
             if k not in state.known_symptoms:
                 label = "var" if v.lower() in ("yes", "evet", "var") else "yok"
                 summary.append(f"{k.capitalize()}: {label}.")
+        for k, parsed in sorted(state.parsed_answers.items()):
+            parts = []
+            if parsed.get("duration_days") is not None:
+                parts.append(f"{parsed['duration_days']} gündür")
+            if parsed.get("severity_0_10") is not None:
+                parts.append(f"şiddet {parsed['severity_0_10']:.0f}/10")
+            if parsed.get("timing"):
+                parts.append(parsed["timing"])
+            if parts:
+                summary.append(f"{k.capitalize()}: {', '.join(parts)}.")
 
-        # Safety notes
+        # Safety notes (locale-aware)
         safety_notes = [
-            "Bu bir ön değerlendirmedir, tıbbi teşhis değildir.",
-            "Şikayetler artarsa veya yeni belirtiler eklenirse doktora başvur.",
+            get_text(state.locale, "safety_note_1"),
+            get_text(state.locale, "safety_note_2"),
         ]
         top_id = state.top_specialty.get("id", "") if state.top_specialty else ""
         if top_id in ("neurology", "cardiology"):
@@ -644,6 +687,7 @@ class Orchestrator:
             "top_conditions": top_conditions,
             "doctor_ready_summary_tr": summary,
             "safety_notes_tr": safety_notes,
+            "parsed_answers": dict(state.parsed_answers),
         }
 
     async def handle_turn(
@@ -652,6 +696,7 @@ class Orchestrator:
         user_message: str,
         answer_canonical: Optional[str] = None,
         answer_value: Optional[str] = None,
+        locale: Optional[str] = None,
     ) -> dict:
         """Unified triage turn handler — single entry point.
 
@@ -670,15 +715,31 @@ class Orchestrator:
                     "type": "ERROR",
                     "session_id": session_id,
                     "turn_index": state.turn_index,
-                    "payload": {"code": "SESSION_COMPLETE", "message_tr": "Bu oturum zaten tamamlandı."},
+                    "payload": {"code": "SESSION_COMPLETE", "message_tr": get_text(locale or state.locale, "SESSION_COMPLETE")},
                 }
 
         state.turn_index += 1
+        if locale is not None:
+            state.locale = locale.strip() or "tr-TR"
 
         # ── Apply incoming data ──
         if user_message and user_message.strip():
             state.raw_texts.append(user_message.strip())
             state.add_message("user", user_message.strip())
+
+        # Context/demographic: last question was context; parse answer and update profile
+        consumed_by_context = False
+        if state._last_context_id and (answer_value or (user_message and user_message.strip() and not is_new)):
+            answer_for_context = (answer_value or user_message or "").strip()
+            consumed_by_context = True
+            updates = parse_context_answer(state._last_context_id, answer_for_context)
+            if updates:
+                if state.profile is None:
+                    state.profile = UserProfile()
+                for key, value in updates.items():
+                    setattr(state.profile, key, value)
+            state.asked_context_ids.add(state._last_context_id)
+            state._last_context_id = None
 
         # Red-flag: last question was red-flag; treat this message as red-flag answer only (do not update canonical answer)
         consumed_by_red_flag = False
@@ -687,7 +748,9 @@ class Orchestrator:
             consumed_by_red_flag = True
             if should_escalate_on_yes(answer_for_redflag):
                 rf = get_red_flag_by_id(state._last_red_flag_id)
-                reason = rf.get("reason_tr", "Acil değerlendirme önerilir.") if rf else "Acil değerlendirme önerilir."
+                use_en = state.locale and state.locale.strip().lower().startswith("en")
+                reason = (rf.get("reason_en") if use_en and rf else None) or (rf.get("reason_tr", "Acil değerlendirme önerilir.") if rf else "Acil değerlendirme önerilir.")
+                instr = ["Go to the emergency room or call 112.", "If alone, tell someone; do not drive."] if use_en else ["Derhal acil servise başvur veya 112'yi ara.", "Yalnızsan birine haber ver, araç kullanma."]
                 state.asked_red_flag_ids.add(state._last_red_flag_id)
                 state._last_red_flag_id = None
                 state.is_complete = True
@@ -698,19 +761,20 @@ class Orchestrator:
                     "payload": {
                         "urgency": "EMERGENCY",
                         "reason_tr": reason,
-                        "instructions_tr": [
-                            "Derhal acil servise başvur veya 112'yi ara.",
-                            "Yalnızsan birine haber ver, araç kullanma.",
-                        ],
+                        "instructions_tr": instr,
                     },
                 }
             state.asked_red_flag_ids.add(state._last_red_flag_id)
             state._last_red_flag_id = None
 
-        if not consumed_by_red_flag and answer_canonical and answer_value is not None:
+        if not consumed_by_red_flag and not consumed_by_context and answer_canonical and answer_value is not None:
             state.answers[answer_canonical] = answer_value
             state.asked_symptoms.add(answer_canonical)
             state._last_asked_canonical = None
+            # Parse free-text into structured (duration_days, severity_0_10, timing) for scoring/stop
+            parsed = parse_free_text_answer(answer_canonical, answer_value)
+            if parsed:
+                state.parsed_answers[answer_canonical] = parsed
             # Update known/denied
             if answer_value.lower() in ("yes", "evet", "var"):
                 state.known_symptoms.add(answer_canonical)
@@ -751,9 +815,9 @@ class Orchestrator:
             state.known_symptoms |= state.get_canonical_symptoms_from_interpreter()
 
         # ── 3. Layer B: Rules scorer ──
-        if user_message and user_message.strip() and not consumed_by_red_flag:
+        if user_message and user_message.strip() and not consumed_by_red_flag and not consumed_by_context:
             self._run_scorer(state, user_message)
-        if not consumed_by_red_flag and answer_canonical and answer_value and answer_value.lower() in ("yes", "evet", "var"):
+        if not consumed_by_red_flag and not consumed_by_context and answer_canonical and answer_value and answer_value.lower() in ("yes", "evet", "var"):
             self._run_scorer(state, answer_canonical)
 
         # ── 4. Layer A: Candidate generator ──
@@ -768,24 +832,42 @@ class Orchestrator:
         # ── 7. Stop check ──
         should_stop = self._should_stop_v4(state)
 
-        # Red-flag question (once per matching context) or discriminative question
+        # Context question (demographic) or red-flag or discriminative question
         next_q = None
         if not should_stop:
-            red_flag = get_red_flag_question(state.known_symptoms, state.asked_red_flag_ids)
-            if red_flag:
-                state.asked_red_flag_ids.add(red_flag["id"])
-                state._last_red_flag_id = red_flag["id"]
+            _use_en = state.locale and state.locale.strip().lower().startswith("en")
+            ctx_q = get_next_context_question(state, state.asked_context_ids)
+            if ctx_q:
+                state.asked_context_ids.add(ctx_q["id"])
+                state._last_context_id = ctx_q["id"]
+                _qt = (ctx_q.get("question_en") if _use_en else None) or ctx_q.get("question_tr", "")
+                _qc = (ctx_q.get("choices_en") if _use_en else None) or ctx_q.get("choices_tr") or []
                 next_q = QuestionOutput(
-                    question_tr=red_flag["question_tr"],
-                    answer_type=red_flag.get("answer_type", "yes_no"),
-                    choices_tr=["Evet", "Hayır"],
-                    why_this_question_tr=f"Kontrol: {red_flag['id']}",
+                    question_tr=_qt,
+                    answer_type=ctx_q.get("answer_type", "free_text"),
+                    choices_tr=_qc,
+                    why_this_question_tr=f"Bağlam: {ctx_q['id']}",
                     stop=False,
                 )
             if next_q is None:
+                red_flag = get_red_flag_question(state.known_symptoms, state.asked_red_flag_ids)
+                if red_flag:
+                    state.asked_red_flag_ids.add(red_flag["id"])
+                    state._last_red_flag_id = red_flag["id"]
+                    _qt = (red_flag.get("question_en") if _use_en else None) or red_flag.get("question_tr", "")
+                    _qc = ["Yes", "No"] if _use_en else ["Evet", "Hayır"]
+                    next_q = QuestionOutput(
+                        question_tr=_qt,
+                        answer_type=red_flag.get("answer_type", "yes_no"),
+                        choices_tr=_qc,
+                        why_this_question_tr=f"Kontrol: {red_flag['id']}",
+                        stop=False,
+                    )
+            if next_q is None:
                 next_q = self._run_question_selector(state)
                 if next_q is not None:
-                    state._last_red_flag_id = None  # normal question, clear red-flag tracking
+                    state._last_red_flag_id = None
+                    state._last_context_id = None
             if next_q is None:
                 # Try LLM fallback... but if we don't want LLM, mark stop
                 state.stop_reason = "NO_MORE_DISCRIMINATIVE_QUESTIONS"

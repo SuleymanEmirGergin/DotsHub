@@ -25,6 +25,7 @@ from app.models.schemas import (
 )
 from app.services.facility_discovery import discover_facilities, DEFAULT_CITY
 from app.core.config import settings
+from app.core.i18n import get_text
 
 from copy import deepcopy
 
@@ -231,6 +232,7 @@ async def _handle_turn_legacy(request: TriageTurnRequest) -> Envelope:
         user_message=request.user_message or "",
         answer_canonical=request.answer.canonical if request.answer else None,
         answer_value=request.answer.value if request.answer else None,
+        locale=request.locale or "tr-TR",
     )
     facility_discovery = _build_facility_discovery(
         result["type"], result["payload"], lat=request.lat, lon=request.lon
@@ -275,7 +277,7 @@ async def triage_turn(request: TriageTurnRequest):
                     turn_index=0,
                     payload={
                         "code": "EMPTY_INPUT",
-                        "message_tr": "Semptomunu biraz daha tarif eder misin?",
+                        "message_tr": get_text(request.locale, "EMPTY_INPUT"),
                     },
                     meta=_make_meta(),
                 )
@@ -304,7 +306,7 @@ async def triage_turn(request: TriageTurnRequest):
             turn_index=0,
             payload={
                 "code": "TURN_FAILED",
-                "message_tr": f"Bir hata oluştu: {str(e)}",
+                "message_tr": get_text(getattr(request, "locale", None), "TURN_FAILED") + ": " + str(e),
                 "retryable": True,
             },
             meta=_make_meta(),

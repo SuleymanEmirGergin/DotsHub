@@ -1,0 +1,74 @@
+{
+  "version": "0.1.0",
+  "description": "Koşullu atlama: Belirti yok denmişse ilgili detay soruları sorulmaz.",
+  "skip_rules": [
+    {
+      "canonical_symptom": "balgam",
+      "skip_if_denied": ["öksürük"]
+    },
+    {
+      "canonical_symptom": "öksürük süresi",
+      "skip_if_denied": ["öksürük"]
+    },
+    {
+      "canonical_symptom": "öksürük gece artışı",
+      "skip_if_denied": ["öksürük"]
+    },
+    {
+      "canonical_symptom": "balgam rengi",
+      "skip_if_denied": ["öksürük", "balgam"]
+    },
+    {
+      "canonical_symptom": "baş ağrısı süresi",
+      "skip_if_denied": ["baş ağrısı"]
+    },
+    {
+      "canonical_symptom": "baş ağrısı sabah artışı",
+      "skip_if_denied": ["baş ağrısı"]
+    },
+    {
+      "canonical_symptom": "göğüs ağrısı süresi",
+      "skip_if_denied": ["göğüs ağrısı"]
+    },
+    {
+      "canonical_symptom": "göğüs ağrısı sabit mi",
+      "skip_if_denied": ["göğüs ağrısı"]
+    },
+    {
+      "canonical_symptom": "göğüste baskı",
+      "skip_if_denied": ["göğüs ağrısı"]
+    },
+    {
+      "canonical_symptom": "ateş süresi",
+      "skip_if_denied": ["ateş"]
+    },
+    {
+      "canonical_symptom": "ateş derecesi",
+      "skip_if_denied": ["ateş"]
+    },
+    {
+      "canonical_symptom": "boğaz ağrısı süresi",
+      "skip_if_denied": ["boğaz ağrısı"]
+    },
+    {
+      "canonical_symptom": "karın ağrısı süresi",
+      "skip_if_denied": ["karın ağrısı"]
+    },
+    {
+      "canonical_symptom": "karın ağrısı yeri",
+      "skip_if_denied": ["karın ağrısı"]
+    },
+    {
+      "canonical_symptom": "ishal süresi",
+      "skip_if_denied": ["ishal"]
+    },
+    {
+      "canonical_symptom": "kusma sıklığı",
+      "skip_if_denied": ["kusma"]
+    },
+    {
+      "canonical_symptom": "nefes darlığı eforla",
+      "skip_if_denied": ["nefes darlığı"]
+    }
+  ]
+}

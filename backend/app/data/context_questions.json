@@ -1,0 +1,10 @@
+{
+  "version": "0.1.0",
+  "description": "Bağlam ve demografik sorular. Eksik profil alanları için sohbet içinde sorulur.",
+  "questions": [
+    {"id": "age", "question_tr": "Yaşınız kaç? (Örn: 25)", "question_en": "How old are you? (e.g. 25)", "answer_type": "free_text", "profile_field": "age", "when_ask": "always", "order": 1},
+    {"id": "sex", "question_tr": "Cinsiyetiniz?", "question_en": "What is your sex?", "answer_type": "choice", "choices_tr": ["Erkek", "Kadın", "Belirtmek istemiyorum"], "choices_en": ["Male", "Female", "Prefer not to say"], "profile_field": "sex", "when_ask": "always", "order": 2},
+    {"id": "pregnancy", "question_tr": "Hamile misiniz veya hamilelik ihtimali var mı?", "question_en": "Are you pregnant or could you be pregnant?", "answer_type": "yes_no", "profile_field": "pregnancy", "when_ask": "when_female_and_relevant", "when_symptoms_any": ["karın ağrısı", "kanama", "lekelenme", "vajinal kanama"], "order": 3},
+    {"id": "chronic", "question_tr": "Bilinen kronik hastalığınız veya sürekli kullandığınız ilacınız var mı?", "question_en": "Do you have any known chronic condition or take regular medication?", "answer_type": "yes_no", "profile_field": "chronic_conditions_tr", "when_ask": "always", "order": 4}
+  ]
+}

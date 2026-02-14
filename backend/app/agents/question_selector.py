@@ -36,21 +36,40 @@ class QuestionSelector:
     """Deterministic discriminative question selection."""
 
     def __init__(self):
-        self._question_bank: Dict[str, Dict] = {}  # canonical_symptom -> {question_tr, answer_type}
+        self._question_bank: Dict[str, Dict] = {}  # canonical_symptom -> {question_tr, answer_type, priority_when_known?}
         self._kaggle_to_canonical: Dict[str, Optional[str]] = {}
         self._canonical_to_kaggle: Dict[str, List[str]] = {}
+        self._skip_if_denied: Dict[str, List[str]] = {}  # canonical -> list of canonicals; if any denied, skip
         self._load()
 
     def _load(self):
-        """Load question bank and mappings."""
-        # Question bank
+        """Load question bank, mappings, and skip rules."""
+        # Question bank (TR base)
         bank_data = _load_json(_DATA_DIR / "symptom_question_bank_tr.json")
         for q in bank_data.get("questions", []):
             self._question_bank[q["canonical_symptom"]] = {
                 "question_tr": q["question_tr"],
                 "answer_type": q.get("answer_type", "yes_no"),
                 "choices_tr": q.get("choices_tr"),
+                "priority_when_known": q.get("priority_when_known"),
             }
+        # Merge EN translations when available
+        en_data = _load_json(_DATA_DIR / "symptom_question_bank_en.json")
+        for q in en_data.get("questions", []):
+            canon = q.get("canonical_symptom")
+            if canon and canon in self._question_bank:
+                if q.get("question_en"):
+                    self._question_bank[canon]["question_en"] = q["question_en"]
+                if q.get("choices_en"):
+                    self._question_bank[canon]["choices_en"] = q["choices_en"]
+
+        # Skip rules: don't ask detail if parent symptom was denied
+        skip_data = _load_json(_DATA_DIR / "question_skip_rules.json")
+        for rule in skip_data.get("skip_rules", []):
+            canon = rule.get("canonical_symptom")
+            prereq = rule.get("skip_if_denied") or []
+            if canon:
+                self._skip_if_denied[canon] = prereq
 
         # Kaggle-to-canonical mapping
         self._kaggle_to_canonical = _load_json(_CACHE_DIR / "kaggle_to_canonical.json")
@@ -74,14 +93,19 @@ class QuestionSelector:
         disease_candidates: List[Dict[str, Any]],
         known_symptoms: Set[str],
         asked_symptoms: Set[str],
+        denied_symptoms: Optional[Set[str]] = None,
+        present_symptoms: Optional[Set[str]] = None,
+        locale: Optional[str] = None,
     ) -> Optional[Dict[str, Any]]:
         """Select the most discriminative question.
 
         Args:
-            disease_candidates: From candidate_generator. Each has "disease_label",
-                "matched_symptoms", "missing_symptoms".
-            known_symptoms: Canonical symptoms already confirmed/denied.
+            disease_candidates: From candidate_generator.
+            known_symptoms: Canonical symptoms already confirmed or denied (don't ask again).
             asked_symptoms: Canonical symptoms already asked about.
+            denied_symptoms: Canonical symptoms user said no to; used for skip rules.
+            present_symptoms: Canonical symptoms user said yes to; used for priority boost.
+            locale: e.g. "tr-TR" or "en-US"; selects question_tr vs question_en (fallback: question_tr).
 
         Returns:
             Dict with "canonical_symptom", "question_tr", "answer_type"
@@ -92,11 +116,12 @@ class QuestionSelector:
             logger.info("QuestionSelector: fewer than 2 candidates, no discrimination needed")
             return None
 
+        denied = denied_symptoms or set()
+        present = present_symptoms or set()
+
         # Collect all symptoms across candidates (in Kaggle space)
-        # and compute discriminative scores
         symptom_counts: Dict[str, int] = {}
         for candidate in disease_candidates:
-            # Combine matched + missing to get full disease symptom set
             all_syms = set(candidate.get("matched_symptoms", []))
             all_syms.update(candidate.get("missing_symptoms", []))
             for sym in all_syms:
@@ -107,21 +132,26 @@ class QuestionSelector:
         # Score each symptom for discriminative power
         candidates_scored = []
         for kaggle_sym, count in symptom_counts.items():
-            # Convert to canonical
             canonical = self._kaggle_symptom_to_canonical(kaggle_sym)
             if canonical is None:
-                continue  # No canonical mapping, skip
-
-            # Skip if already known or asked
+                continue
             if canonical in known_symptoms or canonical in asked_symptoms:
                 continue
-
-            # Skip if no question in bank
             if canonical not in self._question_bank:
                 continue
 
-            # Discriminative score: highest when count ~ C/2
+            # Skip rule: if this question's prerequisite symptom was denied, skip
+            skip_prereqs = self._skip_if_denied.get(canonical) or []
+            if denied and skip_prereqs and any(p in denied for p in skip_prereqs):
+                continue
+
             disc_score = 1.0 - abs(count / C - 0.5)
+
+            # Priority boost: ask duration/related earlier when main symptom is present
+            bank_entry = self._question_bank[canonical]
+            priority_for = bank_entry.get("priority_when_known") or []
+            if present and priority_for and any(p in present for p in priority_for):
+                disc_score += 0.35
 
             candidates_scored.append({
                 "canonical_symptom": canonical,
@@ -149,6 +179,9 @@ class QuestionSelector:
 
         best = sorted_candidates[0]
         bank_entry = self._question_bank[best["canonical_symptom"]]
+        use_en = locale and str(locale).strip().lower().startswith("en")
+        question_text = (bank_entry.get("question_en") if use_en else None) or bank_entry["question_tr"]
+        choices = (bank_entry.get("choices_en") if use_en else None) or bank_entry.get("choices_tr")
 
         logger.info(
             f"QuestionSelector: selected '{best['canonical_symptom']}' "
@@ -157,11 +190,11 @@ class QuestionSelector:
 
         out = {
             "canonical_symptom": best["canonical_symptom"],
-            "question_tr": bank_entry["question_tr"],
+            "question_tr": question_text,
             "answer_type": bank_entry["answer_type"],
         }
-        if bank_entry.get("choices_tr"):
-            out["choices_tr"] = bank_entry["choices_tr"]
+        if choices:
+            out["choices_tr"] = choices
         return out
 
 

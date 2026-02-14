@@ -63,23 +63,27 @@
     {
       "canonical_symptom": "göğüs ağrısı süresi",
       "question_tr": "Ne kadar süredir göğüs ağrınız var?",
-      "answer_type": "free_text"
+      "answer_type": "free_text",
+      "priority_when_known": ["göğüs ağrısı"]
     },
     {
       "canonical_symptom": "göğüs ağrısı sabit mi",
       "question_tr": "Göğüs ağrınız sürekli mi yoksa gelip geçici mi?",
       "answer_type": "choice",
-      "choices_tr": ["Sürekli (sabit)", "Gelip geçici", "Bazen sürekli bazen gelip geçici"]
+      "choices_tr": ["Sürekli (sabit)", "Gelip geçici", "Bazen sürekli bazen gelip geçici"],
+      "priority_when_known": ["göğüs ağrısı"]
     },
     {
       "canonical_symptom": "göğüste baskı",
       "question_tr": "Göğsünüzde baskı veya sıkışma hissi var mı?",
-      "answer_type": "yes_no"
+      "answer_type": "yes_no",
+      "priority_when_known": ["göğüs ağrısı"]
     },
     {
       "canonical_symptom": "nefes darlığı",
       "question_tr": "Nefes darlığı çekiyor musunuz?",
-      "answer_type": "yes_no"
+      "answer_type": "yes_no",
+      "priority_when_known": ["göğüs ağrısı"]
     },
     {
       "canonical_symptom": "nefes darlığı eforla",

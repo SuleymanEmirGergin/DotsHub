@@ -50,9 +50,11 @@ def get_red_flag_question(
             return {
                 "id": q.get("id"),
                 "question_tr": q.get("question_tr", ""),
+                "question_en": q.get("question_en"),
                 "answer_type": q.get("answer_type", "yes_no"),
                 "if_yes_escalate": q.get("if_yes_escalate"),
                 "reason_tr": q.get("reason_tr", ""),
+                "reason_en": q.get("reason_en"),
             }
     return None
 

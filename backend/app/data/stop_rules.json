@@ -1,40 +1,17 @@
 {
   "version": "0.1.0",
   "max_questions": 6,
-
+  "max_questions_emergency": 4,
+  "emergency_specialty_ids": ["cardiology", "emergency", "neurology"],
+  "emergency_disease_keywords": ["Heart attack", "Paralysis", "Stroke", "Aortic", "Pulmonary embolism"],
   "confidence_rules": {
     "high_confidence_disease_score": 0.45,
-    "min_specialty_score_gap": 2.0
+    "min_specialty_score_gap": 2
   },
-
   "stop_conditions": [
-    {
-      "id": "MAX_QUESTIONS_REACHED",
-      "type": "hard",
-      "condition": "turn_index >= max_questions",
-      "result": "RESULT",
-      "reason_tr": "Yeterli sayıda soru soruldu."
-    },
-    {
-      "id": "HIGH_CONFIDENCE_SINGLE_DISEASE",
-      "type": "soft",
-      "condition": "top_disease_score >= high_confidence_disease_score",
-      "result": "RESULT",
-      "reason_tr": "Yüksek olasılıklı tek durum belirlendi."
-    },
-    {
-      "id": "CLEAR_SPECIALTY_WINNER",
-      "type": "soft",
-      "condition": "specialty_score_gap >= min_specialty_score_gap",
-      "result": "RESULT",
-      "reason_tr": "Önerilen branş netleşti."
-    },
-    {
-      "id": "NO_MORE_DISCRIMINATIVE_QUESTIONS",
-      "type": "soft",
-      "condition": "no_question_available == true",
-      "result": "RESULT",
-      "reason_tr": "Ayırt edici ek soru bulunamadı."
-    }
+    {"id": "MAX_QUESTIONS_REACHED", "type": "hard", "condition": "turn_index >= max_questions", "result": "RESULT", "reason_tr": "Yeterli sayıda soru soruldu."},
+    {"id": "HIGH_CONFIDENCE_SINGLE_DISEASE", "type": "soft", "condition": "top_disease_score >= high_confidence_disease_score", "result": "RESULT", "reason_tr": "Yüksek olasılıklı tek durum belirlendi."},
+    {"id": "CLEAR_SPECIALTY_WINNER", "type": "soft", "condition": "specialty_score_gap >= min_specialty_score_gap", "result": "RESULT", "reason_tr": "Önerilen branş netleşti."},
+    {"id": "NO_MORE_DISCRIMINATIVE_QUESTIONS", "type": "soft", "condition": "no_question_available == true", "result": "RESULT", "reason_tr": "Ayırt edici ek soru bulunamadı."}
   ]
 }
