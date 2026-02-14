@@ -18,8 +18,10 @@ from app.api.routes.message import router as message_router
 from app.api.routes.triage import router as triage_router
 from app.api.routes.feedback import router as feedback_router
 from app.api.routes.facilities import router as facilities_router
+from app.api.routes.summary_email import router as summary_email_router
 from app.admin_api import router as admin_router
 from app.admin_v5 import router as admin_v5_router
+from app.middleware.security_headers import SecurityHeadersMiddleware
 from app.rate_limit import (
     check_rate_limit,
     check_rate_limit_redis,
@@ -35,6 +37,7 @@ from app.rate_limit import (
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Startup and shutdown events."""
+    app.state.app_env = settings.APP_ENV
     redis_client = None
     if getattr(settings, "REDIS_URL", None) and "redis://" in (settings.REDIS_URL or ""):
         try:
@@ -76,6 +79,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(SecurityHeadersMiddleware)
 
 
 @app.middleware("http")
@@ -156,6 +160,7 @@ async def admin_rate_limit_middleware(request, call_next):
 app.include_router(triage_router, prefix="/v1", tags=["Triage"])
 app.include_router(feedback_router, prefix="/v1", tags=["Feedback"])
 app.include_router(facilities_router, prefix="/v1", tags=["Facilities"])
+app.include_router(summary_email_router, prefix="/v1", tags=["Summary Email"])
 app.include_router(session_router, prefix="/v1", tags=["Session (legacy)"])
 app.include_router(message_router, prefix="/v1", tags=["Message (legacy)"])
 app.include_router(admin_router, prefix="/v1", tags=["Admin"])

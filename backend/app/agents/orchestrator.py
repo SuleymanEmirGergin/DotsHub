@@ -630,9 +630,56 @@ class Orchestrator:
         confidence = min(1.0, max(0.0, (top1 * 0.75) + (gap * 0.6)))
         return round(confidence, 3)
 
+    def _build_doctor_summary_sentence(self, state: SessionState) -> str:
+        """Doktora söyleyebileceğiniz özet: süre, zamanlama, belirtiler tek cümleler halinde (örn. 3 gündür öksürük var, geceleri artıyor. Balgam var.)."""
+        fragments: List[str] = []
+        used_in_duration: Set[str] = set()  # known_symptoms already mentioned in a duration sentence
+
+        # Parent from duration canonical: "öksürük süresi" -> "öksürük"
+        def _parent(canonical: str) -> Optional[str]:
+            for suffix in (" süresi", " sabah artışı", " gece artışı"):
+                if canonical.endswith(suffix):
+                    return canonical[: -len(suffix)].strip()
+            return None
+
+        for k, parsed in sorted(state.parsed_answers.items()):
+            days = parsed.get("duration_days")
+            timing = parsed.get("timing")
+            severity = parsed.get("severity_0_10")
+            parent = _parent(k)
+            if parent and parent in state.known_symptoms and days is not None:
+                used_in_duration.add(parent)
+                part = f"{days} gündür {parent} var"
+                if timing:
+                    part += f", {timing} artıyor"
+                elif timing in ("gece", "gündüz", "sabah", "akşam"):
+                    part += f", {timing} daha belirgin"
+                if severity is not None:
+                    part += f", şiddet {severity:.0f}/10"
+                fragments.append(part + ".")
+            elif not parent and (days is not None or timing or severity is not None):
+                parts = []
+                if days is not None:
+                    parts.append(f"{days} gündür")
+                if timing:
+                    parts.append(timing)
+                if severity is not None:
+                    parts.append(f"şiddet {severity:.0f}/10")
+                if parts:
+                    fragments.append(f"{k.capitalize()}: {', '.join(parts)}.")
+
+        for c in sorted(state.known_symptoms):
+            if c not in used_in_duration:
+                fragments.append(f"{c.capitalize()} var.")
+        for k, v in sorted(state.answers.items()):
+            if k not in state.known_symptoms and (v or "").lower() in ("no", "hayır", "hayir", "yok"):
+                fragments.append(f"{k.capitalize()} yok.")
+
+        return " ".join(fragments) if fragments else ""
+
     def _build_result_payload(self, state: SessionState) -> dict:
         """Build deterministic RESULT payload — no LLM needed."""
-        # Summary lines
+        # Summary lines (list)
         summary = []
         for c in sorted(state.known_symptoms):
             summary.append(f"{c.capitalize()} mevcut.")
@@ -650,6 +697,9 @@ class Orchestrator:
                 parts.append(parsed["timing"])
             if parts:
                 summary.append(f"{k.capitalize()}: {', '.join(parts)}.")
+
+        # Doktora söyleyebileceğiniz özet (cümle formatı)
+        doctor_sentence = self._build_doctor_summary_sentence(state)
 
         # Safety notes (locale-aware)
         safety_notes = [
@@ -686,6 +736,7 @@ class Orchestrator:
             "recommended_specialty": {"id": spec_id, "name_tr": spec_tr},
             "top_conditions": top_conditions,
             "doctor_ready_summary_tr": summary,
+            "doctor_ready_summary_sentence_tr": doctor_sentence,
             "safety_notes_tr": safety_notes,
             "parsed_answers": dict(state.parsed_answers),
         }

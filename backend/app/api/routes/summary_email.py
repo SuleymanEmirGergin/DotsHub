@@ -10,10 +10,12 @@ import os
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, EmailStr
+from fastapi.responses import PlainTextResponse
+from pydantic import BaseModel, constr
 
 from app.services.email_summary import send_session_summary_email
 from app.services.email_sender_resend import send_via_resend
+from app.services.export_summary import build_export_text
 
 logger = logging.getLogger(__name__)
 
@@ -22,20 +24,30 @@ router = APIRouter(prefix="/triage", tags=["Triage"])
 
 class SendSummaryRequest(BaseModel):
     session_id: str
-    email: EmailStr
+    email: constr(min_length=3, max_length=320, pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
     locale: str = "tr"
 
 
+class ExportSummaryRequest(BaseModel):
+    """Result payload from triage RESULT envelope (payload field)."""
+    payload: dict[str, Any]
+    locale: str = "tr-TR"
+
+
 def _get_session_by_id(session_id: str) -> dict[str, Any] | None:
-    """Session'ı DB'den veya cache'den döndürür. Bu projede Supabase kullanılıyor."""
+    """Session'ı DB'den döndürür. Önce triage_sessions_v5, yoksa triage_sessions dener."""
     try:
         from app.supabase_client import get_supabase
         sb = get_supabase()
         if sb is None:
             return None
-        r = sb.table("triage_sessions_v5").select("*").eq("id", session_id).limit(1).execute()
-        if r.data and len(r.data) > 0:
-            return dict(r.data[0])
+        for table in ("triage_sessions_v5", "triage_sessions"):
+            try:
+                r = sb.table(table).select("*").eq("id", session_id).limit(1).execute()
+                if r.data and len(r.data) > 0:
+                    return dict(r.data[0])
+            except Exception:
+                continue
     except Exception as e:
         logger.warning("summary_email.get_session_error", extra={"session_id": session_id, "error": str(e)})
     return None
@@ -74,3 +86,13 @@ async def send_summary(body: SendSummaryRequest) -> dict[str, str]:
     )
 
     return {"status": "ok", "message": "Summary email sent or queued"}
+
+
+@router.post("/export-summary", response_class=PlainTextResponse)
+def export_summary_text(body: ExportSummaryRequest) -> str:
+    """
+    Oturum sonucunu yapılandırılmış metin olarak döndürür.
+    İstek gövdesi: triage turn RESULT cevabındaki payload + locale.
+    İndirilebilir .txt veya e-posta ile uyumludur.
+    """
+    return build_export_text(body.payload, locale=body.locale)

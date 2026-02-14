@@ -85,7 +85,14 @@
         "nefesim daralıyor",
         "nefes alamıyorum",
         "boğuluyor gibi oluyorum",
-        "soluk alamıyorum"
+        "soluk alamıyorum",
+        "tıkanıyorum",
+        "nefesim yetmiyor",
+        "nefesim kesiliyor",
+        "nefesim tıkanıyor",
+        "nefes almakta zorlanıyorum",
+        "havasızlık",
+        "nefes darlığım var"
       ]
     },
     {
@@ -122,7 +129,11 @@
       "variants_tr": [
         "öksürüyorum",
         "öksürüğüm var",
-        "öksürük tuttu"
+        "öksürük tuttu",
+        "öksürüyorum sürekli",
+        "kuru öksürük",
+        "balgamlı öksürük",
+        "öksürük var"
       ]
     },
     {
@@ -131,7 +142,10 @@
       "variants_tr": [
         "başım ağrıyor",
         "kafam çatlıyor",
-        "migrenim tuttu"
+        "migrenim tuttu",
+        "baş ağrım var",
+        "kafa ağrısı",
+        "şiddetli baş ağrısı"
       ]
     },
     {
@@ -280,6 +294,39 @@
         "balgamda kan var",
         "kanlı balgam çıkarıyorum",
         "öksürürken kan geliyor"
+      ]
+    },
+    {
+      "canonical": "karın ağrısı",
+      "type": "symptom",
+      "variants_tr": [
+        "karın ağrım var",
+        "karnım ağrıyor",
+        "mide ağrısı",
+        "göbek ağrısı",
+        "karın bölgemde ağrı var"
+      ]
+    },
+    {
+      "canonical": "balgam",
+      "type": "symptom",
+      "variants_tr": [
+        "balgam çıkarıyorum",
+        "balgamım var",
+        "öksürünce balgam geliyor",
+        "yeşil balgam",
+        "sarı balgam"
+      ]
+    },
+    {
+      "canonical": "halsizlik",
+      "type": "symptom",
+      "variants_tr": [
+        "halsizim",
+        "yorgunum",
+        "bitkinim",
+        "takatim kalmadı",
+        "halsizlik var"
       ]
     }
   ]
