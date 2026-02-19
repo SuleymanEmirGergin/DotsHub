@@ -18,6 +18,8 @@ Bu doküman, kısa sürede bitirilebilecek işler tamamlandıktan sonra yapılab
 
 **Çıktı:** Yerelde ve (isteğe bağlı) CI’da `pnpm run test:e2e` yeşil; dokümantasyon güncel.
 
+**Tamamlandı:** 2025-02-19 (config pnpm, port 3002, CI dashboard-tests/dashboard-quality, TESTING.md).
+
 ---
 
 ## 2. Release hazırlığı (CHANGELOG + checklist)
@@ -49,6 +51,8 @@ Bu doküman, kısa sürede bitirilebilecek işler tamamlandıktan sonra yapılab
 | 3.3 | İsteğe bağlı: Bir admin sayfasında shadcn Button/Card kullanarak örnek değişiklik yap; görsel olarak light/dark kontrol et. | 10–20 dk |
 
 **Çıktı:** `dashboard/components/ui/` altında tema bileşenleri; isteğe bağlı bir sayfada kullanım örneği.
+
+**Tamamlandı:** 2025-02-19 (Tailwind var(--...), Button/Card, status + analytics ornekleri).
 
 ---
 
