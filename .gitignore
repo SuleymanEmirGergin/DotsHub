@@ -54,6 +54,10 @@ dump.rdb
 .tools/
 __repo_*/
 dashboard/.npm-cache/
+.pnpm-store/
+
+# Kişisel / geçici notlar (proje kökü)
+DotsHub Wiro.txt
 
 # Test / generated reports
 .pytest_cache/
