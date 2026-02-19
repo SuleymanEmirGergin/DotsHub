@@ -43,14 +43,14 @@
   --font-mono: ui-monospace, monospace;
   --radius: 0.375rem;
 
-  /* Backward compat: existing --dash-* (migrate to Tailwind later) */
-  --dash-bg: hsl(var(--background));
-  --dash-bg-card: hsl(var(--card));
-  --dash-text: hsl(var(--foreground));
-  --dash-text-muted: hsl(var(--muted-foreground));
-  --dash-border: hsl(var(--border));
-  --dash-accent: hsl(var(--primary));
-  --dash-accent-bg: hsl(var(--accent));
+  /* Backward compat: existing --dash-* (use semantic tokens) */
+  --dash-bg: var(--background);
+  --dash-bg-card: var(--card);
+  --dash-text: var(--foreground);
+  --dash-text-muted: var(--muted-foreground);
+  --dash-border: var(--border);
+  --dash-accent: var(--primary);
+  --dash-accent-bg: var(--accent);
 }
 
 /* Dark theme — class (Tailwind) and data-theme (existing toggle) */
@@ -89,13 +89,13 @@
   --sidebar-border: 0 0% 25.0980%;
   --sidebar-ring: 217.2193 91.2195% 59.8039%;
 
-  --dash-bg: hsl(var(--background));
-  --dash-bg-card: hsl(var(--card));
-  --dash-text: hsl(var(--foreground));
-  --dash-text-muted: hsl(var(--muted-foreground));
-  --dash-border: hsl(var(--border));
-  --dash-accent: hsl(var(--primary));
-  --dash-accent-bg: hsl(var(--accent));
+  --dash-bg: var(--background);
+  --dash-bg-card: var(--card);
+  --dash-text: var(--foreground);
+  --dash-text-muted: var(--muted-foreground);
+  --dash-border: var(--border);
+  --dash-accent: var(--primary);
+  --dash-accent-bg: var(--accent);
 }
 
 @layer base {
@@ -219,7 +219,7 @@
 
 /* Optional: theme-aware panels (existing class, now uses tokens) */
 .dash-panel {
-  background: hsl(var(--card));
-  color: hsl(var(--card-foreground));
-  border-color: hsl(var(--border));
+  background: var(--card);
+  color: var(--card-foreground);
+  border-color: var(--border);
 }

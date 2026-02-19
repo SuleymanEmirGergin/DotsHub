@@ -6,6 +6,9 @@ import type { Locale } from "@/lib/i18n";
 import { StatusAutoRefresh } from "./StatusAutoRefresh";
 import { Breadcrumb } from "@/app/components/Breadcrumb";
 import { cn } from "@/lib/utils";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
@@ -111,15 +114,17 @@ export default async function StatusPage() {
         <Breadcrumb items={[{ label: getText(locale, "nav.admin"), href: "/admin/sessions" }, { label: getText(locale, "status.title") }]} />
         <h1 className="text-[26px] font-black m-0">{getText(locale, "status.title")}</h1>
         <p className="text-muted-foreground mt-2 mb-1">{getText(locale, "status.subtitle")}</p>
-        <p className="text-muted-foreground text-xs mb-6">{getText(locale, "status.autoRefreshNote")}</p>
+        <p className="text-muted-foreground text-xs mb-4">{getText(locale, "status.autoRefreshNote")}</p>
+        <div className="mb-6">
+          <Button variant="outline" size="sm" asChild>
+            <Link href="/admin/sessions">{getText(locale, "nav.sessions")}</Link>
+          </Button>
+        </div>
         <div className="flex flex-col gap-4">
           {cards.map((card) => (
-            <div
-              key={card.title}
-              className="p-5 rounded-xl border border-border bg-card"
-            >
-              <div className="flex justify-between items-center">
-                <span className="font-bold text-lg">{card.title}</span>
+            <Card key={card.title}>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-lg">{card.title}</CardTitle>
                 <span
                   className={cn(
                     "py-1 px-2.5 rounded-full text-xs font-bold",
@@ -128,14 +133,16 @@ export default async function StatusPage() {
                 >
                   {statusLabels[card.status]}
                 </span>
-              </div>
-              <p className="mt-2 mb-0 text-muted-foreground text-sm">{card.message}</p>
-              {card.health && (
-                <div className="mt-3 text-[13px] text-muted-foreground">
-                  {getText(locale, "status.sample")}: {card.health.samples} | {getText(locale, "status.lowConf")}: %{(card.health.low_conf_rate * 100).toFixed(1)} | {getText(locale, "status.highRisk")}: %{(card.health.high_risk_rate * 100).toFixed(1)}
-                </div>
-              )}
-            </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground text-sm mb-0">{card.message}</p>
+                {card.health && (
+                  <div className="mt-3 text-[13px] text-muted-foreground">
+                    {getText(locale, "status.sample")}: {card.health.samples} | {getText(locale, "status.lowConf")}: %{(card.health.low_conf_rate * 100).toFixed(1)} | {getText(locale, "status.highRisk")}: %{(card.health.high_risk_rate * 100).toFixed(1)}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           ))}
         </div>
       </div>

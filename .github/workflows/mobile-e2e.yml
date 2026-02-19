@@ -38,7 +38,7 @@ jobs:
           echo "$HOME/.maestro/bin" >> $GITHUB_PATH
           echo "MAESTRO_VERSION=$($HOME/.maestro/bin/maestro --version 2>/dev/null || true)" >> $GITHUB_ENV
 
-      - name: Run Maestro smoke (no device: will skip/fail; use Maestro Cloud or local for real E2E)
+      - name: "Run Maestro smoke (no device: will skip/fail; use Maestro Cloud or local for real E2E)"
         run: |
           "$HOME/.maestro/bin/maestro" test mobile/.maestro/triage_flow_smoke.yaml || true
         continue-on-error: true
