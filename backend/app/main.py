@@ -19,6 +19,7 @@ from app.api.routes.triage import router as triage_router
 from app.api.routes.feedback import router as feedback_router
 from app.api.routes.facilities import router as facilities_router
 from app.api.routes.summary_email import router as summary_email_router
+from app.api.routes.push_token import router as push_token_router
 from app.admin_api import router as admin_router
 from app.admin_v5 import router as admin_v5_router
 from app.middleware.security_headers import SecurityHeadersMiddleware
@@ -26,10 +27,14 @@ from app.rate_limit import (
     check_rate_limit,
     check_rate_limit_redis,
     build_rl_key,
+    build_send_summary_rl_key,
+    check_send_summary_rate_limit,
+    check_send_summary_rate_limit_redis,
     build_admin_rl_key,
     check_admin_rate_limit,
     check_admin_rate_limit_redis,
     MAX_REQ,
+    SEND_SUMMARY_MAX_REQ,
     ADMIN_MAX_REQ,
 )
 
@@ -94,33 +99,43 @@ async def request_id_middleware(request, call_next):
 
 @app.middleware("http")
 async def rate_limit_middleware(request, call_next):
-    """Apply rate limit to triage turn and feedback; add X-RateLimit-* headers."""
+    """Apply rate limit to triage turn, feedback, send-summary, and export-summary; add X-RateLimit-* headers."""
     path = request.scope.get("path", "")
-    if path not in ("/v1/triage/turn", "/v1/triage/feedback"):
-        return await call_next(request)
-
     ip = request.client.host if request.client else None
-    device_id = request.headers.get("x-device-id")
-    key = build_rl_key(ip, device_id)
-    redis = getattr(request.app.state, "redis", None)
-    if redis:
-        allowed, remaining, reset_in = await check_rate_limit_redis(redis, key)
+
+    if path in ("/v1/triage/send-summary", "/v1/triage/export-summary"):
+        key = build_send_summary_rl_key(ip)
+        redis = getattr(request.app.state, "redis", None)
+        if redis:
+            allowed, remaining, reset_in = await check_send_summary_rate_limit_redis(redis, key)
+        else:
+            allowed, remaining, reset_in = check_send_summary_rate_limit(key)
+        limit_header = SEND_SUMMARY_MAX_REQ
+    elif path in ("/v1/triage/turn", "/v1/triage/feedback"):
+        device_id = request.headers.get("x-device-id")
+        key = build_rl_key(ip, device_id)
+        redis = getattr(request.app.state, "redis", None)
+        if redis:
+            allowed, remaining, reset_in = await check_rate_limit_redis(redis, key)
+        else:
+            allowed, remaining, reset_in = check_rate_limit(key)
+        limit_header = MAX_REQ
     else:
-        allowed, remaining, reset_in = check_rate_limit(key)
+        return await call_next(request)
 
     if not allowed:
         return JSONResponse(
             status_code=429,
             content={"detail": "Rate limit exceeded", "reset_in_sec": reset_in},
             headers={
-                "X-RateLimit-Limit": str(MAX_REQ),
+                "X-RateLimit-Limit": str(limit_header),
                 "X-RateLimit-Remaining": "0",
                 "X-RateLimit-Reset": str(reset_in),
             },
         )
 
     response = await call_next(request)
-    response.headers["X-RateLimit-Limit"] = str(MAX_REQ)
+    response.headers["X-RateLimit-Limit"] = str(limit_header)
     response.headers["X-RateLimit-Remaining"] = str(remaining)
     response.headers["X-RateLimit-Reset"] = str(reset_in)
     return response
@@ -161,6 +176,7 @@ app.include_router(triage_router, prefix="/v1", tags=["Triage"])
 app.include_router(feedback_router, prefix="/v1", tags=["Feedback"])
 app.include_router(facilities_router, prefix="/v1", tags=["Facilities"])
 app.include_router(summary_email_router, prefix="/v1", tags=["Summary Email"])
+app.include_router(push_token_router, prefix="/v1", tags=["Push Token"])
 app.include_router(session_router, prefix="/v1", tags=["Session (legacy)"])
 app.include_router(message_router, prefix="/v1", tags=["Message (legacy)"])
 app.include_router(admin_router, prefix="/v1", tags=["Admin"])

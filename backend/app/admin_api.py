@@ -14,6 +14,7 @@ from app.tuning_tasks import build_tuning_tasks_from_session
 from app.patchgen import build_synonyms_patch_from_task
 from app.patchgen_keywords import build_keywords_patch_from_task
 from app.admin_auth import require_admin_key
+from app.core.config import settings
 
 router = APIRouter(prefix="/admin/tuning-tasks", tags=["tuning"])
 

@@ -525,3 +525,152 @@ def risk_high_series(
         )
 
     return {"points": pts}
+
+
+@router.get("/webhook/status")
+def webhook_status(
+    x_admin_key: Optional[str] = Header(default=None),
+):
+    """Return webhook notification configuration status."""
+    require_admin(x_admin_key)
+
+    from app.core.config import settings as cfg
+
+    return {
+        "enabled": cfg.WEBHOOK_ENABLED,
+        "channels": {
+            "slack": bool(cfg.WEBHOOK_SLACK_URL),
+            "discord": bool(cfg.WEBHOOK_DISCORD_URL),
+        },
+    }
+
+
+@router.get("/live")
+def live_sessions(
+    x_admin_key: Optional[str] = Header(default=None),
+    minutes: int = Query(default=5, ge=1, le=60),
+):
+    """Return sessions with activity in the last N minutes for live monitoring."""
+    require_admin(x_admin_key)
+
+    from datetime import datetime, timedelta, timezone
+
+    cutoff = (datetime.now(timezone.utc) - timedelta(minutes=minutes)).isoformat()
+
+    resp = (
+        supabase()
+        .table("triage_sessions")
+        .select(
+            "id,session_id,envelope_type,turn_index,"
+            "recommended_specialty_tr,confidence_0_1,confidence_label_tr,"
+            "stop_reason,input_text,locale,"
+            "created_at,updated_at"
+        )
+        .gte("updated_at", cutoff)
+        .order("updated_at", desc=True)
+        .limit(50)
+        .execute()
+    )
+
+    rows = resp.data or []
+    now = datetime.now(timezone.utc)
+
+    items = []
+    for r in rows:
+        updated = r.get("updated_at", "")
+        created = r.get("created_at", "")
+        envelope = r.get("envelope_type", "QUESTION")
+
+        # Compute status
+        if envelope in ("RESULT", "EMERGENCY"):
+            status = "completed"
+        elif updated:
+            try:
+                dt = datetime.fromisoformat(updated.replace("Z", "+00:00"))
+                age_sec = (now - dt).total_seconds()
+                status = "active" if age_sec < 30 else "waiting"
+            except Exception:
+                status = "waiting"
+        else:
+            status = "waiting"
+
+        items.append({
+            "id": r.get("session_id") or r.get("id"),
+            "envelope_type": envelope,
+            "turn_index": r.get("turn_index", 0),
+            "specialty": r.get("recommended_specialty_tr"),
+            "confidence": r.get("confidence_0_1"),
+            "confidence_label": r.get("confidence_label_tr"),
+            "stop_reason": r.get("stop_reason"),
+            "input_text": (r.get("input_text") or "")[:80],
+            "locale": r.get("locale", "tr-TR"),
+            "status": status,
+            "created_at": created,
+            "updated_at": updated,
+        })
+
+    return {"items": items, "cutoff_minutes": minutes}
+
+
+@router.post("/webhook/test")
+def webhook_test(
+    x_admin_key: Optional[str] = Header(default=None),
+):
+    """Send a test message to all configured webhook channels."""
+    require_admin(x_admin_key)
+
+    from app.notifier import send_test
+
+    results = send_test()
+    return {"results": results}
+
+
+@router.get("/users")
+def list_admin_users(
+    x_admin_key: Optional[str] = Header(default=None),
+):
+    """List all admin users."""
+    require_admin(x_admin_key)
+
+    resp = (
+        supabase()
+        .table("admin_users")
+        .select("id,user_id,email,role,created_at")
+        .order("created_at", desc=True)
+        .execute()
+    )
+    return {"users": resp.data or []}
+
+
+@router.post("/users")
+def add_admin_user(
+    x_admin_key: Optional[str] = Header(default=None),
+    email: str = Query(...),
+    user_id: str = Query(...),
+    role: str = Query(default="admin"),
+):
+    """Add a new admin user."""
+    require_admin(x_admin_key)
+
+    resp = (
+        supabase()
+        .table("admin_users")
+        .upsert(
+            {"user_id": user_id, "email": email, "role": role},
+            on_conflict="user_id",
+        )
+        .execute()
+    )
+    return {"ok": True, "data": resp.data}
+
+
+@router.delete("/users/{user_id}")
+def remove_admin_user(
+    user_id: str,
+    x_admin_key: Optional[str] = Header(default=None),
+):
+    """Remove an admin user."""
+    require_admin(x_admin_key)
+
+    supabase().table("admin_users").delete().eq("user_id", user_id).execute()
+    return {"ok": True}

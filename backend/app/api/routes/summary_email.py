@@ -25,13 +25,13 @@ router = APIRouter(prefix="/triage", tags=["Triage"])
 class SendSummaryRequest(BaseModel):
     session_id: str
     email: constr(min_length=3, max_length=320, pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
-    locale: str = "tr"
+    locale: str = "tr"  # tr | en | de | ru | ar (de/ru/ar use Turkish content for now)
 
 
 class ExportSummaryRequest(BaseModel):
     """Result payload from triage RESULT envelope (payload field)."""
     payload: dict[str, Any]
-    locale: str = "tr-TR"
+    locale: str = "tr-TR"  # tr-TR | en | de | ru | ar (de/ru/ar use Turkish content for now)
 
 
 def _get_session_by_id(session_id: str) -> dict[str, Any] | None:
@@ -62,13 +62,20 @@ def _get_sender():
     return None
 
 
+def _content_locale(locale: str) -> str:
+    """Normalize locale for email/export content: en -> en, else (tr, de, ru, ar) -> tr."""
+    if (locale or "").strip().lower() == "en":
+        return "en"
+    return "tr"
+
+
 @router.post("/send-summary")
 async def send_summary(body: SendSummaryRequest) -> dict[str, str]:
     """
     Oturum özetini verilen e-posta adresine gönderir.
     session_id: triage_sessions_v5 tablosundaki oturum ID'si.
     email: Gönderilecek adres.
-    locale: tr | en
+    locale: tr | en | de | ru | ar (de/ru/ar için e-posta içeriği Türkçe).
     """
     if not body.session_id:
         raise HTTPException(status_code=400, detail="session_id required")
@@ -78,10 +85,11 @@ async def send_summary(body: SendSummaryRequest) -> dict[str, str]:
         raise HTTPException(status_code=404, detail="Session not found")
 
     sender = _get_sender()
+    content_locale = _content_locale(body.locale)
     send_session_summary_email(
         body.email,
         session,
-        locale=body.locale,
+        locale=content_locale,
         sender=sender,
     )
 
@@ -93,6 +101,8 @@ def export_summary_text(body: ExportSummaryRequest) -> str:
     """
     Oturum sonucunu yapılandırılmış metin olarak döndürür.
     İstek gövdesi: triage turn RESULT cevabındaki payload + locale.
+    locale: tr-TR | en | de | ru | ar (de/ru/ar için metin Türkçe).
     İndirilebilir .txt veya e-posta ile uyumludur.
     """
-    return build_export_text(body.payload, locale=body.locale)
+    content_locale = "en" if (body.locale or "").strip().lower().startswith("en") else "tr-TR"
+    return build_export_text(body.payload, locale=content_locale)

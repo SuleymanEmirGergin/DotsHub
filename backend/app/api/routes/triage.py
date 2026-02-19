@@ -16,7 +16,7 @@ from datetime import datetime, timezone
 from typing import Optional
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Header, HTTPException, Query
 
 from app.models.schemas import (
     TriageTurnRequest,
@@ -210,6 +210,36 @@ def _handle_turn_supabase(request: TriageTurnRequest) -> Envelope:
         envelope_type, client_payload, lat=request.lat, lon=request.lon
     )
 
+    # ── Webhook notification (fire-and-forget) ──
+    try:
+        from app.notifier import send_alert
+
+        risk_obj = client_payload.get("risk") if isinstance(client_payload, dict) else None
+        risk_level = risk_obj.get("level") if isinstance(risk_obj, dict) else None
+        send_alert(
+            envelope_type=envelope_type,
+            session_id=str(sid),
+            payload=client_payload,
+            risk_level=risk_level,
+        )
+    except Exception as exc:
+        logger.debug("Notifier call skipped: %s", exc)
+
+    # ── Push notification (fire-and-forget) ──
+    try:
+        from app.push import send_push_alert
+
+        risk_obj2 = client_payload.get("risk") if isinstance(client_payload, dict) else None
+        risk_level2 = risk_obj2.get("level") if isinstance(risk_obj2, dict) else None
+        send_push_alert(
+            envelope_type=envelope_type,
+            session_id=str(sid),
+            payload=client_payload,
+            risk_level=risk_level2,
+        )
+    except Exception as exc:
+        logger.debug("Push notification skipped: %s", exc)
+
     return Envelope(
         type=envelope_type,
         session_id=str(sid),
@@ -251,6 +281,44 @@ async def _handle_turn_legacy(request: TriageTurnRequest) -> Envelope:
 # ──────────────────────────────────────────────────────────
 
 _RUNTIME = None  # module-level cache
+
+
+@router.get("/triage/history")
+def triage_history(
+    limit: int = Query(default=50, ge=1),
+    x_device_id: str | None = Header(default=None),
+):
+    """Return recent triage sessions for the device.
+
+    Uses x-device-id to filter sessions when available.
+    Returns basic session info for the history screen.
+    """
+    if not _has_supabase():
+        return {"items": []}
+    if not x_device_id:
+        return {"items": []}
+
+    from app.supabase_client import get_supabase as _get_sb
+    sb = _get_sb()
+
+    q = (
+        sb.table("triage_sessions")
+        .select("id,created_at,envelope_type,recommended_specialty_tr,confidence_label_tr,confidence_0_1,stop_reason")
+        .order("created_at", desc=True)
+        .eq("device_id", x_device_id)
+        .limit(min(limit, 100))
+    )
+
+    # Filter by envelope_type to only show completed sessions
+    q = q.in_("envelope_type", ["RESULT", "EMERGENCY", "SAME_DAY"])
+
+    try:
+        rows = q.execute().data or []
+    except Exception:
+        # Fail closed if the storage layer cannot enforce device scoping.
+        return {"items": []}
+
+    return {"items": rows}
 
 
 @router.post("/triage/turn", response_model=Envelope)

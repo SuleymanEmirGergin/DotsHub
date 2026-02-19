@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import os
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -12,6 +13,7 @@ from dataclasses import dataclass
 class Step:
     name: str
     command: list[str]
+    env_override: dict[str, str] | None = None
 
 
 STEPS = [
@@ -22,6 +24,7 @@ STEPS = [
     Step(
         name="backend_test_suite",
         command=[sys.executable, "-m", "unittest", "discover", "-s", "tests", "-p", "test_*.py", "-q"],
+        env_override={"REDIS_URL": ""},  # use in-memory rate limit so send-summary/export-summary tests pass
     ),
     Step(
         name="kaggle_mapping_guardrails",
@@ -30,12 +33,19 @@ STEPS = [
 ]
 
 
+def _env_for_step(step: Step) -> dict[str, str]:
+    env = os.environ.copy()
+    if step.env_override:
+        env.update(step.env_override)
+    return env
+
+
 def main() -> int:
     completed = 0
 
     for step in STEPS:
         print(f"[run_backend_regression] START {step.name}: {' '.join(step.command)}", flush=True)
-        result = subprocess.run(step.command, check=False)
+        result = subprocess.run(step.command, check=False, env=_env_for_step(step))
         if result.returncode != 0:
             print(
                 f"BACKEND_REGRESSION_SUMMARY status=FAIL failed_step={step.name} completed={completed}/{len(STEPS)}",
