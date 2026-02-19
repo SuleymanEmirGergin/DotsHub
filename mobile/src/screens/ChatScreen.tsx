@@ -13,31 +13,33 @@ import { triageTurn } from "@/src/api/triageClient";
 import { useTriageStore } from "@/src/state/triageStore";
 import { inputHeights, tokens, touchTargetMin } from "@/src/ui/designTokens";
 import { Badge, Card, MutedText, ScreenContainer, SectionTitle } from "@/src/ui/primitives";
+import { useI18n } from "@/i18n/I18nProvider";
 
 const QUICK_CHIPS = ["Baş ağrısı", "Ateş", "Öksürük", "Karın ağrısı", "İdrar yanması"];
-const LOADING_TEXT = "Değerlendiriyorum…";
 
 export default function ChatScreen() {
   const [text, setText] = useState("");
   const flatListRef = useRef<FlatList>(null);
+  const { t } = useI18n();
   const { sessionId, messages, loading, appendMessage, setLoading, setLastRequest, applyEnvelope } =
     useTriageStore();
+  const setShowHistory = useTriageStore((s) => s.setShowHistory);
 
   async function onSend(msg?: string) {
-    const t = (msg || text).trim();
-    if (!t) return;
+    const trimmed = (msg || text).trim();
+    if (!trimmed) return;
 
     const req = {
       session_id: sessionId,
       locale: "tr-TR" as const,
-      user_message: t,
+      user_message: trimmed,
       answer: null,
     };
-    appendMessage({ role: "user", text: t });
+    appendMessage({ role: "user", text: trimmed });
     setText("");
     setLoading(true);
     setLastRequest(req);
-    appendMessage({ role: "assistant", text: LOADING_TEXT });
+    appendMessage({ role: "assistant", text: t("chat.evaluating") });
 
     const env = await triageTurn(req);
     applyEnvelope(env);
@@ -51,12 +53,22 @@ export default function ChatScreen() {
     >
       <ScreenContainer style={styles.flex}>
         <View style={styles.headerWrap}>
-          <SectionTitle style={styles.headerTitle}>Ön Değerlendirme</SectionTitle>
+          <View style={styles.headerRow}>
+            <SectionTitle style={styles.headerTitle}>{t("chat.title")}</SectionTitle>
+            <Pressable
+              onPress={() => setShowHistory(true)}
+              style={styles.historyBtn}
+              accessibilityRole="button"
+              accessibilityLabel={t("chat.history")}
+            >
+              <Text style={styles.historyBtnText}>{t("chat.history")}</Text>
+            </Pressable>
+          </View>
           <MutedText>
-            Birkaç kısa soru soracağım, daha doğru yönlendireceğim.
+            {t("chat.subtitle")}
           </MutedText>
           <MutedText style={styles.locationHint}>
-            Konum paylaşırsanız sonuç ekranında yakındaki sağlık kuruluşları listelenir (isteğe bağlı).
+            {t("chat.locationHint")}
           </MutedText>
         </View>
 
@@ -116,6 +128,8 @@ export default function ChatScreen() {
               editable={!loading}
               onSubmitEditing={() => onSend()}
               returnKeyType="send"
+              accessibilityLabel={t("chat.symptomInput")}
+              accessibilityHint={t("chat.symptomInputHint")}
             />
             <Pressable
               onPress={() => onSend()}
@@ -124,6 +138,9 @@ export default function ChatScreen() {
                 styles.sendBtn,
                 (loading || !text.trim()) && styles.sendBtnDisabled,
               ]}
+              accessibilityRole="button"
+              accessibilityLabel={t("common.next")}
+              accessibilityState={{ disabled: loading || !text.trim() }}
             >
               <Text style={styles.sendBtnText}>Gönder</Text>
             </Pressable>
@@ -144,8 +161,26 @@ const styles = StyleSheet.create({
     marginTop: tokens.spacing.lg,
     marginBottom: tokens.spacing.md,
   },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
   headerTitle: {
     marginBottom: tokens.spacing.xs,
+  },
+  historyBtn: {
+    paddingHorizontal: tokens.spacing.md,
+    paddingVertical: tokens.spacing.xs,
+    borderRadius: tokens.radius.pill,
+    backgroundColor: tokens.colors.surfaceAlt,
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+  },
+  historyBtnText: {
+    ...tokens.typography.caption,
+    fontWeight: "600",
+    color: tokens.colors.textSecondary,
   },
   list: {
     flex: 1,

@@ -4,6 +4,7 @@ import { triageTurn } from "@/src/api/triageClient";
 import { useTriageStore } from "@/src/state/triageStore";
 import { tokens } from "@/src/ui/designTokens";
 import { Card, PrimaryButton, ScreenContainer, SectionTitle } from "@/src/ui/primitives";
+import { useI18n } from "@/i18n/I18nProvider";
 
 export default function ErrorScreen() {
   const error = useTriageStore((s) => s.error);
@@ -12,6 +13,7 @@ export default function ErrorScreen() {
   const applyEnvelope = useTriageStore((s) => s.applyEnvelope);
   const setLoading = useTriageStore((s) => s.setLoading);
   const [retrying, setRetrying] = useState(false);
+  const { t } = useI18n();
 
   async function handleRetry() {
     if (!lastRequest || retrying) return;
@@ -31,11 +33,11 @@ export default function ErrorScreen() {
       <View style={styles.centerWrap}>
         <Card style={styles.card}>
           <Text style={styles.icon}>!</Text>
-          <SectionTitle style={styles.title}>Bir sorun oldu</SectionTitle>
+          <SectionTitle style={styles.title}>{t("error.title")}</SectionTitle>
           <Text style={styles.message}>
-            {error?.message_tr || "Beklenmeyen bir hata oluştu."}
+            {error?.message_tr || t("error.fallbackMessage")}
           </Text>
-          {error?.code ? <Text style={styles.code}>Kod: {error.code}</Text> : null}
+          {error?.code ? <Text style={styles.code}>{t("error.code")}: {error.code}</Text> : null}
         </Card>
 
         {lastRequest ? (
@@ -44,12 +46,12 @@ export default function ErrorScreen() {
             onPress={handleRetry}
             disabled={retrying}
           >
-            {retrying ? "Tekrar deneniyor…" : "Tekrar dene"}
+            {retrying ? t("common.retrying") : t("common.retry")}
           </PrimaryButton>
         ) : null}
 
         <PrimaryButton style={styles.retryButton} onPress={resetSession}>
-          Yeni Oturum Başlat
+          {t("common.newSession")}
         </PrimaryButton>
       </View>
     </ScreenContainer>

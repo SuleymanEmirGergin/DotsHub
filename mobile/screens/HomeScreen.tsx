@@ -78,7 +78,7 @@ export default function HomeScreen({ navigation }: any) {
     }
 
     return (
-        <View style={styles.container} accessibilityRole="form">
+        <View style={styles.container}>
             <Text style={styles.title} accessibilityRole="header">Semptomlarını Yaz</Text>
             <Text style={styles.subtitle} accessibilityLabel="Bu uygulama tıbbi teşhis yerine geçmez.">Bu uygulama tıbbi teşhis yerine geçmez.</Text>
 
@@ -118,11 +118,11 @@ export default function HomeScreen({ navigation }: any) {
             {error ? (
                 <View style={styles.errorBox} accessibilityRole="alert">
                     <Text style={styles.errorText}>{error}</Text>
-                    <Button title="Tekrar dene" onPress={submit} disabled={loading} accessibilityLabel="Tekrar dene" accessibilityHint="İsteği yeniden gönderir" />
+                    <Button title="Tekrar dene" onPress={submit} disabled={loading} accessibilityLabel="Tekrar dene" />
                 </View>
             ) : null}
 
-            <Button title={loading ? "Değerlendiriliyor..." : "Devam"} onPress={submit} accessibilityLabel={loading ? "Değerlendiriliyor" : "Devam"} accessibilityHint="Semptomları gönderir" disabled={!text.trim() || loading} />
+            <Button title={loading ? "Değerlendiriliyor..." : "Devam"} onPress={submit} accessibilityLabel={loading ? "Değerlendiriliyor" : "Devam"} disabled={!text.trim() || loading} />
         </View>
     );
 }

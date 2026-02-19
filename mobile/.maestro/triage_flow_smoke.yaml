@@ -1,0 +1,33 @@
+# Smoke: Intro -> semptom girişi -> gönder -> QUESTION veya RESULT ekranı
+# Backend erişilebilir olmalı (EXPO_PUBLIC_API_BASE). Run: maestro test .maestro/triage_flow_smoke.yaml
+appId: com.dotshub.app
+---
+- launchApp
+- extendedWaitUntil:
+    visible:
+      text: "Başla"
+    timeout: 15000
+- tapOn:
+    text: "Başla"
+- extendedWaitUntil:
+    visible:
+      text: "Gönder"
+    timeout: 10000
+- tapOn:
+    text: "Belirtini yaz…"
+- inputText: "baş ağrısı"
+- tapOn:
+    text: "Gönder"
+# QUESTION ekranında "Evet" görünene kadar bekle, tıkla (tek soru varsayımı; 2+ soruda timeout olabilir)
+- extendedWaitUntil:
+    visible:
+      text: "Evet"
+    timeout: 30000
+- tapOn:
+    text: "Evet"
+# Sonuç ekranı: "Yeni Değerlendirme Başlat" butonu görünene kadar bekle
+- extendedWaitUntil:
+    visible:
+      text: "Yeni Değerlendirme Başlat"
+    timeout: 45000
+- assertVisible: "Yeni Değerlendirme Başlat"

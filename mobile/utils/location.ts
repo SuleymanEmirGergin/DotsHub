@@ -18,7 +18,6 @@ export async function getCurrentLocation(): Promise<Coords | null> {
     if (status !== "granted") return null;
     const loc = await getCurrentPositionAsync({
       accuracy: 4, // Accuracy.Balanced
-      maxAge: 60000,
     });
     if (loc?.coords) {
       cached = { lat: loc.coords.latitude, lon: loc.coords.longitude };

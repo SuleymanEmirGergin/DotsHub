@@ -21,8 +21,10 @@ type TriageState = {
   lastRequest: TriageTurnRequest | null;
 
   acceptIntro: boolean;
+  showHistory: boolean;
 
   setAcceptIntro: (v: boolean) => void;
+  setShowHistory: (v: boolean) => void;
   appendMessage: (m: Msg) => void;
   setLoading: (v: boolean) => void;
   setLastRequest: (r: TriageTurnRequest | null) => void;
@@ -42,8 +44,10 @@ export const useTriageStore = create<TriageState>((set, get) => ({
   lastRequest: null,
 
   acceptIntro: false,
+  showHistory: false,
 
   setAcceptIntro: (v) => set({ acceptIntro: v }),
+  setShowHistory: (v) => set({ showHistory: v }),
 
   setLoading: (v) => set({ loading: v }),
 

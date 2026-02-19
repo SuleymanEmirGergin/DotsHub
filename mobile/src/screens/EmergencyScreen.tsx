@@ -10,10 +10,12 @@ import {
   SecondaryButton,
   SectionTitle,
 } from "@/src/ui/primitives";
+import { useI18n } from "@/i18n/I18nProvider";
 
 export default function EmergencyScreen() {
   const emergency = useTriageStore((s) => s.emergency)!;
   const resetSession = useTriageStore((s) => s.resetSession);
+  const { t } = useI18n();
 
   function call112() {
     Linking.openURL("tel:112");
@@ -31,7 +33,7 @@ export default function EmergencyScreen() {
           <View style={styles.iconWrap}>
             <Text style={styles.icon}>⚠</Text>
           </View>
-          <SectionTitle style={styles.title}>Acil Değerlendirme Gerekebilir</SectionTitle>
+          <SectionTitle style={styles.title}>{t("emergency.title")}</SectionTitle>
           <Text style={styles.reason}>{emergency.reason_tr}</Text>
 
           <View style={styles.divider} />
@@ -44,14 +46,14 @@ export default function EmergencyScreen() {
         </Card>
 
         <DangerButton style={styles.buttonSpacing} onPress={call112}>
-          112'yi Ara
+          {t("emergency.call112")}
         </DangerButton>
 
         <PrimaryButton style={styles.buttonSpacing} onPress={shareAlert}>
-          Yakınıma Haber Ver
+          {t("emergency.notifyContact")}
         </PrimaryButton>
 
-        <SecondaryButton onPress={resetSession}>Yeni Değerlendirme</SecondaryButton>
+        <SecondaryButton onPress={resetSession}>{t("common.newAssessment")}</SecondaryButton>
       </ScrollView>
     </ScreenContainer>
   );

@@ -100,11 +100,11 @@ export default function ChatScreen({ navigation, route }: any) {
             {error ? (
                 <View style={styles.errorBox} accessibilityRole="alert">
                     <Text style={styles.errorText}>{error}</Text>
-                    <Button title="Tekrar dene" onPress={sendAnswer} disabled={loading} accessibilityLabel="Tekrar dene" accessibilityHint="Cevabı yeniden gönderir" />
+                    <Button title="Tekrar dene" onPress={sendAnswer} disabled={loading} accessibilityLabel="Tekrar dene" />
                 </View>
             ) : null}
 
-            <Button title={loading ? "Gönderiliyor..." : "Gönder"} onPress={sendAnswer} disabled={!answer.trim() || loading} accessibilityLabel={loading ? "Gönderiliyor" : "Gönder"} accessibilityHint="Cevabı gönderir" />
+            <Button title={loading ? "Gönderiliyor..." : "Gönder"} onPress={sendAnswer} disabled={!answer.trim() || loading} accessibilityLabel={loading ? "Gönderiliyor" : "Gönder"} />
         </View>
     );
 }

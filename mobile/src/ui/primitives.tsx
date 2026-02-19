@@ -26,6 +26,9 @@ type ButtonProps = {
   disabled?: boolean;
   style?: StyleProp<ViewStyle>;
   textStyle?: StyleProp<TextStyle>;
+  accessibilityRole?: "button";
+  accessibilityLabel?: string;
+  accessibilityState?: { disabled?: boolean };
 };
 
 export function ScreenContainer({ children, style }: CommonProps) {
@@ -71,6 +74,9 @@ function BaseButton({
   style,
   textStyle,
   variant,
+  accessibilityRole,
+  accessibilityLabel,
+  accessibilityState,
 }: ButtonProps & { variant: "primary" | "secondary" | "danger" }) {
   const variantStyle = tokens.button[variant];
 
@@ -78,6 +84,9 @@ function BaseButton({
     <Pressable
       onPress={onPress}
       disabled={disabled}
+      accessibilityRole={accessibilityRole}
+      accessibilityLabel={accessibilityLabel}
+      accessibilityState={accessibilityState}
       style={({ pressed }) => [
         styles.buttonBase,
         variantStyle.container,
