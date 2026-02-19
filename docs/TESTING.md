@@ -30,6 +30,7 @@ python -m pytest tests/test_summary_export_route.py::SendSummaryRateLimitTests -
 | `tests/test_triage_turn_e2e.py` | Triage turn E2E; rate limit header’ları. |
 | `tests/test_push_token_route.py` | Push token kayıt/silme endpoint’leri. |
 | `tests/test_admin_v5_auth.py` | Admin API yetkilendirme. |
+| `tests/test_health.py` | `GET /health` liveness (200, status ok). |
 
 Rate limit (5/dk): `send-summary` ve `export-summary` aynı bucket’ı paylaşır; IP başına toplam 5 istek/dakika. Tam regression: `python scripts/run_backend_regression.py` (backend_test_suite adımı `REDIS_URL=""` ile çalışır; rate limit testleri in-memory ile geçer).
 
@@ -66,15 +67,17 @@ Birim testler: `__tests__/` ve `*.test.ts` dosyaları (örn. pushClient, i18n).
 
 [Maestro CLI](https://maestro.mobile.dev/) kurulu olmalı. Uygulama cihazda veya emülatörde yüklü (örn. `npx expo run:ios` / `run:android`).
 
+**Yerel (mobile dizininden):**
+
 ```bash
 cd mobile
 maestro test .maestro/intro_smoke.yaml
 maestro test .maestro/triage_flow_smoke.yaml
 ```
 
+CI’da (repo kökünden) workflow `mobile/.maestro/triage_flow_smoke.yaml` yolunu kullanır; cihaz/emülatör olmadığı için adım atlanır veya fail eder (continue-on-error). Gerçek E2E için uygulamayı yerelde veya Maestro Cloud’da çalıştırıp yukarıdaki komutları `mobile` içinde çalıştırın.
+
 | Senaryo | Açıklama |
 |---------|----------|
 | `intro_smoke.yaml` | Uygulama açılır, "Başla" görünür. |
 | `triage_flow_smoke.yaml` | Intro geçilir, semptom metni girilir ("baş ağrısı"), "Gönder" tıklanır; QUESTION ekranında "Evet" tıklanır; sonuç ekranında "Yeni Değerlendirme Başlat" görünene kadar beklenir (backend erişilebilir olmalı; tek soru varsayımı). |
-
-CI’da opsiyonel: `.github/workflows/mobile-e2e.yml` — `mobile/` veya `.maestro/` değişince Maestro CLI kurulur ve smoke çalıştırılır; cihaz/emülatör yoksa adım fail eder (continue-on-error). Gerçek E2E için yerel veya Maestro Cloud kullanın.

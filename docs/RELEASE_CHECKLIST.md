@@ -9,7 +9,7 @@ Her sürüm çıkarırken aşağıdaki sırayı izleyin.
 - [ ] Backend: `cd backend && python scripts/run_backend_regression.py` çalıştırıldı.
 - [ ] Dashboard: `cd dashboard && pnpm run test:routes && pnpm run test:i18n-contract` çalıştırıldı.
 - [ ] İsteğe bağlı: `cd dashboard && pnpm run test:e2e` (Playwright) çalıştırıldı.
-- [ ] `pnpm audit` (dashboard, mobile) ve `pip list --outdated` (backend) kontrol edildi; [DEPENDENCY_UPDATES.md](DEPENDENCY_UPDATES.md) ile karşılaştırıldı.
+- [ ] `pnpm audit` (dashboard, mobile) ve `pip list --outdated` (backend) kontrol edildi; [DEPENDENCY_UPDATES.md](DEPENDENCY_UPDATES.md) ile karşılaştırıldı. Komutlar: [DEPENDENCY_AUDIT.md](DEPENDENCY_AUDIT.md).
 - [ ] Bu release’te biten maddeler [PLAN_KALAN_ADIMLAR.md](PLAN_KALAN_ADIMLAR.md) / [PLAN_SONRAKI_FAZ.md](PLAN_SONRAKI_FAZ.md) içinde güncellendi.
 - [ ] Yeni endpoint/env varsa README, [DEPLOY_AND_ENV.md](DEPLOY_AND_ENV.md), [API_EXAMPLES.md](API_EXAMPLES.md) güncel.
 
