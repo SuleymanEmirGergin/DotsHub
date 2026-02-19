@@ -83,3 +83,30 @@ curl -s "${BASE}/v1/admin/stats/overview?lookback_limit=100" \
 ```
 
 Admin istekleri ayrı rate limit’e tabidir (varsayılan 60/dk per IP).
+
+---
+
+## Push Token (Kayıt / Silme)
+
+**Kayıt (POST):** Mobil uygulama Expo Push Token ve device_id gönderir. device_id: getDeviceId() (Expo Constants veya fallback).
+
+```bash
+curl -s -X POST "${BASE}/v1/triage/push-token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "expo_push_token": "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]",
+    "device_id": "my-device-uuid",
+    "platform": "ios",
+    "locale": "tr-TR"
+  }' | jq .
+```
+
+Cevap: `{"ok": true}`. 422: eksik/geçersiz body. 503: persist hatası (production'da).
+
+**Silme (DELETE):**
+
+```bash
+curl -s -X DELETE "${BASE}/v1/triage/push-token" \
+  -H "Content-Type: application/json" \
+  -d '{"device_id": "my-device-uuid"}' | jq .
+```

@@ -1,38 +1,43 @@
-# Push bildirimleri politika
+# Push bildirimleri politika metni
 
-Bu belge, Pre-Triage (Dotshub) mobil uygulamasında push bildirimlerinin kullanımı, veri ve saklama kurallarını tanımlar.
+Bu belge, Dotshub mobil uygulamasında push bildirimlerinin ne zaman ve nasıl kullanılacağını tanımlar.
+
+---
 
 ## Amaç
 
-- Kullanıcıya oturum sonucu veya hatırlatma gibi **işlemsel** bildirimler göndermek.
-- Reklam veya pazarlama amaçlı toplu push **gönderilmez**.
+- Triaj sonucu hazır olduğunda kullanıcıya bildirim gönderilebilir (isteğe bağlı).
+- Hatırlatma veya anket bildirimleri ileride tanımlanabilir.
 
-## Ne zaman bildirim gönderilir
+## Veri
 
-- Oturum tamamlandığında (özet hazır) – kullanıcı bu seçeneği açtıysa.
-- Hatırlatma (örn. “Triajı tamamlamayı unutmayın”) – sadece kullanıcı tercihine göre.
-- Zorunlu güvenlik / hesap bildirimleri (ör. şifre sıfırlama) – gerektiğinde.
+- **Expo Push Token:** Cihaza özel, bildirim göndermek için kullanılır. Backend’e `POST /v1/triage/push-token` ile kaydedilir.
+- **Saklama:** Token şu an loglanır; kalıcı depolama (örn. Supabase `push_tokens` tablosu) isteğe bağlı eklenebilir.
+- **Silme:** Kullanıcı bildirimleri kapatırsa veya uygulamadan çıkış yaparsa token silinebilir (ileride uygulanacak akış).
 
-## Veri ve gizlilik
+## Backend–mobil push-token kontratı
 
-- Bildirim içeriği **kişisel sağlık verisi içermemeli**; sadece “Sonucunuz hazır” gibi genel ifadeler kullanılır.
-- Cihaza ait **push token** sadece bildirim gönderimi için kullanılır; üçüncü taraflarla paylaşılmaz.
-- Token’lar sunucuda güvenli şekilde saklanır ve kullanıcı bildirimleri kapattığında ilgili kayıt silinebilir/güncellenir.
+- **POST /v1/triage/push-token**  
+  Body (zorunlu): `expo_push_token` (string, 10–256 karakter), `device_id` (string, 1–128 karakter).  
+  Opsiyonel: `platform` (örn. `ios` / `android`), `locale` (örn. `tr-TR`, `en-US`).  
+  Cevap: `{"ok": true}`. Hata: 422 (eksik/geçersiz alan), 503 (persist hatası, production'da).
 
-## Saklama
+- **DELETE /v1/triage/push-token**  
+  Body: `device_id` (string, zorunlu). Cevap: `{"ok": true}`.
 
-- Push token’lar, kullanıcı hesabı veya cihaz ilişkisi silindiğinde/çıkış yapıldığında kaldırılır veya devre dışı bırakılır.
-- Bildirim geçmişi (içerik) uzun süreli log olarak tutulmaz; sadece teslimat durumu (başarılı/başarısız) operasyonel loglarda kısa süre saklanabilir.
+- **Mobil kullanım:** `registerPushToken(expoPushToken, deviceId, locale)` ve `unregisterPushToken(deviceId)`. `device_id` kaynağı: `getDeviceId()` (Expo Constants.sessionId / installationId veya fallback). Token alınıp device_id üretilemezse register çağrılmamalı; getDeviceId() şu an her zaman string döndürür (fallback ile).
 
 ## İzin
 
-- Bildirimler **kullanıcı izni** ile açılır.
-- Uygulama ilk açılışta veya ilgili özelliğe ilk girildiğinde izin istenir; reddedilirse tekrar sadece ayarlar üzerinden açılabilir.
-- Ayarlarda “Bildirimleri kapat” seçeneği sunulur.
+- Bildirimler yalnızca kullanıcı izin verdikten sonra gönderilir.
+- İzin, ayarlar veya ilk sonuç ekranı sonrası istenebilir (`expo-notifications.requestPermissionsAsync()`).
 
-## Teknik
+## Ne zaman bildirim gönderilir
 
-- Mobil tarafta **Expo Notifications** (veya FCM/APNs) kullanılır.
-- Backend’de token kaydı ve gönderim için ayrı bir servis/endpoint kullanılabilir; gönderim sıklığı rate limit ile sınırlanır.
+- **Şu an:** Sadece token kaydı yapılır; otomatik bildirim gönderimi yok.
+- **İleride:** Triaj sonucu hazır olduğunda (session RESULT döndüğünde) isteğe bağlı “Sonucunuz hazır” bildirimi; oran ve sıklık ayrıca tanımlanacak.
 
-Bu politika, uygulama mağaza gereksinimleri ve KVKK/GDPR uyumuna göre güncellenebilir.
+## Gizlilik ve uyum
+
+- KVKK/GDPR kapsamında token kişisel veri sayılabilir; saklama süresi ve silme talebi prosedürlere uygun yönetilmelidir.
+- Bu politika, ileride gizlilik metni ve kullanıcı ayarları ile güncellenebilir.

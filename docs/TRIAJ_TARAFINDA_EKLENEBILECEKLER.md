@@ -87,3 +87,18 @@ Böylece free_text cevaplar hem kullanıcı deneyimi hem de skorlama/karar için
 4. **İsteğe bağlı**: i18n (EN soru bankası), hamilelik/kronik hastalık soruları, koşullu atlama mantığı.
 
 İlk adım olarak hangi maddeden başlamak istediğinizi söylerseniz, o madde için somut dosya/schema değişikliklerini adım adım yazabilirim.
+
+---
+
+## Tamamlanan maddeler (özet)
+
+| # | Madde | Yapılanlar | Doküman |
+|---|--------|------------|---------|
+| 1 | Detay soruları | Soru bankası, kaggle_to_canonical, disease_symptoms, symptom_severity, choices | `DETAY_SORULAR_EKLEME.md` |
+| 2 | Güvenlik / acil | rules.json hard/soft triggers, red_flag_questions, orkestratör entegrasyonu | — |
+| 3 | Bağlam / demografik | context_questions.json, yaş/cinsiyet/hamilelik/kronik, orkestratör | `BAGLAM_DEMOGRAFIK_SORULAR.md` |
+| 4 | Serbest metin parsing | duration_parse, free_text_parse, parsed_answers, stop condition, doktor özeti | `SERBEST_METIN_PARSING.md` |
+| 5 | Soru sırası / atlama | question_skip_rules.json, priority_when_known, max_questions_emergency | `SORU_SIRASI_ATLAMA.md` |
+| 6 | i18n | symptom_question_bank_en, locale, red-flag/context EN, i18n mesajları | `I18N_TRIAJ.md` |
+| 7 | Veri ve kalite | synonyms_tr genişletme, yeni hastalık/belirti ekleme, feedback | `VERI_KALITE.md` |
+| 8 | Raporlama / özet | doctor_ready_summary_sentence_tr, export_summary servisi, POST /export-summary | `RAPORLAMA_OZET.md` |
