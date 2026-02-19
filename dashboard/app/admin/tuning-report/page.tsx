@@ -1,51 +1,34 @@
+import { cookies } from "next/headers";
 import { requireAdmin } from "@/lib/requireAdmin";
 import {
   listReports,
   getSignedReportUrl,
   fetchJsonFromSignedUrl,
 } from "@/lib/reports";
+import { getText } from "@/lib/i18n";
+import type { Locale } from "@/lib/i18n";
 import { Breadcrumb } from "@/app/components/Breadcrumb";
+import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
+async function getLocale(): Promise<Locale> {
+  const store = await cookies();
+  return store.get("NEXT_LOCALE")?.value === "en" ? "en" : "tr";
+}
+
 function Pre({ obj }: { obj: unknown }) {
   return (
-    <pre
-      style={{
-        background: "#0b0b0b",
-        color: "#e0e0e0",
-        padding: 16,
-        borderRadius: 14,
-        overflowX: "auto",
-        fontSize: 12,
-        lineHeight: 1.5,
-      }}
-    >
+    <pre className="bg-zinc-900 text-zinc-200 p-4 rounded-xl overflow-x-auto text-xs leading-normal">
       {JSON.stringify(obj, null, 2)}
     </pre>
   );
 }
 
-function Card({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
+function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div
-      style={{
-        border: "1px solid var(--dash-border)",
-        borderRadius: 16,
-        padding: 18,
-        background: "var(--dash-bg-card)",
-        color: "var(--dash-text)",
-      }}
-    >
-      <div style={{ fontSize: 12, color: "var(--dash-text-muted)", marginBottom: 10, fontWeight: 600 }}>
-        {title}
-      </div>
+    <div className="border border-border rounded-2xl p-[18px] bg-card text-foreground">
+      <div className="text-xs text-muted-foreground mb-2.5 font-semibold">{title}</div>
       {children}
     </div>
   );
@@ -57,6 +40,7 @@ export default async function TuningReportPage({
   searchParams: Promise<{ file?: string }>;
 }) {
   await requireAdmin();
+  const locale = await getLocale();
   const { file } = await searchParams;
 
   let files: any[] = [];
@@ -79,79 +63,41 @@ export default async function TuningReportPage({
   }
 
   return (
-    <div style={{ padding: 24, maxWidth: 1400, margin: "0 auto", background: "var(--dash-bg)", color: "var(--dash-text)", minHeight: "100vh" }}>
-      <Breadcrumb items={[{ label: "Admin", href: "/admin/sessions" }, { label: "Tuning report" }]} />
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
+    <div className="p-6 max-w-[1400px] mx-auto bg-background text-foreground min-h-screen">
+      <Breadcrumb items={[{ label: getText(locale, "nav.admin"), href: "/admin/sessions" }, { label: getText(locale, "nav.tuningReport") }]} />
+      <div className="flex justify-between items-center">
         <div>
-          <h1 style={{ fontSize: 26, fontWeight: 900, margin: 0 }}>
-            Tuning Report
-          </h1>
-          <div style={{ color: "var(--dash-text-muted)", marginTop: 6, fontSize: 13 }}>
+          <h1 className="text-[26px] font-black m-0">{getText(locale, "tuningReport.title")}</h1>
+          <div className="text-muted-foreground mt-1.5 text-[13px]">
             {report
-              ? `Generated: ${report.generated_at} \u2022 Window: ${report.window_days} days`
-              : "No report selected"}
+              ? getText(locale, "tuningReport.generated").replace("{generated}", report.generated_at ?? "").replace("{days}", String(report.window_days ?? 0))
+              : getText(locale, "tuningReport.noReportSelected")}
           </div>
         </div>
-        <div style={{ display: "flex", gap: 12 }}>
-          <a
-            href="/admin/analytics"
-            style={{ fontWeight: 700, color: "var(--dash-accent)", textDecoration: "none", fontSize: 13 }}
-          >
-            Analytics &rarr;
+        <div className="flex gap-3">
+          <a href="/admin/analytics" className="font-bold text-primary no-underline text-[13px]">
+            {getText(locale, "tuningReport.analyticsLink")}
           </a>
-          <a
-            href="/admin/sessions"
-            style={{ fontWeight: 700, color: "var(--dash-accent)", textDecoration: "none", fontSize: 13 }}
-          >
-            Sessions &rarr;
+          <a href="/admin/sessions" className="font-bold text-primary no-underline text-[13px]">
+            {getText(locale, "tuningReport.sessionsLink")}
           </a>
         </div>
       </div>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "280px 1fr",
-          gap: 16,
-          marginTop: 20,
-        }}
-      >
-        {/* Sidebar: report list */}
-        <Card title="Reports">
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: 8,
-              maxHeight: 600,
-              overflowY: "auto",
-            }}
-          >
+      <div className="grid grid-cols-[280px_1fr] gap-4 mt-5">
+        <Card title={getText(locale, "tuningReport.reports")}>
+          <div className="flex flex-col gap-2 max-h-[600px] overflow-y-auto">
             {files.length === 0 && (
-              <div style={{ color: "var(--dash-text-muted)", fontSize: 13 }}>
-                No reports in Storage yet. Run tuning_report_upload.py.
-              </div>
+              <div className="text-muted-foreground text-[13px]">{getText(locale, "tuningReport.noReportsInStorage")}</div>
             )}
             {files.map((f) => (
               <a
                 key={f.name}
                 href={`/admin/tuning-report?file=${encodeURIComponent(f.name)}`}
-                style={{
-                  textDecoration: "none",
-                  padding: 10,
-                  borderRadius: 10,
-                  border: "1px solid var(--dash-border)",
-                  background: f.name === selected ? "var(--dash-accent)" : "var(--dash-bg)",
-                  color: f.name === selected ? "var(--dash-bg)" : "var(--dash-text)",
-                  fontWeight: 700,
-                  fontSize: 12,
-                }}
+                className={cn(
+                  "no-underline p-2.5 rounded-lg border border-border font-bold text-xs",
+                  f.name === selected ? "bg-primary text-primary-foreground border-primary" : "bg-background text-foreground"
+                )}
               >
                 {f.name}
               </a>
@@ -159,102 +105,65 @@ export default async function TuningReportPage({
           </div>
         </Card>
 
-        {/* Main content */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        <div className="flex flex-col gap-4">
           {!report ? (
-            <Card title="No report">
-              <div style={{ color: "var(--dash-text-muted)" }}>
-                Select a report from the sidebar, or run the upload script.
-              </div>
+            <Card title={getText(locale, "tuningReport.noReport")}>
+              <div className="text-muted-foreground">{getText(locale, "tuningReport.selectReportOrRun")}</div>
             </Card>
           ) : (
             <>
-              {/* Top row: counts */}
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr",
-                  gap: 12,
-                }}
-              >
-                <Card title="Feedback Counts">
+              <div className="grid grid-cols-2 gap-3">
+                <Card title={getText(locale, "tuningReport.feedbackCounts")}>
                   <Pre obj={report.feedback_counts ?? []} />
                 </Card>
-                <Card title="Specialty Down Rate">
+                <Card title={getText(locale, "tuningReport.specialtyDownRate")}>
                   <Pre obj={report.specialty_down_rate ?? []} />
                 </Card>
               </div>
 
-              {/* Synonym suggestions */}
-              {Array.isArray(report.synonym_suggestions) &&
-                report.synonym_suggestions.length > 0 && (
-                  <Card title="Synonym Suggestions (deterministic)">
-                    <table
-                      style={{
-                        width: "100%",
-                        borderCollapse: "collapse",
-                        fontSize: 13,
-                      }}
-                    >
-                      <thead>
-                        <tr style={{ borderBottom: "1px solid #eee", textAlign: "left" }}>
-                          <th style={{ padding: 8 }}>Token</th>
-                          <th style={{ padding: 8 }}>Suggested Canonical</th>
-                          <th style={{ padding: 8 }}>Count</th>
+              {Array.isArray(report.synonym_suggestions) && report.synonym_suggestions.length > 0 && (
+                <Card title={getText(locale, "tuningReport.synonymSuggestions")}>
+                  <table className="w-full border-collapse text-[13px]">
+                    <thead>
+                      <tr className="border-b border-border text-left">
+                        <th className="p-2">{getText(locale, "tuningReport.token")}</th>
+                        <th className="p-2">{getText(locale, "tuningReport.suggestedCanonical")}</th>
+                        <th className="p-2">{getText(locale, "tuningReport.count")}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {report.synonym_suggestions.slice(0, 30).map((s: any, i: number) => (
+                        <tr key={i} className="border-b border-border">
+                          <td className="p-2 font-semibold">{s.token}</td>
+                          <td className="p-2 text-muted-foreground">{s.suggested_canonical ?? "-"}</td>
+                          <td className="p-2">{s.support_count}</td>
                         </tr>
-                      </thead>
-                      <tbody>
-                        {report.synonym_suggestions
-                          .slice(0, 30)
-                          .map((s: any, i: number) => (
-                            <tr
-                              key={i}
-                              style={{ borderBottom: "1px solid #f5f5f5" }}
-                            >
-                              <td style={{ padding: 8, fontWeight: 600 }}>
-                                {s.token}
-                              </td>
-                              <td style={{ padding: 8, color: "#666" }}>
-                                {s.suggested_canonical ?? "-"}
-                              </td>
-                              <td style={{ padding: 8 }}>{s.support_count}</td>
-                            </tr>
-                          ))}
-                      </tbody>
-                    </table>
-                  </Card>
-                )}
+                      ))}
+                    </tbody>
+                  </table>
+                </Card>
+              )}
 
-              {/* Question effectiveness (if embedded) */}
-              {Array.isArray(report.question_effectiveness_top) &&
-                report.question_effectiveness_top.length > 0 && (
-                  <Card title="Question Effectiveness (top)">
-                    <Pre obj={report.question_effectiveness_top} />
-                  </Card>
-                )}
+              {Array.isArray(report.question_effectiveness_top) && report.question_effectiveness_top.length > 0 && (
+                <Card title={getText(locale, "tuningReport.questionEffectivenessTop")}>
+                  <Pre obj={report.question_effectiveness_top} />
+                </Card>
+              )}
 
-              {/* Down examples */}
-              <Card title="Down Feedback Examples (top)">
+              <Card title={getText(locale, "tuningReport.downExamples")}>
                 <Pre obj={report.down_examples ?? []} />
               </Card>
 
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr",
-                  gap: 12,
-                }}
-              >
-                <Card title="Stop Reason Breakdown">
+              <div className="grid grid-cols-2 gap-3">
+                <Card title={getText(locale, "tuningReport.stopReasonBreakdown")}>
                   <Pre obj={report.stop_reason_breakdown ?? []} />
                 </Card>
-                <Card title="Most Asked Canonicals">
+                <Card title={getText(locale, "tuningReport.mostAskedCanonicals")}>
                   <Pre obj={report.most_asked_canonicals ?? []} />
                 </Card>
               </div>
 
-              {/* Confidence distribution */}
-              <Card title="Confidence Distribution">
+              <Card title={getText(locale, "tuningReport.confidenceDistribution")}>
                 <Pre obj={report.confidence_distribution ?? []} />
               </Card>
             </>

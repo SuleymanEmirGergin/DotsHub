@@ -1,262 +1,357 @@
+import { cookies } from "next/headers";
 import { requireAdmin } from "@/lib/requireAdmin";
+import { getText } from "@/lib/i18n";
+import type { Locale } from "@/lib/i18n";
+import { cn } from "@/lib/utils";
 import fs from "fs";
 import path from "path";
 import { Breadcrumb } from "@/app/components/Breadcrumb";
 
 export const dynamic = "force-dynamic";
 
+type Severity = "ok" | "info" | "warning" | "critical";
+
+type Commentary = {
+  severity: Severity;
+  notes: string[];
+  actions: string[];
+};
+
+async function getLocale(): Promise<Locale> {
+  const store = await cookies();
+  return store.get("NEXT_LOCALE")?.value === "en" ? "en" : "tr";
+}
+
+function formatText(template: string, params: Record<string, string | number>): string {
+  let out = template;
+  for (const [key, value] of Object.entries(params)) {
+    out = out.replaceAll(`{${key}}`, String(value));
+  }
+  return out;
+}
+
 function loadGuardrails() {
-    try {
-        const p = path.join(process.cwd(), "..", "config", "tuning_guardrails.json");
-        return JSON.parse(fs.readFileSync(p, "utf-8"));
-    } catch {
-        return null;
-    }
+  try {
+    const p = path.join(process.cwd(), "..", "config", "tuning_guardrails.json");
+    return JSON.parse(fs.readFileSync(p, "utf-8"));
+  } catch {
+    return null;
+  }
 }
 
-function buildImpactCommentary(impact: any, guardrails: any) {
-    const g = guardrails ?? { thresholds: {}, min_feedback_after: 30 };
-    const t = g.thresholds ?? {};
+function buildImpactCommentary(
+  impact: any,
+  guardrails: any,
+  t: (key: string) => string,
+): Commentary {
+  const g = guardrails ?? { thresholds: {}, min_feedback_after: 30 };
+  const thresholds = g.thresholds ?? {};
 
-    const minN = Number(g.min_feedback_after ?? 30);
-    const downMax = Number(t.down_rate_max_delta ?? 0.15);
-    const confMin = Number(t.confidence_decrease_max ?? -0.10);
-    const qMax = Number(t.avg_questions_increase_max ?? 1.5);
+  const minN = Number(g.min_feedback_after ?? 30);
+  const downMax = Number(thresholds.down_rate_max_delta ?? 0.15);
+  const confMin = Number(thresholds.confidence_decrease_max ?? -0.10);
+  const qMax = Number(thresholds.avg_questions_increase_max ?? 1.5);
 
-    const afterTotal = impact?.after?.total ?? 0;
+  const afterTotal = impact?.after?.total ?? 0;
 
-    const d = impact?.delta ?? {};
-    const dDown = d.down_rate;
-    const dConf = d.avg_confidence;
-    const dQ = d.avg_questions;
+  const delta = impact?.delta ?? {};
+  const dDown = delta.down_rate;
+  const dConf = delta.avg_confidence;
+  const dQ = delta.avg_questions;
 
-    const notes: string[] = [];
-    const actions: string[] = [];
+  const notes: string[] = [];
+  const actions: string[] = [];
 
-    if (afterTotal < minN) {
-        notes.push(`Yetersiz veri: after feedback sample = ${afterTotal} (< ${minN}). Şimdilik kesin karar yok.`);
-        actions.push("Daha fazla kullanıcı geri bildirimi birikmesini bekle (veya internal test ile sample artır).");
-        return { severity: "info", notes, actions };
-    }
-
-    // Evaluate conditions
-    const bad: string[] = [];
-    const good: string[] = [];
-
-    if (typeof dDown === "number") {
-        if (dDown > downMax) bad.push(`Down-rate kötüleşmiş: Δ=${dDown.toFixed(4)} (limit ${downMax}).`);
-        else if (dDown < -0.01) good.push(`Down-rate iyileşmiş: Δ=${dDown.toFixed(4)}.`);
-        else notes.push(`Down-rate stabil: Δ=${dDown.toFixed(4)}.`);
-    }
-
-    if (typeof dConf === "number") {
-        if (dConf < confMin) bad.push(`Confidence düşmüş: Δ=${dConf.toFixed(4)} (limit ${confMin}).`);
-        else if (dConf > 0.02) good.push(`Confidence artmış: Δ=${dConf.toFixed(4)}.`);
-        else notes.push(`Confidence stabil: Δ=${dConf.toFixed(4)}.`);
-    }
-
-    if (typeof dQ === "number") {
-        if (dQ > qMax) bad.push(`Soru sayısı artmış: Δ=${dQ.toFixed(3)} (limit ${qMax}).`);
-        else if (dQ < -0.15) good.push(`Daha hızlı sonuca gidiyor: Δ=${dQ.toFixed(3)}.`);
-        else notes.push(`Soru sayısı stabil: Δ=${dQ.toFixed(3)}.`);
-    }
-
-    // Severity
-    let severity: "ok" | "warning" | "critical" = "ok";
-    if (bad.length >= 2) severity = "critical";
-    else if (bad.length === 1) severity = "warning";
-
-    // Compose message
-    if (good.length) notes.unshift(...good);
-    if (bad.length) notes.unshift(...bad);
-
-    if (severity === "critical") {
-        actions.unshift("Rollback önerilir (guardrail zaten tetiklediyse PR'ı merge et).");
-    } else if (severity === "warning") {
-        actions.unshift("Rollback şart değil; önce hedefli tuning + daha fazla sample ile doğrula.");
-    } else {
-        actions.unshift("Her şey yolunda görünüyor. Bu deploy'u baseline kabul edip devam et.");
-    }
-
-    actions.push("Synonym patch'leri: yanlış eşleşme ihtimali için en çok geçen 5 token'ı replay'den kontrol et.");
-    actions.push("Question effectiveness: düşük skor alan soruları demote etmeyi düşün.");
-
-    return { severity, notes, actions };
-}
-
-function SevPill({ s }: { s: string }) {
-    const m: any = {
-        ok: { bg: "#e6fffa", fg: "#065f46", label: "OK" },
-        info: { bg: "#eef2ff", fg: "#3730a3", label: "INFO" },
-        warning: { bg: "#fff7ed", fg: "#9a3412", label: "WARNING" },
-        critical: { bg: "#fee2e2", fg: "#991b1b", label: "CRITICAL" },
-    };
-    const x = m[s] ?? m.info;
-    return (
-        <span style={{ padding: "4px 10px", borderRadius: 999, background: x.bg, color: x.fg, fontWeight: 900, fontSize: 12 }}>
-            {x.label}
-        </span>
+  if (afterTotal < minN) {
+    notes.push(
+      formatText(t("deploymentImpact.noteInsufficientData"), {
+        afterTotal,
+        minN,
+      }),
     );
+    actions.push(t("deploymentImpact.actionWaitMoreFeedback"));
+    return { severity: "info", notes, actions };
+  }
+
+  const bad: string[] = [];
+  const good: string[] = [];
+
+  if (typeof dDown === "number") {
+    if (dDown > downMax) {
+      bad.push(
+        formatText(t("deploymentImpact.noteDownRateWorse"), {
+          delta: dDown.toFixed(4),
+          limit: downMax,
+        }),
+      );
+    } else if (dDown < -0.01) {
+      good.push(
+        formatText(t("deploymentImpact.noteDownRateBetter"), {
+          delta: dDown.toFixed(4),
+        }),
+      );
+    } else {
+      notes.push(
+        formatText(t("deploymentImpact.noteDownRateStable"), {
+          delta: dDown.toFixed(4),
+        }),
+      );
+    }
+  }
+
+  if (typeof dConf === "number") {
+    if (dConf < confMin) {
+      bad.push(
+        formatText(t("deploymentImpact.noteConfidenceDown"), {
+          delta: dConf.toFixed(4),
+          limit: confMin,
+        }),
+      );
+    } else if (dConf > 0.02) {
+      good.push(
+        formatText(t("deploymentImpact.noteConfidenceUp"), {
+          delta: dConf.toFixed(4),
+        }),
+      );
+    } else {
+      notes.push(
+        formatText(t("deploymentImpact.noteConfidenceStable"), {
+          delta: dConf.toFixed(4),
+        }),
+      );
+    }
+  }
+
+  if (typeof dQ === "number") {
+    if (dQ > qMax) {
+      bad.push(
+        formatText(t("deploymentImpact.noteQuestionsUp"), {
+          delta: dQ.toFixed(3),
+          limit: qMax,
+        }),
+      );
+    } else if (dQ < -0.15) {
+      good.push(
+        formatText(t("deploymentImpact.noteQuestionsFaster"), {
+          delta: dQ.toFixed(3),
+        }),
+      );
+    } else {
+      notes.push(
+        formatText(t("deploymentImpact.noteQuestionsStable"), {
+          delta: dQ.toFixed(3),
+        }),
+      );
+    }
+  }
+
+  let severity: Severity = "ok";
+  if (bad.length >= 2) severity = "critical";
+  else if (bad.length === 1) severity = "warning";
+
+  if (good.length) notes.unshift(...good);
+  if (bad.length) notes.unshift(...bad);
+
+  if (severity === "critical") {
+    actions.unshift(t("deploymentImpact.actionCritical"));
+  } else if (severity === "warning") {
+    actions.unshift(t("deploymentImpact.actionWarning"));
+  } else {
+    actions.unshift(t("deploymentImpact.actionOk"));
+  }
+
+  actions.push(t("deploymentImpact.actionSynonym"));
+  actions.push(t("deploymentImpact.actionQuestion"));
+
+  return { severity, notes, actions };
+}
+
+function SevPill({ s, t }: { s: string; t: (key: string) => string }) {
+  const m: Record<string, { class: string; label: string }> = {
+    ok: { class: "bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-300", label: t("deploymentImpact.severityOk") },
+    info: { class: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300", label: t("deploymentImpact.severityInfo") },
+    warning: { class: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300", label: t("deploymentImpact.severityWarning") },
+    critical: { class: "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300", label: t("deploymentImpact.severityCritical") },
+  };
+  const x = m[s] ?? m.info;
+  return (
+    <span className={cn("py-1 px-2.5 rounded-full font-black text-xs", x.class)}>
+      {x.label}
+    </span>
+  );
 }
 
 function Sparkline({ data, label }: { data: number[]; label: string }) {
-    if (!data || data.length === 0) return null;
+  if (!data || data.length === 0) return null;
 
-    const max = Math.max(...data);
-    const min = Math.min(...data);
-    const range = max - min || 1;
+  const max = Math.max(...data);
+  const min = Math.min(...data);
+  const range = max - min || 1;
 
-    const points = data.map((v, i) => {
-        const x = (i / (data.length - 1)) * 100;
-        const y = 100 - ((v - min) / range) * 100;
-        return `${x},${y}`;
-    }).join(" ");
+  const points = data
+    .map((v, i) => {
+      const x = (i / (data.length - 1)) * 100;
+      const y = 100 - ((v - min) / range) * 100;
+      return `${x},${y}`;
+    })
+    .join(" ");
 
-    return (
-        <div style={{ marginTop: 8 }}>
-            <div style={{ fontSize: 11, color: "var(--dash-text-muted)", marginBottom: 4 }}>{label}</div>
-            <svg width="100%" height="40" viewBox="0 0 100 100" preserveAspectRatio="none" style={{ border: "1px solid var(--dash-border)", borderRadius: 4, background: "var(--dash-accent-bg)" }}>
-                <polyline
-                    points={points}
-                    fill="none"
-                    stroke="var(--dash-accent)"
-                    strokeWidth="2"
-                    vectorEffect="non-scaling-stroke"
-                />
-            </svg>
-        </div>
-    );
+  return (
+    <div className="mt-2">
+      <div className="text-[11px] text-muted-foreground mb-1">{label}</div>
+      <svg
+        width="100%"
+        height="40"
+        viewBox="0 0 100 100"
+        preserveAspectRatio="none"
+        className="border border-border rounded bg-accent"
+      >
+        <polyline
+          points={points}
+          fill="none"
+          stroke="hsl(var(--primary))"
+          strokeWidth="2"
+          vectorEffect="non-scaling-stroke"
+        />
+      </svg>
+    </div>
+  );
 }
 
-export default async function DeploymentImpactPage({ params }: { params: Promise<{ id: string }> }) {
-    await requireAdmin();
-    const { id } = await params;
+export default async function DeploymentImpactPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  await requireAdmin();
+  const locale = await getLocale();
+  const t = (key: string) => getText(locale, key);
+  const { id } = await params;
 
-    // Load impact report
-    let impact = null;
-    try {
-        const reportsDir = path.join(process.cwd(), "..", "backend", "reports");
-        const files = fs
-            .readdirSync(reportsDir)
-            .filter((f) => f.startsWith(`impact_`) && f.includes(id) && f.endsWith(".json"))
-            .sort();
+  let impact = null;
+  try {
+    const reportsDir = path.join(process.cwd(), "..", "backend", "reports");
+    const files = fs
+      .readdirSync(reportsDir)
+      .filter((f) => f.startsWith("impact_") && f.includes(id) && f.endsWith(".json"))
+      .sort();
 
-        if (files.length > 0) {
-            const latest = files[files.length - 1];
-            const p = path.join(reportsDir, latest);
-            impact = JSON.parse(fs.readFileSync(p, "utf-8"));
-        }
-    } catch (e) {
-        console.error("Failed to load impact:", e);
+    if (files.length > 0) {
+      const latest = files[files.length - 1];
+      const p = path.join(reportsDir, latest);
+      impact = JSON.parse(fs.readFileSync(p, "utf-8"));
     }
+  } catch (e) {
+    console.error("Failed to load impact:", e);
+  }
 
-    if (!impact) {
-        return (
-            <div style={{ padding: 24 }}>
-                <div style={{ maxWidth: 900, margin: "0 auto" }}>
-                    <h1 style={{ fontSize: 26, fontWeight: 900 }}>Impact Report</h1>
-                    <div style={{ marginTop: 14, padding: 20, background: "#fee2e2", borderRadius: 12, color: "#991b1b" }}>
-                        No impact report found for deployment {id}
-                    </div>
-                    <div style={{ marginTop: 14 }}>
-                        <a href="/admin/deployments" style={{ fontWeight: 800, color: "var(--dash-accent)" }}>← Back to deployments</a>
-                    </div>
-                </div>
-            </div>
-        );
-    }
-
-    const guardrails = loadGuardrails();
-    const commentary = buildImpactCommentary(impact, guardrails);
-
-    const before = impact.before ?? {};
-    const after = impact.after ?? {};
-    const delta = impact.delta ?? {};
-
-    // Extract sparkline data from daily series
-    const dailySeries = after.daily_series || [];
-    const downRateSeries = dailySeries.map((d: any) => d.down_rate ?? 0);
-    const confSeries = dailySeries.map((d: any) => d.confidence ?? 0);
-
+  if (!impact) {
     return (
-        <div style={{ padding: 24, fontFamily: "ui-sans-serif", background: "var(--dash-bg)", color: "var(--dash-text)", minHeight: "100vh" }}>
-            <div style={{ maxWidth: 1000, margin: "0 auto" }}>
-                <Breadcrumb items={[{ label: "Admin", href: "/admin/sessions" }, { label: "Deployments", href: "/admin/deployments" }, { label: "Impact" }]} />
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <div>
-                        <h1 style={{ fontSize: 26, fontWeight: 900, margin: 0 }}>Impact Report</h1>
-                        <div style={{ color: "var(--dash-text-muted)", marginTop: 4, fontSize: 13 }}>Deployment: {id}</div>
-                    </div>
-                    <a href="/admin/deployments" style={{ fontWeight: 800, color: "var(--dash-accent)", textDecoration: "none" }}>
-                        ← Deployments
-                    </a>
-                </div>
-
-                {/* Impact Commentary */}
-                <div style={{ marginTop: 14, border: "1px solid var(--dash-border)", borderRadius: 16, padding: 16, background: "var(--dash-bg-card)" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <div style={{ fontWeight: 900, fontSize: 16 }}>Impact Commentary</div>
-                        <SevPill s={commentary.severity} />
-                    </div>
-
-                    <div style={{ marginTop: 10, color: "var(--dash-accent)" }}>
-                        <div style={{ fontSize: 12, color: "var(--dash-text-muted)" }}>Findings</div>
-                        <ul style={{ marginTop: 8, paddingLeft: 18 }}>
-                            {commentary.notes.map((x: string, i: number) => <li key={i} style={{ marginBottom: 6 }}>{x}</li>)}
-                        </ul>
-
-                        <div style={{ fontSize: 12, color: "var(--dash-text-muted)", marginTop: 10 }}>Recommended actions</div>
-                        <ol style={{ marginTop: 8, paddingLeft: 18 }}>
-                            {commentary.actions.map((x: string, i: number) => <li key={i} style={{ marginBottom: 6 }}>{x}</li>)}
-                        </ol>
-                    </div>
-                </div>
-
-                {/* Metrics Grid */}
-                <div style={{ marginTop: 14, display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14 }}>
-                    <div style={{ border: "1px solid var(--dash-border)", borderRadius: 12, padding: 16, background: "var(--dash-bg-card)" }}>
-                        <div style={{ fontSize: 12, color: "#666", fontWeight: 700 }}>SAMPLE SIZE</div>
-                        <div style={{ marginTop: 8, fontSize: 24, fontWeight: 900 }}>
-                            {before.total ?? 0} → {after.total ?? 0}
-                        </div>
-                        <div style={{ marginTop: 4, fontSize: 12, color: "#666" }}>
-                            Δ {((after.total ?? 0) - (before.total ?? 0)) >= 0 ? "+" : ""}{((after.total ?? 0) - (before.total ?? 0))}
-                        </div>
-                    </div>
-
-                    <div style={{ border: "1px solid var(--dash-border)", borderRadius: 12, padding: 16, background: "var(--dash-bg-card)" }}>
-                        <div style={{ fontSize: 12, color: "#666", fontWeight: 700 }}>DOWN-RATE</div>
-                        <div style={{ marginTop: 8, fontSize: 24, fontWeight: 900 }}>
-                            {((before.down_rate ?? 0) * 100).toFixed(1)}% → {((after.down_rate ?? 0) * 100).toFixed(1)}%
-                        </div>
-                        <div style={{ marginTop: 4, fontSize: 12, color: delta.down_rate > 0 ? "#991b1b" : "#065f46" }}>
-                            Δ {delta.down_rate >= 0 ? "+" : ""}{((delta.down_rate ?? 0) * 100).toFixed(2)}%
-                        </div>
-                        <Sparkline data={downRateSeries} label="Last 7 days" />
-                    </div>
-
-                    <div style={{ border: "1px solid var(--dash-border)", borderRadius: 12, padding: 16, background: "var(--dash-bg-card)" }}>
-                        <div style={{ fontSize: 12, color: "#666", fontWeight: 700 }}>AVG CONFIDENCE</div>
-                        <div style={{ marginTop: 8, fontSize: 24, fontWeight: 900 }}>
-                            {(before.avg_confidence ?? 0).toFixed(3)} → {(after.avg_confidence ?? 0).toFixed(3)}
-                        </div>
-                        <div style={{ marginTop: 4, fontSize: 12, color: delta.avg_confidence >= 0 ? "#065f46" : "#991b1b" }}>
-                            Δ {delta.avg_confidence >= 0 ? "+" : ""}{(delta.avg_confidence ?? 0).toFixed(4)}
-                        </div>
-                        <Sparkline data={confSeries} label="Last 7 days" />
-                    </div>
-
-                    <div style={{ border: "1px solid var(--dash-border)", borderRadius: 12, padding: 16, background: "var(--dash-bg-card)" }}>
-                        <div style={{ fontSize: 12, color: "#666", fontWeight: 700 }}>AVG QUESTIONS</div>
-                        <div style={{ marginTop: 8, fontSize: 24, fontWeight: 900 }}>
-                            {(before.avg_questions ?? 0).toFixed(1)} → {(after.avg_questions ?? 0).toFixed(1)}
-                        </div>
-                        <div style={{ marginTop: 4, fontSize: 12, color: delta.avg_questions <= 0 ? "#065f46" : "#991b1b" }}>
-                            Δ {delta.avg_questions >= 0 ? "+" : ""}{(delta.avg_questions ?? 0).toFixed(2)}
-                        </div>
-                    </div>
-                </div>
-            </div>
+      <div className="p-6">
+        <div className="max-w-[900px] mx-auto">
+          <h1 className="text-[26px] font-black">{t("deploymentImpact.title")}</h1>
+          <div className="mt-3.5 p-5 bg-red-100 dark:bg-red-900/30 rounded-xl text-red-800 dark:text-red-300">
+            {formatText(t("deploymentImpact.noReport"), { id })}
+          </div>
+          <div className="mt-3.5">
+            <a href="/admin/deployments" className="font-extrabold text-primary">
+              {t("deploymentImpact.backToDeployments")}
+            </a>
+          </div>
         </div>
+      </div>
     );
+  }
+
+  const guardrails = loadGuardrails();
+  const commentary = buildImpactCommentary(impact, guardrails, t);
+
+  const before = impact.before ?? {};
+  const after = impact.after ?? {};
+  const delta = impact.delta ?? {};
+
+  const dailySeries = after.daily_series || [];
+  const downRateSeries = dailySeries.map((d: any) => d.down_rate ?? 0);
+  const confSeries = dailySeries.map((d: any) => d.confidence ?? 0);
+
+  return (
+    <div className="p-6 font-sans bg-background text-foreground min-h-screen">
+      <div className="max-w-[1000px] mx-auto">
+        <Breadcrumb items={[{ label: getText(locale, "nav.admin"), href: "/admin/sessions" }, { label: getText(locale, "nav.deployments"), href: "/admin/deployments" }, { label: t("deploymentImpact.breadcrumb") }]} />
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-[26px] font-black m-0">{t("deploymentImpact.title")}</h1>
+            <div className="text-muted-foreground mt-1 text-[13px]">
+              {t("deploymentImpact.deploymentLabel")}: {id}
+            </div>
+          </div>
+          <a href="/admin/deployments" className="font-extrabold text-primary no-underline">
+            {t("deploymentImpact.backToDeployments")}
+          </a>
+        </div>
+
+        <div className="mt-3.5 border border-border rounded-2xl p-4 bg-card">
+          <div className="flex justify-between items-center">
+            <div className="font-black text-base">{t("deploymentImpact.commentaryTitle")}</div>
+            <SevPill s={commentary.severity} t={t} />
+          </div>
+          <div className="mt-2.5 text-primary">
+            <div className="text-xs text-muted-foreground">{t("deploymentImpact.findings")}</div>
+            <ul className="mt-2 pl-[18px]">
+              {commentary.notes.map((x, i) => (
+                <li key={i} className="mb-1.5">{x}</li>
+              ))}
+            </ul>
+            <div className="text-xs text-muted-foreground mt-2.5">{t("deploymentImpact.recommendedActions")}</div>
+            <ol className="mt-2 pl-[18px]">
+              {commentary.actions.map((x, i) => (
+                <li key={i} className="mb-1.5">{x}</li>
+              ))}
+            </ol>
+          </div>
+        </div>
+
+        <div className="mt-3.5 grid grid-cols-3 gap-3.5">
+          <div className="border border-border rounded-xl p-4 bg-card">
+            <div className="text-xs text-muted-foreground font-bold">{t("deploymentImpact.sampleSize")}</div>
+            <div className="mt-2 text-2xl font-black">
+              {before.total ?? 0} → {after.total ?? 0}
+            </div>
+            <div className="mt-1 text-xs text-muted-foreground">
+              d {((after.total ?? 0) - (before.total ?? 0)) >= 0 ? "+" : ""}{((after.total ?? 0) - (before.total ?? 0))}
+            </div>
+          </div>
+          <div className="border border-border rounded-xl p-4 bg-card">
+            <div className="text-xs text-muted-foreground font-bold">{t("deploymentImpact.downRate")}</div>
+            <div className="mt-2 text-2xl font-black">
+              {((before.down_rate ?? 0) * 100).toFixed(1)}% → {((after.down_rate ?? 0) * 100).toFixed(1)}%
+            </div>
+            <div className={cn("mt-1 text-xs", (delta.down_rate ?? 0) > 0 ? "text-red-800 dark:text-red-400" : "text-teal-800 dark:text-teal-400")}>
+              d {(delta.down_rate ?? 0) >= 0 ? "+" : ""}{((delta.down_rate ?? 0) * 100).toFixed(2)}%
+            </div>
+            <Sparkline data={downRateSeries} label={t("deploymentImpact.last7Days")} />
+          </div>
+          <div className="border border-border rounded-xl p-4 bg-card">
+            <div className="text-xs text-muted-foreground font-bold">{t("deploymentImpact.avgConfidence")}</div>
+            <div className="mt-2 text-2xl font-black">
+              {(before.avg_confidence ?? 0).toFixed(3)} → {(after.avg_confidence ?? 0).toFixed(3)}
+            </div>
+            <div className={cn("mt-1 text-xs", (delta.avg_confidence ?? 0) >= 0 ? "text-teal-800 dark:text-teal-400" : "text-red-800 dark:text-red-400")}>
+              d {(delta.avg_confidence ?? 0) >= 0 ? "+" : ""}{(delta.avg_confidence ?? 0).toFixed(4)}
+            </div>
+            <Sparkline data={confSeries} label={t("deploymentImpact.last7Days")} />
+          </div>
+          <div className="border border-border rounded-xl p-4 bg-card">
+            <div className="text-xs text-muted-foreground font-bold">{t("deploymentImpact.avgQuestions")}</div>
+            <div className="mt-2 text-2xl font-black">
+              {(before.avg_questions ?? 0).toFixed(1)} → {(after.avg_questions ?? 0).toFixed(1)}
+            </div>
+            <div className={cn("mt-1 text-xs", (delta.avg_questions ?? 0) <= 0 ? "text-teal-800 dark:text-teal-400" : "text-red-800 dark:text-red-400")}>
+              d {(delta.avg_questions ?? 0) >= 0 ? "+" : ""}{(delta.avg_questions ?? 0).toFixed(2)}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }

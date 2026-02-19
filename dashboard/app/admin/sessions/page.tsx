@@ -1,9 +1,17 @@
+import { cookies } from "next/headers";
 import { requireAdmin } from "@/lib/requireAdmin";
-import { supabaseServerAuthed } from "@/lib/supabaseServerAuthed";
 import { supabaseAdmin } from "@/lib/supabaseServer";
+import { getText } from "@/lib/i18n";
+import type { Locale } from "@/lib/i18n";
 import { Breadcrumb } from "@/app/components/Breadcrumb";
+import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
+
+async function getLocale(): Promise<Locale> {
+  const store = await cookies();
+  return store.get("NEXT_LOCALE")?.value === "en" ? "en" : "tr";
+}
 
 const SORT_COLUMNS = ["created_at", "envelope_type", "recommended_specialty_tr", "confidence_label_tr", "stop_reason"] as const;
 
@@ -22,6 +30,7 @@ export default async function SessionsPage({
   searchParams: Promise<{ feedback?: string; sort?: string; order?: string }>;
 }) {
   await requireAdmin();
+  const locale = await getLocale();
   const params = await searchParams;
   const { feedback: feedbackFilter, sort: sortCol, order: orderDir } = params;
   const sort: (typeof SORT_COLUMNS)[number] = SORT_COLUMNS.includes(sortCol as (typeof SORT_COLUMNS)[number])
@@ -63,223 +72,139 @@ export default async function SessionsPage({
 
   const { data, error } = await q;
 
-  if (error) return <div style={{ padding: 24 }}>Error: {error.message}</div>;
+  if (error) return <div className="p-6">{getText(locale, "common.error")}: {error.message}</div>;
 
   return (
-    <div style={{ padding: 24, maxWidth: 1200, margin: "0 auto", background: "var(--dash-bg)", color: "var(--dash-text)" }}>
-      <Breadcrumb items={[{ label: "Admin", href: "/admin/sessions" }, { label: "Sessions" }]} />
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          gap: 12,
-          flexWrap: "wrap",
-        }}
-      >
+    <div className="p-6 max-w-[1200px] mx-auto bg-background text-foreground">
+      <Breadcrumb items={[{ label: getText(locale, "nav.admin"), href: "/admin/sessions" }, { label: getText(locale, "nav.sessions") }]} />
+      <div className="flex justify-between items-center gap-3 flex-wrap">
         <div>
-          <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>Sessions</h1>
-          <p style={{ color: "var(--dash-text-muted)", marginTop: 6 }}>
-            Last 100 triage sessions
-            {feedbackFilter ? ` \u2022 Filter: feedback=${feedbackFilter}` : ""}
+          <h1 className="text-2xl font-bold m-0">{getText(locale, "sessions.title")}</h1>
+          <p className="text-muted-foreground mt-1.5">
+            {getText(locale, "sessions.last100")}
+            {feedbackFilter ? ` \u2022 ${getText(locale, "sessions.filterFeedback")}=${feedbackFilter}` : ""}
           </p>
         </div>
-        <div style={{ display: "flex", gap: 10 }}>
-          <a
-            href="/admin/status"
-            style={{ textDecoration: "none", color: "var(--dash-text)", fontWeight: 800, fontSize: 13 }}
-          >
-            Sistem durumu
+        <div className="flex gap-2.5">
+          <a href="/admin/feedback" className="no-underline text-foreground font-extrabold text-[13px] hover:text-primary">
+            {getText(locale, "sessions.feedbackLink")} &rarr;
           </a>
-          <a
-            href="/admin/analytics"
-            style={{ textDecoration: "none", color: "var(--dash-text)", fontWeight: 800, fontSize: 13 }}
-          >
-            Analytics &rarr;
+          <a href="/admin/status" className="no-underline text-foreground font-extrabold text-[13px] hover:text-primary">
+            {getText(locale, "sessions.statusLink")}
           </a>
-          <a
-            href="/admin/tuning-report"
-            style={{ textDecoration: "none", color: "var(--dash-text)", fontWeight: 800, fontSize: 13 }}
-          >
-            Tuning &rarr;
+          <a href="/admin/analytics" className="no-underline text-foreground font-extrabold text-[13px] hover:text-primary">
+            {getText(locale, "sessions.analyticsLink")} &rarr;
           </a>
-          <a
-            href="/api/admin/export/sessions"
-            download
-            style={{ textDecoration: "none", color: "var(--dash-accent)", fontWeight: 700, fontSize: 13 }}
-          >
-            Export CSV
+          <a href="/admin/tuning-report" className="no-underline text-foreground font-extrabold text-[13px] hover:text-primary">
+            {getText(locale, "sessions.tuningLink")} &rarr;
+          </a>
+          <a href="/api/admin/export/sessions" download className="no-underline text-primary font-bold text-[13px] hover:underline">
+            {getText(locale, "sessions.exportCsvLink")}
           </a>
         </div>
       </div>
 
-      {/* Feedback filter tabs */}
-      <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
+      <div className="flex gap-2.5 mt-4">
         <a
           href="/admin/sessions"
-          style={{
-            padding: "8px 16px",
-            borderRadius: 10,
-            border: "1px solid var(--dash-border)",
-            textDecoration: "none",
-            color: !feedbackFilter ? "var(--dash-bg)" : "var(--dash-text)",
-            backgroundColor: !feedbackFilter ? "var(--dash-accent)" : "var(--dash-bg-card)",
-            fontWeight: 700,
-            fontSize: 13,
-          }}
+          className={cn(
+            "py-2 px-4 rounded-[10px] border border-border no-underline text-[13px] font-bold",
+            !feedbackFilter ? "bg-primary text-primary-foreground" : "bg-card text-foreground"
+          )}
         >
-          All
+          {getText(locale, "sessions.all")}
         </a>
         <a
           href="/admin/sessions?feedback=down"
-          style={{
-            padding: "8px 16px",
-            borderRadius: 10,
-            border: "1px solid var(--dash-border)",
-            textDecoration: "none",
-            color: feedbackFilter === "down" ? "#fff" : "#b00020",
-            backgroundColor: feedbackFilter === "down" ? "#b00020" : "var(--dash-bg-card)",
-            fontWeight: 800,
-            fontSize: 13,
-          }}
+          className={cn(
+            "py-2 px-4 rounded-[10px] border border-border no-underline text-[13px] font-extrabold",
+            feedbackFilter === "down" ? "bg-red-600 text-white" : "bg-card text-red-700"
+          )}
         >
-          Down only
+          {getText(locale, "sessions.downOnly")}
         </a>
         <a
           href="/admin/sessions?feedback=up"
-          style={{
-            padding: "8px 16px",
-            borderRadius: 10,
-            border: "1px solid var(--dash-border)",
-            textDecoration: "none",
-            color: feedbackFilter === "up" ? "#fff" : "#2E7D32",
-            backgroundColor: feedbackFilter === "up" ? "#2E7D32" : "var(--dash-bg-card)",
-            fontWeight: 700,
-            fontSize: 13,
-          }}
+          className={cn(
+            "py-2 px-4 rounded-[10px] border border-border no-underline text-[13px] font-bold",
+            feedbackFilter === "up" ? "bg-green-700 text-white" : "bg-card text-green-800"
+          )}
         >
-          Up only
+          {getText(locale, "sessions.upOnly")}
         </a>
       </div>
 
-      <table
-        style={{
-          width: "100%",
-          marginTop: 16,
-          borderCollapse: "collapse",
-          backgroundColor: "var(--dash-bg-card)",
-          borderRadius: 12,
-          overflow: "hidden",
-          boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
-          border: "1px solid var(--dash-border)",
-        }}
-      >
-        <thead>
-          <tr
-            style={{
-              textAlign: "left",
-              borderBottom: "2px solid var(--dash-border)",
-              backgroundColor: "var(--dash-accent-bg)",
-            }}
-          >
-            <th style={{ padding: 14, fontSize: 13 }}>
-              <a href={sessionsTableHref(params, "created_at")} style={{ color: "var(--dash-accent)", textDecoration: "none", fontWeight: 600 }}>
-                Time {sort === "created_at" && (ascending ? "↑" : "↓")}
-              </a>
-            </th>
-            <th style={{ padding: 14, fontSize: 13 }}>
-              <a href={sessionsTableHref(params, "envelope_type")} style={{ color: "var(--dash-accent)", textDecoration: "none", fontWeight: 600 }}>
-                Type {sort === "envelope_type" && (ascending ? "↑" : "↓")}
-              </a>
-            </th>
-            <th style={{ padding: 14, fontSize: 13 }}>
-              <a href={sessionsTableHref(params, "recommended_specialty_tr")} style={{ color: "var(--dash-accent)", textDecoration: "none", fontWeight: 600 }}>
-                Specialty {sort === "recommended_specialty_tr" && (ascending ? "↑" : "↓")}
-              </a>
-            </th>
-            <th style={{ padding: 14, fontSize: 13 }}>
-              <a href={sessionsTableHref(params, "confidence_label_tr")} style={{ color: "var(--dash-accent)", textDecoration: "none", fontWeight: 600 }}>
-                Confidence {sort === "confidence_label_tr" && (ascending ? "↑" : "↓")}
-              </a>
-            </th>
-            <th style={{ padding: 14, fontSize: 13 }}>
-              <a href={sessionsTableHref(params, "stop_reason")} style={{ color: "var(--dash-accent)", textDecoration: "none", fontWeight: 600 }}>
-                Stop {sort === "stop_reason" && (ascending ? "↑" : "↓")}
-              </a>
-            </th>
-            <th style={{ padding: 14, fontSize: 13, color: "var(--dash-text-muted)" }}></th>
-          </tr>
-        </thead>
-        <tbody>
-          {data?.map((s) => (
-            <tr key={s.id} style={{ borderBottom: "1px solid var(--dash-border)" }}>
-              <td style={{ padding: 14, fontSize: 14 }}>
-                {new Date(s.created_at).toLocaleString("tr-TR")}
-              </td>
-              <td style={{ padding: 14, fontSize: 14 }}>
-                <span
-                  style={{
-                    display: "inline-block",
-                    padding: "2px 10px",
-                    borderRadius: 6,
-                    fontSize: 12,
-                    fontWeight: 600,
-                    backgroundColor:
-                      s.envelope_type === "EMERGENCY"
-                        ? "#FFEBEE"
-                        : s.envelope_type === "RESULT"
-                          ? "#E8F5E9"
-                          : "#FFF8E1",
-                    color:
-                      s.envelope_type === "EMERGENCY"
-                        ? "#C62828"
-                        : s.envelope_type === "RESULT"
-                          ? "#2E7D32"
-                          : "#F57F17",
-                  }}
-                >
-                  {s.envelope_type}
-                </span>
-              </td>
-              <td style={{ padding: 14, fontSize: 14 }}>
-                {s.recommended_specialty_tr ?? "-"}
-              </td>
-              <td style={{ padding: 14, fontSize: 14 }}>
-                {s.confidence_label_tr ?? "-"}{" "}
-                {typeof s.confidence_0_1 === "number"
-                  ? `(${Math.round(s.confidence_0_1 * 100)}%)`
-                  : ""}
-              </td>
-              <td style={{ padding: 14, fontSize: 14, color: "var(--dash-text-muted)" }}>
-                {s.stop_reason ?? "-"}
-              </td>
-              <td style={{ padding: 14 }}>
-                <a
-                  href={`/admin/sessions/${s.id}`}
-                  style={{
-                    color: "var(--dash-accent)",
-                    fontWeight: 600,
-                    textDecoration: "none",
-                    fontSize: 13,
-                  }}
-                >
-                  View &rarr;
+      <div className="mt-4 w-full overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+        <table className="w-full border-collapse">
+          <thead>
+            <tr className="text-left border-b-2 border-border bg-accent">
+              <th className="p-3.5 text-[13px]">
+                <a href={sessionsTableHref(params, "created_at")} className="text-primary no-underline font-semibold hover:underline">
+                  {getText(locale, "sessions.time")} {sort === "created_at" && (ascending ? "↑" : "↓")}
                 </a>
-              </td>
+              </th>
+              <th className="p-3.5 text-[13px]">
+                <a href={sessionsTableHref(params, "envelope_type")} className="text-primary no-underline font-semibold hover:underline">
+                  {getText(locale, "sessions.type")} {sort === "envelope_type" && (ascending ? "↑" : "↓")}
+                </a>
+              </th>
+              <th className="p-3.5 text-[13px]">
+                <a href={sessionsTableHref(params, "recommended_specialty_tr")} className="text-primary no-underline font-semibold hover:underline">
+                  {getText(locale, "sessions.specialty")} {sort === "recommended_specialty_tr" && (ascending ? "↑" : "↓")}
+                </a>
+              </th>
+              <th className="p-3.5 text-[13px]">
+                <a href={sessionsTableHref(params, "confidence_label_tr")} className="text-primary no-underline font-semibold hover:underline">
+                  {getText(locale, "sessions.confidence")} {sort === "confidence_label_tr" && (ascending ? "↑" : "↓")}
+                </a>
+              </th>
+              <th className="p-3.5 text-[13px]">
+                <a href={sessionsTableHref(params, "stop_reason")} className="text-primary no-underline font-semibold hover:underline">
+                  {getText(locale, "sessions.stopReason")} {sort === "stop_reason" && (ascending ? "↑" : "↓")}
+                </a>
+              </th>
+              <th className="p-3.5 text-[13px] text-muted-foreground"></th>
             </tr>
-          ))}
-          {(!data || data.length === 0) && (
-            <tr>
-              <td
-                colSpan={6}
-                style={{ padding: 40, textAlign: "center", color: "var(--dash-text-muted)" }}
-              >
-                No sessions found.
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {data?.map((s) => (
+              <tr key={s.id} className="border-b border-border">
+                <td className="p-3.5 text-sm">{new Date(s.created_at).toLocaleString("tr-TR")}</td>
+                <td className="p-3.5 text-sm">
+                  <span
+                    className={cn(
+                      "inline-block py-0.5 px-2.5 rounded-md text-xs font-semibold",
+                      s.envelope_type === "EMERGENCY" && "bg-red-50 text-red-700 dark:bg-red-950/50 dark:text-red-300",
+                      s.envelope_type === "RESULT" && "bg-green-50 text-green-800 dark:bg-green-950/50 dark:text-green-300",
+                      s.envelope_type !== "EMERGENCY" && s.envelope_type !== "RESULT" && "bg-amber-50 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300"
+                    )}
+                  >
+                    {s.envelope_type}
+                  </span>
+                </td>
+                <td className="p-3.5 text-sm">{s.recommended_specialty_tr ?? "-"}</td>
+                <td className="p-3.5 text-sm">
+                  {s.confidence_label_tr ?? "-"}{" "}
+                  {typeof s.confidence_0_1 === "number" ? `(${Math.round(s.confidence_0_1 * 100)}%)` : ""}
+                </td>
+                <td className="p-3.5 text-sm text-muted-foreground">{s.stop_reason ?? "-"}</td>
+                <td className="p-3.5">
+                  <a href={`/admin/sessions/${s.id}`} className="text-primary font-semibold no-underline text-[13px] hover:underline">
+                    {getText(locale, "sessions.view")} &rarr;
+                  </a>
+                </td>
+              </tr>
+            ))}
+            {(!data || data.length === 0) && (
+              <tr>
+                <td colSpan={6} className="p-10 text-center text-muted-foreground">
+                  {getText(locale, "sessions.noSessions")}
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
