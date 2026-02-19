@@ -43,11 +43,11 @@ Rate limit (5/dk): `send-summary` ve `export-summary` aynı bucket’ı paylaş�
 cd dashboard
 pnpm run test:routes          # Admin proxy contract (scripts/check_admin_proxy_contract.cjs)
 pnpm run test:i18n-contract   # Deployments i18n contract (scripts/check_deployments_i18n_contract.cjs)
-pnpm run test:e2e             # Playwright E2E
+pnpm run test:e2e             # Playwright E2E (yerelde dev server otomatik başlar)
 pnpm run test:e2e:ui          # Playwright E2E (UI modu)
 ```
 
-E2E testler: `dashboard/e2e/` (örn. `admin.spec.ts`).
+E2E testler: `dashboard/e2e/` (örn. `admin.spec.ts`). Yerelde `pnpm run test:e2e` çalıştırıldığında Playwright config (`playwright.config.ts`) dev server’ı `pnpm run dev` ile başlatır; `PLAYWRIGHT_BASE_URL` ile farklı URL verilebilir. CI’da `.github/workflows/dashboard-tests.yml` dashboard değişince contract testleri + Playwright E2E (chromium) çalıştırır; pnpm kullanır.
 
 ---
 
