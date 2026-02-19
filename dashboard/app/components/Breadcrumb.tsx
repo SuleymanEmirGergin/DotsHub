@@ -9,27 +9,20 @@ export function Breadcrumb({ items }: { items: BreadcrumbItem[] }) {
   return (
     <nav
       aria-label="Breadcrumb"
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 6,
-        fontSize: 13,
-        color: "var(--dash-text-muted)",
-        marginBottom: 12,
-      }}
+      className="flex items-center gap-1.5 text-[13px] text-muted-foreground mb-3"
     >
       {items.map((item, i) => (
-        <span key={i} style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          {i > 0 && <span aria-hidden style={{ color: "var(--dash-border)" }}>/</span>}
+        <span key={i} className="flex items-center gap-1.5">
+          {i > 0 && <span aria-hidden className="text-border">/</span>}
           {item.href ? (
             <Link
               href={item.href}
-              style={{ color: "var(--dash-accent)", textDecoration: "none", fontWeight: 600 }}
+              className="text-primary font-semibold no-underline hover:underline"
             >
               {item.label}
             </Link>
           ) : (
-            <span style={{ color: "var(--dash-text)" }}>{item.label}</span>
+            <span className="text-foreground">{item.label}</span>
           )}
         </span>
       ))}
