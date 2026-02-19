@@ -36,6 +36,8 @@ dist/
 web-build/
 *.tsbuildinfo
 dashboard/.next/
+dashboard/playwright-report/
+dashboard/test-results/
 
 # Docker
 docker-compose.override.yml
