@@ -5,21 +5,15 @@ import { Breadcrumb } from "@/app/components/Breadcrumb";
 import { getText } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
 async function getLocale(): Promise<Locale> {
   const store = await cookies();
   return store.get("NEXT_LOCALE")?.value === "en" ? "en" : "tr";
-}
-
-function Card({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="border border-border rounded-2xl p-5 bg-card text-card-foreground">
-      <div className="text-[13px] text-muted-foreground mb-3 font-semibold">{title}</div>
-      {children}
-    </div>
-  );
 }
 
 function Stat({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
@@ -190,19 +184,19 @@ export default async function AnalyticsPage() {
       <Breadcrumb items={[{ label: getText(locale, "nav.admin"), href: "/admin/sessions" }, { label: t("analytics.title") }]} />
       <div className="flex justify-between items-center">
         <h1 className="text-[26px] font-black m-0">{t("analytics.title")}</h1>
-        <div className="flex gap-3">
-          <a href="/admin/live" className="font-bold text-emerald-600 no-underline text-[13px] hover:underline">
-            {t("analytics.liveLink")} &rarr;
-          </a>
-          <a href="/admin/feedback" className="font-bold text-primary no-underline text-[13px] hover:underline">
-            {t("analytics.feedbackLink")} &rarr;
-          </a>
-          <a href="/admin/sessions" className="font-bold text-primary no-underline text-[13px] hover:underline">
-            {t("analytics.sessionsLink")} &rarr;
-          </a>
-          <a href="/admin/tuning-report" className="font-bold text-primary no-underline text-[13px] hover:underline">
-            {t("analytics.tuningLink")} &rarr;
-          </a>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="link" size="sm" className="text-emerald-600 p-0 h-auto" asChild>
+            <Link href="/admin/live">{t("analytics.liveLink")} &rarr;</Link>
+          </Button>
+          <Button variant="link" size="sm" className="p-0 h-auto" asChild>
+            <Link href="/admin/feedback">{t("analytics.feedbackLink")} &rarr;</Link>
+          </Button>
+          <Button variant="link" size="sm" className="p-0 h-auto" asChild>
+            <Link href="/admin/sessions">{t("analytics.sessionsLink")} &rarr;</Link>
+          </Button>
+          <Button variant="link" size="sm" className="p-0 h-auto" asChild>
+            <Link href="/admin/tuning-report">{t("analytics.tuningLink")} &rarr;</Link>
+          </Button>
         </div>
       </div>
 
@@ -215,7 +209,11 @@ export default async function AnalyticsPage() {
 
       {envelopeDistribution.length > 0 && (
         <div className="mt-5">
-          <Card title={t("analytics.resultTypeDistribution")}>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">{t("analytics.resultTypeDistribution")}</CardTitle>
+            </CardHeader>
+            <CardContent>
             <div className="flex flex-col gap-2.5">
               {envelopeDistribution.map(({ type, count, pct }) => (
                 <div key={type} className="flex flex-col gap-1">
@@ -231,13 +229,18 @@ export default async function AnalyticsPage() {
                 </div>
               ))}
             </div>
+            </CardContent>
           </Card>
         </div>
       )}
 
       {dailyRanked.length > 0 && (
         <div className="mt-5">
-          <Card title={t("analytics.dailyTitle")}>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">{t("analytics.dailyTitle")}</CardTitle>
+            </CardHeader>
+            <CardContent>
             <div className="flex flex-col gap-1.5">
               {dailyRanked.map(([day, cnt]) => (
                 <div key={day} className="flex justify-between py-1.5 border-b border-border">
@@ -246,31 +249,46 @@ export default async function AnalyticsPage() {
                 </div>
               ))}
             </div>
+            </CardContent>
           </Card>
         </div>
       )}
 
       <div className="grid grid-cols-2 gap-4 mt-5">
-        <Card title={t("analytics.specialtyDistribution")}>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">{t("analytics.specialtyDistribution")}</CardTitle>
+          </CardHeader>
+          <CardContent>
           {specRanked.map(([name, cnt], i) => (
             <div key={i} className="flex justify-between py-2 border-b border-border">
               <span className="text-sm">{name}</span>
               <span className="font-bold text-sm">{cnt}</span>
             </div>
           ))}
+          </CardContent>
         </Card>
-        <Card title={t("analytics.confidenceDistribution")}>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">{t("analytics.confidenceDistribution")}</CardTitle>
+          </CardHeader>
+          <CardContent>
           {Object.entries(confCounts).map(([label, cnt], i) => (
             <div key={i} className="flex justify-between py-2 border-b border-border">
               <span className={cn("text-sm font-semibold", getConfidenceClass(label))}>{label}</span>
               <span className="font-bold text-sm">{cnt}</span>
             </div>
           ))}
+          </CardContent>
         </Card>
       </div>
 
       <div className="mt-5">
-        <Card title={t("analytics.confusionTitle")}>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">{t("analytics.confusionTitle")}</CardTitle>
+          </CardHeader>
+          <CardContent>
           {confusionRows.length === 0 ? (
             <div className="text-muted-foreground text-[13px]">{t("analytics.confusionEmpty")}</div>
           ) : (
@@ -293,6 +311,7 @@ export default async function AnalyticsPage() {
               </tbody>
             </table>
           )}
+          </CardContent>
         </Card>
       </div>
     </div>
