@@ -1,0 +1,19 @@
+{
+  "request": {
+    "endpoint": "/v1/session/sess_demo_01/message",
+    "body": { "user_input_tr": "..." }
+  },
+  "response": {
+    "type": "ERROR",
+    "session_id": "sess_demo_01",
+    "payload": {
+      "code": "MODEL_OUTPUT_INVALID_JSON",
+      "message_tr": "Sistem yanıtı beklenen formatta gelmedi. Lütfen tekrar deneyin.",
+      "retryable": true
+    },
+    "meta": {
+      "disclaimer_tr": "Bu uygulama tanı koymaz; bilgilendirme ve yönlendirme amaçlıdır.",
+      "timestamp": "2026-02-08T12:05:00+03:00"
+    }
+  }
+}

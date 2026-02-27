@@ -1,0 +1,48 @@
+{
+  "scenario_id": "demo_abdominal",
+  "title": "Karın ağrısı – Dahiliye/Gastro yönlendirmesi",
+  "description": "Genç hasta karın ağrısı ve ateşle geliyor, aynı gün değerlendirme önerilir.",
+  "expected_specialty": "Dahiliye (gerekirse Gastroenteroloji)",
+  "expected_urgency": "SAME_DAY",
+  "steps": [
+    {
+      "role": "user",
+      "message": "Dün akşamdan beri karnımın sağ alt tarafında ağrı var, ateşim 38.2 derece.",
+      "expected_envelope_type": "QUESTION"
+    },
+    {
+      "role": "assistant_question",
+      "expected_topics": ["bulantı/kusma", "ishal", "iştah", "ağrının şiddeti"]
+    },
+    {
+      "role": "user",
+      "message": "Biraz bulantım var, kusmadım. İştahsızlık var. Ağrı şiddeti 10 üzerinden 6-7 civarı.",
+      "expected_envelope_type": "QUESTION"
+    },
+    {
+      "role": "assistant_question",
+      "expected_topics": ["ağrı bastırınca artıyor mu", "hareketle artıyor mu", "idrar", "gebelik"]
+    },
+    {
+      "role": "user",
+      "message": "Bastırınca biraz artıyor, yürürken de ağrıyor. İdrar normal, gebelik yok.",
+      "expected_envelope_type": "RESULT"
+    },
+    {
+      "role": "expected_result",
+      "expected_specialty_tr": "Dahiliye (gerekirse Gastroenteroloji)",
+      "expected_urgency": "SAME_DAY",
+      "expected_candidates": [
+        "Akut apandisit",
+        "Mezenterik lenfadenit",
+        "Üriner sistem enfeksiyonu"
+      ],
+      "expected_risk_level": "MEDIUM",
+      "expected_negatives_checked": {
+        "gi_bleeding": false,
+        "cardiac": false
+      },
+      "notes": "Sağ alt kadran ağrısı + ateş + palpasyonda hassasiyet → apandisit ihtimali yüksek → SAME_DAY"
+    }
+  ]
+}

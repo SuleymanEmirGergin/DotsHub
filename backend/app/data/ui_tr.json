@@ -1,0 +1,48 @@
+{
+  "app_name": "Ön-Triyaj Asistanı",
+  "disclaimer_banner": "Tanı koymaz. Yönlendirme amaçlıdır.",
+  "start_screen": {
+    "title": "Belirtilerini yaz",
+    "subtitle": "Doktora gitmeden önce hangi branşa gitmen gerektiğini netleştirelim.",
+    "placeholder": "Örn: 3 gündür boğazım ağrıyor, ateşim var, yutkunurken yanıyor.",
+    "cta": "Başla"
+  },
+  "chat": {
+    "bot_name": "Asistan",
+    "typing": "Yazıyor…",
+    "quick_replies": {
+      "yes": "Evet",
+      "no": "Hayır",
+      "skip": "Bilmiyorum"
+    },
+    "safety_note": "Acil olabilecek belirtiler varsa 112'yi arayın."
+  },
+  "result": {
+    "title": "Özet ve Yönlendirme",
+    "sections": {
+      "possibilities": "Olası Durumlar",
+      "specialty": "Önerilen Branş",
+      "urgency": "Ne kadar acil?",
+      "watchouts": "Acil Uyarılar",
+      "doctor_summary": "Doktora Gösterilecek Özet"
+    },
+    "urgency_labels": {
+      "ER_NOW": "Hemen Acil",
+      "SAME_DAY": "Bugün İçinde",
+      "WITHIN_3_DAYS": "1–3 Gün İçinde",
+      "ROUTINE": "Rutin"
+    },
+    "cta_share": "Özeti Paylaş",
+    "cta_pdf": "PDF Oluştur"
+  },
+  "emergency": {
+    "title": "Acil Uyarı",
+    "cta_call": "112'yi Ara",
+    "cta_close": "Kapat",
+    "message_prefix": "Bu belirtiler acil olabilir:"
+  },
+  "errors": {
+    "network": "Bağlantı sorunu var. Tekrar dene.",
+    "invalid_json": "Sistem yanıtı hatalı geldi. Yeniden deniyoruz."
+  }
+}

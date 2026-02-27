@@ -1,0 +1,57 @@
+{
+  "scenario_id": "demo_vertigo",
+  "title": "Baş dönmesi – Nöroloji yönlendirmesi",
+  "description": "Yaşlı hasta vertigo ile geliyor, kademeli sorgulamayla nörolojiye yönlendiriliyor.",
+  "expected_specialty": "Nöroloji",
+  "expected_urgency": "WITHIN_3_DAYS",
+  "steps": [
+    {
+      "role": "user",
+      "message": "2 gündür başım dönüyor, oda dönüyor gibi hissediyorum. Özellikle yataktan kalkarken oluyor.",
+      "expected_envelope_type": "QUESTION"
+    },
+    {
+      "role": "assistant_question",
+      "expected_topics": ["bulantı/kusma", "işitme kaybı", "kulak çınlaması", "baş ağrısı"]
+    },
+    {
+      "role": "user",
+      "message": "Hafif bulantı var ama kusmadım. Kulağımda çınlama yok.",
+      "expected_envelope_type": "QUESTION"
+    },
+    {
+      "role": "assistant_question",
+      "expected_topics": ["düşme", "güçsüzlük", "konuşma bozukluğu", "uyuşma"]
+    },
+    {
+      "role": "user",
+      "message": "Hayır, güçsüzlük yok, konuşmam normal. Sadece sersemlik ve denge kaybı.",
+      "expected_envelope_type": "QUESTION"
+    },
+    {
+      "role": "assistant_question",
+      "expected_topics": ["kronik hastalık", "ilaç", "tansiyon", "yaş"]
+    },
+    {
+      "role": "user",
+      "message": "62 yaşındayım, tansiyon ilacı kullanıyorum.",
+      "expected_envelope_type": "RESULT"
+    },
+    {
+      "role": "expected_result",
+      "expected_specialty_tr": "Nöroloji",
+      "expected_urgency": "WITHIN_3_DAYS",
+      "expected_candidates": [
+        "Benign Paroksismal Pozisyonel Vertigo (BPPV)",
+        "Periferik vestibüler bozukluk",
+        "Ortostatik hipotansiyon"
+      ],
+      "expected_risk_level": "LOW",
+      "expected_negatives_checked": {
+        "stroke_like": true,
+        "severe_breathing": false,
+        "cardiac": false
+      }
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+    "guardrails": {
+        "min_feedback_count": 20,
+        "observation_window_hours": 48,
+        "thresholds": {
+            "down_rate_increase_max": 0.15,
+            "confidence_decrease_max": 0.10,
+            "avg_questions_increase_max": 1.5
+        }
+    },
+    "rollback": {
+        "auto_rollback_enabled": true,
+        "require_manual_approval": false
+    },
+    "notifications": {
+        "slack_enabled": true,
+        "discord_enabled": false,
+        "email_enabled": false
+    }
+}

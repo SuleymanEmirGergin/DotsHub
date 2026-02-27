@@ -1,0 +1,72 @@
+{
+  "version": "0.1.0",
+  "language": "tr-TR",
+  "workflow": {
+    "on_user_message": [
+      "run_safety_guard",
+      "if_emergency_return",
+      "run_symptom_interpreter_merge_state",
+      "update_specialty_scores",
+      "decide_next_step",
+      "if_ask_question_return_question",
+      "else_run_reasoning_and_routing_return_result"
+    ]
+  },
+  "state": {
+    "session_fields": [
+      "session_id",
+      "profile",
+      "chat_history",
+      "structured_symptoms",
+      "negatives_checked",
+      "specialty_scores",
+      "questions_asked",
+      "rounds_without_new_signal",
+      "last_new_signal_at"
+    ]
+  },
+  "decision": {
+    "ask_question_if": [
+      "not_sufficient_info",
+      "questions_asked < max_questions_total",
+      "not_time_limit_reached",
+      "rounds_without_new_signal < max_rounds_without_new_signal"
+    ],
+    "go_to_reasoning_if": [
+      "sufficient_info",
+      "or_limits_reached"
+    ]
+  },
+  "alignment": {
+    "prefer_specialty_that_matches_top_candidate": true,
+    "fallback_specialty_if_unclear": "Dahiliye"
+  },
+  "output_contracts": {
+    "question": {
+      "type": "QUESTION",
+      "schema": {
+        "question_tr": "string",
+        "answer_type": "yes_no|number|multiple_choice|free_text",
+        "choices_tr": ["string"]
+      }
+    },
+    "result": {
+      "type": "RESULT",
+      "schema": {
+        "recommended_specialty_tr": "string",
+        "urgency": "ER_NOW|SAME_DAY|WITHIN_3_DAYS|ROUTINE",
+        "candidates_tr": [
+          { "label_tr": "string", "probability_0_1": "number" }
+        ],
+        "emergency_watchouts_tr": ["string"],
+        "doctor_ready_summary_tr": {
+          "symptoms_tr": ["string"],
+          "timeline_tr": "string",
+          "qa_highlights_tr": ["string"],
+          "risk_level": "LOW|MEDIUM|HIGH"
+        },
+        "disclaimer_tr": "string"
+      }
+    }
+  }
+}

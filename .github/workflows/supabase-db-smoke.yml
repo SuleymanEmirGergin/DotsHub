@@ -1,0 +1,60 @@
+name: Supabase DB Smoke
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches:
+      - main
+    paths:
+      - "backend/sql/**"
+      - "backend/scripts/apply_supabase_schema.py"
+      - ".github/workflows/supabase-db-smoke.yml"
+
+jobs:
+  supabase-db-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: "backend/requirements.txt"
+
+      - name: Install backend dependencies
+        run: |
+          cd backend
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install supabase
+
+      - name: Run schema apply smoke
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          SUPABASE_DB_POOLER_URL: ${{ secrets.SUPABASE_DB_POOLER_URL }}
+        run: |
+          set -euo pipefail
+          cd backend
+          python scripts/apply_supabase_schema.py --sql sql/20260210_supabase_triage_schema.sql 2>&1 | tee supabase_schema_smoke.log
+
+      - name: Assert pooler socket success
+        run: |
+          set -euo pipefail
+          cd backend
+          grep -Fq "Schema applied successfully via SUPABASE_DB_POOLER_URL." supabase_schema_smoke.log
+
+      - name: Assert REST fallback not used
+        run: |
+          set -euo pipefail
+          cd backend
+          if grep -Fq "verifying schema via Supabase REST" supabase_schema_smoke.log; then
+            echo "Unexpected REST fallback in DB smoke." >&2
+            exit 1
+          fi

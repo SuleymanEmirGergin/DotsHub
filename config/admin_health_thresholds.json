@@ -1,0 +1,5 @@
+{
+  "low_conf_rate": { "warn": 0.25, "crit": 0.4 },
+  "high_risk_rate": { "warn": 0.08, "crit": 0.15 },
+  "min_samples": 80
+}

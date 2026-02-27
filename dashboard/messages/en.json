@@ -1,0 +1,45 @@
+{
+  "common": {
+    "ok": "OK",
+    "cancel": "Cancel",
+    "back": "Back",
+    "loading": "Loading...",
+    "error": "An error occurred."
+  },
+  "nav": {
+    "admin": "Admin",
+    "sessions": "Sessions",
+    "status": "Status",
+    "analytics": "Analytics",
+    "deployments": "Deployments",
+    "tuningTasks": "Tuning Tasks",
+    "tuningReport": "Tuning Report",
+    "tuningMetrics": "Tuning Metrics",
+    "login": "Login",
+    "logout": "Logout"
+  },
+  "login": {
+    "title": "Login",
+    "email": "Email",
+    "password": "Password",
+    "submit": "Sign in"
+  },
+  "sessions": {
+    "title": "Sessions",
+    "id": "ID",
+    "createdAt": "Created",
+    "envelopeType": "Envelope type",
+    "specialty": "Specialty",
+    "confidence": "Confidence",
+    "stopReason": "Stop reason",
+    "exportCsv": "Export CSV"
+  },
+  "status": {
+    "title": "System status",
+    "autoRefresh": "Auto refresh"
+  },
+  "tuningTasks": {
+    "title": "Tuning tasks",
+    "exportCsv": "Export CSV"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "request": {
+    "endpoint": "/v1/session/sess_demo_01/message",
+    "body": { "user_input_tr": "Oda dönüyor gibi" }
+  },
+  "response": {
+    "type": "RESULT",
+    "session_id": "sess_demo_01",
+    "payload": {
+      "recommended_specialty_tr": "Nöroloji (gerekirse KBB)",
+      "urgency": "WITHIN_3_DAYS",
+      "candidates_tr": [
+        { "label_tr": "Benign vertigo (olası)", "probability_0_1": 0.58 },
+        { "label_tr": "Dehidrasyon / düşük tansiyon (olası)", "probability_0_1": 0.20 }
+      ],
+      "rationale_tr": ["Vertigo paterni vestibüler/nörolojik değerlendirme gerektirebilir."],
+      "emergency_watchouts_tr": ["Konuşma bozukluğu, tek taraflı güçsüzlük, bayılma olursa acil servise başvur."],
+      "doctor_ready_summary_tr": {
+        "symptoms_tr": ["Baş dönmesi (oda dönüyor gibi)", "Bulantı"],
+        "timeline_tr": "Bu sabah başladı, saatlerdir sürüyor",
+        "qa_highlights_tr": ["Stroke benzeri bulgu yok"],
+        "risk_level": "LOW"
+      }
+    },
+    "meta": {
+      "disclaimer_tr": "Bu uygulama tanı koymaz; bilgilendirme ve yönlendirme amaçlıdır.",
+      "timestamp": "2026-02-08T12:00:25+03:00"
+    }
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "name": "pretriage-dashboard",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "lint": "npm run typecheck",
+    "lint:eslint": "npx --offline=false --yes --package eslint@9.19.0 --package eslint-config-next@15.1.0 eslint . --max-warnings=0",
+    "test:routes": "node scripts/check_admin_proxy_contract.cjs",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui"
+  },
+  "dependencies": {
+    "next": "^15.1.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "@supabase/supabase-js": "^2.49.0",
+    "@supabase/ssr": "^0.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "typescript": "^5.7.0",
+    "@playwright/test": "^1.49.0"
+  }
+}

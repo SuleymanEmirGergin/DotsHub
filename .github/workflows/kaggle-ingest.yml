@@ -1,0 +1,97 @@
+name: Kaggle Ingest
+
+on:
+  schedule:
+    # Every Monday at 03:00 UTC
+    - cron: "0 3 * * 1"
+  workflow_dispatch:
+    inputs:
+      dataset_slug:
+        description: "Kaggle dataset slug (owner/name)"
+        required: false
+        default: ""
+        type: string
+
+concurrency:
+  group: kaggle-ingest
+  cancel-in-progress: false
+
+jobs:
+  refresh-kaggle-cache:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: "backend/requirements.txt"
+
+      - name: Install backend dependencies
+        run: |
+          cd backend
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install kaggle
+
+      - name: Resolve dataset slug
+        id: dataset
+        env:
+          INPUT_DATASET_SLUG: ${{ github.event.inputs.dataset_slug }}
+          DATASET_SLUG_VAR: ${{ vars.KAGGLE_DATASET_SLUG }}
+          DEFAULT_DATASET_SLUG: "itachi9604/disease-symptom-description-dataset"
+        run: |
+          set -euo pipefail
+          DATASET_SLUG="${INPUT_DATASET_SLUG:-}"
+          if [ -z "$DATASET_SLUG" ]; then
+            DATASET_SLUG="${DATASET_SLUG_VAR:-}"
+          fi
+          if [ -z "$DATASET_SLUG" ]; then
+            DATASET_SLUG="$DEFAULT_DATASET_SLUG"
+          fi
+
+          echo "dataset_slug=$DATASET_SLUG" >> "$GITHUB_OUTPUT"
+          echo "Using dataset slug: $DATASET_SLUG"
+
+      - name: Fetch Kaggle dataset and rebuild cache
+        env:
+          KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
+          KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
+        run: |
+          set -euo pipefail
+          cd backend
+          python scripts/fetch_kaggle_dataset.py --dataset-slug "${{ steps.dataset.outputs.dataset_slug }}"
+          python scripts/preprocess_kaggle.py
+
+      - name: Create pull request for cache updates
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "chore(data): refresh kaggle cache"
+          title: "chore(data): refresh kaggle cache"
+          body: |
+            Automated Kaggle ingest refreshed deterministic triage cache files.
+
+            - Dataset: `${{ steps.dataset.outputs.dataset_slug }}`
+            - Trigger: `${{ github.event_name }}`
+            - Workflow run: `${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}`
+          branch: "automation/kaggle-cache-refresh"
+          delete-branch: true
+          labels: |
+            automation
+            data
+          add-paths: |
+            backend/app/data/kaggle_cache/disease_symptoms.json
+            backend/app/data/kaggle_cache/symptom_severity.json
+            backend/app/data/kaggle_cache/disease_descriptions.json
+            backend/app/data/kaggle_cache/kaggle_to_canonical.json

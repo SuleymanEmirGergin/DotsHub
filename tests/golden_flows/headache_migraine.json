@@ -1,0 +1,15 @@
+{
+  "scenario": "Headache + Migraine path",
+  "description": "User reports headache, answers follow-up questions, gets neurology routing",
+  "input": [
+    { "user_message": "Başım ağrıyor", "answer": null },
+    { "user_message": "", "answer": { "canonical": "bulantı", "value": "yes" } },
+    { "user_message": "", "answer": { "canonical": "bulanık görme", "value": "yes" } }
+  ],
+  "expected": {
+    "final_type": "RESULT",
+    "recommended_specialty": "neurology",
+    "top_condition_contains": "Migraine",
+    "urgency": "ROUTINE"
+  }
+}

@@ -1,0 +1,344 @@
+openapi: 3.0.3
+info:
+  title: Pre-Triage Agentic AI API
+  version: 0.1.1
+  description: >
+    Medical pre-triage system. Does not diagnose; provides routing & urgency guidance.
+    Legacy reference spec. Primary contract is docs/openapi_orchestrator.yaml.
+servers:
+  - url: https://api.example.com
+x-default-integration-path:
+  backend_app: app.main
+  mobile_endpoint: /v1/triage/turn
+
+paths:
+  /v1/session/start:
+    post:
+      deprecated: true
+      summary: Start a new triage session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SessionStartRequest"
+            examples:
+              startExample:
+                summary: Start session with free-text symptoms
+                value:
+                  user_input_tr: "Sabah kalktığımdan beri başım dönüyor, midem bulanıyor."
+                  profile:
+                    age: 23
+                    sex: "male"
+                    pregnancy: null
+                    chronic_conditions_tr: []
+                    medications_tr: []
+                    allergies_tr: []
+      responses:
+        "200":
+          description: Envelope response (usually QUESTION or EMERGENCY)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Envelope"
+              examples:
+                questionResponse:
+                  summary: Returns a clarification question
+                  value:
+                    type: "QUESTION"
+                    session_id: "sess_20260207_001"
+                    payload:
+                      question_tr: "Konuşmanda bozulma, yüzünde kayma ya da kol-bacakta tek taraflı güçsüzlük oldu mu?"
+                      answer_type: "yes_no"
+                      choices_tr: ["Evet", "Hayır"]
+                      ui_hints:
+                        quick_replies: true
+                    meta:
+                      disclaimer_tr: "Bu uygulama tanı koymaz; bilgilendirme ve yönlendirme amaçlıdır."
+                      timestamp: "2026-02-07T12:15:20+03:00"
+
+  /v1/session/{session_id}/message:
+    post:
+      deprecated: true
+      summary: Send a user message/answer in an existing session
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MessageRequest"
+            examples:
+              answerYes:
+                summary: User answers yes/no question
+                value:
+                  user_input_tr: "Hayır"
+      responses:
+        "200":
+          description: Envelope response (QUESTION/RESULT/EMERGENCY/ERROR)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Envelope"
+              examples:
+                resultResponse:
+                  summary: Returns final routing result
+                  value:
+                    type: "RESULT"
+                    session_id: "sess_20260207_001"
+                    payload:
+                      recommended_specialty_tr: "Nöroloji (gerekirse KBB)"
+                      urgency: "WITHIN_3_DAYS"
+                      candidates_tr:
+                        - label_tr: "Benign vertigo (olası)"
+                          probability_0_1: 0.58
+                        - label_tr: "Dehidrasyon / düşük tansiyon (olası)"
+                          probability_0_1: 0.20
+                      rationale_tr:
+                        - "Baş dönmesi paterni vestibüler/nörolojik değerlendirme gerektirebilir."
+                      emergency_watchouts_tr:
+                        - "Konuşma bozukluğu, tek taraflı güçsüzlük, bayılma olursa acil servise başvur."
+                      doctor_ready_summary_tr:
+                        symptoms_tr:
+                          - "Baş dönmesi (oda dönüyor gibi)"
+                          - "Bulantı"
+                        timeline_tr: "Bu sabah başladı, saatlerdir sürüyor"
+                        qa_highlights_tr:
+                          - "Stroke benzeri bulgu yok (konuşma/tek taraflı güçsüzlük yok)"
+                        risk_level: "LOW"
+                      specialty_scores:
+                        neurology: { score: 11 }
+                        internal_gi: { score: 6 }
+                    meta:
+                      disclaimer_tr: "Bu uygulama tanı koymaz; bilgilendirme ve yönlendirme amaçlıdır."
+                      timestamp: "2026-02-07T12:16:05+03:00"
+
+                emergencyResponse:
+                  summary: Emergency override response
+                  value:
+                    type: "EMERGENCY"
+                    session_id: "sess_20260207_999"
+                    payload:
+                      reason_tr: "Göğüs baskısı + nefes darlığı + terleme acil değerlendirme gerektirebilir."
+                      instructions_tr:
+                        - "Derhal acil servise başvur veya 112'yi ara."
+                        - "Araç kullanma, yalnızsan birine haber ver."
+                      missing_info_to_confirm_tr:
+                        - "Ağrı sol kola/çeneye yayılıyor mu?"
+                        - "Bayılma oldu mu?"
+                    meta:
+                      disclaimer_tr: "Bu uygulama tanı koymaz; bilgilendirme ve yönlendirme amaçlıdır."
+                      timestamp: "2026-02-07T13:01:12+03:00"
+
+                errorResponse:
+                  summary: Model or parsing error (retryable)
+                  value:
+                    type: "ERROR"
+                    session_id: "sess_20260207_001"
+                    payload:
+                      code: "MODEL_OUTPUT_INVALID_JSON"
+                      message_tr: "Sistem yanıtı beklenen formatta gelmedi. Lütfen tekrar deneyin."
+                      retryable: true
+                    meta:
+                      disclaimer_tr: "Bu uygulama tanı koymaz; bilgilendirme ve yönlendirme amaçlıdır."
+                      timestamp: "2026-02-07T12:16:10+03:00"
+
+  /v1/session/{session_id}/state:
+    get:
+      deprecated: true
+      summary: Get current session state (debug / admin)
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Current state snapshot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionState"
+              examples:
+                stateExample:
+                  summary: Minimal state snapshot
+                  value:
+                    session_id: "sess_20260207_001"
+                    questions_asked: 1
+                    top_specialty:
+                      id: "neurology"
+                      score: 11
+
+components:
+  schemas:
+    SessionStartRequest:
+      type: object
+      required: [user_input_tr]
+      properties:
+        user_input_tr:
+          type: string
+        profile:
+          $ref: "#/components/schemas/Profile"
+
+    MessageRequest:
+      type: object
+      required: [user_input_tr]
+      properties:
+        user_input_tr:
+          type: string
+
+    Profile:
+      type: object
+      properties:
+        age:
+          type: integer
+          nullable: true
+        sex:
+          type: string
+          nullable: true
+          description: "male|female|other"
+        pregnancy:
+          type: string
+          nullable: true
+        chronic_conditions_tr:
+          type: array
+          items: { type: string }
+        medications_tr:
+          type: array
+          items: { type: string }
+        allergies_tr:
+          type: array
+          items: { type: string }
+
+    Envelope:
+      type: object
+      required: [type, session_id, payload, meta]
+      properties:
+        type:
+          type: string
+          enum: [QUESTION, RESULT, EMERGENCY, ERROR]
+        session_id:
+          type: string
+        payload:
+          oneOf:
+            - $ref: "#/components/schemas/QuestionPayload"
+            - $ref: "#/components/schemas/ResultPayload"
+            - $ref: "#/components/schemas/EmergencyPayload"
+            - $ref: "#/components/schemas/ErrorPayload"
+        meta:
+          $ref: "#/components/schemas/Meta"
+
+    Meta:
+      type: object
+      required: [disclaimer_tr, timestamp]
+      properties:
+        disclaimer_tr:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        model_info:
+          type: object
+          additionalProperties: true
+        debug:
+          type: object
+          additionalProperties: true
+
+    QuestionPayload:
+      type: object
+      required: [question_tr, answer_type]
+      properties:
+        question_tr:
+          type: string
+        answer_type:
+          type: string
+          enum: [yes_no, number, multiple_choice, free_text]
+        choices_tr:
+          type: array
+          items: { type: string }
+        ui_hints:
+          type: object
+          additionalProperties: true
+
+    ResultPayload:
+      type: object
+      required: [recommended_specialty_tr, urgency, candidates_tr, emergency_watchouts_tr, doctor_ready_summary_tr]
+      properties:
+        recommended_specialty_tr:
+          type: string
+        urgency:
+          type: string
+          enum: [ER_NOW, SAME_DAY, WITHIN_3_DAYS, ROUTINE]
+        candidates_tr:
+          type: array
+          items:
+            type: object
+            required: [label_tr, probability_0_1]
+            properties:
+              label_tr:
+                type: string
+              probability_0_1:
+                type: number
+                minimum: 0
+                maximum: 1
+        rationale_tr:
+          type: array
+          items: { type: string }
+        emergency_watchouts_tr:
+          type: array
+          items: { type: string }
+        doctor_ready_summary_tr:
+          $ref: "#/components/schemas/DoctorReadySummary"
+        specialty_scores:
+          type: object
+          additionalProperties: true
+
+    DoctorReadySummary:
+      type: object
+      required: [symptoms_tr, timeline_tr, qa_highlights_tr, risk_level]
+      properties:
+        symptoms_tr:
+          type: array
+          items: { type: string }
+        timeline_tr:
+          type: string
+        qa_highlights_tr:
+          type: array
+          items: { type: string }
+        risk_level:
+          type: string
+          enum: [LOW, MEDIUM, HIGH]
+
+    EmergencyPayload:
+      type: object
+      required: [reason_tr, instructions_tr]
+      properties:
+        reason_tr:
+          type: string
+        instructions_tr:
+          type: array
+          items: { type: string }
+        missing_info_to_confirm_tr:
+          type: array
+          items: { type: string }
+
+    ErrorPayload:
+      type: object
+      required: [code, message_tr]
+      properties:
+        code:
+          type: string
+        message_tr:
+          type: string
+        retryable:
+          type: boolean
+
+    SessionState:
+      type: object
+      additionalProperties: true

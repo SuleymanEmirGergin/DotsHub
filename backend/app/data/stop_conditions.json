@@ -1,0 +1,65 @@
+{
+  "version": "0.1.0",
+  "language": "tr-TR",
+  "limits": {
+    "max_questions_total": 8,
+    "max_questions_per_cluster": 4,
+    "max_rounds_without_new_signal": 2,
+    "time_limit_seconds": 90
+  },
+  "required_fields": [
+    "chief_complaint_present",
+    "onset_or_duration_present",
+    "severity_estimated",
+    "at_least_one_negative_red_flag_checked"
+  ],
+  "red_flag_checkpoints": {
+    "check_every_user_message": true,
+    "force_check_before_final_result": true
+  },
+  "sufficiency_rules": [
+    {
+      "id": "sufficient_low_risk",
+      "when_all_true": [
+        "chief_complaint_present",
+        "onset_or_duration_present",
+        "severity_estimated",
+        "at_least_one_negative_red_flag_checked",
+        "dominant_specialty_score_gte_8"
+      ],
+      "then": "STOP_ASKING_AND_REASON"
+    },
+    {
+      "id": "sufficient_medium_risk",
+      "when_all_true": [
+        "chief_complaint_present",
+        "onset_or_duration_present",
+        "severity_estimated",
+        "at_least_two_negative_red_flags_checked",
+        "dominant_specialty_score_gte_10"
+      ],
+      "then": "STOP_ASKING_AND_REASON"
+    }
+  ],
+  "early_stop_rules": [
+    {
+      "id": "emergency_override",
+      "when_any_true": ["safety_guard_emergency"],
+      "then": "STOP_AND_RETURN_EMERGENCY"
+    },
+    {
+      "id": "question_limit_reached",
+      "when_any_true": ["max_questions_total_reached", "time_limit_reached"],
+      "then": "STOP_ASKING_AND_REASON_WITH_LOW_CONFIDENCE_NOTE"
+    },
+    {
+      "id": "no_new_signal",
+      "when_any_true": ["max_rounds_without_new_signal_reached"],
+      "then": "STOP_ASKING_AND_REASON_WITH_LOW_CONFIDENCE_NOTE"
+    }
+  ],
+  "definition_hints": {
+    "severity_estimated": "Kullanıcı 0-10 vermediyse, metinden yaklaşık çıkar (hafif/orta/şiddetli -> 3/6/8).",
+    "dominant_specialty_score": "specialty_keywords_tr.json scoring ile hesaplanan en yüksek skor."
+  }
+}

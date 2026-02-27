@@ -1,0 +1,19 @@
+{
+  "request": {
+    "endpoint": "/v1/session/sess_demo_01/message",
+    "body": { "user_input_tr": "Hayır" }
+  },
+  "response": {
+    "type": "QUESTION",
+    "session_id": "sess_demo_01",
+    "payload": {
+      "question_tr": "Baş dönmesi odanın dönmesi gibi mi (vertigo) yoksa sersemlik gibi mi?",
+      "answer_type": "multiple_choice",
+      "choices_tr": ["Oda dönüyor gibi", "Sersemlik gibi", "Karışık"]
+    },
+    "meta": {
+      "disclaimer_tr": "Bu uygulama tanı koymaz; bilgilendirme ve yönlendirme amaçlıdır.",
+      "timestamp": "2026-02-08T12:00:10+03:00"
+    }
+  }
+}

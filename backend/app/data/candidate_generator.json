@@ -1,0 +1,15 @@
+{
+  "version": "0.1.0",
+  "method": "weighted_jaccard",
+  "top_k": 5,
+  "min_score_to_include": 0.05,
+  "weights": {
+    "default_symptom_weight": 1.0,
+    "use_severity_if_available": true,
+    "severity_weight_multiplier": 0.25
+  },
+  "normalization": {
+    "lowercase": true,
+    "strip_punctuation": true
+  }
+}

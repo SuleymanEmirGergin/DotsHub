@@ -1,0 +1,25 @@
+{
+  "request": {
+    "endpoint": "/v1/session/start",
+    "body": {
+      "user_input_tr": "Göğsümde baskı var, nefesim daralıyor ve terliyorum.",
+      "profile": { "age": 41, "sex": "male", "chronic_conditions_tr": ["hipertansiyon"], "medications_tr": ["amlodipin"], "allergies_tr": [] }
+    }
+  },
+  "response": {
+    "type": "EMERGENCY",
+    "session_id": "sess_demo_08",
+    "payload": {
+      "reason_tr": "Göğüs baskısı + nefes darlığı + terleme acil değerlendirme gerektirebilir.",
+      "instructions_tr": [
+        "Derhal acil servise başvur veya 112'yi ara.",
+        "Araç kullanma, yalnızsan birine haber ver."
+      ],
+      "missing_info_to_confirm_tr": ["Ağrı sol kola/çeneye yayılıyor mu?", "Bayılma oldu mu?"]
+    },
+    "meta": {
+      "disclaimer_tr": "Bu uygulama tanı koymaz; bilgilendirme ve yönlendirme amaçlıdır.",
+      "timestamp": "2026-02-08T12:03:00+03:00"
+    }
+  }
+}

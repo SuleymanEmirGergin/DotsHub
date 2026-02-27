@@ -1,0 +1,26 @@
+{
+  "null_allowlist": [
+    "extra_marital_contacts",
+    "family_history",
+    "history_of_alcohol_consumption",
+    "receiving_blood_transfusion",
+    "receiving_unsterile_injections",
+    "scarring"
+  ],
+  "coverage": {
+    "min_total_symptoms": 3,
+    "min_non_null_ratio_critical": 0.6
+  },
+  "canonical_reachability": {
+    "require_any_source": [
+      "synonyms",
+      "question_bank",
+      "specialty_keywords"
+    ]
+  },
+  "collapse": {
+    "max_en_symptoms_per_canonical_warning": 4,
+    "min_non_null_symptoms_for_disease_check": 3,
+    "max_single_canonical_share_warning": 0.75
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "scenario": "Internal GI anal pain path",
+  "description": "User reports anal pain and should route to internal_gi with hemorrhoids candidate coverage.",
+  "input": [
+    {
+      "user_message": "Anal bölgede ağrı var",
+      "answer": null
+    }
+  ],
+  "expected": {
+    "final_type": "RESULT",
+    "recommended_specialty": "internal_gi",
+    "top_condition_contains": "Dimorphic hemmorhoids(piles)",
+    "urgency": "ROUTINE"
+  }
+}
