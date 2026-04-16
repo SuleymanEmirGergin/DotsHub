@@ -1,0 +1,15 @@
+{
+  "scenario": "OB-GYN suspected ectopic pregnancy — EMERGENCY",
+  "description": "Gebelik testi pozitif olan kullanıcı şiddetli tek taraflı pelvik ağrı ve vajinal kanama bildiriyor. Ektopik gebelik şüphesiyle EMERGENCY envelope tetiklenmeli.",
+  "input": [
+    {
+      "user_message": "Gebelik testim pozitif çıktı ama sağ kasığımda çok şiddetli ağrı var ve az miktarda kanama oluyor.",
+      "answer": null
+    }
+  ],
+  "expected": {
+    "final_type": "EMERGENCY",
+    "recommended_specialty": "obgyn",
+    "urgency": "ER_NOW"
+  }
+}
