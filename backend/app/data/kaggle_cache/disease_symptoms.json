@@ -8,30 +8,11 @@
     "vomiting",
     "headache_duration_days"
   ],
-  "AIDS": [
-    "extra_marital_contacts",
-    "high_fever",
-    "muscle_wasting",
-    "patches_in_throat",
-    "throat_pain_duration_days",
-    "fever_degree_celsius"
-  ],
   "Acne": [
     "blackheads",
     "pus_filled_pimples",
     "scarring",
     "skin_rash"
-  ],
-  "Alcoholic hepatitis": [
-    "abdominal_pain",
-    "distention_of_abdomen",
-    "fluid_overload",
-    "history_of_alcohol_consumption",
-    "vomiting",
-    "yellowish_skin",
-    "yellowing_of_eyes",
-    "abdominal_pain_duration_days",
-    "abdominal_pain_location"
   ],
   "Allergy": [
     "chills",
@@ -113,44 +94,6 @@
     "fever_degree_celsius",
     "sputum_color"
   ],
-  "Dengue": [
-    "back_pain",
-    "chills",
-    "fatigue",
-    "headache",
-    "high_fever",
-    "joint_pain",
-    "loss_of_appetite",
-    "malaise",
-    "muscle_pain",
-    "nausea",
-    "pain_behind_the_eyes",
-    "red_spots_over_body",
-    "skin_rash",
-    "vomiting",
-    "fever_duration_days",
-    "headache_duration_days",
-    "fever_degree_celsius"
-  ],
-  "Diabetes ": [
-    "blurred_and_distorted_vision",
-    "excessive_hunger",
-    "fatigue",
-    "increased_appetite",
-    "irregular_sugar_level",
-    "lethargy",
-    "obesity",
-    "polyuria",
-    "restlessness",
-    "weight_loss"
-  ],
-  "Dimorphic hemmorhoids(piles)": [
-    "bloody_stool",
-    "constipation",
-    "irritation_in_anus",
-    "pain_during_bowel_movements",
-    "pain_in_anal_region"
-  ],
   "Drug Reaction": [
     "itching",
     "skin_rash",
@@ -195,70 +138,6 @@
     "vomiting_frequency_per_day",
     "breathlessness_on_exertion"
   ],
-  "Hepatitis B": [
-    "abdominal_pain",
-    "dark_urine",
-    "fatigue",
-    "high_fever",
-    "joint_pain",
-    "lethargy",
-    "loss_of_appetite",
-    "malaise",
-    "muscle_pain",
-    "nausea",
-    "receiving_blood_transfusion",
-    "receiving_unsterile_injections",
-    "yellow_urine",
-    "yellowish_skin",
-    "yellowing_of_eyes",
-    "abdominal_pain_duration_days",
-    "fever_duration_days",
-    "fever_degree_celsius",
-    "abdominal_pain_location"
-  ],
-  "Hepatitis C": [
-    "fatigue",
-    "family_history",
-    "loss_of_appetite",
-    "nausea",
-    "yellowish_skin",
-    "yellowing_of_eyes"
-  ],
-  "Hepatitis D": [
-    "abdominal_pain",
-    "dark_urine",
-    "fatigue",
-    "high_fever",
-    "joint_pain",
-    "loss_of_appetite",
-    "nausea",
-    "vomiting",
-    "yellowish_skin",
-    "yellowing_of_eyes",
-    "abdominal_pain_duration_days",
-    "fever_duration_days",
-    "fever_degree_celsius",
-    "abdominal_pain_location"
-  ],
-  "Hepatitis E": [
-    "abdominal_pain",
-    "dark_urine",
-    "dehydration",
-    "fatigue",
-    "high_fever",
-    "joint_pain",
-    "loss_of_appetite",
-    "nausea",
-    "stomach_bleeding",
-    "vomiting",
-    "yellowish_skin",
-    "yellowing_of_eyes",
-    "abdominal_pain_duration_days",
-    "fever_duration_days",
-    "diarrhoea_duration_days",
-    "fever_degree_celsius",
-    "abdominal_pain_location"
-  ],
   "Hyperthyroidism": [
     "abnormal_menstruation",
     "diarrhoea",
@@ -271,20 +150,6 @@
     "restlessness",
     "sweating",
     "weight_loss"
-  ],
-  "Hypoglycemia": [
-    "anxiety",
-    "blurred_and_distorted_vision",
-    "drying_and_tingling_lips",
-    "excessive_hunger",
-    "fatigue",
-    "headache",
-    "irritability",
-    "nausea",
-    "palpitations",
-    "sweating",
-    "vomiting",
-    "headache_duration_days"
   ],
   "Hypothyroidism": [
     "abnormal_menstruation",
@@ -325,20 +190,6 @@
     "fever_degree_celsius",
     "abdominal_pain_location"
   ],
-  "Malaria": [
-    "chills",
-    "diarrhoea",
-    "headache",
-    "high_fever",
-    "muscle_pain",
-    "nausea",
-    "sweating",
-    "vomiting",
-    "diarrhoea_duration_days",
-    "fever_duration_days",
-    "headache_duration_days",
-    "fever_degree_celsius"
-  ],
   "Migraine": [
     "acidity",
     "blurred_and_distorted_vision",
@@ -354,22 +205,6 @@
     "stiff_neck",
     "visual_disturbances",
     "vomiting"
-  ],
-  "Osteoarthristis": [
-    "hip_joint_pain",
-    "joint_pain",
-    "knee_pain",
-    "movement_stiffness",
-    "neck_pain",
-    "painful_walking",
-    "swelling_joints"
-  ],
-  "Paralysis (brain hemorrhage)": [
-    "altered_sensorium",
-    "headache",
-    "vomiting",
-    "weakness_of_one_body_side",
-    "headache_duration_days"
   ],
   "Peptic ulcer diseae": [
     "abdominal_pain",
@@ -439,28 +274,6 @@
     "fever_degree_celsius",
     "sputum_color"
   ],
-  "Typhoid": [
-    "abdominal_pain",
-    "belly_pain",
-    "chills",
-    "constipation",
-    "diarrhoea",
-    "fatigue",
-    "headache",
-    "high_fever",
-    "loss_of_appetite",
-    "malaise",
-    "nausea",
-    "toxic_look_(typhos)",
-    "vomiting",
-    "vomiting_frequency_per_day",
-    "abdominal_pain_duration_days",
-    "diarrhoea_duration_days",
-    "fever_duration_days",
-    "headache_duration_days",
-    "fever_degree_celsius",
-    "abdominal_pain_location"
-  ],
   "Urinary tract infection": [
     "bladder_discomfort",
     "burning_micturition",
@@ -494,5 +307,28 @@
     "diarrhoea_duration_days",
     "fever_degree_celsius",
     "abdominal_pain_location"
+  ],
+  "Osteoartrit": [
+    "hip_joint_pain",
+    "joint_pain",
+    "knee_pain",
+    "movement_stiffness",
+    "neck_pain",
+    "painful_walking",
+    "swelling_joints"
+  ],
+  "İnme/SVH şüphesi": [
+    "altered_sensorium",
+    "headache",
+    "vomiting",
+    "weakness_of_one_body_side",
+    "headache_duration_days"
+  ],
+  "Hemoroid": [
+    "bloody_stool",
+    "constipation",
+    "irritation_in_anus",
+    "pain_during_bowel_movements",
+    "pain_in_anal_region"
   ]
 }

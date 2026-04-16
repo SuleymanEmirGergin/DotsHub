@@ -40,18 +40,6 @@
       "confidence": 0.9
     },
     {
-      "disease_label": "AIDS",
-      "specialty_id": "internal_gi",
-      "specialty_tr": "Dahiliye (gerekirse Enfeksiyon)",
-      "confidence": 0.8
-    },
-    {
-      "disease_label": "Diabetes ",
-      "specialty_id": "internal_gi",
-      "specialty_tr": "Dahiliye (gerekirse Endokrinoloji)",
-      "confidence": 0.9
-    },
-    {
       "disease_label": "Gastroenteritis",
       "specialty_id": "internal_gi",
       "specialty_tr": "Dahiliye (gerekirse Gastroenteroloji)",
@@ -64,10 +52,11 @@
       "confidence": 0.9
     },
     {
-      "disease_label": "Hypertension ",
+      "disease_label": "Hipertansiyon (stabil)",
       "specialty_id": "cardiology",
       "specialty_tr": "Kardiyoloji",
-      "confidence": 0.85
+      "confidence": 0.85,
+      "review_status": "draft"
     },
     {
       "disease_label": "Migraine",
@@ -82,21 +71,16 @@
       "confidence": 0.85
     },
     {
-      "disease_label": "Paralysis (brain hemorrhage)",
+      "disease_label": "İnme/SVH şüphesi",
       "specialty_id": "neurology",
       "specialty_tr": "Nöroloji",
-      "confidence": 0.95
+      "confidence": 0.95,
+      "review_status": "draft"
     },
     {
       "disease_label": "Jaundice",
       "specialty_id": "internal_gi",
       "specialty_tr": "Dahiliye (gerekirse Gastroenteroloji)",
-      "confidence": 0.85
-    },
-    {
-      "disease_label": "Malaria",
-      "specialty_id": "internal_gi",
-      "specialty_tr": "Dahiliye (gerekirse Enfeksiyon)",
       "confidence": 0.85
     },
     {
@@ -106,52 +90,10 @@
       "confidence": 0.8
     },
     {
-      "disease_label": "Dengue",
-      "specialty_id": "internal_gi",
-      "specialty_tr": "Dahiliye (gerekirse Enfeksiyon)",
-      "confidence": 0.85
-    },
-    {
-      "disease_label": "Typhoid",
-      "specialty_id": "internal_gi",
-      "specialty_tr": "Dahiliye (gerekirse Enfeksiyon)",
-      "confidence": 0.9
-    },
-    {
       "disease_label": "hepatitis A",
       "specialty_id": "internal_gi",
       "specialty_tr": "Dahiliye (gerekirse Gastroenteroloji)",
       "confidence": 0.9
-    },
-    {
-      "disease_label": "Hepatitis B",
-      "specialty_id": "internal_gi",
-      "specialty_tr": "Dahiliye (gerekirse Gastroenteroloji)",
-      "confidence": 0.9
-    },
-    {
-      "disease_label": "Hepatitis C",
-      "specialty_id": "internal_gi",
-      "specialty_tr": "Dahiliye (gerekirse Gastroenteroloji)",
-      "confidence": 0.9
-    },
-    {
-      "disease_label": "Hepatitis D",
-      "specialty_id": "internal_gi",
-      "specialty_tr": "Dahiliye (gerekirse Gastroenteroloji)",
-      "confidence": 0.9
-    },
-    {
-      "disease_label": "Hepatitis E",
-      "specialty_id": "internal_gi",
-      "specialty_tr": "Dahiliye (gerekirse Gastroenteroloji)",
-      "confidence": 0.9
-    },
-    {
-      "disease_label": "Alcoholic hepatitis",
-      "specialty_id": "internal_gi",
-      "specialty_tr": "Dahiliye (gerekirse Gastroenteroloji)",
-      "confidence": 0.85
     },
     {
       "disease_label": "Tuberculosis",
@@ -172,10 +114,11 @@
       "confidence": 0.9
     },
     {
-      "disease_label": "Dimorphic hemmorhoids(piles)",
+      "disease_label": "Hemoroid",
       "specialty_id": "internal_gi",
       "specialty_tr": "Dahiliye (gerekirse Genel Cerrahi)",
-      "confidence": 0.85
+      "confidence": 0.85,
+      "review_status": "draft"
     },
     {
       "disease_label": "Heart attack",
@@ -202,16 +145,11 @@
       "confidence": 0.9
     },
     {
-      "disease_label": "Hypoglycemia",
-      "specialty_id": "internal_gi",
-      "specialty_tr": "Dahiliye (gerekirse Endokrinoloji)",
-      "confidence": 0.85
-    },
-    {
-      "disease_label": "Osteoarthristis",
+      "disease_label": "Osteoartrit",
       "specialty_id": "orthopedics_rheum",
       "specialty_tr": "Ortopedi / Romatoloji",
-      "confidence": 0.9
+      "confidence": 0.9,
+      "review_status": "draft"
     },
     {
       "disease_label": "Arthritis",
