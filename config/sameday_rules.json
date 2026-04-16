@@ -1,3 +1,124 @@
 {
-    "rules": []
+  "version": "0.1.0",
+  "description": "Same-day triage rules — conditions that do NOT meet emergency criteria but warrant evaluation within 24h. Matched against the extracted canonicals set by orchestrator_v5.sameday_router (see backend/app/orchestrator_v5.py:192-200). Each rule fires if ALL canonicals in `all[]` are present AND ANY in `any[]` is present AND NONE in `none[]` is present. Emergency rules are evaluated first; sameday rules only run when the turn is not flagged as an emergency.",
+  "schema_notes": [
+    "id: stable identifier for analytics",
+    "any: list of canonical symptom names — at least one must be present (optional; empty = ignored)",
+    "all: list of canonical symptom names — every one must be present (optional)",
+    "none: list of canonicals — none may be present (excludes emergency-leaning combinations)",
+    "message_tr: user-facing explanation",
+    "action: see_today (default) | follow_up_72h",
+    "recommended_specialty: advisory hint for downstream scorer — not authoritative"
+  ],
+  "rules": [
+    {
+      "id": "productive_cough_febrile",
+      "all": ["öksürük", "ateş"],
+      "none": ["kanlı balgam", "nefes darlığı", "göğüs ağrısı"],
+      "message_tr": "Ateşle birlikte öksürük — 24 saat içinde göğüs hastalıkları veya aile hekimine başvur.",
+      "action": "see_today",
+      "recommended_specialty": "pulmonology"
+    },
+    {
+      "id": "cough_with_sputum_persistent",
+      "all": ["öksürük", "balgam"],
+      "none": ["kanlı balgam", "nefes darlığı"],
+      "message_tr": "Süregelen balgamlı öksürük — bugün/yarın göğüs hastalıkları değerlendirmesi önerilir.",
+      "action": "see_today",
+      "recommended_specialty": "pulmonology"
+    },
+    {
+      "id": "headache_with_nausea_no_focal",
+      "all": ["baş ağrısı", "bulantı"],
+      "none": ["tek taraflı güçsüzlük/uyuşma", "konuşma bozukluğu"],
+      "message_tr": "Bulantı ile birlikte baş ağrısı — bugün nöroloji veya aile hekimi değerlendirmesi.",
+      "action": "see_today",
+      "recommended_specialty": "neurology"
+    },
+    {
+      "id": "diarrhea_with_fatigue",
+      "all": ["ishal", "halsizlik"],
+      "none": ["kanlı balgam"],
+      "message_tr": "Süregelen ishal ve halsizlik — sıvı kaybı riski, bugün poliklinik muayenesi önerilir.",
+      "action": "see_today",
+      "recommended_specialty": "internal_gi"
+    },
+    {
+      "id": "uti_symptom_cluster",
+      "all": ["idrar yanması", "sık idrara çıkma"],
+      "none": ["ateş"],
+      "message_tr": "İdrar yakınmaları — bugün üroloji veya aile hekimine başvuru.",
+      "action": "see_today",
+      "recommended_specialty": "urology_internal"
+    },
+    {
+      "id": "skin_rash_with_pruritus",
+      "all": ["döküntü/ürtiker", "kaşıntı"],
+      "none": ["yüz/dudak şişmesi"],
+      "message_tr": "Döküntü ve kaşıntı — bugün dermatoloji değerlendirmesi.",
+      "action": "see_today",
+      "recommended_specialty": "dermatology"
+    },
+    {
+      "id": "joint_swelling_with_stiffness",
+      "all": ["şişlik", "eklem tutukluğu"],
+      "message_tr": "Eklem şişliği ve tutukluk — bugün ortopedi veya romatoloji değerlendirmesi.",
+      "action": "see_today",
+      "recommended_specialty": "orthopedics_rheum"
+    },
+    {
+      "id": "abdominal_pain_with_vomiting",
+      "all": ["karın ağrısı", "kusma"],
+      "none": ["göğüs ağrısı", "göğüste baskı"],
+      "message_tr": "Karın ağrısı ve kusma — bugün dahiliye veya genel cerrahi değerlendirmesi.",
+      "action": "see_today",
+      "recommended_specialty": "internal_gi"
+    },
+    {
+      "id": "fever_with_sore_throat",
+      "all": ["ateş", "boğaz ağrısı"],
+      "none": ["nefes darlığı"],
+      "message_tr": "Ateşli boğaz ağrısı — bugün Kulak Burun Boğaz veya aile hekimi muayenesi.",
+      "action": "see_today",
+      "recommended_specialty": "ent"
+    },
+    {
+      "id": "itch_with_redness",
+      "all": ["kaşıntı", "kızarıklık"],
+      "none": ["yüz/dudak şişmesi"],
+      "message_tr": "Kaşıntı ve kızarıklık — bugün dermatoloji.",
+      "action": "see_today",
+      "recommended_specialty": "dermatology"
+    },
+    {
+      "id": "fatigue_with_palpitation_no_chest_pain",
+      "all": ["halsizlik", "çarpıntı"],
+      "none": ["göğüs ağrısı", "göğüste baskı", "nefes darlığı"],
+      "message_tr": "Halsizlik ile çarpıntı — bugün kardiyoloji veya dahiliye değerlendirmesi.",
+      "action": "see_today",
+      "recommended_specialty": "cardiology"
+    },
+    {
+      "id": "mild_asthma_pattern",
+      "all": ["öksürük", "nefes darlığı"],
+      "none": ["kanlı balgam", "göğüs ağrısı", "göğüste baskı"],
+      "message_tr": "Öksürük ile birlikte nefes darlığı — bugün göğüs hastalıkları kontrolü.",
+      "action": "see_today",
+      "recommended_specialty": "pulmonology"
+    },
+    {
+      "id": "suicidal_ideation_no_active_plan",
+      "any": ["intihar/kendine zarar"],
+      "message_tr": "Kendine zarar düşüncesi — bugün psikiyatri başvurusu önerilir. Aktif plan veya yöntem hazırlığı varsa 112'yi ara.",
+      "action": "see_today",
+      "recommended_specialty": "psychiatry"
+    },
+    {
+      "id": "anal_pain_persistent",
+      "any": ["anal ağrı"],
+      "message_tr": "Süregelen anal ağrı — bugün genel cerrahi veya aile hekimi değerlendirmesi.",
+      "action": "see_today",
+      "recommended_specialty": "general_surgery"
+    }
+  ]
 }
