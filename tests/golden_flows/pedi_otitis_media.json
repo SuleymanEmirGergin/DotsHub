@@ -1,0 +1,16 @@
+{
+  "scenario": "Pediatrics acute otitis media",
+  "description": "Ebeveyn, 2 yaşındaki çocuğunun kulağını çekiştirdiğini ve ateşinin olduğunu bildiriyor. Rutin pediatri yönlendirmesi bekleniyor.",
+  "input": [
+    {
+      "user_message": "2 yaşındaki oğlum sabahtan beri kulağını çekiştiriyor, ağlıyor ve ateşi 38.5. Ne yapmalıyım?",
+      "answer": null
+    }
+  ],
+  "expected": {
+    "final_type": "RESULT",
+    "recommended_specialty": "pediatrics",
+    "top_condition_contains": "Otitis",
+    "urgency": "WITHIN_3_DAYS"
+  }
+}

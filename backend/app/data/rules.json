@@ -284,6 +284,29 @@
       "specialty": "Kadın Hastalıkları ve Doğum",
       "clusters": ["düzensiz kanama", "alt karın ağrısı", "adet gecikmesi", "gebelik şüphesi"],
       "urgency_rules": [{ "if": { "pregnancy": true, "bleeding": true }, "then": "ER_NOW" }]
+    },
+    {
+      "id": "pediatrics",
+      "specialty": "Çocuk Sağlığı ve Hastalıkları",
+      "_note": "age_bucket: bu routing yalnız age_bucket=child veya açık çocuk bağlamında aktif",
+      "clusters": [
+        "çocukta yüksek ateş",
+        "bebek huzursuzluğu",
+        "beslenmeyi reddetme",
+        "çocukta döküntü ve ateş",
+        "kulak çekiştirme",
+        "bebek nefes hırıltısı",
+        "çocukta ishal ve dehidrasyon",
+        "febril konvülziyon"
+      ],
+      "urgency_rules": [
+        { "if": { "canonical_any": ["febril konvülziyon"] }, "then": "ER_NOW" },
+        { "if": { "age_months_lte": 3, "canonical_any": ["çocukta yüksek ateş"] }, "then": "ER_NOW" },
+        { "if": { "canonical_any": ["çocukta döküntü ve ateş"], "non_blanching": true }, "then": "ER_NOW" },
+        { "if": { "canonical_any": ["çocukta ishal ve dehidrasyon"] }, "then": "SAME_DAY" },
+        { "if": { "canonical_any": ["bebek nefes hırıltısı"] }, "then": "SAME_DAY" },
+        { "if": { "canonical_any": ["kulak çekiştirme"] }, "then": "WITHIN_3_DAYS" }
+      ]
     }
   ],
   "urgency_definitions": {

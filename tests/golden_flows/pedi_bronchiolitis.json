@@ -1,0 +1,16 @@
+{
+  "scenario": "Pediatrics bronchiolitis (RSV)",
+  "description": "Ebeveyn, 8 aylık bebeğinin hırıltılı nefes aldığını ve ateşli olduğunu bildiriyor. Bronşiolit şüphesiyle pediatri yönlendirmesi bekleniyor.",
+  "input": [
+    {
+      "user_message": "8 aylık bebeğim hırıltılı nefes alıyor, hafif ateşi var ve iştahı azaldı. 2 gündür böyle.",
+      "answer": null
+    }
+  ],
+  "expected": {
+    "final_type": "RESULT",
+    "recommended_specialty": "pediatrics",
+    "top_condition_contains": "Bronşiolit",
+    "urgency": "SAME_DAY"
+  }
+}

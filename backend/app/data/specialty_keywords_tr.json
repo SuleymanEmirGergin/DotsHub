@@ -190,6 +190,36 @@
         "vajinal akıntı"
       ],
       "negative_keywords_tr": []
+    },
+    {
+      "id": "pediatrics",
+      "specialty_tr": "Çocuk Sağlığı ve Hastalıkları",
+      "keywords_tr": [
+        "bebeğim",
+        "çocuğum",
+        "bebek",
+        "çocuk ateşi",
+        "çocuğun ateşi",
+        "bebeğimin ateşi",
+        "kulağını çekiştiriyor",
+        "bebeğim ağlıyor",
+        "hırıltılı nefes",
+        "ishal bebek",
+        "çocukta döküntü",
+        "ateşte kasıldı",
+        "havale geçirdi",
+        "febril nöbet",
+        "mama yemiyor",
+        "emmek istemiyor",
+        "suçiçeği",
+        "rotavirüs",
+        "bronşiolit",
+        "çocuk nefes zorluğu",
+        "bebek ishal",
+        "çocukta kusma ishal",
+        "pediatri"
+      ],
+      "negative_keywords_tr": []
     }
   ],
   "scoring": {
