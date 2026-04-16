@@ -1,0 +1,14 @@
+{
+  "scenario": "Adult acute otitis media — ENT",
+  "description": "User reports ear pain + fever. Tests A10-2 newly-added 'Akut otitis media (yetişkin)' disease + A10-2 newly-added 'kulak ağrısı' canonical. Routes to ENT as ROUTINE (sameday rule 'acute_otitis_suspect_adult' exists in config/sameday_rules.json but NOT wired to production pipeline yet).",
+  "review_status": "draft",
+  "input": [
+    { "user_message": "kulağım ağrıyor ve ateşim var, kulak iltihabım olduğunu düşünüyorum", "answer": null }
+  ],
+  "expected": {
+    "final_type": "RESULT",
+    "recommended_specialty": "ent",
+    "urgency": "ROUTINE",
+    "top_condition_contains": "otitis media"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "scenario": "Low-confidence RESULT — A9 gate suppresses top_conditions",
+  "description": "Single-symptom ambiguous input with few signals. Confidence falls below 0.45 gate → A9 confidence gate clears top_conditions (prevents 'Brain hemorrhage' / 'Cushing' / etc. from being shown to user for textbook mild cases). Also asserts low_confidence=true flag is set on client_payload.",
+  "review_status": "draft",
+  "a9_gate_test": true,
+  "input": [
+    { "user_message": "kendimi iyi hissetmiyorum", "answer": null }
+  ],
+  "expected": {
+    "final_type": "RESULT",
+    "low_confidence": true,
+    "top_condition_contains_empty": true
+  }
+}

@@ -61,15 +61,15 @@ Kritik bulgular (A1):
 | **A1** | Coverage audit baseline | — | — | — | — | — | ✅ Done — `docs/medical/coverage_audit.md` |
 | **A9** | Confidence gate | — | — | — | — | — | ✅ Done — commit `dcf1529` |
 | **A7 collision test** | `test_synonym_collisions.py` — 14 test (data hygiene, collision, expansion guard, matcher sanity) | — | — | — | — | — | ✅ Done |
-| A2 | Psikiyatri | 8 | 12 | 1 | 4 | 3 | Pending |
-| A3 | OB-GYN | 10 | 13 (+1 cross) | 3 | 3 | 3 | Pending |
-| A4 | Oftalmoloji | 6 | 10 | 2 | 2 | 3 | Pending |
-| A5 | Pediatri | 8 | 14 | 3 | 4 | 4 | Pending |
-| A6 | Nefro + Endo + Gen Surg | 8 | 14 (+2 taşıma) | 3 | — | 4 | Pending |
-| A7 | Variant expansion (generator) | 0 (genişletme) | — | — | — | — | Pending |
-| A8 | Sameday rules + audit | — | — | — | — | — | Pending |
-| A10 | Disease list revizyonu | — | ~-10/+15 | — | — | 2 | Pending |
-| A10b | Golden flows ek | — | — | — | — | +18 (toplam 25+) | Pending |
+| **A2** | **Psikiyatri** | **8** | **12** | **1** | **4** | **3** | **✅ Done** (psychiatry orphan listesinden çıktı, 1 pending A8 urgency upgrade) |
+| **A3** | **OB-GYN** | **10** | **13** | **3** | **3** | **3** | **✅ Done** (obgyn orphan listesinden çıktı; ektopik + preeklampsi + postpartum EMERGENCY; +10 pelvic_pain variants for free-text coverage) |
+| **A4** | **Oftalmoloji** | **6** | **10** | **2** | **2** | **3** | **✅ Done** (ophthalmology orphan listesinden çıktı — **tüm 3 orphan kapandı**; akut glokom + retina dekolmanı EMERGENCY; bulantı GI false-positive guard çalışıyor) |
+| A5 | Pediatri | 8 | 14 | 3 | 4 | 4 | Pending (yaş bucket altyapısı nedeniyle ertelendi) |
+| **A6** | **Nefro + Endo + Gen Surg** | **8** | **13 (+3 taşıma)** | **3** | **0** | **4** | **✅ Done** (nephrology/endocrinology/general_surgery yeni specialty_id'leri oluşturuldu; DKA + severe hypoglycemia + acute appendicitis EMERGENCY; Hypo/Hyperthyroidism → endo, Piles → genSurg taşıma) |
+| **A7** | **Variant expansion** | **0** | — | — | — | — | **✅ Done** (574 → 794 variant; 17 canonical 3-variant'tan kurtarıldı; avg 8.7 → 12.0; weak spots ≤4 variant = 0) |
+| **A8** | **Sameday rules + expert review** | — | — | — | — | — | **✅ Done** (13 sameday rule + expert_review_v1.md; wiring production'a değil — Stream B'de duration extraction ile aktif olacak) |
+| **A10** | **Disease list revizyonu** | **+2** | **+12 / -11** | — | — | — | **✅ Done** (Malaria/Dengue/AIDS/Hep B-E çıkarıldı; Paralysis→İnme, Osteoarthristis→Osteoartrit; +12 TR primary care hastalık) |
+| **A10b** | **Golden flows ek** | — | — | — | — | **+5** | **✅ Done** (cardio_stable_hypertension, ent_otitis_media_adult, ortho_mechanical_back_pain, pulm_covid_acute, low_confidence_no_conditions) |
 | A11 | UI full-stack yansıma | — | — | — | — | — | Pending |
 
 **Hedef toplam:** +40 canonical, +63 disease (net +49), +12 emergency
@@ -141,17 +141,21 @@ CI otomatik (`.github/workflows/audit-coverage.yml`):
 - main: rapor + artifact
 - Pazartesi 06:17 UTC: haftalık snapshot
 
-### Güncel Durum (2026-04-16)
+### Güncel Durum (A7 + A10b sonrası, 2026-04-17)
 
 ```
-canonicals             current=32    baseline=32  target=72 (44.4%)
-variants_total         current=128   baseline=131 target=1450 (8.8%)
-diseases               current=41    baseline=41  target=90 (45.6%)
-emergency_rules        current=7     target=24
-sameday_rules          current=0     target=14    ⚠ EMPTY STUB
-red_flag_questions     current=4     target=17
-golden_flows           current=7     target=25
-orphan_specialties     ['obgyn', 'ophthalmology', 'psychiatry']  target: 0
+canonicals             current=66    baseline=32  target=72 (91.7%)
+variants_total         current=794   baseline=131 target=1450 (54.8%)  [+220 A7 expansion]
+variants_avg           current=12.0  baseline=4.0                       [3x improvement]
+variants_weak_spots    0 canonicals ≤4 variants                         [A7 threshold met]
+diseases               current=90    baseline=41  target=90 (100.0%)   ✅
+emergency_rules        current=16    target=24
+sameday_rules          current=13    target=14    (92.9%)
+red_flag_questions     current=13    target=17
+golden_flows           current=25    baseline=7   target=25 (100.0%)   ✅ HEDEF TAMAMLANDI (A10b +5)
+specialties_active     current=14    target=14    ✅
+orphan_specialties     []  target: 0                                    ✅
+data_quality_issues    []                                               ✅
 ```
 
 ---

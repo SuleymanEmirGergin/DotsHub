@@ -1,0 +1,13 @@
+{
+  "scenario": "Acute COVID-19 / influenza-like illness — pulmonology",
+  "description": "Classic COVID-19 acute presentation: fever + cough + fatigue (without severe dyspnea). Tests A10-2 newly-added 'COVID-19 akut' / 'Mevsimsel grip' diseases. Routes to pulmonology as ROUTINE (severe breathlessness would escalate to ER via hard_trigger chest_pain_plus_breathlessness or breathing_severe).",
+  "review_status": "draft",
+  "input": [
+    { "user_message": "ateşim çıktı, öksürüğüm var ve çok halsizim, boğazım da yanıyor", "answer": null }
+  ],
+  "expected": {
+    "final_type": "RESULT",
+    "recommended_specialty": "pulmonology",
+    "urgency": "ROUTINE"
+  }
+}

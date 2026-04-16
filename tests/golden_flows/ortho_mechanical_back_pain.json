@@ -1,0 +1,13 @@
+{
+  "scenario": "Mechanical low back pain — routine orthopedics",
+  "description": "User reports typical mechanical low back pain without neurological red flags (no radicular leg pain, no cauda equina signs). Tests A10-2 newly-added 'bel ağrısı' canonical + 'Mekanik bel ağrısı' / 'Lomber disk hernisi' diseases.",
+  "review_status": "draft",
+  "input": [
+    { "user_message": "belim çok ağrıyor, bel ağrısı çekiyorum, kaldırmakta zorlanıyorum", "answer": null }
+  ],
+  "expected": {
+    "final_type": "RESULT",
+    "recommended_specialty": "orthopedics_rheum",
+    "urgency": "ROUTINE"
+  }
+}
