@@ -1,0 +1,15 @@
+{
+  "scenario": "General surgery acute appendicitis — EMERGENCY",
+  "description": "Kullanıcı sağ alt karın ağrısı, ateş ve bulantı bildiriyor. Akut apandisit şüphesiyle EMERGENCY envelope tetiklenmeli.",
+  "input": [
+    {
+      "user_message": "Sağ alt karın bölgemde çok şiddetli ağrı var, ateşim 38.7 ve bulantım var. Yürüyünce daha çok ağrıyor.",
+      "answer": null
+    }
+  ],
+  "expected": {
+    "final_type": "EMERGENCY",
+    "recommended_specialty": "general_surgery",
+    "urgency": "ER_NOW"
+  }
+}

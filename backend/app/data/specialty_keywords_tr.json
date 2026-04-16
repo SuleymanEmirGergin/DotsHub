@@ -287,6 +287,68 @@
         "pediatri"
       ],
       "negative_keywords_tr": []
+    },
+    {
+      "id": "nephrology",
+      "specialty_tr": "Nefroloji",
+      "keywords_tr": [
+        "böbrek",
+        "böbreğim ağrıyor",
+        "yan ağrısı",
+        "renal kolik",
+        "idrarda kan",
+        "kanlı idrar",
+        "idrarda köpük",
+        "böbrek yetmezliği",
+        "diyaliz",
+        "kreatinin yüksek",
+        "nefrotik"
+      ],
+      "negative_keywords_tr": []
+    },
+    {
+      "id": "endocrinology",
+      "specialty_tr": "Endokrinoloji",
+      "keywords_tr": [
+        "şeker hastalığı",
+        "diyabet",
+        "insülin",
+        "kan şekeri",
+        "şekerim yüksek",
+        "şekerim düştü",
+        "aşırı susama",
+        "çok su içiyorum",
+        "çok idrara çıkıyorum",
+        "tiroid",
+        "guatr",
+        "hipotiroidi",
+        "hipertiroidi",
+        "terleme ve kilo kaybı",
+        "cushing",
+        "kortizol",
+        "hipoglisemi"
+      ],
+      "negative_keywords_tr": []
+    },
+    {
+      "id": "general_surgery",
+      "specialty_tr": "Genel Cerrahi",
+      "keywords_tr": [
+        "apandis",
+        "apandisit",
+        "sağ alt karın ağrısı",
+        "kasık fıtığı",
+        "fıtık",
+        "safra kesesi",
+        "safra taşı",
+        "kolesistit",
+        "kasıkta şişlik",
+        "bağırsak tıkanması",
+        "ameliyat gerekir mi",
+        "hemoroid",
+        "basur"
+      ],
+      "negative_keywords_tr": []
     }
   ],
   "scoring": {

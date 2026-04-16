@@ -1,0 +1,15 @@
+{
+  "scenario": "Endocrinology DKA — EMERGENCY",
+  "description": "Tip 1 diyabetli kullanıcı aşırı susama, çok idrara çıkma, bulantı ve yorgunluk bildiriyor. DKA şüphesiyle EMERGENCY envelope tetiklenmeli.",
+  "input": [
+    {
+      "user_message": "Tip 1 diyabetim var, son iki gündür çok su içiyorum, sürekli idrara çıkıyorum, bulantım var ve çok yoruldum. Şekerim yüksek çıkıyor.",
+      "answer": null
+    }
+  ],
+  "expected": {
+    "final_type": "EMERGENCY",
+    "recommended_specialty": "endocrinology",
+    "urgency": "ER_NOW"
+  }
+}

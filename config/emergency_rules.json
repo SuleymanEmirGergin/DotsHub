@@ -436,6 +436,107 @@
       "canonical_any": [
         "febril konvülziyon"
       ]
+    },
+    {
+      "id": "dka_suspect",
+      "severity": 3,
+      "title_tr": "Diyabetik ketoasidoz (DKA) şüphesi",
+      "message_tr": "Diyabetik hastada aşırı susama, çok idrara çıkma, bulantı/kusma ve derin nefes DKA belirtisi olabilir. Acil servise gidin.",
+      "recommendation_tr": "112 / Acil Servis",
+      "keyword_any": [
+        "diyabetim var",
+        "insülin kullanıyorum",
+        "şeker hastasıyım",
+        "tip 1 diyabetim"
+      ],
+      "canonical_any": [
+        "aşırı susama",
+        "poliüri"
+      ],
+      "require_any_group": [
+        {
+          "keyword_any": [
+            "bulantı",
+            "kusma",
+            "derin nefes",
+            "meyve kokusu",
+            "bilinç bozuldu",
+            "halsizlik çok şiddetli"
+          ]
+        },
+        {
+          "canonical_any": [
+            "bulantı",
+            "kusma"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "severe_hypoglycemia",
+      "severity": 3,
+      "title_tr": "Ağır hipoglisemi şüphesi",
+      "message_tr": "Diyabetik hastada terleme, titreme ve bilinç değişikliği ağır hipoglisemi belirtisi olabilir. Hemen şeker ver, düzelmezse 112'yi ara.",
+      "recommendation_tr": "Şeker/şekerli içecek ver — düzelmezse 112",
+      "keyword_any": [
+        "diyabetim var",
+        "insülin yaptım",
+        "şeker hastasıyım"
+      ],
+      "canonical_any": [
+        "hipoglisemi belirtisi"
+      ],
+      "require_any_group": [
+        {
+          "keyword_any": [
+            "bilinç",
+            "bayılacak",
+            "titriyor",
+            "terleme",
+            "konuşamıyor",
+            "uyandıramıyorum"
+          ]
+        },
+        {
+          "canonical_any": [
+            "hipoglisemi belirtisi",
+            "bilinç değişikliği"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "acute_appendicitis_suspect",
+      "severity": 3,
+      "title_tr": "Akut apandisit şüphesi",
+      "message_tr": "Sağ alt karın ağrısı, ateş ve bulantı apandisit belirtisi olabilir. Acil servise gidin — tedavisiz perfore olabilir.",
+      "recommendation_tr": "Acil Servis / Genel Cerrahi",
+      "keyword_any": [
+        "sağ alt karın ağrısı",
+        "apandis ağrısı",
+        "apandisit"
+      ],
+      "canonical_any": [
+        "sağ alt karın ağrısı"
+      ],
+      "require_any_group": [
+        {
+          "keyword_any": [
+            "ateş",
+            "bulantı",
+            "yürüyünce ağrıyor",
+            "sarsınca ağrıyor",
+            "iştah yok",
+            "giderek kötüleşiyor"
+          ]
+        },
+        {
+          "canonical_any": [
+            "ateş",
+            "bulantı"
+          ]
+        }
+      ]
     }
   ]
 }
