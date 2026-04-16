@@ -122,7 +122,17 @@ export default async function SessionDetail({
         <Bullets arr={session.why_specialty_tr} />
       </div>
 
-      <h2 className="text-lg font-bold mt-6">Top Conditions</h2>
+      <h2 className="text-lg font-bold mt-6 flex items-center gap-2">
+        Top Conditions
+        {typeof session.confidence_0_1 === "number" && session.confidence_0_1 < 0.45 ? (
+          <span
+            className="inline-flex items-center rounded-full bg-amber-100 text-amber-900 text-xs font-medium px-2 py-0.5 border border-amber-300"
+            title="Confidence < 0.45 gate threshold — top_conditions A9 gate tarafından client_payload'dan gizlendi. Admin view tam listeyi gösterir."
+          >
+            Düşük güven — client'a gösterilmedi
+          </span>
+        ) : null}
+      </h2>
       <Pretty data={session.top_conditions} />
 
       <h2 className="text-lg font-bold mt-6">Scoring Debug (rules)</h2>

@@ -44,6 +44,11 @@ export type ResultPayload = {
   confidence_explain_tr?: string;
   why_specialty_tr?: string[];
   stop_reason?: string;
+  // When true, confidence fell below the gate threshold (0.45) and
+  // top_conditions was suppressed by the backend to avoid showing
+  // misleading disease candidates. UI should display a "düşük güven"
+  // indicator and may omit the "possible conditions" section.
+  low_confidence?: boolean;
 };
 
 export type EmergencyPayload = {

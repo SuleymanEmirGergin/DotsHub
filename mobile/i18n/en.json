@@ -73,6 +73,8 @@
     "feedbackError": "Feedback could not be sent.",
     "whySpecialty": "Why this specialty?",
     "possibleConditions": "Possible conditions (estimated)",
+    "lowConfidenceBadge": "Low confidence",
+    "lowConfidenceNotice": "Not enough symptom information to confidently rank possible conditions. Please consult the recommended specialty; your doctor will perform a full evaluation.",
     "summaryForDoctor": "Summary for doctor",
     "shareAsText": "Text",
     "pdf": "PDF",

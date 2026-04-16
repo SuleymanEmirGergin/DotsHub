@@ -81,7 +81,9 @@
     "feedbackSubmit": "إرسال",
     "feedbackThanksInline": "تم حفظ ملاحظاتك. شكراً!",
     "alertError": "خطأ",
-    "alertInfo": "معلومات"
+    "alertInfo": "معلومات",
+    "lowConfidenceBadge": "ثقة منخفضة",
+    "lowConfidenceNotice": "لا توجد معلومات أعراض كافية لترتيب الأمراض المحتملة بثقة. يرجى مراجعة التخصص الموصى به للحصول على تقييم كامل."
   },
   "emergency": {
     "title": "قد يلزم تقييم طارئ",

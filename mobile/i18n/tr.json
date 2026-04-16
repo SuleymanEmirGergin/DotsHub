@@ -73,6 +73,8 @@
     "feedbackError": "Geri bildirim gönderilemedi.",
     "whySpecialty": "Neden bu branş?",
     "possibleConditions": "Olası durumlar (tahmini)",
+    "lowConfidenceBadge": "Düşük güven",
+    "lowConfidenceNotice": "Belirti bilgisi olası hastalıkları güvenle sıralamak için yeterli değil. Lütfen önerilen branşa başvurunuz; doktorunuz tam değerlendirme yapacaktır.",
     "summaryForDoctor": "Doktora gösterilecek özet",
     "shareAsText": "Metin",
     "pdf": "PDF",

@@ -159,13 +159,20 @@ export default function ResultScreen() {
         <Card style={styles.cardSpacing}>
           <MutedText style={[styles.cardLabel, rtlText]}>{t("result.whereToGo")}</MutedText>
           <Text style={[styles.specialtyName, rtlText]}>{result.recommended_specialty.name_tr}</Text>
-          <Badge style={styles.urgencyBadge} textStyle={styles.urgencyText}>
-            {result.urgency === "ROUTINE"
-              ? t("result.urgencyRoutine")
-              : result.urgency === "SAME_DAY"
-                ? t("result.urgencySameDay")
-                : t("result.urgencyAcil")}
-          </Badge>
+          <View style={styles.badgeRow}>
+            <Badge style={styles.urgencyBadge} textStyle={styles.urgencyText}>
+              {result.urgency === "ROUTINE"
+                ? t("result.urgencyRoutine")
+                : result.urgency === "SAME_DAY"
+                  ? t("result.urgencySameDay")
+                  : t("result.urgencyAcil")}
+            </Badge>
+            {result.low_confidence ? (
+              <Badge style={styles.lowConfidenceBadge} textStyle={styles.lowConfidenceText}>
+                {t("result.lowConfidenceBadge")}
+              </Badge>
+            ) : null}
+          </View>
         </Card>
 
         <View style={styles.sectionSpacing}>
@@ -185,12 +192,18 @@ export default function ResultScreen() {
 
         <Card style={styles.cardSpacing}>
           <SectionTitle style={rtlText}>{t("result.possibleConditions")}</SectionTitle>
-          {result.top_conditions.map((c, i) => (
-            <View key={i} style={styles.conditionRow}>
-              <Text style={[styles.conditionLabel, rtlText]}>{c.disease_label}</Text>
-              <Text style={[styles.conditionScore, rtlText]}>%{Math.round(c.score_0_1 * 100)}</Text>
-            </View>
-          ))}
+          {result.low_confidence || result.top_conditions.length === 0 ? (
+            <Text style={[styles.lowConfidenceNotice, rtlText]}>
+              {t("result.lowConfidenceNotice")}
+            </Text>
+          ) : (
+            result.top_conditions.map((c, i) => (
+              <View key={i} style={styles.conditionRow}>
+                <Text style={[styles.conditionLabel, rtlText]}>{c.disease_label}</Text>
+                <Text style={[styles.conditionScore, rtlText]}>%{Math.round(c.score_0_1 * 100)}</Text>
+              </View>
+            ))
+          )}
         </Card>
 
         <Card style={styles.cardSpacing}>
@@ -363,6 +376,25 @@ const styles = StyleSheet.create({
   },
   urgencyText: {
     color: tokens.colors.textSecondary,
+  },
+  badgeRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "center",
+    gap: tokens.spacing.sm,
+    marginTop: tokens.spacing.sm,
+  },
+  lowConfidenceBadge: {
+    backgroundColor: "#FFF4E0",
+    borderColor: "#F0C36D",
+  },
+  lowConfidenceText: {
+    color: "#8A5A00",
+  },
+  lowConfidenceNotice: {
+    ...tokens.typography.body,
+    color: tokens.colors.textSecondary,
+    paddingVertical: tokens.spacing.sm,
   },
   bulletText: {
     ...tokens.typography.body,
