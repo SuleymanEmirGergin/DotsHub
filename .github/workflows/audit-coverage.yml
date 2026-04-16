@@ -1,0 +1,66 @@
+name: Coverage Audit
+
+# Runs backend/scripts/audit_coverage.py to surface medical data coverage gaps.
+# - On PRs touching data files: human-readable report in logs + fails build if
+#   critical gaps exist (new orphan specialty, regression in sameday rules, new
+#   known-bad disease labels).
+# - On main: regression guard against baseline.
+# - Weekly cron: uploads JSON artifact for trend tracking.
+
+on:
+  pull_request:
+    paths:
+      - "backend/app/data/**"
+      - "backend/scripts/audit_coverage.py"
+      - "backend/scripts/coverage_expected.json"
+      - "config/emergency_rules.json"
+      - "config/sameday_rules.json"
+      - "tests/golden_flows/**"
+      - ".github/workflows/audit-coverage.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "backend/app/data/**"
+      - "backend/scripts/audit_coverage.py"
+      - "backend/scripts/coverage_expected.json"
+      - "config/emergency_rules.json"
+      - "config/sameday_rules.json"
+      - "tests/golden_flows/**"
+  schedule:
+    # Weekly trend snapshot, Mondays 06:17 UTC (off-peak)
+    - cron: "17 6 * * 1"
+  workflow_dispatch: {}
+
+jobs:
+  audit-coverage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Run coverage audit (human-readable, always shown in logs)
+        run: python backend/scripts/audit_coverage.py
+
+      - name: Run coverage audit (JSON artifact)
+        run: python backend/scripts/audit_coverage.py --json > audit_coverage_report.json
+
+      - name: Upload JSON report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-audit-${{ github.run_id }}
+          path: audit_coverage_report.json
+          retention-days: 90
+
+      # Fail the build on PRs if critical gaps are present.
+      # Allowed on main + scheduled runs so trend tracking doesn't break history.
+      - name: Fail on critical gaps (PR only)
+        if: github.event_name == 'pull_request'
+        run: python backend/scripts/audit_coverage.py --fail-on-critical

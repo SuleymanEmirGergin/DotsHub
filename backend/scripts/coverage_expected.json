@@ -1,0 +1,125 @@
+{
+  "_meta": {
+    "source": "docs/medical/coverage_audit.md — Stream A Session A1",
+    "baseline_date": "2026-04-16",
+    "review_status": "draft_pending_medical_expert_review"
+  },
+
+  "baseline": {
+    "description": "A1 audit anındaki mevcut kapsam — regresyon tespiti için referans.",
+    "canonicals_total": 32,
+    "variants_total_approx": 131,
+    "variants_avg_per_canonical": 4.0,
+    "specialties_total": 11,
+    "specialties_orphan": ["psychiatry", "obgyn", "ophthalmology"],
+    "specialties_missing_entirely": ["pediatrics", "nephrology", "endocrinology", "general_surgery"],
+    "diseases_total": 41,
+    "emergency_rules": 13,
+    "sameday_rules": 0,
+    "red_flag_questions": 4,
+    "golden_flows": 7
+  },
+
+  "targets": {
+    "description": "Stream A sonu hedefleri. Her A session'ından sonra yaklaşılmalı.",
+    "canonicals_min": 72,
+    "variants_total_min": 1450,
+    "variants_avg_min": 15,
+    "specialties_total_min": 14,
+    "specialties_orphan_max": 0,
+    "specialties_missing_max": 0,
+    "diseases_min": 90,
+    "emergency_rules_min": 24,
+    "sameday_rules_min": 14,
+    "red_flag_questions_min": 17,
+    "golden_flows_min": 25
+  },
+
+  "expected_canonicals_by_specialty": {
+    "_comment": "A1 section 2.3 — boş/eksik branşlar için eklenmesi gereken canonical'lar. Session'larda eklendikçe script bu liste üzerinden tamamlanma oranını raporlar.",
+    "psychiatry": [
+      "uyku bozukluğu",
+      "düşük ruh hali",
+      "anksiyete",
+      "panik atak",
+      "iştah kaybı",
+      "konsantrasyon bozukluğu",
+      "sosyal izolasyon",
+      "umutsuzluk"
+    ],
+    "obgyn": [
+      "vajinal kanama",
+      "gecikmiş adet",
+      "pelvik ağrı",
+      "adet düzensizliği",
+      "dismenore",
+      "gebelik şüphesi",
+      "meme ağrısı",
+      "vajinal akıntı",
+      "vajinal kaşıntı",
+      "amenore"
+    ],
+    "ophthalmology": [
+      "ani görme kaybı",
+      "fotofobi",
+      "kızarık göz",
+      "göz ağrısı",
+      "çift görme",
+      "göz sulanma"
+    ],
+    "pediatrics": [
+      "bebek huzursuzluğu",
+      "beslenmeyi reddetme",
+      "yüksek ateş çocuk",
+      "ağlamada değişiklik",
+      "ishal dehidratasyon",
+      "kulak çekiştirme",
+      "nefes hırıltısı bebek"
+    ],
+    "nephrology": [
+      "yan ağrısı",
+      "hematüri",
+      "idrarda köpük"
+    ],
+    "endocrinology": [
+      "aşırı susama",
+      "poliüri",
+      "hipoglisemi"
+    ],
+    "general_surgery": [
+      "ani karın ağrısı",
+      "kasık fıtığı"
+    ]
+  },
+
+  "data_quality_issues": {
+    "_comment": "A1 section 3.2 — disease_to_specialty.json'da A10'da düzeltilecek kirlilikler. Script bunların hâlâ mevcut olup olmadığını raporlar.",
+    "trailing_space_labels": [
+      "Hypertension ",
+      "Diabetes "
+    ],
+    "typo_labels": [
+      "Osteoarthristis"
+    ],
+    "aggressive_diagnostic_labels": [
+      "Paralysis (brain hemorrhage)"
+    ],
+    "out_of_scope_for_turkey_primary_care": [
+      "Malaria",
+      "Dengue",
+      "Typhoid",
+      "AIDS",
+      "Hepatitis B",
+      "Hepatitis C",
+      "Hepatitis D",
+      "Hepatitis E",
+      "Alcoholic hepatitis"
+    ]
+  },
+
+  "critical_gate_thresholds": {
+    "confidence_gate_current": 0.45,
+    "confidence_gate_a1_recommended": 0.35,
+    "note": "A1 önerisi 0.35 (daha permissive), mevcut implementasyon 0.45 ('Düşük' label sınırı). Tıp expert review'ı ile final karar verilecek — A8 expert_review_v1.md."
+  }
+}
