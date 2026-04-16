@@ -284,6 +284,51 @@
       "specialty": "Kadın Hastalıkları ve Doğum",
       "clusters": ["düzensiz kanama", "alt karın ağrısı", "adet gecikmesi", "gebelik şüphesi"],
       "urgency_rules": [{ "if": { "pregnancy": true, "bleeding": true }, "then": "ER_NOW" }]
+    },
+    {
+      "id": "nephrology",
+      "specialty": "Nefroloji",
+      "clusters": [
+        "yan ağrısı",
+        "hematüri",
+        "idrarda köpük",
+        "böbrek ağrısı",
+        "idrar miktarı azaldı"
+      ],
+      "urgency_rules": [
+        { "if": { "canonical_any": ["yan ağrısı"], "severity": "severe" }, "then": "SAME_DAY" },
+        { "if": { "canonical_any": ["hematüri"] }, "then": "SAME_DAY" }
+      ]
+    },
+    {
+      "id": "endocrinology",
+      "specialty": "Endokrinoloji",
+      "clusters": [
+        "aşırı susama",
+        "poliüri",
+        "hipoglisemi belirtisi",
+        "kilo değişimi",
+        "tiroid şikayeti"
+      ],
+      "urgency_rules": [
+        { "if": { "canonical_any": ["hipoglisemi belirtisi"], "consciousness": "altered" }, "then": "ER_NOW" },
+        { "if": { "canonical_any": ["aşırı susama", "poliüri"], "known_diabetes": true }, "then": "SAME_DAY" }
+      ]
+    },
+    {
+      "id": "general_surgery",
+      "specialty": "Genel Cerrahi",
+      "clusters": [
+        "sağ alt karın ağrısı",
+        "kasık şişliği",
+        "safra kesesi ağrısı",
+        "akut karın"
+      ],
+      "urgency_rules": [
+        { "if": { "canonical_any": ["sağ alt karın ağrısı"] }, "then": "ER_NOW" },
+        { "if": { "canonical_any": ["kasık şişliği"], "irreducible": true }, "then": "ER_NOW" },
+        { "if": { "canonical_any": ["kasık şişliği"] }, "then": "WITHIN_3_DAYS" }
+      ]
     }
   ],
   "urgency_definitions": {

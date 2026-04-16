@@ -43,6 +43,22 @@
     {"disease_label": "Acne", "specialty_id": "dermatology", "specialty_tr": "Dermatoloji", "confidence": 0.9},
     {"disease_label": "Urinary tract infection", "specialty_id": "urology_internal", "specialty_tr": "Üroloji (gerekirse Dahiliye)", "confidence": 0.85},
     {"disease_label": "Psoriasis", "specialty_id": "dermatology", "specialty_tr": "Dermatoloji", "confidence": 0.9},
-    {"disease_label": "Impetigo", "specialty_id": "dermatology", "specialty_tr": "Dermatoloji", "confidence": 0.9}
+    {"disease_label": "Impetigo", "specialty_id": "dermatology", "specialty_tr": "Dermatoloji", "confidence": 0.9},
+    {"disease_label": "Renal Kolik", "specialty_id": "nephrology", "specialty_tr": "Nefroloji (gerekirse Üroloji)", "confidence": 0.9},
+    {"disease_label": "Akut Piyelonefrit", "specialty_id": "nephrology", "specialty_tr": "Nefroloji", "confidence": 0.9},
+    {"disease_label": "Kronik Böbrek Yetmezliği Takibi", "specialty_id": "nephrology", "specialty_tr": "Nefroloji", "confidence": 0.85},
+    {"disease_label": "Nefrotik Sendrom", "specialty_id": "nephrology", "specialty_tr": "Nefroloji", "confidence": 0.85},
+    {"disease_label": "Tip 1 Diyabet (Yeni Tanı)", "specialty_id": "endocrinology", "specialty_tr": "Endokrinoloji", "confidence": 0.9},
+    {"disease_label": "Tip 2 Diyabet", "specialty_id": "endocrinology", "specialty_tr": "Endokrinoloji (gerekirse Dahiliye)", "confidence": 0.9},
+    {"disease_label": "Diyabetik Ketoasidoz (DKA)", "specialty_id": "endocrinology", "specialty_tr": "Endokrinoloji (ACİL)", "confidence": 0.95},
+    {"disease_label": "Ağır Hipoglisemi", "specialty_id": "endocrinology", "specialty_tr": "Endokrinoloji (ACİL)", "confidence": 0.95},
+    {"disease_label": "Hipertiroidi", "specialty_id": "endocrinology", "specialty_tr": "Endokrinoloji", "confidence": 0.9},
+    {"disease_label": "Hipotiroidi", "specialty_id": "endocrinology", "specialty_tr": "Endokrinoloji (gerekirse Dahiliye)", "confidence": 0.9},
+    {"disease_label": "Cushing Sendromu Şüphesi", "specialty_id": "endocrinology", "specialty_tr": "Endokrinoloji", "confidence": 0.8},
+    {"disease_label": "Akut Apandisit", "specialty_id": "general_surgery", "specialty_tr": "Genel Cerrahi (ACİL)", "confidence": 0.95},
+    {"disease_label": "Akut Kolesistit", "specialty_id": "general_surgery", "specialty_tr": "Genel Cerrahi", "confidence": 0.9},
+    {"disease_label": "Kasık Fıtığı", "specialty_id": "general_surgery", "specialty_tr": "Genel Cerrahi", "confidence": 0.9},
+    {"disease_label": "Hemoroid", "specialty_id": "general_surgery", "specialty_tr": "Genel Cerrahi (gerekirse Prokatoloji)", "confidence": 0.85},
+    {"disease_label": "Akut Bağırsak Tıkanması", "specialty_id": "general_surgery", "specialty_tr": "Genel Cerrahi (ACİL)", "confidence": 0.95}
   ]
 }

@@ -1,0 +1,16 @@
+{
+  "scenario": "Endocrinology T2DM follow-up",
+  "description": "Kullanıcı bilinen tip 2 diyabeti olduğunu, şeker kontrolünün bozulduğunu ve sık idrara çıktığını bildiriyor. Rutin endokrinoloji yönlendirmesi bekleniyor.",
+  "input": [
+    {
+      "user_message": "Tip 2 diyabetim var, son zamanlarda şekerim çok yükseldi. Çok su içiyorum ve sık idrara çıkıyorum ama acil bir şey yok.",
+      "answer": null
+    }
+  ],
+  "expected": {
+    "final_type": "RESULT",
+    "recommended_specialty": "endocrinology",
+    "top_condition_contains": "Tip 2 Diyabet",
+    "urgency": "ROUTINE"
+  }
+}

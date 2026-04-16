@@ -328,6 +328,104 @@
         "takatim kalmadı",
         "halsizlik var"
       ]
+    },
+    {
+      "canonical": "yan ağrısı",
+      "type": "symptom",
+      "variants_tr": [
+        "böbreğim ağrıyor",
+        "yan bölge ağrısı",
+        "sağ/sol yan ağrısı",
+        "böbrek bölgesi ağrıyor",
+        "bel yanı ağrısı",
+        "kasığa vuran yan ağrısı",
+        "renal kolik",
+        "dalga tarzı ağrı böbrek"
+      ]
+    },
+    {
+      "canonical": "hematüri",
+      "type": "symptom",
+      "variants_tr": [
+        "idrarım kanlı",
+        "idrarda kan var",
+        "kırmızı idrar",
+        "kanlı işedim",
+        "pembe idrar",
+        "idrar rengi değişti kana döndü"
+      ]
+    },
+    {
+      "canonical": "idrarda köpük",
+      "type": "symptom",
+      "variants_tr": [
+        "idrarda köpük var",
+        "idrarm köpüklü",
+        "idrar köpürüyor",
+        "köpüklü işiyorum"
+      ]
+    },
+    {
+      "canonical": "aşırı susama",
+      "type": "symptom",
+      "variants_tr": [
+        "çok su içiyorum",
+        "sürekli susuyorum",
+        "ağzım kuruyor",
+        "polidipsi",
+        "aşırı susama hissediyorum",
+        "su içtikçe içiyorum",
+        "çok sıvı tüketiyorum"
+      ]
+    },
+    {
+      "canonical": "poliüri",
+      "type": "symptom",
+      "variants_tr": [
+        "çok sık idrara çıkıyorum",
+        "çok fazla idrar yapıyorum",
+        "geceleri çok kalkıyorum idrara",
+        "idrar miktarı arttı",
+        "poliüri",
+        "aşırı idrar"
+      ]
+    },
+    {
+      "canonical": "hipoglisemi belirtisi",
+      "type": "red_flag",
+      "variants_tr": [
+        "şekerim düştü",
+        "terleme ve titreme var",
+        "baş dönmesi ve terleme",
+        "hipoglisemi",
+        "şeker düşüklüğü",
+        "düşük kan şekeri belirtisi",
+        "diyabetim ve fenalaşıyorum"
+      ]
+    },
+    {
+      "canonical": "sağ alt karın ağrısı",
+      "type": "symptom",
+      "variants_tr": [
+        "sağ alt karın ağrısı",
+        "apandis ağrısı gibi",
+        "sağ kasık bölgesi ağrıyor",
+        "sağ alt bölge ağrısı",
+        "sağda alt kısım çok ağrıyor",
+        "göbek altı sağ ağrı"
+      ]
+    },
+    {
+      "canonical": "kasık şişliği",
+      "type": "symptom",
+      "variants_tr": [
+        "kasığımda şişlik var",
+        "kasık fıtığı",
+        "kasıkta kitle",
+        "kasık bölgesinde yumru",
+        "fıtık çıktı",
+        "kasıkta şişme"
+      ]
     }
   ]
 }

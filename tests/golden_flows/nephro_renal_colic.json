@@ -1,0 +1,16 @@
+{
+  "scenario": "Nephrology renal colic",
+  "description": "Kullanıcı sol yan bölgesinde dalga tarzı şiddetli ağrı ve idrarda kan bildiriyor. Renal kolik şüphesiyle nefroloji yönlendirmesi bekleniyor.",
+  "input": [
+    {
+      "user_message": "Sol böbreğim çok şiddetli ağrıyor, ağrı gelip geçiyor ve idrarımın rengi kırmızımsı oldu.",
+      "answer": null
+    }
+  ],
+  "expected": {
+    "final_type": "RESULT",
+    "recommended_specialty": "nephrology",
+    "top_condition_contains": "Renal Kolik",
+    "urgency": "SAME_DAY"
+  }
+}
