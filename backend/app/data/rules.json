@@ -6,7 +6,12 @@
     "long": "Bu uygulama bir sağlık profesyonelinin değerlendirmesinin yerini tutmaz. Yalnızca belirtilerinizi anlamlandırmanıza ve uygun branşa yönlendirmeye yardımcı olur. Acil durum şüpheniz varsa 112'yi arayın veya acil servise başvurun."
   },
   "age_risk_adjustment": {
-    "high_risk_ages": { "min": 0, "max": 5, "min2": 65, "max2": 120 },
+    "high_risk_ages": {
+      "min": 0,
+      "max": 5,
+      "min2": 65,
+      "max2": 120
+    },
     "urgency_bias": {
       "WITHIN_3_DAYS_to_SAME_DAY": true,
       "SAME_DAY_to_ER_NOW_if_soft_redflag": true
@@ -70,35 +75,56 @@
       {
         "id": "seizure",
         "label": "Nöbet / havale",
-        "keywords": ["nöbet geçirdim", "havale"],
+        "keywords": [
+          "nöbet geçirdim",
+          "havale"
+        ],
         "regex": "\\b(nöbet\\s*geçirdim|havale)\\b",
         "action": "ER_NOW"
       },
       {
         "id": "worst_headache",
         "label": "Hayatımın en şiddetli baş ağrısı",
-        "keywords": ["hayatımın en şiddetli baş ağrısı", "en şiddetli baş ağrısı"],
+        "keywords": [
+          "hayatımın en şiddetli baş ağrısı",
+          "en şiddetli baş ağrısı"
+        ],
         "regex": "\\b(hayatımın\\s*en\\s*şiddetli\\s*baş\\s*ağrısı|en\\s*şiddetli\\s*baş\\s*ağrısı)\\b",
         "action": "ER_NOW"
       },
       {
         "id": "gi_bleeding",
         "label": "Kanama (kan kusma / siyah dışkı)",
-        "keywords": ["kan kusuyorum", "kusmukta kan", "dışkım siyah", "katran gibi"],
+        "keywords": [
+          "kan kusuyorum",
+          "kusmukta kan",
+          "dışkım siyah",
+          "katran gibi"
+        ],
         "regex": "\\b(kan\\s*kus(uyorum|tum)|kusmuk(ta|umda)\\s*kan|dışk(ı|im)\\s*siyah|katran\\s*gibi)\\b",
         "action": "ER_NOW"
       },
       {
         "id": "anaphylaxis",
         "label": "Şiddetli alerjik reaksiyon",
-        "keywords": ["dudak şişti", "yüzüm şişti", "hırıltı", "anafilaksi"],
+        "keywords": [
+          "dudak şişti",
+          "yüzüm şişti",
+          "hırıltı",
+          "anafilaksi"
+        ],
         "regex": "\\b(dudak(larım)?\\s*şiş(ti|iyor)|yüz(üm)?\\s*şiş(ti|iyor)|hırıltı|anafilaksi)\\b",
         "action": "ER_NOW"
       },
       {
         "id": "self_harm",
         "label": "Kendine zarar / intihar düşüncesi",
-        "keywords": ["intihar", "kendimi öldürmek", "kendime zarar", "ölmek istiyorum"],
+        "keywords": [
+          "intihar",
+          "kendimi öldürmek",
+          "kendime zarar",
+          "ölmek istiyorum"
+        ],
         "regex": "\\b(intihar|kendimi\\s*öldürmek|kendime\\s*zarar|ölmek\\s*istiyorum)\\b",
         "action": "ER_NOW"
       },
@@ -142,7 +168,11 @@
       {
         "id": "fever_neck_stiffness",
         "label": "Yüksek ateş + ense sertliği şüphesi",
-        "keywords": ["ensem sert", "ense sertliği", "yüksek ateş"],
+        "keywords": [
+          "ensem sert",
+          "ense sertliği",
+          "yüksek ateş"
+        ],
         "follow_up_questions": [
           "Ateşini ölçtün mü? Kaç derece?",
           "Enseyi öne eğince ağrı/sertlik belirgin mi?"
@@ -152,7 +182,11 @@
       {
         "id": "severe_abdominal_pain",
         "label": "Şiddetli karın ağrısı",
-        "keywords": ["çok şiddetli karın ağrısı", "karnım taş gibi", "dayanılmaz"],
+        "keywords": [
+          "çok şiddetli karın ağrısı",
+          "karnım taş gibi",
+          "dayanılmaz"
+        ],
         "follow_up_questions": [
           "Ağrı sağ alt tarafta tek bir noktada mı çok şiddetli?",
           "Bastırınca artıyor mu veya ani kötüleşme var mı?"
@@ -162,7 +196,12 @@
       {
         "id": "pregnancy_bleeding",
         "label": "Gebelik şüphesi + kanama",
-        "keywords": ["hamileyim", "gebelik", "kanamam var", "lekelenme"],
+        "keywords": [
+          "hamileyim",
+          "gebelik",
+          "kanamam var",
+          "lekelenme"
+        ],
         "follow_up_questions": [
           "Hamilelik ihtimali var mı veya test yaptın mı?",
           "Kanama miktarı fazla mı ve ağrı eşlik ediyor mu?"
@@ -172,7 +211,11 @@
       {
         "id": "near_syncope",
         "label": "Bayılacak gibi hissetme",
-        "keywords": ["bayılacak gibi", "gözüm kararıyor", "gözlerim kararıyor"],
+        "keywords": [
+          "bayılacak gibi",
+          "gözüm kararıyor",
+          "gözlerim kararıyor"
+        ],
         "follow_up_questions": [
           "Bayılma gerçekleşti mi?",
           "Bu his ne kadar sürüyor?"
@@ -182,7 +225,12 @@
       {
         "id": "child_elderly_altered",
         "label": "Bebek/çocuk/yaşlıda bilinç değişikliği",
-        "keywords": ["uyandırılamıyor", "halsiz", "morarma", "bebek"],
+        "keywords": [
+          "uyandırılamıyor",
+          "halsiz",
+          "morarma",
+          "bebek"
+        ],
         "follow_up_questions": [
           "Hasta kaç yaşında?",
           "Uyarılara tepki veriyor mu?"
@@ -192,7 +240,12 @@
       {
         "id": "chest_pain_breathlessness_soft",
         "label": "Göğüs ağrısı veya baskı ile nefes darlığı birlikteliği",
-        "keywords": ["göğüs ağrısı", "göğüste baskı", "nefes darlığı", "nefesim yetmiyor"],
+        "keywords": [
+          "göğüs ağrısı",
+          "göğüste baskı",
+          "nefes darlığı",
+          "nefesim yetmiyor"
+        ],
         "follow_up_questions": [
           "Göğüs ağrınız/baskınız ile birlikte nefes darlığı da var mı?",
           "Terleme veya sol kola yayılan ağrı var mı?"
@@ -202,7 +255,11 @@
       {
         "id": "blood_in_stool_soft",
         "label": "Dışkıda kan",
-        "keywords": ["dışkıda kan", "kakanızda kan", "tuvalette kan"],
+        "keywords": [
+          "dışkıda kan",
+          "kakanızda kan",
+          "tuvalette kan"
+        ],
         "follow_up_questions": [
           "Dışkınızda taze kan mı yoksa koyu/siyah renk mi görüyorsunuz?",
           "Miktar ne kadar?"
@@ -220,70 +277,302 @@
     {
       "id": "ent",
       "specialty": "Kulak Burun Boğaz (KBB)",
-      "clusters": ["boğaz ağrısı", "burun akıntısı", "kulak ağrısı", "sinüs basıncı", "ses kısıklığı"],
+      "clusters": [
+        "boğaz ağrısı",
+        "burun akıntısı",
+        "kulak ağrısı",
+        "sinüs basıncı",
+        "ses kısıklığı"
+      ],
       "urgency_rules": [
-        { "if": { "fever": "high", "swallowing": "severe" }, "then": "SAME_DAY" }
+        {
+          "if": {
+            "fever": "high",
+            "swallowing": "severe"
+          },
+          "then": "SAME_DAY"
+        }
       ]
     },
     {
       "id": "pulmonology",
       "specialty": "Göğüs Hastalıkları",
-      "clusters": ["öksürük", "balgam", "hırıltı", "nefes darlığı (hafif/orta)"],
-      "urgency_rules": [{ "if": { "breathing": "worsening" }, "then": "SAME_DAY" }]
+      "clusters": [
+        "öksürük",
+        "balgam",
+        "hırıltı",
+        "nefes darlığı (hafif/orta)"
+      ],
+      "urgency_rules": [
+        {
+          "if": {
+            "breathing": "worsening"
+          },
+          "then": "SAME_DAY"
+        }
+      ]
     },
     {
       "id": "cardiology",
       "specialty": "Kardiyoloji",
-      "clusters": ["çarpıntı", "göğüs ağrısı (hafif/atipik)", "egzersizle artan ağrı"],
-      "urgency_rules": [{ "if": { "syncope": true }, "then": "SAME_DAY" }]
+      "clusters": [
+        "çarpıntı",
+        "göğüs ağrısı (hafif/atipik)",
+        "egzersizle artan ağrı"
+      ],
+      "urgency_rules": [
+        {
+          "if": {
+            "syncope": true
+          },
+          "then": "SAME_DAY"
+        }
+      ]
     },
     {
       "id": "neurology",
       "specialty": "Nöroloji",
-      "clusters": ["baş dönmesi (vertigo)", "baş ağrısı", "uyuşma (acil dışı)", "migren benzeri"],
-      "urgency_rules": [{ "if": { "sudden_onset": true }, "then": "WITHIN_3_DAYS" }]
+      "clusters": [
+        "baş dönmesi (vertigo)",
+        "baş ağrısı",
+        "uyuşma (acil dışı)",
+        "migren benzeri"
+      ],
+      "urgency_rules": [
+        {
+          "if": {
+            "sudden_onset": true
+          },
+          "then": "WITHIN_3_DAYS"
+        }
+      ]
     },
     {
       "id": "internal_gi",
       "specialty": "Dahiliye (gerekirse Gastroenteroloji)",
-      "clusters": ["karın ağrısı", "ishal", "kusma", "hazımsızlık", "reflü"],
-      "urgency_rules": [{ "if": { "fever": "present", "duration_days_gte": 2 }, "then": "SAME_DAY" }]
+      "clusters": [
+        "karın ağrısı",
+        "ishal",
+        "kusma",
+        "hazımsızlık",
+        "reflü"
+      ],
+      "urgency_rules": [
+        {
+          "if": {
+            "fever": "present",
+            "duration_days_gte": 2
+          },
+          "then": "SAME_DAY"
+        }
+      ]
     },
     {
       "id": "urology_internal",
       "specialty": "Üroloji (gerekirse Dahiliye)",
-      "clusters": ["idrar yanması", "sık idrara çıkma", "bel ağrısı", "kasık ağrısı"],
-      "urgency_rules": [{ "if": { "fever": "high", "chills": true }, "then": "SAME_DAY" }]
+      "clusters": [
+        "idrar yanması",
+        "sık idrara çıkma",
+        "bel ağrısı",
+        "kasık ağrısı"
+      ],
+      "urgency_rules": [
+        {
+          "if": {
+            "fever": "high",
+            "chills": true
+          },
+          "then": "SAME_DAY"
+        }
+      ]
     },
     {
       "id": "dermatology",
       "specialty": "Dermatoloji",
-      "clusters": ["döküntü", "kaşıntı", "ürtiker (acil dışı)", "egzama"],
-      "urgency_rules": [{ "if": { "spreading_fast": true }, "then": "WITHIN_3_DAYS" }]
+      "clusters": [
+        "döküntü",
+        "kaşıntı",
+        "ürtiker (acil dışı)",
+        "egzama"
+      ],
+      "urgency_rules": [
+        {
+          "if": {
+            "spreading_fast": true
+          },
+          "then": "WITHIN_3_DAYS"
+        }
+      ]
     },
     {
       "id": "ophthalmology",
       "specialty": "Göz Hastalıkları",
-      "clusters": ["göz kızarıklığı", "batma", "görme bulanıklığı"],
-      "urgency_rules": [{ "if": { "vision_loss": true }, "then": "ER_NOW" }]
+      "clusters": [
+        "göz kızarıklığı",
+        "göz ağrısı",
+        "batma",
+        "görme bulanıklığı",
+        "ani görme kaybı",
+        "fotofobi",
+        "çift görme",
+        "göz kaşıntısı",
+        "arpacık",
+        "göz kapağı şişmesi",
+        "konjonktivit"
+      ],
+      "urgency_rules": [
+        {
+          "if": {
+            "vision_loss": true
+          },
+          "then": "ER_NOW"
+        },
+        {
+          "if": {
+            "canonical_any": [
+              "ani görme kaybı"
+            ]
+          },
+          "then": "ER_NOW"
+        },
+        {
+          "if": {
+            "canonical_any": [
+              "göz ağrısı"
+            ],
+            "associated": [
+              "bulantı"
+            ]
+          },
+          "then": "ER_NOW"
+        },
+        {
+          "if": {
+            "canonical_any": [
+              "çift görme"
+            ],
+            "trauma": true
+          },
+          "then": "ER_NOW"
+        }
+      ]
     },
     {
       "id": "orthopedics_rheum",
       "specialty": "Ortopedi / Romatoloji",
-      "clusters": ["eklem ağrısı", "şişlik", "travma sonrası ağrı", "sabah tutukluğu"],
-      "urgency_rules": [{ "if": { "trauma": true }, "then": "SAME_DAY" }]
+      "clusters": [
+        "eklem ağrısı",
+        "şişlik",
+        "travma sonrası ağrı",
+        "sabah tutukluğu"
+      ],
+      "urgency_rules": [
+        {
+          "if": {
+            "trauma": true
+          },
+          "then": "SAME_DAY"
+        }
+      ]
     },
     {
       "id": "psychiatry",
       "specialty": "Psikiyatri",
-      "clusters": ["panik", "anksiyete", "uyku bozukluğu", "depresif ruh hali"],
-      "urgency_rules": [{ "if": { "self_harm": true }, "then": "ER_NOW" }]
+      "clusters": [
+        "panik",
+        "panik atak",
+        "anksiyete",
+        "kaygı",
+        "uyku bozukluğu",
+        "depresif ruh hali",
+        "düşük ruh hali",
+        "umutsuzluk",
+        "sosyal izolasyon",
+        "konsantrasyon bozukluğu",
+        "iştah kaybı",
+        "obsesyon",
+        "halüsinasyon",
+        "travma sonrası stres",
+        "bipolar",
+        "psikoz"
+      ],
+      "urgency_rules": [
+        {
+          "if": {
+            "self_harm": true
+          },
+          "then": "ER_NOW"
+        },
+        {
+          "if": {
+            "psychosis": true
+          },
+          "then": "SAME_DAY"
+        },
+        {
+          "if": {
+            "duration_days_gte": 14,
+            "canonical_any": [
+              "düşük ruh hali",
+              "uyku bozukluğu"
+            ]
+          },
+          "then": "SAME_DAY"
+        }
+      ]
     },
     {
       "id": "obgyn",
       "specialty": "Kadın Hastalıkları ve Doğum",
-      "clusters": ["düzensiz kanama", "alt karın ağrısı", "adet gecikmesi", "gebelik şüphesi"],
-      "urgency_rules": [{ "if": { "pregnancy": true, "bleeding": true }, "then": "ER_NOW" }]
+      "clusters": [
+        "düzensiz kanama",
+        "vajinal kanama",
+        "alt karın ağrısı",
+        "pelvik ağrı",
+        "adet gecikmesi",
+        "gecikmiş adet",
+        "gebelik şüphesi",
+        "dismenore",
+        "adet düzensizliği",
+        "vajinal akıntı",
+        "vajinal kaşıntı",
+        "meme şikayeti",
+        "menopoz belirtisi",
+        "yumurtalık ağrısı"
+      ],
+      "urgency_rules": [
+        {
+          "if": {
+            "pregnancy": true,
+            "bleeding": true
+          },
+          "then": "ER_NOW"
+        },
+        {
+          "if": {
+            "pregnancy": true,
+            "severe_pain": true
+          },
+          "then": "ER_NOW"
+        },
+        {
+          "if": {
+            "postpartum": true,
+            "bleeding": true
+          },
+          "then": "ER_NOW"
+        },
+        {
+          "if": {
+            "canonical_any": [
+              "dismenore",
+              "pelvik ağrı"
+            ],
+            "severity": "severe"
+          },
+          "then": "SAME_DAY"
+        }
+      ]
     }
   ],
   "urgency_definitions": {

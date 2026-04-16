@@ -1,0 +1,16 @@
+{
+  "scenario": "Ophthalmology allergic conjunctivitis",
+  "description": "Kullanıcı her iki gözde kaşıntı, sulanma ve kızarıklık bildiriyor. Mevsimsel alerjik konjonktivit şüphesiyle rutin göz hastalıkları yönlendirmesi bekleniyor.",
+  "input": [
+    {
+      "user_message": "İki gözüm de çok kaşınıyor, sulanıyor ve kırmızı. Baharda hep oluyor bu.",
+      "answer": null
+    }
+  ],
+  "expected": {
+    "final_type": "RESULT",
+    "recommended_specialty": "ophthalmology",
+    "top_condition_contains": "Konjonktivit",
+    "urgency": "ROUTINE"
+  }
+}

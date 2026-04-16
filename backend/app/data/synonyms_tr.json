@@ -716,6 +716,541 @@
         "halsizliğim geçmiyor",
         "tükenmiş hissediyorum"
       ]
+    },
+    {
+      "canonical": "uyku bozukluğu",
+      "type": "symptom",
+      "variants_tr": [
+        "uyuyamıyorum",
+        "uykuya dalamıyorum",
+        "gece uyanıyorum",
+        "sabah erken uyanıyorum",
+        "uykum bölünüyor",
+        "aşırı uyuyorum",
+        "uyku kalitem kötü",
+        "yatağa girince aklım çalışıyor",
+        "geceleri düşüncelerim durmuyor",
+        "insomnia"
+      ]
+    },
+    {
+      "canonical": "düşük ruh hali",
+      "type": "symptom",
+      "variants_tr": [
+        "kendimi çok kötü hissediyorum",
+        "moralim çok bozuk",
+        "çökkünüm",
+        "içim karardı",
+        "hiçbir şeyden zevk alamıyorum",
+        "her şey anlamsız geliyor",
+        "mutlu olamıyorum",
+        "sürekli üzgünüm",
+        "depresif hissediyorum",
+        "neşesizim",
+        "boşluk hissediyorum",
+        "ruhen çöküntü"
+      ]
+    },
+    {
+      "canonical": "anksiyete",
+      "type": "symptom",
+      "variants_tr": [
+        "anksiyete",
+        "kaygılanıyorum",
+        "sürekli endişeleniyorum",
+        "içim sıkışıyor",
+        "telaşlanıyorum",
+        "gergin hissediyorum",
+        "stres altındayım",
+        "aşırı endişe",
+        "gereksiz yere kaygılanıyorum",
+        "kafam çalışmıyor",
+        "kafam dolu",
+        "zihin yorgunluğu"
+      ]
+    },
+    {
+      "canonical": "panik atak",
+      "type": "symptom",
+      "variants_tr": [
+        "panik atak geçirdim",
+        "aniden kalp hızlandı ve korktum",
+        "birden nefes alamadım ve panikledim",
+        "aşırı korku dalgası geldi",
+        "ölüm korkusu yaşadım",
+        "atak geçirdim",
+        "panik krizi",
+        "aniden fenalaştım ve çok korktum"
+      ]
+    },
+    {
+      "canonical": "iştah kaybı",
+      "type": "symptom",
+      "variants_tr": [
+        "yemek yiyemiyorum",
+        "iştahım yok",
+        "bir şey yiyemiyorum",
+        "yemekten zevk almıyorum",
+        "kilo kaybettim isteksizce",
+        "hiç acıkmıyorum",
+        "yemek yemek istemiyorum"
+      ]
+    },
+    {
+      "canonical": "konsantrasyon bozukluğu",
+      "type": "symptom",
+      "variants_tr": [
+        "konsantre olamıyorum",
+        "dikkatimi toplayamıyorum",
+        "odaklanamıyorum",
+        "aklım dağılıyor",
+        "bir şeye uzun süre bakamıyorum",
+        "unutkanlık arttı",
+        "zihin bulanıklığı",
+        "düşüncelerim karışık"
+      ]
+    },
+    {
+      "canonical": "sosyal izolasyon",
+      "type": "symptom",
+      "variants_tr": [
+        "insanlardan uzaklaşıyorum",
+        "kimseyle görüşmek istemiyorum",
+        "sosyal ortamlardan kaçınıyorum",
+        "evden çıkamıyorum",
+        "yalnız kalmak istiyorum",
+        "arkadaşlarımla görüşmüyorum",
+        "dışarı çıkamıyorum"
+      ]
+    },
+    {
+      "canonical": "umutsuzluk",
+      "type": "symptom",
+      "variants_tr": [
+        "umudum yok",
+        "hiçbir şeyin düzelmeyeceğini düşünüyorum",
+        "her şey mahvoldu",
+        "geleceğe bakamıyorum",
+        "yaşamın anlamı yok",
+        "çıkış yolu göremiyorum",
+        "iyileşemeyeceğimi düşünüyorum",
+        "herşey boş geliyor"
+      ]
+    },
+    {
+      "canonical": "vajinal kanama",
+      "type": "symptom",
+      "variants_tr": [
+        "vajinal kanama var",
+        "aşağıdan kanıyorum",
+        "vajinadan kan geliyor",
+        "lekelenme var",
+        "ara kanama",
+        "postkoital kanama",
+        "ilişki sonrası kanama",
+        "anormal kanama",
+        "beklenmedik kanama"
+      ]
+    },
+    {
+      "canonical": "gecikmiş adet",
+      "type": "symptom",
+      "variants_tr": [
+        "adetim gecikti",
+        "adetim gelmedi",
+        "adetim yok",
+        "ay halim olmadı",
+        "reglim gelmedi",
+        "teorik tarihim geçti",
+        "amenore",
+        "adetim kesildi"
+      ]
+    },
+    {
+      "canonical": "pelvik ağrı",
+      "type": "symptom",
+      "variants_tr": [
+        "alt karın ağrısı",
+        "kasık ağrısı",
+        "pelvik bölgede ağrı",
+        "rahim bölgesi ağrıyor",
+        "yumurtalık ağrısı",
+        "alt karın krampları",
+        "aşağı bölge ağrısı",
+        "kasıklarım ağrıyor"
+      ]
+    },
+    {
+      "canonical": "adet düzensizliği",
+      "type": "symptom",
+      "variants_tr": [
+        "adetlerim düzensiz",
+        "ay halim düzensiz",
+        "reglim her ay farklı",
+        "bazen çok erken bazen geç geliyor",
+        "düzensiz adet",
+        "oligomenore",
+        "menorajim var",
+        "adet kanaması çok uzun sürüyor"
+      ]
+    },
+    {
+      "canonical": "dismenore",
+      "type": "symptom",
+      "variants_tr": [
+        "adet ağrısı",
+        "regl ağrısı",
+        "adet döneminde çok ağrı oluyor",
+        "kramp çok şiddetli",
+        "adet krampları",
+        "bayılacak gibi ağrıyor",
+        "adet sancısı",
+        "her adet çok acı veriyor"
+      ]
+    },
+    {
+      "canonical": "gebelik şüphesi",
+      "type": "symptom",
+      "variants_tr": [
+        "hamile olabilirim",
+        "gebelik testi pozitif",
+        "gebeyim",
+        "hamilelik testi yaptım pozitif çıktı",
+        "bebek bekliyorum",
+        "hamilelik şüphesi",
+        "hamile miyim bilmiyorum",
+        "test yaptım iki çizgi çıktı"
+      ]
+    },
+    {
+      "canonical": "meme şikayeti",
+      "type": "symptom",
+      "variants_tr": [
+        "memem ağrıyor",
+        "göğsüm ağrıyor",
+        "meme akıntısı",
+        "memeden akıntı geliyor",
+        "memede kitle var",
+        "memem şişti",
+        "göğsümde ağrı var",
+        "meme hassasiyeti"
+      ]
+    },
+    {
+      "canonical": "vajinal akıntı",
+      "type": "symptom",
+      "variants_tr": [
+        "vajinal akıntı var",
+        "aşağıdan akıntı geliyor",
+        "beyaz akıntı",
+        "sarı akıntı",
+        "kötü kokulu akıntı",
+        "köpüklü akıntı",
+        "peynir kıvamında akıntı",
+        "akıntım arttı",
+        "pıhtılı akıntı"
+      ]
+    },
+    {
+      "canonical": "vajinal kaşıntı",
+      "type": "symptom",
+      "variants_tr": [
+        "aşağısı kaşınıyor",
+        "vajina kaşıntısı",
+        "genital bölge kaşınıyor",
+        "kasık bölgesi kaşınıyor",
+        "yanma ve kaşıntı var"
+      ]
+    },
+    {
+      "canonical": "menopoz belirtisi",
+      "type": "symptom",
+      "variants_tr": [
+        "ateş basması",
+        "gece terlemesi",
+        "adetlerim kesildi",
+        "klimakterium",
+        "menopoza girdim",
+        "menopoz belirtileri var",
+        "sıcak basması",
+        "adet kesilmesi"
+      ]
+    },
+    {
+      "canonical": "ani görme kaybı",
+      "type": "red_flag",
+      "variants_tr": [
+        "aniden göremiyorum",
+        "bir gözüm görmüyor",
+        "görme aniden kesildi",
+        "bir gözümde karardı",
+        "görüşüm aniden bozuldu",
+        "bir taraf görmüyor",
+        "görme kayboldu",
+        "ani körlük"
+      ]
+    },
+    {
+      "canonical": "fotofobi",
+      "type": "symptom",
+      "variants_tr": [
+        "ışığa bakamıyorum",
+        "ışık gözümü rahatsız ediyor",
+        "ışıktan rahatsız oluyorum",
+        "parlak ışık acı veriyor",
+        "güneşe bakamıyorum",
+        "ışığa hassasiyetim var",
+        "fotofobim var"
+      ]
+    },
+    {
+      "canonical": "göz kızarıklığı",
+      "type": "symptom",
+      "variants_tr": [
+        "gözüm kırmızı",
+        "gözlerim kızardı",
+        "gözüm al al oldu",
+        "gözüm pembe",
+        "konjonktivit",
+        "gözüm kan çanağına döndü",
+        "gözlerim çok kızarık"
+      ]
+    },
+    {
+      "canonical": "göz ağrısı",
+      "type": "symptom",
+      "variants_tr": [
+        "gözüm ağrıyor",
+        "gözümde ağrı var",
+        "göz içi basıncı hissediyorum",
+        "göz arkası ağrıyor",
+        "gözümde zonklama var",
+        "gözüm sızlıyor",
+        "gözüme baskı hissediyorum"
+      ]
+    },
+    {
+      "canonical": "çift görme",
+      "type": "symptom",
+      "variants_tr": [
+        "çift görüyorum",
+        "diplopi",
+        "her şey ikili görünüyor",
+        "görüntüler üst üste geliyor",
+        "nesneler çift çıkıyor",
+        "çift görme var"
+      ]
+    },
+    {
+      "canonical": "göz kaşıntısı",
+      "type": "symptom",
+      "variants_tr": [
+        "gözüm kaşınıyor",
+        "gözlerim kaşınıyor",
+        "gözüm sulanıyor",
+        "gözlerim sulandı",
+        "gözümden su geliyor",
+        "gözüm yanıyor ve kaşınıyor",
+        "alerjik göz"
+      ]
+    },
+    {
+      "canonical": "bebek huzursuzluğu",
+      "type": "symptom",
+      "variants_tr": [
+        "bebeğim çok ağlıyor",
+        "bebeğim durdurulamıyor",
+        "bebek saatlerce ağlıyor",
+        "bebeğim rahat etmiyor",
+        "bebeğim hep huzursuz",
+        "çocuğum çok sinirli",
+        "bebeğim teselli edilemiyor"
+      ]
+    },
+    {
+      "canonical": "beslenmeyi reddetme",
+      "type": "symptom",
+      "variants_tr": [
+        "bebeğim emmek istemiyor",
+        "bebeğim mama yemiyor",
+        "çocuğum yemek yemek istemiyor",
+        "bebeğim süt içmek istemiyor",
+        "beslenmeyi reddediyor",
+        "iştahı çok azaldı çocuğun",
+        "biberon almıyor"
+      ]
+    },
+    {
+      "canonical": "çocukta döküntü ve ateş",
+      "type": "symptom",
+      "variants_tr": [
+        "çocuğumda döküntü ve ateş var",
+        "bebeğimde kızarıklık ve ateş çıktı",
+        "ateşle birlikte leke çıktı",
+        "vücudunda döküntü ve ateşi var",
+        "döküntü ateşle birlikte geldi"
+      ]
+    },
+    {
+      "canonical": "çocukta yüksek ateş",
+      "type": "symptom",
+      "variants_tr": [
+        "çocuğumun ateşi çok yüksek",
+        "bebeğimin ateşi var",
+        "çocuk ateşlendi",
+        "38 derece ateşi var",
+        "39 ateşi var",
+        "bebek ateşlendi",
+        "çocuk ateş bastı",
+        "ateşi düşmüyor çocuğun"
+      ]
+    },
+    {
+      "canonical": "kulak çekiştirme",
+      "type": "symptom",
+      "variants_tr": [
+        "kulağını çekiştiriyor",
+        "kulağına dokunuyor sürekli",
+        "kulağından rahatsız",
+        "kulağını ovuşturuyor",
+        "kulak ağrısı çocukta",
+        "bebeğim kulağını tutuyor"
+      ]
+    },
+    {
+      "canonical": "bebek nefes hırıltısı",
+      "type": "symptom",
+      "variants_tr": [
+        "bebeğim hırıltılı nefes alıyor",
+        "nefes alırken ses geliyor",
+        "hırıltılı solunum",
+        "wheeze sesi var",
+        "nefes zorlanıyor bebek",
+        "vışıltılı nefes",
+        "hırıltı var nefeste"
+      ]
+    },
+    {
+      "canonical": "çocukta ishal ve dehidrasyon",
+      "type": "symptom",
+      "variants_tr": [
+        "çocuğumun ishal var ve az idrara çıkıyor",
+        "bebek ishal ve susuz kaldı",
+        "çocuk çok ishal yapıyor ve dudakları kurudu",
+        "dehidrasyon belirtisi var çocukta",
+        "çocukta sulu ishal ve gözleri çöküyor"
+      ]
+    },
+    {
+      "canonical": "febril konvülziyon",
+      "type": "red_flag",
+      "variants_tr": [
+        "çocuk ateşle nöbet geçirdi",
+        "ateşte kasıldı",
+        "ateşle titreme ve bilinç kaybı",
+        "febril nöbet",
+        "ateşli havale",
+        "havale geçirdi ateşle",
+        "ateşte kasılma oldu"
+      ]
+    },
+    {
+      "canonical": "yan ağrısı",
+      "type": "symptom",
+      "variants_tr": [
+        "böbreğim ağrıyor",
+        "yan bölge ağrısı",
+        "sağ/sol yan ağrısı",
+        "böbrek bölgesi ağrıyor",
+        "bel yanı ağrısı",
+        "kasığa vuran yan ağrısı",
+        "renal kolik",
+        "dalga tarzı ağrı böbrek"
+      ]
+    },
+    {
+      "canonical": "hematüri",
+      "type": "symptom",
+      "variants_tr": [
+        "idrarım kanlı",
+        "idrarda kan var",
+        "kırmızı idrar",
+        "kanlı işedim",
+        "pembe idrar",
+        "idrar rengi değişti kana döndü"
+      ]
+    },
+    {
+      "canonical": "idrarda köpük",
+      "type": "symptom",
+      "variants_tr": [
+        "idrarda köpük var",
+        "idrarm köpüklü",
+        "idrar köpürüyor",
+        "köpüklü işiyorum"
+      ]
+    },
+    {
+      "canonical": "aşırı susama",
+      "type": "symptom",
+      "variants_tr": [
+        "çok su içiyorum",
+        "sürekli susuyorum",
+        "ağzım kuruyor",
+        "polidipsi",
+        "aşırı susama hissediyorum",
+        "su içtikçe içiyorum",
+        "çok sıvı tüketiyorum"
+      ]
+    },
+    {
+      "canonical": "poliüri",
+      "type": "symptom",
+      "variants_tr": [
+        "çok sık idrara çıkıyorum",
+        "çok fazla idrar yapıyorum",
+        "geceleri çok kalkıyorum idrara",
+        "idrar miktarı arttı",
+        "poliüri",
+        "aşırı idrar"
+      ]
+    },
+    {
+      "canonical": "hipoglisemi belirtisi",
+      "type": "red_flag",
+      "variants_tr": [
+        "şekerim düştü",
+        "terleme ve titreme var",
+        "baş dönmesi ve terleme",
+        "hipoglisemi",
+        "şeker düşüklüğü",
+        "düşük kan şekeri belirtisi",
+        "diyabetim ve fenalaşıyorum"
+      ]
+    },
+    {
+      "canonical": "sağ alt karın ağrısı",
+      "type": "symptom",
+      "variants_tr": [
+        "sağ alt karın ağrısı",
+        "apandis ağrısı gibi",
+        "sağ kasık bölgesi ağrıyor",
+        "sağ alt bölge ağrısı",
+        "sağda alt kısım çok ağrıyor",
+        "göbek altı sağ ağrı"
+      ]
+    },
+    {
+      "canonical": "kasık şişliği",
+      "type": "symptom",
+      "variants_tr": [
+        "kasığımda şişlik var",
+        "kasık fıtığı",
+        "kasıkta kitle",
+        "kasık bölgesinde yumru",
+        "fıtık çıktı",
+        "kasıkta şişme"
+      ]
     }
   ]
 }

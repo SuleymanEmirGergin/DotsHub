@@ -1,0 +1,15 @@
+{
+  "scenario": "Ophthalmology sudden vision loss — EMERGENCY",
+  "description": "Kullanıcı sağ gözünde aniden perde inmesi ve görme kaybı bildiriyor. Retina dekolmanı şüphesiyle EMERGENCY envelope tetiklenmeli.",
+  "input": [
+    {
+      "user_message": "Sağ gözümde aniden perde indi gibi, o taraf görmüyor. Öncesinde çok fazla uçuşan nokta gördüm.",
+      "answer": null
+    }
+  ],
+  "expected": {
+    "final_type": "EMERGENCY",
+    "recommended_specialty": "ophthalmology",
+    "urgency": "ER_NOW"
+  }
+}

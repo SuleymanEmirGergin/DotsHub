@@ -1,0 +1,16 @@
+{
+  "scenario": "OB-GYN PCOS irregular periods",
+  "description": "Kullanıcı düzensiz adet, kilo artışı ve tüylenme şikayetiyle başvuruyor. PCOS öneriyle rutin OB-GYN yönlendirmesi bekleniyor.",
+  "input": [
+    {
+      "user_message": "Adetlerim çok düzensiz, bazen 2-3 ayda bir geliyor. Kilo aldım ve yüzümde tüylenme arttı.",
+      "answer": null
+    }
+  ],
+  "expected": {
+    "final_type": "RESULT",
+    "recommended_specialty": "obgyn",
+    "top_condition_contains": "PCOS",
+    "urgency": "ROUTINE"
+  }
+}
