@@ -23,7 +23,7 @@ class PushTokenRouteTests(unittest.TestCase):
                         "locale": "tr-TR",
                     },
                 )
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 201)
         self.assertEqual(response.json(), {"ok": True})
 
     def test_register_push_token_200_with_minimal_body(self):
@@ -36,7 +36,7 @@ class PushTokenRouteTests(unittest.TestCase):
                         "device_id": "d1",
                     },
                 )
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 201)
         self.assertEqual(response.json(), {"ok": True})
 
     def test_register_push_token_422_when_token_missing(self):
@@ -88,7 +88,7 @@ class PushTokenRouteTests(unittest.TestCase):
                     },
                 )
 
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 201)
         mocked_register.assert_called_once_with(
             device_id="test-device-123",
             expo_token="ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]",
@@ -122,7 +122,7 @@ class PushTokenRouteTests(unittest.TestCase):
                     },
                 )
 
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 201)
         self.assertEqual(response.json(), {"ok": True})
 
     def test_register_fail_closed_in_production(self):

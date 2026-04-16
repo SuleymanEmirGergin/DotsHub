@@ -6,10 +6,26 @@ import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, Header, Query
+from fastapi import APIRouter, Header, HTTPException, Query
 
 from app.db import supabase
 from app.admin_auth import require_admin_key
+
+
+def _sb_execute(query):
+    """Execute a Supabase query. Raises HTTP 503 on any network/auth failure."""
+    try:
+        return query.execute()
+    except Exception as exc:
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "code": "SUPABASE_UNAVAILABLE",
+                "message": "Storage layer unavailable. Please retry.",
+                "detail": str(exc)[:200],
+            },
+        ) from exc
+
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -108,7 +124,7 @@ def list_sessions(
     if stop_reason:
         q = q.eq("stop_reason", stop_reason)
 
-    rows = q.order("created_at", desc=True).limit(fetch_n).execute().data or []
+    rows = _sb_execute(q.order("created_at", desc=True).limit(fetch_n)).data or []
 
     def sev_rank(r: Dict[str, Any]):
         et = (r.get("envelope_type") or "")
@@ -142,20 +158,20 @@ def list_sessions(
 def get_session_detail(session_id: str, x_admin_key: Optional[str] = Header(default=None)):
     require_admin(x_admin_key)
 
-    sess = supabase.table("triage_sessions").select("*").eq("session_id", session_id).single().execute()
-    events = (
+    sess = _sb_execute(supabase.table("triage_sessions").select("*").eq("session_id", session_id).single())
+    if sess.data is None:
+        raise HTTPException(status_code=404, detail="session not found")
+    events = _sb_execute(
         supabase.table("triage_events")
         .select("*")
         .eq("session_id", session_id)
         .order("created_at", desc=False)
-        .execute()
     )
-    fb = (
+    fb = _sb_execute(
         supabase.table("triage_feedback")
         .select("*")
         .eq("session_id", session_id)
         .order("created_at", desc=False)
-        .execute()
     )
 
     return {
@@ -163,6 +179,20 @@ def get_session_detail(session_id: str, x_admin_key: Optional[str] = Header(defa
         "events": events.data,
         "feedback": fb.data,
     }
+
+
+@router.delete("/sessions/{session_id}")
+def delete_session(session_id: str, x_admin_key: Optional[str] = Header(default=None)):
+    """Permanently delete a session and its events/feedback (GDPR/KVKK right to erasure)."""
+    require_admin(x_admin_key)
+
+    # Cascade: events and feedback have FK with ON DELETE CASCADE in schema,
+    # but we delete explicitly for clarity and to support databases without cascade.
+    _sb_execute(supabase.table("triage_events").delete().eq("session_id", session_id))
+    _sb_execute(supabase.table("triage_feedback").delete().eq("session_id", session_id))
+    _sb_execute(supabase.table("triage_sessions").delete().eq("session_id", session_id))
+
+    return {"ok": True, "deleted_session_id": session_id}
 
 
 @router.get("/stats/overview")
@@ -173,12 +203,12 @@ def overview_stats(
     require_admin(x_admin_key)
 
     rows = (
-        supabase.table("triage_sessions")
-        .select("session_id,created_at,envelope_type,stop_reason,confidence_0_1,meta,extracted_canonicals")
-        .order("created_at", desc=True)
-        .limit(lookback_limit)
-        .execute()
-        .data
+        _sb_execute(
+            supabase.table("triage_sessions")
+            .select("session_id,created_at,envelope_type,stop_reason,confidence_0_1,meta,extracted_canonicals")
+            .order("created_at", desc=True)
+            .limit(lookback_limit)
+        ).data
         or []
     )
 
@@ -287,12 +317,12 @@ def low_conf_series(
     require_admin(x_admin_key)
 
     rows = (
-        supabase.table("triage_sessions")
-        .select("created_at,confidence_0_1,envelope_type")
-        .order("created_at", desc=True)
-        .limit(lookback_limit)
-        .execute()
-        .data
+        _sb_execute(
+            supabase.table("triage_sessions")
+            .select("created_at,confidence_0_1,envelope_type")
+            .order("created_at", desc=True)
+            .limit(lookback_limit)
+        ).data
         or []
     )
 
@@ -345,13 +375,13 @@ def feedback_stats(
     since = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
 
     rows = (
-        supabase.table("triage_feedback")
-        .select("id,session_id,rating,comment,user_selected_specialty_id,created_at")
-        .gte("created_at", since)
-        .order("created_at", desc=True)
-        .limit(2000)
-        .execute()
-        .data
+        _sb_execute(
+            supabase.table("triage_feedback")
+            .select("id,session_id,rating,comment,user_selected_specialty_id,created_at")
+            .gte("created_at", since)
+            .order("created_at", desc=True)
+            .limit(2000)
+        ).data
         or []
     )
 
@@ -381,11 +411,11 @@ def feedback_stats(
 
     if down_session_ids:
         sessions = (
-            supabase.table("triage_sessions")
-            .select("id,recommended_specialty_tr")
-            .in_("id", list(set(down_session_ids))[:200])
-            .execute()
-            .data
+            _sb_execute(
+                supabase.table("triage_sessions")
+                .select("id,recommended_specialty_tr")
+                .in_("id", list(set(down_session_ids))[:200])
+            ).data
             or []
         )
         sess_map = {s["id"]: s.get("recommended_specialty_tr", "Unknown") for s in sessions}
@@ -436,7 +466,7 @@ def feedback_list(
     if rating in ("up", "down"):
         q = q.eq("rating", rating)
 
-    rows = q.limit(limit).execute().data or []
+    rows = _sb_execute(q.limit(limit)).data or []
 
     # enrich with session data
     session_ids = list(set(r["session_id"] for r in rows if r.get("session_id")))
@@ -444,11 +474,11 @@ def feedback_list(
 
     if session_ids:
         sessions = (
-            supabase.table("triage_sessions")
-            .select("id,envelope_type,recommended_specialty_tr,confidence_0_1,created_at")
-            .in_("id", session_ids[:200])
-            .execute()
-            .data
+            _sb_execute(
+                supabase.table("triage_sessions")
+                .select("id,envelope_type,recommended_specialty_tr,confidence_0_1,created_at")
+                .in_("id", session_ids[:200])
+            ).data
             or []
         )
         for s in sessions:
@@ -482,12 +512,12 @@ def risk_high_series(
     require_admin(x_admin_key)
 
     rows = (
-        supabase.table("triage_sessions")
-        .select("created_at,meta,envelope_type")
-        .order("created_at", desc=True)
-        .limit(lookback_limit)
-        .execute()
-        .data
+        _sb_execute(
+            supabase.table("triage_sessions")
+            .select("created_at,meta,envelope_type")
+            .order("created_at", desc=True)
+            .limit(lookback_limit)
+        ).data
         or []
     )
 
@@ -557,8 +587,8 @@ def live_sessions(
 
     cutoff = (datetime.now(timezone.utc) - timedelta(minutes=minutes)).isoformat()
 
-    resp = (
-        supabase()
+    resp = _sb_execute(
+        supabase
         .table("triage_sessions")
         .select(
             "id,session_id,envelope_type,turn_index,"
@@ -569,7 +599,6 @@ def live_sessions(
         .gte("updated_at", cutoff)
         .order("updated_at", desc=True)
         .limit(50)
-        .execute()
     )
 
     rows = resp.data or []
@@ -632,17 +661,16 @@ def list_admin_users(
     """List all admin users."""
     require_admin(x_admin_key)
 
-    resp = (
-        supabase()
+    resp = _sb_execute(
+        supabase
         .table("admin_users")
         .select("id,user_id,email,role,created_at")
         .order("created_at", desc=True)
-        .execute()
     )
     return {"users": resp.data or []}
 
 
-@router.post("/users")
+@router.post("/users", status_code=201)
 def add_admin_user(
     x_admin_key: Optional[str] = Header(default=None),
     email: str = Query(...),
@@ -652,14 +680,13 @@ def add_admin_user(
     """Add a new admin user."""
     require_admin(x_admin_key)
 
-    resp = (
-        supabase()
+    resp = _sb_execute(
+        supabase
         .table("admin_users")
         .upsert(
             {"user_id": user_id, "email": email, "role": role},
             on_conflict="user_id",
         )
-        .execute()
     )
     return {"ok": True, "data": resp.data}
 
@@ -672,7 +699,7 @@ def remove_admin_user(
     """Remove an admin user."""
     require_admin(x_admin_key)
 
-    supabase().table("admin_users").delete().eq("user_id", user_id).execute()
+    _sb_execute(supabase.table("admin_users").delete().eq("user_id", user_id))
     return {"ok": True}
 
 

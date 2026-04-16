@@ -86,12 +86,16 @@ async def send_summary(body: SendSummaryRequest) -> dict[str, str]:
 
     sender = _get_sender()
     content_locale = _content_locale(body.locale)
-    send_session_summary_email(
-        body.email,
-        session,
-        locale=content_locale,
-        sender=sender,
-    )
+    try:
+        send_session_summary_email(
+            body.email,
+            session,
+            locale=content_locale,
+            sender=sender,
+        )
+    except Exception as exc:
+        logger.error("send_summary.email_failed session=%s err=%s", body.session_id, exc)
+        raise HTTPException(status_code=500, detail="email_send_failed")
 
     return {"status": "ok", "message": "Summary email sent or queued"}
 

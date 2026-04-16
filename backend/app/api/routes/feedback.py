@@ -32,7 +32,7 @@ class FeedbackOut(BaseModel):
 
 # ─── Route ───
 
-@router.post("/triage/feedback", response_model=FeedbackOut)
+@router.post("/triage/feedback", status_code=201, response_model=FeedbackOut)
 def submit_feedback(payload: FeedbackIn):
     """Record user feedback on a triage result.
 

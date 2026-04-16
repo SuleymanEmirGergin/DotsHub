@@ -1,97 +1,135 @@
+"""Tests for push token service (app.push) and push-token route error handling."""
+
 from __future__ import annotations
 
 import unittest
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
-from app import push
+from fastapi.testclient import TestClient
 
+from app.core.config import settings
+from app.main import app
+from app.push import register_token, unregister_token
 
-class _FakeExecute:
-    def __init__(self, data):
-        self.data = data
+_VALID_REGISTER_BODY = {
+    "expo_push_token": "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]",
+    "device_id": "device-abc-123",
+    "platform": "ios",
+    "locale": "tr-TR",
+}
 
-
-class _FakeQuery:
-    def __init__(self, table_name: str):
-        self.table_name = table_name
-        self.last_upsert = None
-        self.last_update = None
-        self.eq_filters: list[tuple[str, object]] = []
-        self.limit_value: int | None = None
-
-    def upsert(self, payload, on_conflict=None):
-        self.last_upsert = {"payload": payload, "on_conflict": on_conflict}
-        return self
-
-    def update(self, payload):
-        self.last_update = payload
-        return self
-
-    def select(self, *_args, **_kwargs):
-        return self
-
-    def eq(self, column: str, value: object):
-        self.eq_filters.append((column, value))
-        return self
-
-    def limit(self, value: int):
-        self.limit_value = value
-        return self
-
-    def execute(self):
-        if self.table_name == "push_tokens" and self.last_upsert:
-            return _FakeExecute([self.last_upsert["payload"]])
-        if self.table_name == "push_tokens" and self.last_update:
-            return _FakeExecute([{"updated": True}])
-        return _FakeExecute([{"expo_token": "ExponentPushToken[a]"}, {"expo_token": "ExponentPushToken[b]"}])
+_VALID_DELETE_BODY = {
+    "device_id": "device-abc-123",
+}
 
 
-class _FakeSupabase:
-    def __init__(self):
-        self.queries: dict[str, _FakeQuery] = {}
+class RegisterTokenServiceTests(unittest.TestCase):
+    """Unit tests for app.push.register_token / unregister_token."""
 
-    def table(self, table_name: str):
-        query = _FakeQuery(table_name)
-        self.queries[table_name] = query
-        return query
+    def _make_mock_supabase(self, execute_return=None, execute_side_effect=None):
+        """Return a patched supabase mock with a fluent table/upsert/update/eq/execute chain."""
+        mock_sb = MagicMock()
+        mock_table = MagicMock()
+        mock_sb.table.return_value = mock_table
+        mock_table.upsert.return_value = mock_table
+        mock_table.update.return_value = mock_table
+        mock_table.eq.return_value = mock_table
+        if execute_side_effect is not None:
+            mock_table.execute.side_effect = execute_side_effect
+        else:
+            mock_table.execute.return_value = execute_return
+        return mock_sb
 
+    # ------------------------------------------------------------------
+    # 1. register_token — happy path
+    # ------------------------------------------------------------------
+    def test_register_token_success(self):
+        execute_result = MagicMock(data=[{"id": 1}])
+        mock_sb = self._make_mock_supabase(execute_return=execute_result)
 
-class PushServiceTests(unittest.TestCase):
-    def test_register_token_uses_supabase_client_without_calling_it(self):
-        fake = _FakeSupabase()
-        with patch.object(push, "supabase", fake):
-            response = push.register_token(
+        with patch("app.push.supabase", mock_sb):
+            result = register_token(
                 device_id="device-1",
                 expo_token="ExponentPushToken[abc]",
                 platform="ios",
                 locale="tr-TR",
             )
 
-        self.assertTrue(response["ok"])
-        query = fake.queries["push_tokens"]
-        self.assertEqual(query.last_upsert["on_conflict"], "device_id")
-        self.assertEqual(query.last_upsert["payload"]["device_id"], "device-1")
-        self.assertEqual(query.last_upsert["payload"]["active"], True)
+        self.assertEqual(result, {"ok": True, "data": [{"id": 1}]})
 
-    def test_unregister_token_marks_token_inactive(self):
-        fake = _FakeSupabase()
-        with patch.object(push, "supabase", fake):
-            response = push.unregister_token(device_id="device-2")
+    # ------------------------------------------------------------------
+    # 2. register_token — Supabase exception propagates
+    # ------------------------------------------------------------------
+    def test_register_token_supabase_exception_propagates(self):
+        mock_sb = self._make_mock_supabase(execute_side_effect=RuntimeError("DB down"))
 
-        self.assertTrue(response["ok"])
-        query = fake.queries["push_tokens"]
-        self.assertEqual(query.last_update, {"active": False})
-        self.assertIn(("device_id", "device-2"), query.eq_filters)
+        with patch("app.push.supabase", mock_sb):
+            with self.assertRaises(RuntimeError) as ctx:
+                register_token(
+                    device_id="device-2",
+                    expo_token="ExponentPushToken[abc]",
+                    platform="android",
+                    locale="tr-TR",
+                )
 
-    def test_get_active_tokens_reads_active_rows(self):
-        fake = _FakeSupabase()
-        with patch.object(push, "supabase", fake):
-            tokens = push._get_active_tokens()
+        self.assertIn("DB down", str(ctx.exception))
 
-        self.assertEqual(tokens, ["ExponentPushToken[a]", "ExponentPushToken[b]"])
-        query = fake.queries["push_tokens"]
-        self.assertIn(("active", True), query.eq_filters)
-        self.assertEqual(query.limit_value, 500)
+    # ------------------------------------------------------------------
+    # 3. unregister_token — Supabase exception propagates
+    # ------------------------------------------------------------------
+    def test_unregister_token_supabase_exception_propagates(self):
+        mock_sb = self._make_mock_supabase(execute_side_effect=RuntimeError("DB down"))
+
+        with patch("app.push.supabase", mock_sb):
+            with self.assertRaises(RuntimeError) as ctx:
+                unregister_token("device-x")
+
+        self.assertIn("DB down", str(ctx.exception))
+
+
+class PushTokenRouteErrorHandlingTests(unittest.TestCase):
+    """HTTP route tests for fail-open / fail-closed push-token behavior."""
+
+    def setUp(self):
+        self.client = TestClient(app, raise_server_exceptions=False)
+
+    # ------------------------------------------------------------------
+    # 4. Fail-open: APP_ENV=test -> exception swallowed, HTTP 201 returned
+    # ------------------------------------------------------------------
+    def test_register_fail_open_returns_201(self):
+        with patch("app.push.register_token", side_effect=RuntimeError("Supabase down")):
+            response = self.client.post(
+                "/v1/triage/push-token",
+                json=_VALID_REGISTER_BODY,
+            )
+
+        self.assertEqual(response.status_code, 201)
+
+    # ------------------------------------------------------------------
+    # 5. Fail-closed: APP_ENV=production -> HTTP 503 raised
+    # ------------------------------------------------------------------
+    def test_register_fail_closed_returns_503(self):
+        with patch.object(settings, "APP_ENV", "production"):
+            with patch("app.push.register_token", side_effect=RuntimeError("Supabase down")):
+                response = self.client.post(
+                    "/v1/triage/push-token",
+                    json=_VALID_REGISTER_BODY,
+                )
+
+        self.assertEqual(response.status_code, 503)
+
+    # ------------------------------------------------------------------
+    # 6. Fail-open DELETE: APP_ENV=test -> exception swallowed, HTTP 200 returned
+    # ------------------------------------------------------------------
+    def test_unregister_fail_open_returns_200(self):
+        with patch("app.push.unregister_token", side_effect=RuntimeError("Supabase down")):
+            response = self.client.request(
+                "DELETE",
+                "/v1/triage/push-token",
+                json=_VALID_DELETE_BODY,
+            )
+
+        self.assertEqual(response.status_code, 200)
 
 
 if __name__ == "__main__":

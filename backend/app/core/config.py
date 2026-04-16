@@ -46,7 +46,16 @@ class Settings(BaseSettings):
 
     @property
     def cors_origins_list(self) -> List[str]:
-        return json.loads(self.CORS_ORIGINS)
+        try:
+            parsed = json.loads(self.CORS_ORIGINS)
+            return [str(o) for o in parsed] if isinstance(parsed, list) else []
+        except (json.JSONDecodeError, TypeError):
+            import logging
+            logging.getLogger(__name__).warning(
+                "CORS_ORIGINS JSON parse failed, defaulting to []. Value: %r",
+                self.CORS_ORIGINS,
+            )
+            return []
 
     # Agent config
     MAX_QUESTIONS: int = 6

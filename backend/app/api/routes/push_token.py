@@ -65,7 +65,7 @@ def _handle_push_persist_error(action: Literal["register", "unregister"], device
     )
 
 
-@router.post("/push-token", response_model=PushTokenResponse)
+@router.post("/push-token", status_code=201, response_model=PushTokenResponse)
 async def register_push_token(body: PushTokenRequest) -> PushTokenResponse:
     """Register or update an Expo Push Token for a device."""
     logger.info(
