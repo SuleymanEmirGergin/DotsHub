@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/requireAdmin";
+import { proxyFetch } from "@/lib/api/proxy";
 
 /**
  * Proxy POST to backend admin generate-patch. Uses ADMIN_API_KEY so the
@@ -8,6 +10,8 @@ export async function POST(
   _req: NextRequest,
   { params }: { params: Promise<{ taskId: string }> }
 ) {
+  await requireAdmin();
+
   const { taskId } = await params;
   const base = process.env.NEXT_PUBLIC_API_BASE;
   const key = process.env.ADMIN_API_KEY;
@@ -26,12 +30,11 @@ export async function POST(
   }
 
   const url = `${base.replace(/\/+$/, "")}/v1/admin/tuning-tasks/${taskId}/generate-patch`;
-  const r = await fetch(url, {
+  const { data, status } = await proxyFetch(url, {
     method: "POST",
     headers: { "x-admin-key": key, "Content-Type": "application/json" },
     cache: "no-store",
   });
 
-  const data = await r.json().catch(() => ({}));
-  return NextResponse.json(data, { status: r.status });
+  return NextResponse.json(data, { status });
 }

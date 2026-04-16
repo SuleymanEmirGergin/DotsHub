@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import type { StatsOverview } from "@/lib/types/admin";
 
 export const dynamic = "force-dynamic";
 
@@ -37,8 +38,8 @@ async function checkBackendHealth(t: (key: string) => string): Promise<{ status:
     });
     if (r.ok) return { status: "ok", message: t("status.connected") };
     return { status: "error", message: `HTTP ${r.status}` };
-  } catch (e: any) {
-    return { status: "error", message: e?.message ?? t("status.connectionFailed") };
+  } catch (e: unknown) {
+    return { status: "error", message: e instanceof Error ? e.message : t("status.connectionFailed") };
   }
 }
 
@@ -48,12 +49,12 @@ async function checkSupabase(t: (key: string) => string): Promise<{ status: Stat
     const { error } = await sb.from("triage_sessions").select("id").limit(1).maybeSingle();
     if (error) return { status: "error", message: error.message };
     return { status: "ok", message: t("status.connected") };
-  } catch (e: any) {
-    return { status: "error", message: e?.message ?? t("status.connectionFailed") };
+  } catch (e: unknown) {
+    return { status: "error", message: e instanceof Error ? e.message : t("status.connectionFailed") };
   }
 }
 
-async function checkAdminOverview(t: (key: string) => string): Promise<{ status: Status; message: string; health?: any }> {
+async function checkAdminOverview(t: (key: string) => string): Promise<{ status: Status; message: string; health?: StatsOverview["health"] }> {
   const base = process.env.NEXT_PUBLIC_API_BASE;
   const key = process.env.ADMIN_API_KEY;
   if (!base || !key) return { status: "info", message: t("status.apiBaseOrKeyMissing") };
@@ -70,8 +71,8 @@ async function checkAdminOverview(t: (key: string) => string): Promise<{ status:
     const status: Status = overall === "CRIT" ? "crit" : overall === "WARN" ? "warn" : "ok";
     const samples = h?.samples ?? 0;
     return { status, message: formatText(t("status.sessionsState"), { samples, overall }), health: h };
-  } catch (e: any) {
-    return { status: "error", message: e?.message ?? t("status.connectionFailed") };
+  } catch (e: unknown) {
+    return { status: "error", message: e instanceof Error ? e.message : t("status.connectionFailed") };
   }
 }
 

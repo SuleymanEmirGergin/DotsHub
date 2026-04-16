@@ -5,6 +5,8 @@ import { Breadcrumb } from "@/app/components/Breadcrumb";
 import { getText } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
 type LiveSession = {
   id: string;
@@ -136,19 +138,21 @@ export default function LivePage() {
           </p>
         </div>
         <div className="flex gap-2 items-center">
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             onClick={sendWebhookTest}
             disabled={webhookTesting}
-            className="py-2 px-4 rounded-lg border border-border bg-card text-foreground font-semibold text-[13px] cursor-pointer disabled:cursor-wait disabled:opacity-60"
           >
             {webhookTesting ? t("live.sending") : t("live.webhookTest")}
-          </button>
-          <button
+          </Button>
+          <Button
+            variant={paused ? "default" : "outline"}
+            size="sm"
             onClick={() => setPaused((p) => !p)}
-            className={cn("py-2 px-4 rounded-lg border border-border font-semibold text-[13px] cursor-pointer", paused ? "bg-primary text-primary-foreground" : "bg-card text-foreground")}
           >
             {paused ? t("live.resume") : t("live.pause")}
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -159,10 +163,21 @@ export default function LivePage() {
       )}
 
       <div className="grid grid-cols-[repeat(auto-fit,minmax(160px,1fr))] gap-3 mb-6">
-        <StatCard label={t("live.total")} value={sessions.length} colorClass="text-violet-500" />
-        <StatCard label={t("live.active")} value={activeSessions.length} colorClass="text-emerald-500" />
-        <StatCard label={t("live.waiting")} value={waitingSessions.length} colorClass="text-amber-500" />
-        <StatCard label={t("live.completed")} value={completedSessions.length} colorClass="text-indigo-500" />
+        {[
+          { label: t("live.total"), value: sessions.length, colorClass: "text-violet-500" },
+          { label: t("live.active"), value: activeSessions.length, colorClass: "text-emerald-500" },
+          { label: t("live.waiting"), value: waitingSessions.length, colorClass: "text-amber-500" },
+          { label: t("live.completed"), value: completedSessions.length, colorClass: "text-indigo-500" },
+        ].map(({ label, value, colorClass }) => (
+          <Card key={label}>
+            <CardHeader className="pb-1 pt-[18px] px-[18px]">
+              <CardTitle className="text-xs font-semibold text-muted-foreground">{label}</CardTitle>
+            </CardHeader>
+            <CardContent className="px-[18px] pb-[18px] pt-0">
+              <div className={cn("text-3xl font-extrabold tabular-nums", colorClass)}>{value}</div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       {error && (
@@ -238,15 +253,6 @@ export default function LivePage() {
           </table>
         </div>
       )}
-    </div>
-  );
-}
-
-function StatCard({ label, value, colorClass }: { label: string; value: number; colorClass: string }) {
-  return (
-    <div className="p-[18px] rounded-xl border border-border bg-card">
-      <div className="text-xs text-muted-foreground font-semibold">{label}</div>
-      <div className={cn("text-3xl font-extrabold mt-1 tabular-nums", colorClass)}>{value}</div>
     </div>
   );
 }

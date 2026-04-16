@@ -5,6 +5,7 @@ import { Breadcrumb } from "@/app/components/Breadcrumb";
 import { getText } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
+import type { FeedbackRow, SessionRow } from "@/lib/types/admin";
 
 export const dynamic = "force-dynamic";
 
@@ -130,7 +131,7 @@ export default async function FeedbackPage({
     .order("created_at", { ascending: true });
 
   const dailyMap: Record<string, { up: number; down: number }> = {};
-  (trendRaw ?? []).forEach((r: any) => {
+  (trendRaw ?? []).forEach((r: { rating: string; created_at: string }) => {
     const day = new Date(r.created_at).toISOString().slice(0, 10);
     if (!dailyMap[day]) dailyMap[day] = { up: 0, down: 0 };
     dailyMap[day][r.rating as "up" | "down"] += 1;
@@ -152,8 +153,8 @@ export default async function FeedbackPage({
   const { data: feedbackRows } = await fbQuery;
   const fbList = feedbackRows ?? [];
 
-  const sessionIds = [...new Set(fbList.map((r: any) => r.session_id).filter(Boolean))];
-  const sessMap: Record<string, any> = {};
+  const sessionIds = [...new Set((fbList as FeedbackRow[]).map((r) => r.session_id).filter(Boolean))];
+  const sessMap: Record<string, Pick<SessionRow, "id" | "envelope_type" | "recommended_specialty_tr" | "confidence_0_1">> = {};
 
   if (sessionIds.length > 0) {
     const { data: sessions } = await sb
@@ -161,7 +162,7 @@ export default async function FeedbackPage({
       .select("id,envelope_type,recommended_specialty_tr,confidence_0_1")
       .in("id", sessionIds.slice(0, 200));
 
-    (sessions ?? []).forEach((s: any) => {
+    (sessions ?? []).forEach((s: Pick<SessionRow, "id" | "envelope_type" | "recommended_specialty_tr" | "confidence_0_1">) => {
       sessMap[s.id] = s;
     });
   }
@@ -173,7 +174,7 @@ export default async function FeedbackPage({
     .order("created_at", { ascending: false })
     .limit(500);
 
-  const downSessionIds = [...new Set((downFb ?? []).map((r: any) => r.session_id).filter(Boolean))];
+  const downSessionIds = [...new Set((downFb ?? []).map((r: Pick<FeedbackRow, "session_id">) => r.session_id).filter(Boolean))];
   const specDownCounts: Record<string, number> = {};
 
   if (downSessionIds.length > 0) {
@@ -183,7 +184,7 @@ export default async function FeedbackPage({
       .in("id", downSessionIds.slice(0, 200));
 
     const dMap: Record<string, string> = {};
-    (downSessions ?? []).forEach((s: any) => {
+    (downSessions ?? []).forEach((s: Pick<SessionRow, "id" | "recommended_specialty_tr">) => {
       dMap[s.id] = s.recommended_specialty_tr ?? getText(locale, "analytics.unknown");
     });
 
@@ -306,16 +307,16 @@ export default async function FeedbackPage({
         <table className="w-full border-collapse">
           <thead>
             <tr className="text-left border-b-2 border-border bg-accent">
-              <th className="p-3.5 text-xs font-semibold text-muted-foreground">{t("feedback.date")}</th>
-              <th className="p-3.5 text-xs font-semibold text-muted-foreground">{t("feedback.rating")}</th>
-              <th className="p-3.5 text-xs font-semibold text-muted-foreground">{t("feedback.specialty")}</th>
-              <th className="p-3.5 text-xs font-semibold text-muted-foreground">{t("feedback.confidence")}</th>
-              <th className="p-3.5 text-xs font-semibold text-muted-foreground">{t("feedback.comment")}</th>
-              <th className="p-3.5 text-xs font-semibold text-muted-foreground" />
+              <th scope="col" className="p-3.5 text-xs font-semibold text-muted-foreground">{t("feedback.date")}</th>
+              <th scope="col" className="p-3.5 text-xs font-semibold text-muted-foreground">{t("feedback.rating")}</th>
+              <th scope="col" className="p-3.5 text-xs font-semibold text-muted-foreground">{t("feedback.specialty")}</th>
+              <th scope="col" className="p-3.5 text-xs font-semibold text-muted-foreground">{t("feedback.confidence")}</th>
+              <th scope="col" className="p-3.5 text-xs font-semibold text-muted-foreground">{t("feedback.comment")}</th>
+              <th scope="col" className="p-3.5 text-xs font-semibold text-muted-foreground" />
             </tr>
           </thead>
           <tbody>
-            {fbList.map((row: any) => {
+            {(fbList as FeedbackRow[]).map((row) => {
               const sess = sessMap[row.session_id] || {};
               return (
                 <tr key={row.id} className="border-b border-border transition-colors hover:bg-muted/20">

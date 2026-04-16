@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import fs from "fs";
 import path from "path";
 import { Breadcrumb } from "@/app/components/Breadcrumb";
+import type { DeploymentImpact, GuardrailsConfig, ImpactPeriod } from "@/lib/types/admin";
 
 export const dynamic = "force-dynamic";
 
@@ -40,8 +41,8 @@ function loadGuardrails() {
 }
 
 function buildImpactCommentary(
-  impact: any,
-  guardrails: any,
+  impact: DeploymentImpact | null,
+  guardrails: GuardrailsConfig | null,
   t: (key: string) => string,
 ): Commentary {
   const g = guardrails ?? { thresholds: {}, min_feedback_after: 30 };
@@ -228,7 +229,7 @@ export default async function DeploymentImpactPage({
   const t = (key: string) => getText(locale, key);
   const { id } = await params;
 
-  let impact = null;
+  let impact: DeploymentImpact | null = null;
   try {
     const reportsDir = path.join(process.cwd(), "..", "backend", "reports");
     const files = fs
@@ -266,13 +267,13 @@ export default async function DeploymentImpactPage({
   const guardrails = loadGuardrails();
   const commentary = buildImpactCommentary(impact, guardrails, t);
 
-  const before = impact.before ?? {};
-  const after = impact.after ?? {};
-  const delta = impact.delta ?? {};
+  const before: ImpactPeriod = impact.before ?? {};
+  const after: ImpactPeriod = impact.after ?? {};
+  const delta: DeploymentImpact["delta"] = impact.delta ?? {};
 
   const dailySeries = after.daily_series || [];
-  const downRateSeries = dailySeries.map((d: any) => d.down_rate ?? 0);
-  const confSeries = dailySeries.map((d: any) => d.confidence ?? 0);
+  const downRateSeries = dailySeries.map((d: { down_rate?: number; confidence?: number }) => d.down_rate ?? 0);
+  const confSeries = dailySeries.map((d: { down_rate?: number; confidence?: number }) => d.confidence ?? 0);
 
   return (
     <div className="p-6 font-sans bg-background text-foreground min-h-screen">

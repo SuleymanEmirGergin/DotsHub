@@ -1,19 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/requireAdmin";
+import { proxyFetch } from "@/lib/api/proxy";
 
 export async function GET(
-    _req: NextRequest,
-    { params }: { params: Promise<{ session_id: string }> }
+  _req: NextRequest,
+  { params }: { params: Promise<{ session_id: string }> }
 ) {
-    const { session_id } = await params;
-    const base = process.env.NEXT_PUBLIC_API_BASE!;
-    const key = process.env.ADMIN_API_KEY!;
-    const upstream = `${base}/admin/sessions/${session_id}`;
+  await requireAdmin();
 
-    const r = await fetch(upstream, {
-        headers: { "x-admin-key": key },
-        cache: "no-store",
-    });
+  const base = process.env.NEXT_PUBLIC_API_BASE;
+  if (!base) return NextResponse.json({ error: "API_BASE_NOT_CONFIGURED" }, { status: 500 });
 
-    const data = await r.json();
-    return NextResponse.json(data, { status: r.status });
+  const { session_id } = await params;
+  const upstream = `${base}/admin/sessions/${session_id}`;
+
+  const { data, status } = await proxyFetch(upstream, {
+    headers: { "x-admin-key": process.env.ADMIN_API_KEY ?? "" },
+    cache: "no-store",
+  });
+  return NextResponse.json(data, { status });
 }

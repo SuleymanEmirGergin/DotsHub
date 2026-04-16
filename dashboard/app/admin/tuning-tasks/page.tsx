@@ -37,6 +37,8 @@ function StatusBadge({ status }: { status: string }) {
 
 const TUNING_SORT_COLUMNS = ["created_at", "task_type", "title", "status"] as const;
 
+const TT_PAGE_SIZE = 100;
+
 function tuningTableHref(params: { status?: string; type?: string; sort?: string; order?: string }, col: string) {
     const nextOrder = params.sort === col && params.order === "desc" ? "asc" : "desc";
     const sp = new URLSearchParams();
@@ -48,17 +50,31 @@ function tuningTableHref(params: { status?: string; type?: string; sort?: string
     return s ? `/admin/tuning-tasks?${s}` : "/admin/tuning-tasks";
 }
 
+function tuningPageHref(params: { status?: string; type?: string; sort?: string; order?: string }, pg: number) {
+    const sp = new URLSearchParams();
+    if (params.status && params.status !== "all") sp.set("status", params.status);
+    if (params.type && params.type !== "all") sp.set("type", params.type);
+    if (params.sort) sp.set("sort", params.sort);
+    if (params.order) sp.set("order", params.order);
+    if (pg > 0) sp.set("page", String(pg));
+    const s = sp.toString();
+    return s ? `/admin/tuning-tasks?${s}` : "/admin/tuning-tasks";
+}
+
 export default async function TuningTasksPage({
     searchParams,
 }: {
-    searchParams: Promise<{ status?: string; type?: string; sort?: string; order?: string }>;
+    searchParams: Promise<{ status?: string; type?: string; sort?: string; order?: string; page?: string }>;
 }) {
     await requireAdmin();
     const params = await searchParams;
     const statusFilter = params.status ?? "all";
     const typeFilter = params.type ?? "all";
-    const sortCol: (typeof TUNING_SORT_COLUMNS)[number] = TUNING_SORT_COLUMNS.includes(params.sort as any)
-        ? (params.sort as (typeof TUNING_SORT_COLUMNS)[number])
+    const page = Math.max(0, parseInt(params.page ?? "0") || 0);
+    const isTuningSortColumn = (v: string | undefined): v is (typeof TUNING_SORT_COLUMNS)[number] =>
+        TUNING_SORT_COLUMNS.includes(v as (typeof TUNING_SORT_COLUMNS)[number]);
+    const sortCol: (typeof TUNING_SORT_COLUMNS)[number] = isTuningSortColumn(params.sort)
+        ? params.sort
         : "created_at";
     const ascending = params.order === "asc";
 
@@ -66,9 +82,9 @@ export default async function TuningTasksPage({
 
     let q = sb
         .from("tuning_tasks")
-        .select("id,created_at,task_type,severity,title,description,status,session_id,patch")
+        .select("id,created_at,task_type,severity,title,description,status,session_id,patch", { count: "exact" })
         .order(sortCol, { ascending })
-        .limit(100);
+        .range(page * TT_PAGE_SIZE, page * TT_PAGE_SIZE + TT_PAGE_SIZE - 1);
 
     if (statusFilter !== "all") {
         q = q.eq("status", statusFilter);
@@ -77,13 +93,14 @@ export default async function TuningTasksPage({
         q = q.eq("task_type", typeFilter);
     }
 
-    const { data: tasks, error } = await q;
+    const { data: tasks, error, count: ttCount } = await q;
 
     const locale = await getLocale();
 
     if (error) return <div className="p-6">{getText(locale, "common.error")}: {error.message}</div>;
 
-    const taskCount = tasks?.length ?? 0;
+    const taskCount = ttCount ?? 0;
+    const ttPageCount = Math.max(1, Math.ceil(taskCount / TT_PAGE_SIZE));
 
     return (
         <div className="p-6 bg-background text-foreground min-h-screen font-sans">
@@ -129,21 +146,21 @@ export default async function TuningTasksPage({
                     <table className="w-full border-collapse">
                         <thead>
                             <tr className="bg-accent border-b border-border">
-                                <th className="p-3 text-left font-black text-xs">
+                                <th scope="col" aria-sort={sortCol === "created_at" ? (ascending ? "ascending" : "descending") : "none"} className="p-3 text-left font-black text-xs">
                                     <a href={tuningTableHref(params, "created_at")} className="text-primary no-underline hover:underline">{getText(locale, "tuningTasks.columnCreated")} {sortCol === "created_at" && (ascending ? "↑" : "↓")}</a>
                                 </th>
-                                <th className="p-3 text-left font-black text-xs">
+                                <th scope="col" aria-sort={sortCol === "task_type" ? (ascending ? "ascending" : "descending") : "none"} className="p-3 text-left font-black text-xs">
                                     <a href={tuningTableHref(params, "task_type")} className="text-primary no-underline hover:underline">{getText(locale, "tuningTasks.columnType")} {sortCol === "task_type" && (ascending ? "↑" : "↓")}</a>
                                 </th>
-                                <th className="p-3 text-left font-black text-xs">
+                                <th scope="col" aria-sort={sortCol === "title" ? (ascending ? "ascending" : "descending") : "none"} className="p-3 text-left font-black text-xs">
                                     <a href={tuningTableHref(params, "title")} className="text-primary no-underline hover:underline">{getText(locale, "tuningTasks.columnTitle")} {sortCol === "title" && (ascending ? "↑" : "↓")}</a>
                                 </th>
-                                <th className="p-3 text-left font-black text-xs">{getText(locale, "tuningTasks.severity")}</th>
-                                <th className="p-3 text-left font-black text-xs">
+                                <th scope="col" className="p-3 text-left font-black text-xs">{getText(locale, "tuningTasks.severity")}</th>
+                                <th scope="col" aria-sort={sortCol === "status" ? (ascending ? "ascending" : "descending") : "none"} className="p-3 text-left font-black text-xs">
                                     <a href={tuningTableHref(params, "status")} className="text-primary no-underline hover:underline">{getText(locale, "tuningTasks.columnStatus")} {sortCol === "status" && (ascending ? "↑" : "↓")}</a>
                                 </th>
-                                <th className="p-3 text-left font-black text-xs">{getText(locale, "tuningTasks.patch")}</th>
-                                <th className="p-3 text-left font-black text-xs">{getText(locale, "tuningTasks.actions")}</th>
+                                <th scope="col" className="p-3 text-left font-black text-xs">{getText(locale, "tuningTasks.patch")}</th>
+                                <th scope="col" className="p-3 text-left font-black text-xs">{getText(locale, "tuningTasks.actions")}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -155,7 +172,7 @@ export default async function TuningTasksPage({
                                         <td className="p-3 text-xs">{task.task_type.replace(/_/g, " ")}</td>
                                         <td className="p-3 text-sm font-bold">
                                             {task.title}
-                                            <div className="text-xs text-muted-foreground mt-1">{task.description.slice(0, 80)}...</div>
+                                            <div className="text-xs text-muted-foreground mt-1">{task.description?.slice(0, 80) ?? ""}...</div>
                                         </td>
                                         <td className="p-3"><Pill text={task.severity} color={task.severity} /></td>
                                         <td className="p-3"><StatusBadge status={task.status} /></td>
@@ -171,7 +188,14 @@ export default async function TuningTasksPage({
                                                 )}
                                                 {!hasPatch && task.status === "open" && (
                                                     <button
-                                                        onClick={() => fetch(`/api/admin/tuning-tasks/${task.id}/generate-patch`, { method: "POST" }).then(() => location.reload())}
+                                                        onClick={() =>
+                                                        fetch(`/api/admin/tuning-tasks/${task.id}/generate-patch`, { method: "POST" })
+                                                            .then(() => location.reload())
+                                                            .catch((e: unknown) => {
+                                                                const msg = e instanceof Error ? e.message : "Unknown error";
+                                                                alert(`Patch oluşturulamadı: ${msg}`);
+                                                            })
+                                                    }
                                                         className="text-xs font-extrabold bg-primary text-primary-foreground border-none py-1 px-2 rounded-md cursor-pointer hover:opacity-90"
                                                     >
                                                         {getText(locale, "tuningTasks.generatePatch")}
@@ -188,6 +212,33 @@ export default async function TuningTasksPage({
                         <div className="p-10 text-center text-muted-foreground">{getText(locale, "tuningTasks.noTasks")}</div>
                     )}
                 </div>
+
+                {ttPageCount > 1 && (
+                    <div className="flex gap-1.5 mt-4 flex-wrap">
+                        {page > 0 && (
+                            <a href={tuningPageHref(params, page - 1)} className="py-1.5 px-3 rounded-lg border border-border no-underline text-sm bg-card text-foreground hover:bg-accent">
+                                ← Önceki
+                            </a>
+                        )}
+                        {Array.from({ length: ttPageCount }, (_, i) => (
+                            <a
+                                key={i}
+                                href={tuningPageHref(params, i)}
+                                className={cn(
+                                    "py-1.5 px-3 rounded-lg border border-border no-underline text-sm font-semibold",
+                                    i === page ? "bg-primary text-primary-foreground" : "bg-card text-foreground hover:bg-accent"
+                                )}
+                            >
+                                {i + 1}
+                            </a>
+                        ))}
+                        {page < ttPageCount - 1 && (
+                            <a href={tuningPageHref(params, page + 1)} className="py-1.5 px-3 rounded-lg border border-border no-underline text-sm bg-card text-foreground hover:bg-accent">
+                                Sonraki →
+                            </a>
+                        )}
+                    </div>
+                )}
             </div>
         </div>
     );

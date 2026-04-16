@@ -130,13 +130,19 @@ function LoginForm() {
             Magic link gönderildi! E-postanı kontrol et.
           </div>
         ) : (
-          <>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (email.includes("@")) sendMagicLink();
+            }}
+          >
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="admin@example.com"
-              onKeyDown={(e) => e.key === "Enter" && sendMagicLink()}
+              aria-label="E-posta adresi"
+              aria-required="true"
               style={{
                 width: "100%",
                 padding: 14,
@@ -150,7 +156,7 @@ function LoginForm() {
               }}
             />
             <button
-              onClick={sendMagicLink}
+              type="submit"
               disabled={!email.includes("@") || !isSupabaseConfigured || cooldownSec > 0}
               style={{
                 width: "100%",
@@ -170,11 +176,11 @@ function LoginForm() {
                 : "Send magic link"}
             </button>
             {error && (
-              <p style={{ color: "#ef4444", marginTop: 12, fontSize: 13 }}>
+              <p role="alert" style={{ color: "#ef4444", marginTop: 12, fontSize: 13 }}>
                 {error}
               </p>
             )}
-          </>
+          </form>
         )}
       </div>
     </div>

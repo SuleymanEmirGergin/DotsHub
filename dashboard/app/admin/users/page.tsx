@@ -18,10 +18,21 @@ export default async function AdminUsersPage() {
   const t = (key: string) => getText(locale, key);
   const sb = supabaseAdmin();
 
-  const { data: users } = await sb
+  const { data: users, error: usersError } = await sb
     .from("admin_users")
     .select("id,user_id,email,role,created_at")
     .order("created_at", { ascending: false });
+
+  if (usersError) {
+    return (
+      <div className="p-6 max-w-[900px] mx-auto">
+        <Breadcrumb items={[{ label: getText(locale, "nav.admin"), href: "/admin/analytics" }, { label: t("users.breadcrumb") }]} />
+        <div className="mt-4 rounded-xl border-2 border-red-300 bg-red-50 p-4 text-red-800 text-sm">
+          <strong>{t("users.title")}:</strong> {usersError.message}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 max-w-[900px] mx-auto">
@@ -36,10 +47,10 @@ export default async function AdminUsersPage() {
         <table className="w-full border-collapse text-sm text-foreground">
           <thead>
             <tr className="bg-accent text-left">
-              <th className="p-3 font-semibold text-xs uppercase tracking-wide text-muted-foreground">{t("users.email")}</th>
-              <th className="p-3 font-semibold text-xs uppercase tracking-wide text-muted-foreground">{t("users.role")}</th>
-              <th className="p-3 font-semibold text-xs uppercase tracking-wide text-muted-foreground">{t("users.createdAt")}</th>
-              <th className="p-3 font-semibold text-xs uppercase tracking-wide text-muted-foreground">{t("users.userId")}</th>
+              <th scope="col" className="p-3 font-semibold text-xs uppercase tracking-wide text-muted-foreground">{t("users.email")}</th>
+              <th scope="col" className="p-3 font-semibold text-xs uppercase tracking-wide text-muted-foreground">{t("users.role")}</th>
+              <th scope="col" className="p-3 font-semibold text-xs uppercase tracking-wide text-muted-foreground">{t("users.createdAt")}</th>
+              <th scope="col" className="p-3 font-semibold text-xs uppercase tracking-wide text-muted-foreground">{t("users.userId")}</th>
             </tr>
           </thead>
           <tbody>

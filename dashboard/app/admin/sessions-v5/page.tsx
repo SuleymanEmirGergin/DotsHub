@@ -1,22 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-
-type SessionRow = {
-  session_id: string;
-  created_at: string;
-  updated_at: string;
-  envelope_type: string | null;
-  stop_reason: string | null;
-  confidence_0_1: number | null;
-  recommended_specialty_id: number | null;
-  extracted_canonicals: string[];
-  meta: any;
-};
+import { useEffect, useMemo, useRef, useState } from "react";
+import SessionsFilter from "./_components/SessionsFilter";
+import SessionsStats from "./_components/SessionsStats";
+import type { SessionRow, SessionMeta, HealthStatus, SessionDetail } from "@/lib/types/admin";
+import { pillClass, riskBadge, fmtPct } from "@/components/ui/health-badge";
 
 type SessionsResp = { items: SessionRow[] };
-
-type HealthStatus = "INFO" | "OK" | "WARN" | "CRIT";
 
 type Overview = {
   total: number;
@@ -42,34 +32,11 @@ type Overview = {
     high_risk_rate: number;
     low_conf_status: HealthStatus;
     high_risk_status: HealthStatus;
-    thresholds: any;
+    thresholds: Record<string, number>;
   };
 };
 
-type SessionDetail = {
-  session: any;
-  events: any[];
-  feedback: any[];
-};
-
-function pillClass(kind: HealthStatus) {
-  const base = "inline-flex items-center rounded-full px-2 py-1 text-xs font-semibold border";
-  if (kind === "CRIT") return `${base} border-red-500 text-red-600`;
-  if (kind === "WARN") return `${base} border-amber-500 text-amber-600`;
-  if (kind === "OK") return `${base} border-emerald-500 text-emerald-600`;
-  return `${base} border-slate-400 text-slate-500`;
-}
-
-function riskBadge(level?: string) {
-  const base = "inline-flex items-center rounded-full px-2 py-1 text-xs font-semibold border";
-  const l = String(level || "").toUpperCase();
-  if (l === "HIGH") return `${base} border-red-500 text-red-600`;
-  if (l === "MEDIUM") return `${base} border-amber-500 text-amber-600`;
-  if (l === "LOW") return `${base} border-emerald-500 text-emerald-600`;
-  return `${base} border-slate-300 text-slate-500`;
-}
-
-function getRiskLevel(meta: any): string | undefined {
+function getRiskLevel(meta: SessionMeta | undefined): string | undefined {
   if (!meta || typeof meta !== "object") return undefined;
   const direct = meta?.risk_level;
   if (typeof direct === "string" && direct) return direct.toUpperCase();
@@ -78,7 +45,7 @@ function getRiskLevel(meta: any): string | undefined {
   return undefined;
 }
 
-function getRiskScore(meta: any): number | undefined {
+function getRiskScore(meta: SessionMeta | undefined): number | undefined {
   if (!meta || typeof meta !== "object") return undefined;
   if (typeof meta?.risk_score_0_1 === "number") return meta.risk_score_0_1;
   if (typeof meta?.risk?.score_0_1 === "number") return meta.risk.score_0_1;
@@ -96,36 +63,6 @@ function severityOf(row: SessionRow): HealthStatus {
   if (et === "RESULT" && c < 0.55) return "INFO";
   if (et === "QUESTION") return "INFO";
   return "OK";
-}
-
-function fmtPct(x: number) {
-  return `${Math.round(x * 100)}%`;
-}
-
-function Sparkline({ values }: { values: number[] }) {
-  const w = 220;
-  const h = 44;
-  const pad = 4;
-
-  if (!values.length) {
-    return <div className="text-xs text-slate-500">-</div>;
-  }
-
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  const span = Math.max(1e-9, max - min);
-
-  const pts = values.map((v, i) => {
-    const x = pad + (i * (w - pad * 2)) / Math.max(1, values.length - 1);
-    const y = h - pad - ((v - min) / span) * (h - pad * 2);
-    return `${x.toFixed(2)},${y.toFixed(2)}`;
-  });
-
-  return (
-    <svg width={w} height={h} className="block">
-      <polyline fill="none" stroke="currentColor" strokeWidth="2" points={pts.join(" ")} />
-    </svg>
-  );
 }
 
 function CopyButton({ text }: { text: string }) {
@@ -163,6 +100,7 @@ export default function SessionsPageV5() {
   const [overview, setOverview] = useState<Overview | null>(null);
   const [series, setSeries] = useState<number[]>([]);
   const [riskHighSeries, setRiskHighSeries] = useState<number[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   const [onlyProblems, setOnlyProblems] = useState(true);
   const [limit, setLimit] = useState(50);
@@ -181,17 +119,22 @@ export default function SessionsPageV5() {
   }, [onlyProblems, limit, envelopeType, stopReason]);
 
   async function load() {
-    const [s, o, lc, rh] = await Promise.all([
-      fetch(`/api/admin/sessions?${query}`, { cache: "no-store" }).then((r) => r.json()),
-      fetch(`/api/admin/stats?lookback_limit=800`, { cache: "no-store" }).then((r) => r.json()),
-      fetch(`/api/admin/lowconf?lookback_limit=800&buckets=28&threshold=0.55`, { cache: "no-store" }).then((r) => r.json()),
-      fetch(`/api/admin/riskhigh?lookback_limit=800&buckets=28`, { cache: "no-store" }).then((r) => r.json()),
-    ]);
+    try {
+      setError(null);
+      const [s, o, lc, rh] = await Promise.all([
+        fetch(`/api/admin/sessions?${query}`, { cache: "no-store" }).then((r) => r.json()),
+        fetch(`/api/admin/stats?lookback_limit=800`, { cache: "no-store" }).then((r) => r.json()),
+        fetch(`/api/admin/lowconf?lookback_limit=800&buckets=28&threshold=0.55`, { cache: "no-store" }).then((r) => r.json()),
+        fetch(`/api/admin/riskhigh?lookback_limit=800&buckets=28`, { cache: "no-store" }).then((r) => r.json()),
+      ]);
 
-    setItems((s as SessionsResp).items ?? []);
-    setOverview(o as Overview);
-    setSeries((lc?.points ?? []).map((p: any) => Number(p.low_conf_rate) || 0));
-    setRiskHighSeries((rh?.points ?? []).map((p: any) => Number(p.high_risk_rate) || 0));
+      setItems((s as SessionsResp).items ?? []);
+      setOverview(o as Overview);
+      setSeries((lc?.points ?? []).map((p: { low_conf_rate?: unknown }) => Number(p.low_conf_rate) || 0));
+      setRiskHighSeries((rh?.points ?? []).map((p: { high_risk_rate?: unknown }) => Number(p.high_risk_rate) || 0));
+    } catch {
+      setError("Veriler yüklenemedi. Lütfen sayfayı yenileyin.");
+    }
   }
 
   useEffect(() => {
@@ -201,6 +144,10 @@ export default function SessionsPageV5() {
   const high = overview?.by_risk_level?.HIGH ?? 0;
   const total = overview?.total ?? 0;
   const highRate = total ? high / total : 0;
+
+  if (error) {
+    return <div className="p-6 text-red-600">{error}</div>;
+  }
 
   return (
     <div className="p-6 space-y-5">
@@ -221,157 +168,37 @@ export default function SessionsPageV5() {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-        <div className="rounded-2xl border p-4">
-          <div className="text-xs text-slate-500">Total (lookback)</div>
-          <div className="text-2xl font-bold">{overview?.total ?? "-"}</div>
-        </div>
+      <SessionsStats overview={overview} series={series} riskHighSeries={riskHighSeries} />
 
-        <div className="rounded-2xl border p-4">
-          <div className="text-xs text-slate-500 flex items-center justify-between">
-            <span>Low confidence rate</span>
-            <span className={pillClass((overview?.health?.low_conf_status as HealthStatus) ?? "INFO")}>
-              {overview?.health?.low_conf_status ?? "-"}
-            </span>
-          </div>
-          <div className="mt-2 text-slate-600">
-            <Sparkline values={series} />
-          </div>
-          <div className="text-xs text-slate-500 mt-1">
-            {overview ? fmtPct(overview.health?.low_conf_rate ?? overview.low_confidence_rate) : "-"}
-          </div>
-
-          <div className="mt-3 pt-3 border-t">
-            <div className="text-xs text-slate-500 flex items-center justify-between">
-              <span>High risk rate</span>
-              <span className={pillClass((overview?.health?.high_risk_status as HealthStatus) ?? "INFO")}>
-                {overview?.health?.high_risk_status ?? "-"}
-              </span>
-            </div>
-            <div className="mt-2 text-slate-600">
-              <Sparkline values={riskHighSeries} />
-            </div>
-            <div className="text-xs text-slate-500 mt-1">{fmtPct(overview?.health?.high_risk_rate ?? highRate)}</div>
-          </div>
-        </div>
-
-        <div className="rounded-2xl border p-4">
-          <div className="text-xs text-slate-500">By envelope</div>
-          <div className="mt-2 space-y-1 text-sm">
-            {overview
-              ? Object.entries(overview.by_envelope_type)
-                  .sort((a, b) => Number(b[1]) - Number(a[1]))
-                  .slice(0, 6)
-                  .map(([k, v]) => (
-                    <div key={k} className="flex justify-between">
-                      <span className="text-slate-600">{k}</span>
-                      <span className="font-semibold">{v}</span>
-                    </div>
-                  ))
-              : "-"}
-          </div>
-        </div>
-
-        <div className="rounded-2xl border p-4">
-          <div className="text-xs text-slate-500">By stop reason</div>
-          <div className="mt-2 space-y-1 text-sm">
-            {overview
-              ? Object.entries(overview.by_stop_reason)
-                  .sort((a, b) => Number(b[1]) - Number(a[1]))
-                  .slice(0, 5)
-                  .map(([k, v]) => (
-                    <div key={k} className="flex justify-between">
-                      <span className="text-slate-600">{k}</span>
-                      <span className="font-semibold">{v}</span>
-                    </div>
-                  ))
-              : "-"}
-          </div>
-
-          <div className="mt-3 pt-3 border-t">
-            <div className="text-xs text-slate-500">By risk</div>
-            <div className="mt-2 space-y-1 text-sm">
-              {overview
-                ? Object.entries(overview.by_risk_level || {})
-                    .sort((a, b) => Number(b[1]) - Number(a[1]))
-                    .slice(0, 5)
-                    .map(([k, v]) => (
-                      <div key={k} className="flex justify-between items-center">
-                        <span className={riskBadge(k)}>{k}</span>
-                        <span className="font-semibold">{v}</span>
-                      </div>
-                    ))
-                : "-"}
-            </div>
-            <div className="text-xs text-slate-500 mt-1">High risk rate: {Math.round(highRate * 100)}%</div>
-          </div>
-        </div>
-      </div>
-
-      <div className="rounded-2xl border p-4 flex flex-wrap gap-3 items-end">
-        <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" checked={onlyProblems} onChange={(e) => setOnlyProblems(e.target.checked)} />
-          only problems
-        </label>
-
-        <div className="flex flex-col gap-1">
-          <div className="text-xs text-slate-500">limit</div>
-          <input
-            className="rounded-xl border px-3 py-2 text-sm w-28"
-            type="number"
-            value={limit}
-            min={1}
-            max={200}
-            onChange={(e) => setLimit(Number(e.target.value))}
-          />
-        </div>
-
-        <div className="flex flex-col gap-1">
-          <div className="text-xs text-slate-500">envelope</div>
-          <select className="rounded-xl border px-3 py-2 text-sm" value={envelopeType} onChange={(e) => setEnvelopeType(e.target.value)}>
-            <option value="">All</option>
-            <option value="QUESTION">QUESTION</option>
-            <option value="RESULT">RESULT</option>
-            <option value="EMERGENCY">EMERGENCY</option>
-            <option value="SAME_DAY">SAME_DAY</option>
-          </select>
-        </div>
-
-        <div className="flex flex-col gap-1 min-w-[260px]">
-          <div className="text-xs text-slate-500">stop_reason</div>
-          <input
-            className="rounded-xl border px-3 py-2 text-sm"
-            placeholder="e.g. min_expected_gain"
-            value={stopReason}
-            onChange={(e) => setStopReason(e.target.value)}
-          />
-        </div>
-
-        <button
-          className="rounded-xl border px-3 py-2 text-sm hover:bg-slate-50"
-          onClick={() => {
-            setOnlyProblems(true);
-            setLimit(50);
-            setEnvelopeType("");
-            setStopReason("");
-          }}
-        >
-          Clear
-        </button>
-      </div>
+      <SessionsFilter
+        onlyProblems={onlyProblems}
+        limit={limit}
+        envelopeType={envelopeType}
+        stopReason={stopReason}
+        onOnlyProblemsChange={setOnlyProblems}
+        onLimitChange={setLimit}
+        onEnvelopeTypeChange={setEnvelopeType}
+        onStopReasonChange={setStopReason}
+        onClear={() => {
+          setOnlyProblems(true);
+          setLimit(50);
+          setEnvelopeType("");
+          setStopReason("");
+        }}
+      />
 
       <div className="rounded-2xl border overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-slate-50">
             <tr className="text-left">
-              <th className="p-3">Severity</th>
-              <th className="p-3">Session</th>
-              <th className="p-3">Envelope</th>
-              <th className="p-3">Risk</th>
-              <th className="p-3">Confidence</th>
-              <th className="p-3">Stop reason</th>
-              <th className="p-3">Canonicals</th>
-              <th className="p-3">Updated</th>
+              <th className="p-3" scope="col">Severity</th>
+              <th className="p-3" scope="col">Session</th>
+              <th className="p-3" scope="col">Envelope</th>
+              <th className="p-3" scope="col">Risk</th>
+              <th className="p-3" scope="col">Confidence</th>
+              <th className="p-3" scope="col">Stop reason</th>
+              <th className="p-3" scope="col">Canonicals</th>
+              <th className="p-3" scope="col" aria-sort="descending">Updated</th>
             </tr>
           </thead>
           <tbody>
@@ -456,6 +283,7 @@ export default function SessionsPageV5() {
 }
 
 function SessionDrawer({ sessionId, onClose }: { sessionId: string; onClose: () => void }) {
+  const drawerRef = useRef<HTMLDivElement>(null);
   const [detail, setDetail] = useState<SessionDetail | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -476,17 +304,64 @@ function SessionDrawer({ sessionId, onClose }: { sessionId: string; onClose: () 
     };
   }, [sessionId]);
 
+  // Auto-focus ve Escape key handler
+  useEffect(() => {
+    const el = drawerRef.current;
+    if (!el) return;
+    el.focus();
+
+    const drawerEl = el;
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        onClose();
+        return;
+      }
+      if (e.key !== "Tab") return;
+      const focusable = drawerEl.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      );
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey) {
+        if (document.activeElement === first) {
+          e.preventDefault();
+          last?.focus();
+        }
+      } else {
+        if (document.activeElement === last) {
+          e.preventDefault();
+          first?.focus();
+        }
+      }
+    }
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
   const session = detail?.session;
   const rl = getRiskLevel(session?.meta);
   const rs = getRiskScore(session?.meta);
 
   return (
-    <div className="fixed inset-0 z-50">
-      <div className="absolute inset-0 bg-black/30" onClick={onClose} />
-      <div className="absolute right-0 top-0 h-full w-full md:w-[720px] shadow-xl border-l p-4 overflow-auto dash-panel">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="session-drawer-title"
+      className="fixed inset-0 z-50"
+    >
+      <div
+        className="absolute inset-0 bg-black/30"
+        onClick={onClose}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onClose(); }}
+        role="button"
+        aria-label="Kapat"
+        tabIndex={0}
+      />
+      <div ref={drawerRef} tabIndex={-1} className="absolute right-0 top-0 h-full w-full md:w-[720px] shadow-xl border-l p-4 overflow-auto dash-panel">
         <div className="flex items-center justify-between mb-4">
-          <div className="font-bold">Session {sessionId}</div>
-          <button className="rounded-xl border px-3 py-2 text-sm hover:bg-slate-50" onClick={onClose}>
+          <div id="session-drawer-title" className="font-bold">Session {sessionId}</div>
+          <button aria-label="Kapat" className="rounded-xl border px-3 py-2 text-sm hover:bg-slate-50" onClick={onClose}>
             Close
           </button>
         </div>

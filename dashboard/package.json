@@ -7,12 +7,16 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "lint": "npm run typecheck",
+    "lint": "tsc --noEmit && next lint",
     "lint:eslint": "npx --offline=false --yes --package eslint@9.19.0 --package eslint-config-next@15.1.0 eslint . --max-warnings=0",
     "test:routes": "node scripts/check_admin_proxy_contract.cjs",
     "test:i18n-contract": "node scripts/check_deployments_i18n_contract.cjs",
+    "test:contracts": "node --test tests/proxy_fetch.test.cjs tests/api_routes.test.cjs tests/runtime_guards.test.cjs",
+    "test": "node --test tests/proxy_fetch.test.cjs tests/api_routes.test.cjs tests/runtime_guards.test.cjs && node scripts/check_admin_proxy_contract.cjs && node scripts/check_deployments_i18n_contract.cjs",
     "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui"
+    "test:e2e:ui": "playwright test --ui",
+    "test:unit": "vitest run",
+    "test:unit:watch": "vitest"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.1.0",
@@ -25,14 +29,20 @@
     "tailwind-merge": "^3.5.0"
   },
   "devDependencies": {
-    "class-variance-authority": "^0.7.0",
     "@playwright/test": "^1.49.0",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^6.0.1",
     "autoprefixer": "^10.4.24",
+    "class-variance-authority": "^0.7.0",
+    "jsdom": "^29.0.2",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.19",
-    "typescript": "^5.7.0"
+    "typescript": "^5.7.0",
+    "vitest": "^4.1.4"
   }
 }

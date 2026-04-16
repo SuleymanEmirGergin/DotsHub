@@ -72,15 +72,28 @@ export default async function TuningMetricsPage() {
         .limit(1000);
 
     const totalSessions = sessions?.length ?? 0;
-    const avgConf = sessions ? sessions.reduce((sum, s) => sum + (s.confidence_0_1 ?? 0), 0) / totalSessions : 0;
-    const avgQuestions = sessions ? sessions.reduce((sum, s) => sum + (s.turn_index ?? 0), 0) / totalSessions : 0;
+    const sumConf = sessions ? sessions.reduce((sum, s) => sum + (s.confidence_0_1 ?? 0), 0) : 0;
+    const sumQ = sessions ? sessions.reduce((sum, s) => sum + (s.turn_index ?? 0), 0) : 0;
+    const avgConf = totalSessions > 0 ? (sumConf / totalSessions).toFixed(3) : "—";
+    const avgQuestions = totalSessions > 0 ? (sumQ / totalSessions).toFixed(1) : "—";
 
     // Load effectiveness report
     const effectiveness = loadLatestEffectivenessReport();
     const questions = effectiveness?.questions ?? [];
 
+    type QuestionEffectiveness = {
+        canonical: string;
+        asked_count?: number;
+        effectiveness_0_1?: number;
+        avg_gap_delta?: number;
+        avg_conf_delta?: number;
+        balance_0_1?: number;
+    };
+
     // Sort by effectiveness
-    const sortedQuestions = [...questions].sort((a: any, b: any) => (b.effectiveness_0_1 ?? 0) - (a.effectiveness_0_1 ?? 0));
+    const sortedQuestions = [...(questions as QuestionEffectiveness[])].sort(
+        (a, b) => (b.effectiveness_0_1 ?? 0) - (a.effectiveness_0_1 ?? 0)
+    );
 
   const effColorClass = (eff: number) =>
     eff >= 0.6 ? "text-teal-800 dark:text-teal-400" : eff >= 0.4 ? "text-amber-800 dark:text-amber-400" : "text-red-800 dark:text-red-400";
@@ -99,11 +112,11 @@ export default async function TuningMetricsPage() {
           </div>
           <div className="border border-border rounded-xl p-4 bg-card">
             <div className="text-xs text-muted-foreground font-bold">{getText(locale, "tuningMetrics.avgConfidence")}</div>
-            <div className="mt-2 text-3xl font-black">{avgConf.toFixed(3)}</div>
+            <div className="mt-2 text-3xl font-black">{avgConf}</div>
           </div>
           <div className="border border-border rounded-xl p-4 bg-card">
             <div className="text-xs text-muted-foreground font-bold">{getText(locale, "tuningMetrics.avgQuestions")}</div>
-            <div className="mt-2 text-3xl font-black">{avgQuestions.toFixed(1)}</div>
+            <div className="mt-2 text-3xl font-black">{avgQuestions}</div>
           </div>
         </div>
 
@@ -131,7 +144,7 @@ export default async function TuningMetricsPage() {
                 </tr>
               </thead>
               <tbody>
-                {sortedQuestions.slice(0, 50).map((q: any) => {
+                {sortedQuestions.slice(0, 50).map((q) => {
                   const eff = q.effectiveness_0_1 ?? 0;
                   const trendData = [eff * 0.9, eff * 0.95, eff, eff * 1.02, eff * 1.01];
                   return (

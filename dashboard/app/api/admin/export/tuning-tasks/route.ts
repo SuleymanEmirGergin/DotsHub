@@ -10,27 +10,43 @@ function escapeCsvCell(s: unknown): string {
 }
 
 export async function GET() {
-  await requireAdmin();
-  const sb = supabaseAdmin();
-  const { data, error } = await sb
-    .from("tuning_tasks")
-    .select("id,created_at,task_type,severity,title,description,status,session_id")
-    .order("created_at", { ascending: false })
-    .limit(500);
+  try {
+    await requireAdmin();
+    const sb = supabaseAdmin();
+    const { data, error } = await sb
+      .from("tuning_tasks")
+      .select("id,created_at,task_type,severity,title,description,status,session_id")
+      .order("created_at", { ascending: false })
+      .limit(500);
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  const headers = ["id", "created_at", "task_type", "severity", "title", "description", "status", "session_id"];
-  const rows = (data ?? []).map((r: any) =>
-    headers.map((h) => escapeCsvCell(r[h])).join(",")
-  );
-  const csv = [headers.join(","), ...rows].join("\n");
+    const headers = ["id", "created_at", "task_type", "severity", "title", "description", "status", "session_id"];
+    type TuningTaskRow = {
+      id: string;
+      created_at: string;
+      task_type: string | null;
+      severity: string | null;
+      title: string | null;
+      description: string | null;
+      status: string | null;
+      session_id: string | null;
+      [key: string]: unknown;
+    };
+    const rows = (data ?? []).map((r: TuningTaskRow) =>
+      headers.map((h) => escapeCsvCell(r[h])).join(",")
+    );
+    const csv = [headers.join(","), ...rows].join("\n");
 
-  return new NextResponse(csv, {
-    status: 200,
-    headers: {
-      "Content-Type": "text/csv; charset=utf-8",
-      "Content-Disposition": `attachment; filename="tuning-tasks-${new Date().toISOString().slice(0, 10)}.csv"`,
-    },
-  });
+    return new NextResponse(csv, {
+      status: 200,
+      headers: {
+        "Content-Type": "text/csv; charset=utf-8",
+        "Content-Disposition": `attachment; filename="tuning-tasks-${new Date().toISOString().slice(0, 10)}.csv"`,
+      },
+    });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "unexpected_error";
+    return NextResponse.json({ error: msg }, { status: 500 });
+  }
 }

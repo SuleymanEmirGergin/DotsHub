@@ -9,6 +9,7 @@ import { getText } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
 import { Breadcrumb } from "@/app/components/Breadcrumb";
 import { cn } from "@/lib/utils";
+import type { ReportFile, TuningReport, SynonymSuggestion } from "@/lib/types/admin";
 
 export const dynamic = "force-dynamic";
 
@@ -43,22 +44,24 @@ export default async function TuningReportPage({
   const locale = await getLocale();
   const { file } = await searchParams;
 
-  let files: any[] = [];
+  let files: ReportFile[] = [];
+  let filesError: string | null = null;
   try {
     files = await listReports(20);
-  } catch {
-    // Storage not configured yet
+  } catch (err) {
+    filesError = err instanceof Error ? err.message : "Depo yapılandırması eksik";
   }
 
   const selected = file ?? files?.[0]?.name;
 
-  let report: any = null;
+  let report: TuningReport | null = null;
+  let reportError: string | null = null;
   if (selected) {
     try {
       const url = await getSignedReportUrl(selected);
       report = await fetchJsonFromSignedUrl(url);
-    } catch {
-      // File not found or storage error
+    } catch (err) {
+      reportError = err instanceof Error ? err.message : "Rapor yüklenemedi";
     }
   }
 
@@ -70,7 +73,7 @@ export default async function TuningReportPage({
           <h1 className="text-[26px] font-black m-0">{getText(locale, "tuningReport.title")}</h1>
           <div className="text-muted-foreground mt-1.5 text-[13px]">
             {report
-              ? getText(locale, "tuningReport.generated").replace("{generated}", report.generated_at ?? "").replace("{days}", String(report.window_days ?? 0))
+              ? getText(locale, "tuningReport.generated").replace("{generated}", String(report.generated_at ?? "")).replace("{days}", String(report.window_days ?? 0))
               : getText(locale, "tuningReport.noReportSelected")}
           </div>
         </div>
@@ -84,10 +87,21 @@ export default async function TuningReportPage({
         </div>
       </div>
 
+      {filesError && (
+        <div className="mt-4 rounded-xl border-2 border-red-300 bg-red-50 p-4 text-red-800 text-sm">
+          <strong>Depo hatası:</strong> {filesError}
+        </div>
+      )}
+      {reportError && (
+        <div className="mt-4 rounded-xl border-2 border-red-300 bg-red-50 p-4 text-red-800 text-sm">
+          <strong>Rapor yüklenemedi:</strong> {reportError}
+        </div>
+      )}
+
       <div className="grid grid-cols-[280px_1fr] gap-4 mt-5">
         <Card title={getText(locale, "tuningReport.reports")}>
           <div className="flex flex-col gap-2 max-h-[600px] overflow-y-auto">
-            {files.length === 0 && (
+            {files.length === 0 && !filesError && (
               <div className="text-muted-foreground text-[13px]">{getText(locale, "tuningReport.noReportsInStorage")}</div>
             )}
             {files.map((f) => (
@@ -132,7 +146,7 @@ export default async function TuningReportPage({
                       </tr>
                     </thead>
                     <tbody>
-                      {report.synonym_suggestions.slice(0, 30).map((s: any, i: number) => (
+                      {report.synonym_suggestions.slice(0, 30).map((s: SynonymSuggestion, i: number) => (
                         <tr key={i} className="border-b border-border">
                           <td className="p-2 font-semibold">{s.token}</td>
                           <td className="p-2 text-muted-foreground">{s.suggested_canonical ?? "-"}</td>
