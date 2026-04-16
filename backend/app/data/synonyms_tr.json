@@ -665,6 +665,106 @@
         "gözüm yanıyor ve kaşınıyor",
         "alerjik göz"
       ]
+    },
+    {
+      "canonical": "bebek huzursuzluğu",
+      "type": "symptom",
+      "variants_tr": [
+        "bebeğim çok ağlıyor",
+        "bebeğim durdurulamıyor",
+        "bebek saatlerce ağlıyor",
+        "bebeğim rahat etmiyor",
+        "bebeğim hep huzursuz",
+        "çocuğum çok sinirli",
+        "bebeğim teselli edilemiyor"
+      ]
+    },
+    {
+      "canonical": "beslenmeyi reddetme",
+      "type": "symptom",
+      "variants_tr": [
+        "bebeğim emmek istemiyor",
+        "bebeğim mama yemiyor",
+        "çocuğum yemek yemek istemiyor",
+        "bebeğim süt içmek istemiyor",
+        "beslenmeyi reddediyor",
+        "iştahı çok azaldı çocuğun",
+        "biberon almıyor"
+      ]
+    },
+    {
+      "canonical": "çocukta döküntü ve ateş",
+      "type": "symptom",
+      "variants_tr": [
+        "çocuğumda döküntü ve ateş var",
+        "bebeğimde kızarıklık ve ateş çıktı",
+        "ateşle birlikte leke çıktı",
+        "vücudunda döküntü ve ateşi var",
+        "döküntü ateşle birlikte geldi"
+      ]
+    },
+    {
+      "canonical": "çocukta yüksek ateş",
+      "type": "symptom",
+      "variants_tr": [
+        "çocuğumun ateşi çok yüksek",
+        "bebeğimin ateşi var",
+        "çocuk ateşlendi",
+        "38 derece ateşi var",
+        "39 ateşi var",
+        "bebek ateşlendi",
+        "çocuk ateş bastı",
+        "ateşi düşmüyor çocuğun"
+      ]
+    },
+    {
+      "canonical": "kulak çekiştirme",
+      "type": "symptom",
+      "variants_tr": [
+        "kulağını çekiştiriyor",
+        "kulağına dokunuyor sürekli",
+        "kulağından rahatsız",
+        "kulağını ovuşturuyor",
+        "kulak ağrısı çocukta",
+        "bebeğim kulağını tutuyor"
+      ]
+    },
+    {
+      "canonical": "bebek nefes hırıltısı",
+      "type": "symptom",
+      "variants_tr": [
+        "bebeğim hırıltılı nefes alıyor",
+        "nefes alırken ses geliyor",
+        "hırıltılı solunum",
+        "wheeze sesi var",
+        "nefes zorlanıyor bebek",
+        "vışıltılı nefes",
+        "hırıltı var nefeste"
+      ]
+    },
+    {
+      "canonical": "çocukta ishal ve dehidrasyon",
+      "type": "symptom",
+      "variants_tr": [
+        "çocuğumun ishal var ve az idrara çıkıyor",
+        "bebek ishal ve susuz kaldı",
+        "çocuk çok ishal yapıyor ve dudakları kurudu",
+        "dehidrasyon belirtisi var çocukta",
+        "çocukta sulu ishal ve gözleri çöküyor"
+      ]
+    },
+    {
+      "canonical": "febril konvülziyon",
+      "type": "red_flag",
+      "variants_tr": [
+        "çocuk ateşle nöbet geçirdi",
+        "ateşte kasıldı",
+        "ateşle titreme ve bilinç kaybı",
+        "febril nöbet",
+        "ateşli havale",
+        "havale geçirdi ateşle",
+        "ateşte kasılma oldu"
+      ]
     }
   ]
 }

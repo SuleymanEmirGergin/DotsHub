@@ -367,6 +367,75 @@
       "canonical_any": [
         "ani görme kaybı"
       ]
+    },
+    {
+      "id": "infant_fever_under3months",
+      "severity": 3,
+      "title_tr": "3 aydan küçük bebekte ateş — acil",
+      "message_tr": "3 aydan küçük bebeklerde 38°C ve üzeri ateş ciddi enfeksiyon belirtisi olabilir. Hemen acil servise gidin.",
+      "recommendation_tr": "112 / Çocuk Acil Servisi",
+      "keyword_any": [
+        "3 aylık bebeğim",
+        "2 aylık bebeğim",
+        "1 aylık bebeğim",
+        "yenidoğan ateş",
+        "bebek çok küçük ateşi var",
+        "3 aydan küçük"
+      ],
+      "canonical_any": [
+        "çocukta yüksek ateş"
+      ],
+      "require_any_group": [
+        {
+          "keyword_any": [
+            "38",
+            "39",
+            "40",
+            "ateş var",
+            "ateşi var"
+          ]
+        },
+        {
+          "canonical_any": [
+            "çocukta yüksek ateş"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "petechial_rash_child",
+      "severity": 3,
+      "title_tr": "Çocukta petesyal/purpurik döküntü",
+      "message_tr": "Solmayan nokta tarzı kırmızı-mor döküntü menenjit veya sepsis belirtisi olabilir. Hemen acil servise gidin.",
+      "recommendation_tr": "112 / Acil Servis",
+      "keyword_any": [
+        "solmayan döküntü",
+        "cam bastırınca geçmiyor",
+        "mor nokta döküntü",
+        "çocukta purpura",
+        "petesi"
+      ],
+      "canonical_any": [
+        "çocukta döküntü ve ateş"
+      ]
+    },
+    {
+      "id": "febrile_seizure_active",
+      "severity": 3,
+      "title_tr": "Ateşli havale / febril konvülziyon",
+      "message_tr": "Ateşle birlikte kasılma veya bilinç kaybı febril konvülziyon olabilir. Çocuğu güvenli pozisyona alın, hemen 112'yi arayın.",
+      "recommendation_tr": "112 / Çocuk Acil Servisi",
+      "keyword_any": [
+        "ateşle kasıldı",
+        "ateşte nöbet geçirdi",
+        "havale geçirdi",
+        "ateşli havale",
+        "febril nöbet",
+        "ateşte titredi bilinci gitti"
+      ],
+      "canonical_any": [
+        "febril konvülziyon"
+      ]
     }
   ]
 }

@@ -172,6 +172,58 @@
       "if_yes_escalate": "ER_NOW",
       "reason_tr": "Travma sonrası çift görme nörolojik veya göz acili olabilir.",
       "reason_en": "Post-trauma diplopia may indicate neurological or ocular emergency."
+    },
+    {
+      "id": "pedi_infant_fever",
+      "when_canonical_any": [
+        "çocukta yüksek ateş",
+        "bebek huzursuzluğu"
+      ],
+      "question_tr": "Çocuğunuz 3 aydan küçük mü ve ateşi 38°C veya üzerinde mi?",
+      "question_en": "Is your child under 3 months old with a fever of 38°C or above?",
+      "answer_type": "yes_no",
+      "if_yes_escalate": "ER_NOW",
+      "reason_tr": "3 aydan küçük bebeklerde yüksek ateş ciddi enfeksiyon açısından acildir.",
+      "reason_en": "High fever in infants under 3 months is an emergency for possible serious infection."
+    },
+    {
+      "id": "pedi_petechial_rash",
+      "when_canonical_any": [
+        "çocukta döküntü ve ateş"
+      ],
+      "question_tr": "Döküntü üzerine cam bastırınca solar mı? Yoksa kırmızı/mor noktalar olarak kalıyor mu?",
+      "question_en": "Does the rash fade when you press a glass on it, or do red/purple spots remain?",
+      "answer_type": "yes_no",
+      "if_yes_escalate": "ER_NOW",
+      "reason_tr": "Solmayan petesyal döküntü menenjit veya sepsis belirtisi olabilir.",
+      "reason_en": "Non-blanching petechial rash may indicate meningitis or sepsis."
+    },
+    {
+      "id": "pedi_lethargy",
+      "when_canonical_any": [
+        "bebek huzursuzluğu",
+        "beslenmeyi reddetme",
+        "çocukta yüksek ateş"
+      ],
+      "question_tr": "Çocuğunuz normalden çok uyuşuk mu, uyandırılamıyor mu ya da sizi tanımıyor gibi mi bakıyor?",
+      "question_en": "Is your child unusually lethargic, unable to be roused, or looking through you?",
+      "answer_type": "yes_no",
+      "if_yes_escalate": "ER_NOW",
+      "reason_tr": "Şiddetli letarji ciddi enfeksiyon veya nörolojik sorun açısından acildir.",
+      "reason_en": "Severe lethargy is an emergency due to possible serious infection or neurological issue."
+    },
+    {
+      "id": "pedi_cyanosis",
+      "when_canonical_any": [
+        "bebek nefes hırıltısı",
+        "çocukta yüksek ateş"
+      ],
+      "question_tr": "Çocuğunuzun dudakları, tırnakları veya yüzü morardı mı?",
+      "question_en": "Have your child's lips, nails, or face turned blue?",
+      "answer_type": "yes_no",
+      "if_yes_escalate": "ER_NOW",
+      "reason_tr": "Siyanoz oksijen yetersizliği açısından acildir.",
+      "reason_en": "Cyanosis is an emergency due to possible oxygen deficiency."
     }
   ]
 }

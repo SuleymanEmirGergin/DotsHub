@@ -1,0 +1,15 @@
+{
+  "scenario": "Pediatrics febrile seizure — EMERGENCY",
+  "description": "Ebeveyn, yüksek ateşli çocuğunun kasıldığını ve bilincinin gittiğini bildiriyor. Febril konvülziyon şüphesiyle EMERGENCY envelope tetiklenmeli.",
+  "input": [
+    {
+      "user_message": "Çocuğumun ateşi çıktı ve aniden kasılmaya başladı, gözleri döndü ve bilinci gitti. Şimdi uyuyor ama çok korktum.",
+      "answer": null
+    }
+  ],
+  "expected": {
+    "final_type": "EMERGENCY",
+    "recommended_specialty": "pediatrics",
+    "urgency": "ER_NOW"
+  }
+}

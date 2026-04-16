@@ -1,0 +1,15 @@
+{
+  "scenario": "Pediatrics infant high fever — EMERGENCY",
+  "description": "Ebeveyn, 6 haftalık bebeğinin 38.5°C ateşi olduğunu bildiriyor. 3 aydan küçük bebekte yüksek ateş şüphesiyle EMERGENCY envelope tetiklenmeli.",
+  "input": [
+    {
+      "user_message": "Bebeğim 6 haftalık ve termometre 38.5 gösterdi. Ne yapmalıyım, çok endişelendim.",
+      "answer": null
+    }
+  ],
+  "expected": {
+    "final_type": "EMERGENCY",
+    "recommended_specialty": "pediatrics",
+    "urgency": "ER_NOW"
+  }
+}
