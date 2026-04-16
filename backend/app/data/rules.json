@@ -264,8 +264,25 @@
     {
       "id": "ophthalmology",
       "specialty": "Göz Hastalıkları",
-      "clusters": ["göz kızarıklığı", "batma", "görme bulanıklığı"],
-      "urgency_rules": [{ "if": { "vision_loss": true }, "then": "ER_NOW" }]
+      "clusters": [
+        "göz kızarıklığı",
+        "göz ağrısı",
+        "batma",
+        "görme bulanıklığı",
+        "ani görme kaybı",
+        "fotofobi",
+        "çift görme",
+        "göz kaşıntısı",
+        "arpacık",
+        "göz kapağı şişmesi",
+        "konjonktivit"
+      ],
+      "urgency_rules": [
+        { "if": { "vision_loss": true }, "then": "ER_NOW" },
+        { "if": { "canonical_any": ["ani görme kaybı"] }, "then": "ER_NOW" },
+        { "if": { "canonical_any": ["göz ağrısı"], "associated": ["bulantı"] }, "then": "ER_NOW" },
+        { "if": { "canonical_any": ["çift görme"], "trauma": true }, "then": "ER_NOW" }
+      ]
     },
     {
       "id": "orthopedics_rheum",

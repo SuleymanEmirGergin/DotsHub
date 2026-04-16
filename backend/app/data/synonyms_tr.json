@@ -328,6 +328,84 @@
         "takatim kalmadı",
         "halsizlik var"
       ]
+    },
+    {
+      "canonical": "ani görme kaybı",
+      "type": "red_flag",
+      "variants_tr": [
+        "aniden göremiyorum",
+        "bir gözüm görmüyor",
+        "görme aniden kesildi",
+        "bir gözümde karardı",
+        "görüşüm aniden bozuldu",
+        "bir taraf görmüyor",
+        "görme kayboldu",
+        "ani körlük"
+      ]
+    },
+    {
+      "canonical": "fotofobi",
+      "type": "symptom",
+      "variants_tr": [
+        "ışığa bakamıyorum",
+        "ışık gözümü rahatsız ediyor",
+        "ışıktan rahatsız oluyorum",
+        "parlak ışık acı veriyor",
+        "güneşe bakamıyorum",
+        "ışığa hassasiyetim var",
+        "fotofobim var"
+      ]
+    },
+    {
+      "canonical": "göz kızarıklığı",
+      "type": "symptom",
+      "variants_tr": [
+        "gözüm kırmızı",
+        "gözlerim kızardı",
+        "gözüm al al oldu",
+        "gözüm pembe",
+        "konjonktivit",
+        "gözüm kan çanağına döndü",
+        "gözlerim çok kızarık"
+      ]
+    },
+    {
+      "canonical": "göz ağrısı",
+      "type": "symptom",
+      "variants_tr": [
+        "gözüm ağrıyor",
+        "gözümde ağrı var",
+        "göz içi basıncı hissediyorum",
+        "göz arkası ağrıyor",
+        "gözümde zonklama var",
+        "gözüm sızlıyor",
+        "gözüme baskı hissediyorum"
+      ]
+    },
+    {
+      "canonical": "çift görme",
+      "type": "symptom",
+      "variants_tr": [
+        "çift görüyorum",
+        "diplopi",
+        "her şey ikili görünüyor",
+        "görüntüler üst üste geliyor",
+        "nesneler çift çıkıyor",
+        "çift görme var"
+      ]
+    },
+    {
+      "canonical": "göz kaşıntısı",
+      "type": "symptom",
+      "variants_tr": [
+        "gözüm kaşınıyor",
+        "gözlerim kaşınıyor",
+        "gözüm sulanıyor",
+        "gözlerim sulandı",
+        "gözümden su geliyor",
+        "gözüm yanıyor ve kaşınıyor",
+        "alerjik göz"
+      ]
     }
   ]
 }

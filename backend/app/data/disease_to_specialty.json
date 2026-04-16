@@ -43,6 +43,16 @@
     {"disease_label": "Acne", "specialty_id": "dermatology", "specialty_tr": "Dermatoloji", "confidence": 0.9},
     {"disease_label": "Urinary tract infection", "specialty_id": "urology_internal", "specialty_tr": "Üroloji (gerekirse Dahiliye)", "confidence": 0.85},
     {"disease_label": "Psoriasis", "specialty_id": "dermatology", "specialty_tr": "Dermatoloji", "confidence": 0.9},
-    {"disease_label": "Impetigo", "specialty_id": "dermatology", "specialty_tr": "Dermatoloji", "confidence": 0.9}
+    {"disease_label": "Impetigo", "specialty_id": "dermatology", "specialty_tr": "Dermatoloji", "confidence": 0.9},
+    {"disease_label": "Viral Konjonktivit", "specialty_id": "ophthalmology", "specialty_tr": "Göz Hastalıkları", "confidence": 0.9},
+    {"disease_label": "Bakteriyel Konjonktivit", "specialty_id": "ophthalmology", "specialty_tr": "Göz Hastalıkları", "confidence": 0.9},
+    {"disease_label": "Alerjik Konjonktivit", "specialty_id": "ophthalmology", "specialty_tr": "Göz Hastalıkları", "confidence": 0.9},
+    {"disease_label": "Akut Glokom Krizi", "specialty_id": "ophthalmology", "specialty_tr": "Göz Hastalıkları (ACİL)", "confidence": 0.95},
+    {"disease_label": "Retina Dekolmanı", "specialty_id": "ophthalmology", "specialty_tr": "Göz Hastalıkları (ACİL)", "confidence": 0.95},
+    {"disease_label": "Katarakt", "specialty_id": "ophthalmology", "specialty_tr": "Göz Hastalıkları", "confidence": 0.9},
+    {"disease_label": "Kuru Göz Sendromu", "specialty_id": "ophthalmology", "specialty_tr": "Göz Hastalıkları", "confidence": 0.85},
+    {"disease_label": "Kornea Yaralanması", "specialty_id": "ophthalmology", "specialty_tr": "Göz Hastalıkları (ACİL)", "confidence": 0.9},
+    {"disease_label": "Blefarit", "specialty_id": "ophthalmology", "specialty_tr": "Göz Hastalıkları", "confidence": 0.85},
+    {"disease_label": "Arpacık (Hordeolum)", "specialty_id": "ophthalmology", "specialty_tr": "Göz Hastalıkları", "confidence": 0.9}
   ]
 }
