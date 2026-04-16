@@ -170,3 +170,62 @@ async def check_admin_rate_limit_redis(redis: "Redis", key: str) -> Tuple[bool, 
         return True, ADMIN_MAX_REQ - count, reset_in
     except Exception:
         return True, ADMIN_MAX_REQ - 1, ADMIN_WINDOW_SEC
+
+
+# ---------------------------------------------------------------------------
+# LLM NLU rate limit — protects Wiro API quota
+# Separate global bucket: limits total LLM NLU calls per minute across
+# all sessions to avoid blowing the Wiro per-minute request cap.
+# ---------------------------------------------------------------------------
+
+LLM_NLU_WINDOW_SEC = int(os.getenv("LLM_NLU_RATE_LIMIT_WINDOW_SEC", "60"))
+LLM_NLU_MAX_REQ = int(os.getenv("LLM_NLU_RATE_LIMIT_MAX_REQ", "30"))
+LLM_NLU_REDIS_KEY_PREFIX = "rl_llm_nlu:"
+
+# In-memory bucket — keyed by arbitrary key (typically "global" or device_id)
+_LLM_NLU_BUCKETS: Dict[str, Deque[float]] = {}
+
+
+def check_llm_nlu_rate_limit(key: str = "global") -> Tuple[bool, int, int]:
+    """In-memory LLM NLU rate limit. Returns (allowed, remaining, reset_in_sec).
+
+    Default key is "global" — enforces a server-wide cap on Wiro calls.
+    Pass a device_id or session_id for per-user limiting.
+    """
+    now = time.time()
+    q = _LLM_NLU_BUCKETS.get(key)
+    if q is None:
+        q = deque()
+        _LLM_NLU_BUCKETS[key] = q
+
+    cutoff = now - LLM_NLU_WINDOW_SEC
+    while q and q[0] < cutoff:
+        q.popleft()
+
+    if len(q) >= LLM_NLU_MAX_REQ:
+        reset_in = int(LLM_NLU_WINDOW_SEC - (now - q[0])) if q else LLM_NLU_WINDOW_SEC
+        return False, 0, max(reset_in, 1)
+
+    q.append(now)
+    remaining = LLM_NLU_MAX_REQ - len(q)
+    reset_in = int(LLM_NLU_WINDOW_SEC - (now - q[0])) if q else LLM_NLU_WINDOW_SEC
+    return True, remaining, max(reset_in, 1)
+
+
+async def check_llm_nlu_rate_limit_redis(
+    redis: "Redis", key: str = "global"
+) -> Tuple[bool, int, int]:
+    """Redis-backed LLM NLU rate limit. Returns (allowed, remaining, reset_in_sec)."""
+    rkey = f"{LLM_NLU_REDIS_KEY_PREFIX}{key}"
+    try:
+        count = await redis.incr(rkey)
+        if count == 1:
+            await redis.expire(rkey, LLM_NLU_WINDOW_SEC)
+        ttl = await redis.ttl(rkey)
+        reset_in = max(ttl, 1) if ttl > 0 else LLM_NLU_WINDOW_SEC
+        if count > LLM_NLU_MAX_REQ:
+            await redis.decr(rkey)
+            return False, 0, reset_in
+        return True, LLM_NLU_MAX_REQ - count, reset_in
+    except Exception:
+        return True, LLM_NLU_MAX_REQ - 1, LLM_NLU_WINDOW_SEC

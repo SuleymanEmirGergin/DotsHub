@@ -183,6 +183,19 @@ app.include_router(admin_router, prefix="/v1", tags=["Admin"])
 app.include_router(admin_v5_router, tags=["Admin V5"])
 
 
+@app.get("/v1/config/features")
+async def features():
+    """Return current feature-flag state for client-side consent and UI gating.
+
+    Mobile app reads LLM_NLU_ENABLED to decide whether to show the KVKK/AI consent
+    banner before the first triage turn.
+    """
+    return {
+        "llm_nlu_enabled": settings.LLM_NLU_ENABLED,
+        "llm_explain_enabled": settings.LLM_EXPLAIN_ENABLED,
+    }
+
+
 @app.get("/health")
 async def health_check():
     """Basic liveness; includes Supabase reachability when configured."""

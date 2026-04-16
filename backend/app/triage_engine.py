@@ -16,6 +16,7 @@ All deterministic. Same input Ã¢â€ â€™ same output. No LLM.
 """
 
 from __future__ import annotations
+import logging
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 from app.runtime import Runtime
@@ -31,9 +32,12 @@ from app.scoring_v2 import (
 from app.question_selector_v3 import select_discriminative_question_v3
 from app.explain_specialty import build_why_specialty_tr
 from app.risk import compute_risk
+from app.core.config import settings
+
+logger = logging.getLogger(__name__)
 
 
-# Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Disease candidate generator (deterministic, Kaggle-based) Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+#Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Disease candidate generator (deterministic, Kaggle-based) Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
 
 def _generate_candidates(
@@ -228,11 +232,47 @@ def run_orchestrator_turn(
     # Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
     # 2) Canonical extraction
     # Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+    # 2a) Deterministic extraction (always runs — provides fallback)
+    nlu_source = "deterministic"
     user_canonicals_tr = extract_canonicals_tr(
         text_tr=input_text,
         answers=answers,
         synonyms_json=runtime.synonyms,
     )
+
+    # 2b) LLM-augmented extraction (feature-flagged + rate-limited)
+    if settings.LLM_NLU_ENABLED:
+        # Rate-limit check: protect Wiro API quota before making any external call.
+        # Uses a global server-side bucket (LLM_NLU_MAX_REQ calls/min, default 30).
+        # On limit exceeded, silently fall back to deterministic — no error raised.
+        from app.rate_limit import check_llm_nlu_rate_limit
+
+        _rl_allowed, _rl_remaining, _ = check_llm_nlu_rate_limit("global")
+        if not _rl_allowed:
+            logger.warning(
+                "LLM NLU rate limit exceeded (global). Falling back to deterministic."
+            )
+            nlu_source = "deterministic"
+        else:
+            try:
+                from app.services.llm_nlu import extract_canonicals_llm  # deferred import
+
+                llm_canonicals, llm_source = extract_canonicals_llm(
+                    text=input_text,
+                    locale="tr-TR",
+                    synonyms_json=runtime.synonyms,
+                )
+                if llm_canonicals:
+                    # Union merge: LLM + deterministic → richer signal
+                    merged = sorted(set(user_canonicals_tr) | set(llm_canonicals))
+                    nlu_source = "hybrid" if user_canonicals_tr else llm_source
+                    user_canonicals_tr = merged
+                else:
+                    # LLM returned empty or failed schema — keep deterministic result
+                    nlu_source = llm_source  # e.g. "llm_schema_error"
+            except Exception as _llm_exc:
+                logger.warning("LLM NLU failed, using deterministic fallback: %s", _llm_exc)
+                nlu_source = "deterministic"
 
     # Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
     # 3) Disease candidate generation
@@ -366,6 +406,7 @@ def run_orchestrator_turn(
             "top1_spec": round(top1_spec_score, 4),
             "top2_spec": round(top2_spec_score, 4),
             "specialty_gap": round(specialty_gap, 4),
+            "nlu_source": nlu_source,
         }
 
         payload = {
@@ -414,6 +455,7 @@ def run_orchestrator_turn(
         "top1_spec": round(top1_spec_score, 4),
         "top2_spec": round(top2_spec_score, 4),
         "specialty_gap": round(specialty_gap, 4),
+        "nlu_source": nlu_source,
     }
 
     payload = {

@@ -379,3 +379,80 @@ async def triage_turn(request: TriageTurnRequest):
             },
             meta=_make_meta(),
         )
+
+
+# ──────────────────────────────────────────────────────────
+# SSE streaming endpoint: POST /v1/triage/stream
+# ──────────────────────────────────────────────────────────
+
+import asyncio
+import json as _json
+from fastapi.responses import StreamingResponse
+
+
+def _sse_event(event: str, data: dict) -> str:
+    """Format a single SSE message."""
+    payload = _json.dumps(data, ensure_ascii=False, default=str)
+    return f"event: {event}\ndata: {payload}\n\n"
+
+
+@router.post("/triage/stream")
+async def triage_stream(request: TriageTurnRequest):
+    """Streaming variant of /v1/triage/turn using Server-Sent Events.
+
+    Emits three events in sequence:
+      1. ``thinking``  — immediate acknowledgement so the client can show a spinner
+      2. ``envelope``  — the full triage result (same structure as /triage/turn response)
+      3. ``done``      — signals end of stream
+
+    On error emits an ``error`` event then ``done``.
+
+    Client usage (JavaScript):
+        const es = await fetch('/v1/triage/stream', {method:'POST', body: JSON.stringify(body)});
+        const reader = es.body.getReader();
+        // parse SSE lines
+    """
+
+    async def _generate():
+        # 1) Immediate thinking event — lets the UI show a spinner without waiting
+        yield _sse_event("thinking", {"message_tr": "Analiz ediliyor…", "turn_index": 0})
+
+        try:
+            # 2) Run the triage engine (blocking) in a thread pool so we don't block the event loop
+            loop = asyncio.get_event_loop()
+
+            if _has_supabase():
+                envelope = await loop.run_in_executor(
+                    None, lambda: _handle_turn_supabase(request)
+                )
+            else:
+                envelope = await _handle_turn_legacy(request)
+
+            # 3) Emit the full envelope as an SSE event
+            envelope_dict = envelope.model_dump(mode="json")
+            yield _sse_event("envelope", envelope_dict)
+
+        except Exception as exc:
+            logger.error("SSE triage_stream error: %s", exc, exc_info=True)
+            yield _sse_event(
+                "error",
+                {
+                    "code": "STREAM_FAILED",
+                    "message_tr": "Bir hata oluştu, lütfen tekrar deneyin.",
+                    "detail": str(exc),
+                },
+            )
+
+        finally:
+            # 4) Always close the stream
+            yield _sse_event("done", {})
+
+    return StreamingResponse(
+        _generate(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",   # disable nginx buffering
+            "Connection": "keep-alive",
+        },
+    )

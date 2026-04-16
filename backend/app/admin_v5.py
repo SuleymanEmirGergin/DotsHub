@@ -674,3 +674,150 @@ def remove_admin_user(
 
     supabase().table("admin_users").delete().eq("user_id", user_id).execute()
     return {"ok": True}
+
+
+@router.get("/stats/llm")
+def llm_stats(
+    x_admin_key: Optional[str] = Header(default=None),
+    lookback_days: int = Query(default=7, ge=1, le=90),
+):
+    """LLM NLU call metrics: success rate, latency percentiles, nlu_source breakdown, daily counts."""
+    require_admin(x_admin_key)
+
+    from datetime import datetime, timezone, timedelta
+    from collections import defaultdict
+
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=lookback_days)).isoformat()
+
+    rows = (
+        supabase.table("llm_calls")
+        .select("success,error_type,latency_ms,nlu_source,created_at,model,provider")
+        .gte("created_at", cutoff)
+        .order("created_at", desc=True)
+        .limit(5000)
+        .execute()
+        .data or []
+    )
+
+    total = len(rows)
+    success_count = sum(1 for r in rows if r.get("success"))
+
+    # error breakdown
+    error_counts: Dict[str, int] = {}
+    for r in rows:
+        if not r.get("success"):
+            et = r.get("error_type") or "unknown"
+            error_counts[et] = error_counts.get(et, 0) + 1
+
+    # latency stats (success only)
+    latencies = sorted(
+        r["latency_ms"] for r in rows
+        if r.get("success") and r.get("latency_ms") is not None
+    )
+    def _pct(lst, p):
+        if not lst:
+            return 0
+        idx = max(0, int(len(lst) * p / 100) - 1)
+        return lst[idx]
+
+    avg_latency_ms = round(sum(latencies) / len(latencies)) if latencies else 0
+
+    # nlu_source distribution
+    by_nlu_source: Dict[str, int] = {}
+    for r in rows:
+        src = r.get("nlu_source") or "unknown"
+        by_nlu_source[src] = by_nlu_source.get(src, 0) + 1
+
+    # daily call counts
+    daily: Dict[str, int] = defaultdict(int)
+    for r in rows:
+        day = (r.get("created_at") or "")[:10]
+        daily[day] += 1
+
+    # model/provider in use
+    models = list({r.get("model") for r in rows if r.get("model")})
+    providers = list({r.get("provider") for r in rows if r.get("provider")})
+
+    return {
+        "lookback_days": lookback_days,
+        "total_calls": total,
+        "success_count": success_count,
+        "success_rate": round(success_count / total, 4) if total else 0.0,
+        "error_counts": error_counts,
+        "latency_ms": {
+            "avg": avg_latency_ms,
+            "p50": _pct(latencies, 50),
+            "p90": _pct(latencies, 90),
+            "p95": _pct(latencies, 95),
+            "p99": _pct(latencies, 99),
+        },
+        "by_nlu_source": by_nlu_source,
+        "daily_counts": dict(sorted(daily.items())),
+        "models": models,
+        "providers": providers,
+    }
+
+
+@router.get("/stats/synonym-suggestions")
+def synonym_suggestions(
+    x_admin_key: Optional[str] = Header(default=None),
+    limit: int = Query(default=100, ge=1, le=500),
+    status: Optional[str] = Query(default=None),
+    min_count: int = Query(default=2, ge=1),
+):
+    """Unrecognized symptom phrases from LLM NLU — candidates for new synonym entries.
+
+    Sorted by occurrence count descending. Filter by status: pending | accepted | rejected.
+    Only returns phrases seen at least min_count times to reduce noise.
+    """
+    require_admin(x_admin_key)
+
+    q = (
+        supabase.table("synonym_suggestions")
+        .select("id,phrase,count,status,suggested_canonical,created_at,updated_at")
+        .gte("count", min_count)
+        .order("count", desc=True)
+    )
+    if status:
+        q = q.eq("status", status)
+
+    rows = q.limit(limit).execute().data or []
+    return {"items": rows, "total": len(rows)}
+
+
+@router.patch("/stats/synonym-suggestions/{suggestion_id}")
+def update_synonym_suggestion(
+    suggestion_id: int,
+    x_admin_key: Optional[str] = Header(default=None),
+    status: str = Query(..., description="pending | accepted | rejected"),
+    suggested_canonical: Optional[str] = Query(default=None),
+):
+    """Update a synonym suggestion's review status.
+
+    - status=accepted  → mark phrase as approved to add to synonyms_tr.json
+    - status=rejected  → dismiss the phrase
+    - suggested_canonical → the canonical string this phrase should map to
+    """
+    require_admin(x_admin_key)
+
+    if status not in ("pending", "accepted", "rejected"):
+        from fastapi import HTTPException
+        raise HTTPException(status_code=422, detail="status must be: pending | accepted | rejected")
+
+    patch: Dict[str, Any] = {"status": status}
+    if suggested_canonical is not None:
+        patch["suggested_canonical"] = suggested_canonical.strip() or None
+
+    result = (
+        supabase.table("synonym_suggestions")
+        .update(patch)
+        .eq("id", suggestion_id)
+        .execute()
+    )
+
+    updated = result.data or []
+    if not updated:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail=f"synonym_suggestion id={suggestion_id} not found")
+
+    return {"ok": True, "updated": updated[0]}

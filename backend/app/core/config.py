@@ -52,6 +52,24 @@ class Settings(BaseSettings):
     MAX_QUESTIONS: int = 6
     TEMPERATURE: float = 0.3
 
+    # ── LLM NLU — Wiro.ai provider (gemini-2-5-flash) ─────────────────────────
+    # Provider choices: "wiro" | "google" | "anthropic" | "openai"
+    # "wiro" uses WIRO_API_KEY and the Wiro submit+poll API (recommended).
+    # Other providers call the respective vendor API directly.
+    LLM_PROVIDER: str = "wiro"
+    # LLM_API_KEY: only needed for non-Wiro providers.
+    # For "wiro", WIRO_API_KEY is reused automatically.
+    LLM_API_KEY: str = ""
+    # Wiro model path  →  https://api.wiro.ai/v1/Run/{LLM_NLU_MODEL}
+    LLM_NLU_MODEL: str = "google/gemini-2-5-flash"
+    LLM_NLU_ENABLED: bool = False            # feature flag — off by default
+    # Hard deadline for the entire submit+poll cycle (seconds)
+    LLM_NLU_TIMEOUT_SECONDS: float = 15.0
+    # How often to poll Wiro for task completion
+    LLM_NLU_POLL_INTERVAL_SECONDS: float = 0.5
+    LLM_NLU_LOG_TO_SUPABASE: bool = True
+    LLM_EXPLAIN_ENABLED: bool = False        # optional explanation layer (B9)
+
     model_config = {
         "env_file": ".env",
         "env_file_encoding": "utf-8",
