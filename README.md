@@ -23,7 +23,6 @@ guardrails, and rollback support.
 - Mobile/backend API path: `POST /v1/triage/turn`
 - Primary API contract: `docs/openapi_orchestrator.yaml`
 - Legacy reference contract: `openapi.yaml` (deprecated)
-- `app.api_v5` is experimental and not the default production path
 
 ## API & Environment
 
