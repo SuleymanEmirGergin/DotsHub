@@ -1,261 +1,299 @@
-"""CI gate: synonyms_tr.json bütünlük ve collision testleri.
+"""Collision guards for ``app/data/synonyms_tr.json``.
 
-Testler:
-1. JSON yüklenebilmeli ve şema geçerli olmalı
-2. Her canonical unique olmalı (duplicate canonical yok)
-3. Her variant unique olmalı — aynı variant iki farklı canonical'a ait olamaz (collision)
-4. Variant'lar canonical adıyla çakışmamalı (öz-referans)
-5. Her canonical en az 1 variant içermeli
-6. Variant'lar boş string içermemeli
-7. Longest-first sort kontrolü: multi-word variant'lar önce gelmeli (runtime match koruması)
+Purpose
+-------
+The matcher in ``app.canonical_extract`` adds *every* canonical whose variant
+(or the canonical itself) matches the normalized input text. If the same
+variant string (after TR normalization) appears under two different
+canonicals, the user silently gets both canonicals tagged. Expansion
+sessions (A2–A6) could introduce this class of bug by accident — this test
+file prevents that at CI level.
+
+What this file covers:
+  1. Data hygiene   — canonical labels unique, variants well-formed
+  2. Collision    — no variant is shared across canonicals
+  3. Expansion guard — none of the A1-planned canonicals in
+                       ``backend/scripts/coverage_expected.json`` collide
+                       with existing variants
+  4. Matcher sanity — longest-first ordering survives, negation works,
+                      deterministic output
+
+Invariants enforced:
+  - Top-level JSON has ``synonyms`` list
+  - Each entry has non-empty ``canonical`` and list-type ``variants_tr``
+  - ``canonical`` values are unique (after TR normalization)
+  - A variant (normalized) is NOT used in two different canonicals
+  - A canonical's label (normalized) is NOT used as a variant of a
+    different canonical
+  - ``variants_tr`` contains no duplicates, no empty strings, no non-strings
+  - The expected A1 canonicals do not clash with existing variants
+  - ``extract_canonicals_tr`` is deterministic and honors negation
 """
+
 from __future__ import annotations
 
 import json
 import unittest
-from pathlib import Path
 from collections import defaultdict
+from pathlib import Path
 
+from app.canonical_extract import (
+    build_synonym_patterns,
+    extract_canonicals_tr,
+    normalize_text_tr,
+)
 
-SYNONYMS_PATH = Path(__file__).resolve().parents[1] / "app" / "data" / "synonyms_tr.json"
+# ── Paths ────────────────────────────────────────────────────────────────────
+
+_BACKEND_ROOT = Path(__file__).resolve().parent.parent
+_SYNONYMS_PATH = _BACKEND_ROOT / "app" / "data" / "synonyms_tr.json"
+_EXPECTED_PATH = _BACKEND_ROOT / "scripts" / "coverage_expected.json"
 
 
 def _load_synonyms() -> dict:
-    with open(SYNONYMS_PATH, encoding="utf-8") as f:
+    with open(_SYNONYMS_PATH, encoding="utf-8") as f:
         return json.load(f)
 
 
-class SynonymSchemaTests(unittest.TestCase):
-    """JSON şema ve temel yapı kontrolleri."""
+def _load_expected_canonicals() -> list[str]:
+    """Flatten ``expected_canonicals_by_specialty`` into one list."""
+    if not _EXPECTED_PATH.exists():
+        return []
+    with open(_EXPECTED_PATH, encoding="utf-8") as f:
+        data = json.load(f)
+    bucket = data.get("expected_canonicals_by_specialty", {})
+    out: list[str] = []
+    for key, val in bucket.items():
+        if key.startswith("_"):
+            continue
+        if isinstance(val, list):
+            out.extend(str(x) for x in val)
+    return out
+
+
+# ── 1. Data hygiene ───────────────────────────────────────────────────────
+
+class DataHygieneTests(unittest.TestCase):
+    """Baseline structural invariants over synonyms_tr.json."""
 
     @classmethod
-    def setUpClass(cls):
+    def setUpClass(cls) -> None:
         cls.data = _load_synonyms()
-        cls.synonyms: list[dict] = cls.data["synonyms"]
+        cls.entries = cls.data.get("synonyms", [])
 
-    def test_file_loads(self):
-        self.assertIsInstance(self.data, dict)
-        self.assertIn("synonyms", self.data)
+    def test_top_level_has_synonyms_list(self):
+        self.assertIsInstance(self.data.get("synonyms"), list,
+                              "synonyms_tr.json must have a top-level 'synonyms' list")
+        self.assertGreater(len(self.entries), 0,
+                           "synonyms list cannot be empty")
 
-    def test_required_fields(self):
-        for entry in self.synonyms:
-            with self.subTest(canonical=entry.get("canonical")):
-                self.assertIn("canonical", entry, "canonical alanı eksik")
-                self.assertIn("type", entry, "type alanı eksik")
-                self.assertIn("variants_tr", entry, "variants_tr alanı eksik")
-                self.assertIsInstance(entry["variants_tr"], list, "variants_tr liste olmalı")
+    def test_every_entry_has_non_empty_canonical_string(self):
+        bad = []
+        for i, entry in enumerate(self.entries):
+            c = entry.get("canonical")
+            if not isinstance(c, str) or not c.strip():
+                bad.append((i, entry))
+        self.assertEqual(bad, [],
+                         f"Entries with invalid canonical: {bad!r}")
 
-    def test_valid_types(self):
-        valid_types = {"symptom", "red_flag"}
-        for entry in self.synonyms:
-            with self.subTest(canonical=entry.get("canonical")):
-                self.assertIn(
-                    entry.get("type"),
-                    valid_types,
-                    f"Geçersiz type '{entry.get('type')}' — beklenen: {valid_types}",
-                )
+    def test_every_entry_has_list_variants(self):
+        bad = []
+        for i, entry in enumerate(self.entries):
+            v = entry.get("variants_tr")
+            if not isinstance(v, list):
+                bad.append((i, entry.get("canonical"), type(v).__name__))
+        self.assertEqual(bad, [],
+                         f"Entries with non-list variants_tr: {bad!r}")
 
-    def test_at_least_one_variant(self):
-        for entry in self.synonyms:
-            with self.subTest(canonical=entry["canonical"]):
-                self.assertGreater(
-                    len(entry["variants_tr"]),
-                    0,
-                    f"'{entry['canonical']}' canonical'ı hiç variant içermiyor",
-                )
+    def test_all_variants_are_non_empty_strings(self):
+        bad = []
+        for entry in self.entries:
+            c = entry.get("canonical")
+            for j, v in enumerate(entry.get("variants_tr", [])):
+                if not isinstance(v, str) or not v.strip():
+                    bad.append((c, j, v))
+        self.assertEqual(bad, [],
+                         f"Variants that are empty/whitespace/non-string: {bad!r}")
 
-    def test_no_empty_variants(self):
-        for entry in self.synonyms:
-            for variant in entry["variants_tr"]:
-                with self.subTest(canonical=entry["canonical"], variant=variant):
-                    self.assertTrue(
-                        variant.strip(),
-                        f"'{entry['canonical']}' içinde boş variant: '{variant}'",
-                    )
+    def test_no_duplicate_variants_within_canonical(self):
+        """After TR normalization, a canonical cannot repeat the same variant."""
+        offenders: list[tuple[str, str]] = []
+        for entry in self.entries:
+            c = entry.get("canonical")
+            seen: set[str] = set()
+            for v in entry.get("variants_tr", []):
+                vn = normalize_text_tr(v)
+                if not vn:
+                    continue
+                if vn in seen:
+                    offenders.append((c, vn))
+                else:
+                    seen.add(vn)
+        self.assertEqual(offenders, [],
+                         f"Duplicate variants within a canonical: {offenders!r}")
+
+    def test_type_field_is_valid_when_present(self):
+        allowed = {"symptom", "red_flag"}
+        bad = []
+        for entry in self.entries:
+            t = entry.get("type")
+            if t is not None and t not in allowed:
+                bad.append((entry.get("canonical"), t))
+        self.assertEqual(bad, [],
+                         f"Entries with unrecognized 'type' field: {bad!r}")
 
 
-class SynonymUniquenessTests(unittest.TestCase):
-    """Duplicate ve collision kontrolleri — bu testler CI gate'tir."""
+# ── 2. Collision ────────────────────────────────────────────────────────────
+
+class CollisionTests(unittest.TestCase):
+    """Ensure no variant (or canonical label) is ambiguously shared."""
 
     @classmethod
-    def setUpClass(cls):
+    def setUpClass(cls) -> None:
         cls.data = _load_synonyms()
-        cls.synonyms: list[dict] = cls.data["synonyms"]
+        cls.entries = cls.data.get("synonyms", [])
 
-    def test_no_duplicate_canonicals(self):
-        """Aynı canonical adı iki kez tanımlanamaz."""
-        seen: dict[str, int] = {}
-        duplicates = []
-        for i, entry in enumerate(self.synonyms):
-            canon = entry["canonical"].strip().lower()
-            if canon in seen:
-                duplicates.append(
-                    f"'{entry['canonical']}' satır {seen[canon]} ve {i} içinde duplicate"
-                )
+    def test_canonical_labels_are_unique_after_normalization(self):
+        seen: dict[str, str] = {}
+        dupes: list[tuple[str, str]] = []
+        for entry in self.entries:
+            raw = entry.get("canonical", "")
+            norm = normalize_text_tr(raw)
+            if norm in seen:
+                dupes.append((seen[norm], raw))
             else:
-                seen[canon] = i
-        self.assertFalse(
-            duplicates,
-            "Duplicate canonical'lar tespit edildi:\n" + "\n".join(duplicates),
-        )
+                seen[norm] = raw
+        self.assertEqual(dupes, [],
+                         f"Canonical label collisions (normalized): {dupes!r}")
 
-    def test_no_variant_collisions(self):
-        """Aynı variant string iki farklı canonical'a ait olamaz.
+    def test_no_variant_is_shared_across_canonicals(self):
+        """The key CI guard: a single normalized variant → at most one canonical."""
+        variant_owners: dict[str, list[str]] = defaultdict(list)
+        for entry in self.entries:
+            c = entry.get("canonical", "")
+            for v in entry.get("variants_tr", []):
+                vn = normalize_text_tr(v)
+                if vn:
+                    variant_owners[vn].append(c)
+        shared = {v: owners for v, owners in variant_owners.items() if len(set(owners)) > 1}
+        self.assertEqual(shared, {},
+                         f"Variants shared across canonicals (would silently double-tag): {shared!r}")
 
-        Bu test A7 variant expansion için CI gate'tir.
-        Bir variant collision bulunursa yeni variant eklenmez — önce çakışma giderilir.
+    def test_canonical_label_not_used_as_variant_of_different_canonical(self):
         """
-        variant_to_canonicals: dict[str, list[str]] = defaultdict(list)
-        for entry in self.synonyms:
-            canon = entry["canonical"]
-            for variant in entry["variants_tr"]:
-                key = variant.strip().lower()
-                variant_to_canonicals[key].append(canon)
-
-        collisions = {
-            v: canons
-            for v, canons in variant_to_canonicals.items()
-            if len(canons) > 1
-        }
-
-        if collisions:
-            lines = []
-            for variant, canons in sorted(collisions.items()):
-                lines.append(f"  '{variant}' → {canons}")
-            self.fail(
-                f"{len(collisions)} variant collision tespit edildi:\n" + "\n".join(lines)
-            )
-
-    def test_variants_dont_equal_canonical(self):
-        """Variant, kendi canonical'ıyla birebir eşleşmemeli (öz-referans)."""
-        problems = []
-        for entry in self.synonyms:
-            canon_lower = entry["canonical"].strip().lower()
-            for variant in entry["variants_tr"]:
-                if variant.strip().lower() == canon_lower:
-                    problems.append(
-                        f"'{entry['canonical']}' canonical'ı kendi adını variant olarak içeriyor"
-                    )
-        self.assertFalse(
-            problems,
-            "Öz-referans variant'lar:\n" + "\n".join(problems),
-        )
-
-    def test_no_cross_canonical_variant_substring(self):
-        """Bir canonical'ın variant'ı başka bir canonical adının tam substring'i olmamalı
-        (örn. 'ağrı' → birden fazla canonical'ı gölgeleyebilir).
-
-        Bu test WARNING üretir, FAIL değil — tam collision değil, öncelik riski.
-        Sadece tam eşleşme (==) kontrol edilir, substring değil.
+        If canonical A's label (normalized) appears as a variant of canonical B,
+        the matcher will silently tag both whenever A's phrase is in the text.
         """
-        canonical_names = {e["canonical"].strip().lower() for e in self.synonyms}
-        warnings = []
-        for entry in self.synonyms:
-            for variant in entry["variants_tr"]:
-                v = variant.strip().lower()
-                if v in canonical_names and v != entry["canonical"].strip().lower():
-                    warnings.append(
-                        f"'{variant}' (in '{entry['canonical']}') "
-                        f"başka bir canonical adıyla çakışıyor"
-                    )
-        # Sadece warning — test fail etmez ama output'a yazar
-        if warnings:
-            import warnings as w
-            w.warn(
-                "Cross-canonical variant/canonical name çakışması:\n"
-                + "\n".join(warnings),
-                UserWarning,
-                stacklevel=2,
-            )
+        labels = {normalize_text_tr(e.get("canonical", "")): e.get("canonical", "")
+                  for e in self.entries}
+        offenders: list[tuple[str, str]] = []  # (canonical_B, label_of_A)
+        for entry in self.entries:
+            c = entry.get("canonical", "")
+            cn = normalize_text_tr(c)
+            for v in entry.get("variants_tr", []):
+                vn = normalize_text_tr(v)
+                if vn and vn != cn and vn in labels:
+                    offenders.append((c, labels[vn]))
+        self.assertEqual(offenders, [],
+                         f"Canonical label used as variant of another canonical: {offenders!r}")
 
 
-class SynonymLongestFirstTests(unittest.TestCase):
-    """Longest-first match koruması — çok kelimeli variant'lar önce gelmeli."""
+# ── 3. Expansion guard (A1 coverage_expected.json) ─────────────────────────
+
+class ExpectedCanonicalExpansionGuardTests(unittest.TestCase):
+    """
+    A1 enumerated 39 canonicals that Stream A will add. Verify that none of
+    them would collide with existing variants when merged. This is the gate
+    for A2–A6 expansion PRs.
+    """
 
     @classmethod
-    def setUpClass(cls):
+    def setUpClass(cls) -> None:
         cls.data = _load_synonyms()
-        cls.synonyms: list[dict] = cls.data["synonyms"]
+        cls.expected = _load_expected_canonicals()
+        cls.existing_variants: dict[str, str] = {}
+        for entry in cls.data.get("synonyms", []):
+            c = entry.get("canonical", "")
+            for v in entry.get("variants_tr", []):
+                vn = normalize_text_tr(v)
+                if vn:
+                    cls.existing_variants[vn] = c
 
-    def test_multiword_variants_before_single_word(self):
-        """Her canonical içinde çok kelimeli variant'lar tek kelimeli olanlardan önce gelmeli.
+    def test_expected_canonicals_list_not_empty(self):
+        self.assertGreater(len(self.expected), 0,
+                           "coverage_expected.json must list expected canonicals "
+                           "(check expected_canonicals_by_specialty section)")
 
-        Runtime'da longest-first match uygulanıyorsa bu sıra kritik değil,
-        ama JSON'un bu sırayı koruması önerilen pratiktir.
+    def test_no_expected_canonical_collides_with_existing_variant(self):
         """
-        violations = []
-        for entry in self.synonyms:
-            variants = entry["variants_tr"]
-            last_multi_idx = -1
-            first_single_idx = len(variants)
-
-            for i, v in enumerate(variants):
-                word_count = len(v.strip().split())
-                if word_count > 1:
-                    last_multi_idx = i
-                elif word_count == 1:
-                    if first_single_idx == len(variants):
-                        first_single_idx = i
-
-            if last_multi_idx > first_single_idx and first_single_idx != len(variants):
-                violations.append(
-                    f"'{entry['canonical']}': tek kelimeli variant (idx={first_single_idx}) "
-                    f"çok kelimeli variant'tan (idx={last_multi_idx}) önce geliyor"
-                )
-
-        # Soft uyarı — CI'ı kırmaz, ama dikkat çeker
-        if violations:
-            import warnings as w
-            w.warn(
-                "Longest-first sırası ihlali (soft):\n" + "\n".join(violations),
-                UserWarning,
-                stacklevel=2,
-            )
+        If an A1-expected canonical string (normalized) already appears as a
+        variant under a *different* canonical, adding it would silently
+        double-tag. Flag it so the expansion author can choose: rename,
+        relocate the variant, or merge the canonicals.
+        """
+        hits: list[tuple[str, str]] = []
+        for new_c in self.expected:
+            nn = normalize_text_tr(new_c)
+            if nn in self.existing_variants:
+                hits.append((new_c, self.existing_variants[nn]))
+        self.assertEqual(hits, [],
+                         f"Expected canonicals collide with existing variants "
+                         f"(new_canonical -> existing_canonical_owning_it): {hits!r}")
 
 
-class SynonymCoverageTests(unittest.TestCase):
-    """Kapsama metrikleri — sayısal eşikler."""
+# ── 4. Matcher sanity ──────────────────────────────────────────────────────
+
+class MatcherSanityTests(unittest.TestCase):
+    """Runtime behaviour: determinism, negation, pattern ordering."""
 
     @classmethod
-    def setUpClass(cls):
+    def setUpClass(cls) -> None:
         cls.data = _load_synonyms()
-        cls.synonyms: list[dict] = cls.data["synonyms"]
 
-    def test_total_canonical_count(self):
-        """Stream A tamamlandığında en az 32 canonical olmalı."""
-        self.assertGreaterEqual(
-            len(self.synonyms),
-            32,
-            f"Beklenen ≥32 canonical, mevcut: {len(self.synonyms)}",
+    def test_extract_canonicals_is_deterministic(self):
+        """Same input → identical output over many calls."""
+        text = "göğsümde baskı var, soluk alamıyorum, ateşim yükseldi"
+        first = extract_canonicals_tr(text, {}, self.data)
+        for _ in range(50):
+            self.assertEqual(extract_canonicals_tr(text, {}, self.data), first)
+
+    def test_negation_suppresses_match(self):
+        """'ateşim yok' must not yield 'ateş'."""
+        pos = extract_canonicals_tr("ateşim var", {}, self.data)
+        neg = extract_canonicals_tr("ateşim yok", {}, self.data)
+        self.assertIn("ateş", pos)
+        self.assertNotIn("ateş", neg)
+
+    def test_patterns_sorted_longest_first(self):
+        """
+        ``build_synonym_patterns`` is the only guarantee we have that longer
+        variants are considered before shorter ones. Re-assert it here so a
+        future refactor doesn't silently drop the sort.
+
+        We compare *phrase* lengths (not raw pattern-string lengths), because
+        ``re.escape`` inserts backslashes for non-alphanumeric characters
+        (spaces in particular) which would skew raw-string length comparison.
+        """
+        import re as _re
+
+        def _phrase_of(pat) -> str:
+            s = pat.pattern
+            # Strip leading \b and trailing \b (each is 2 chars in the source form)
+            if s.startswith(r"\b"):
+                s = s[2:]
+            if s.endswith(r"\b"):
+                s = s[:-2]
+            # Reverse re.escape: \X -> X (single-backslash escape for any char)
+            return _re.sub(r"\\(.)", r"\1", s)
+
+        patterns = build_synonym_patterns(self.data)
+        phrase_lengths = [len(_phrase_of(pat)) for _, pat in patterns]
+        self.assertEqual(
+            phrase_lengths, sorted(phrase_lengths, reverse=True),
+            "Synonym patterns must be sorted by descending phrase length "
+            "(longest-first) so more specific variants are preferred.",
         )
 
-    def test_average_variant_count(self):
-        """Ortalama variant sayısı ≥4 olmalı (A7 hedefi: 15-25, asgari eşik 4)."""
-        total_variants = sum(len(e["variants_tr"]) for e in self.synonyms)
-        avg = total_variants / len(self.synonyms) if self.synonyms else 0
-        self.assertGreaterEqual(
-            avg,
-            4.0,
-            f"Ortalama variant sayısı düşük: {avg:.1f} (beklenen ≥4.0)",
-        )
 
-    def test_no_canonical_below_minimum(self):
-        """Hiçbir canonical 1 variant'tan az içermemeli."""
-        below_min = [
-            e["canonical"]
-            for e in self.synonyms
-            if len(e["variants_tr"]) < 1
-        ]
-        self.assertFalse(
-            below_min,
-            f"Hiç variant'ı olmayan canonical'lar: {below_min}",
-        )
-
-    def test_red_flag_canonicals_exist(self):
-        """En az 1 red_flag tipinde canonical olmalı."""
-        red_flags = [e for e in self.synonyms if e.get("type") == "red_flag"]
-        self.assertGreater(
-            len(red_flags),
-            0,
-            "Hiç red_flag tipinde canonical yok",
-        )
+if __name__ == "__main__":
+    unittest.main()

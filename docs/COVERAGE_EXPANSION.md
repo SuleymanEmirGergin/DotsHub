@@ -60,6 +60,7 @@ Kritik bulgular (A1):
 |---|---|---:|---:|---:|---:|---:|---|
 | **A1** | Coverage audit baseline | — | — | — | — | — | ✅ Done — `docs/medical/coverage_audit.md` |
 | **A9** | Confidence gate | — | — | — | — | — | ✅ Done — commit `dcf1529` |
+| **A7 collision test** | `test_synonym_collisions.py` — 14 test (data hygiene, collision, expansion guard, matcher sanity) | — | — | — | — | — | ✅ Done |
 | A2 | Psikiyatri | 8 | 12 | 1 | 4 | 3 | Pending |
 | A3 | OB-GYN | 10 | 13 (+1 cross) | 3 | 3 | 3 | Pending |
 | A4 | Oftalmoloji | 6 | 10 | 2 | 2 | 3 | Pending |
@@ -80,9 +81,9 @@ rule, +13 red-flag soru, +20 golden flow senaryosu.
 
 A1'deki pazarlama/impact analizine göre:
 
-1. **A9** (confidence gate) — altyapı sigortası, önce bitir ✅
+1. **A9** (confidence gate) — altyapı sigortası ✅
 2. **A7 collision test** — `test_synonym_collisions.py` variant
-   expansion güvenliği için
+   expansion güvenliği için ✅
 3. **A2** (psikiyatri) — yüksek hacim, stigma'yı azaltır
 4. **A3** (OB-GYN) — ektopik gebelik + preeklampsi kritik emergency
 5. **A4** (oftalmoloji) — ani görme kaybı emergency
