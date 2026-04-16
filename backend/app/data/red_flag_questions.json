@@ -2,13 +2,149 @@
   "version": "0.1.0",
   "description": "Belirli belirti setlerinde sorulacak kısa acil kontrol soruları.",
   "questions": [
-    {"id": "chest_pain_redflags", "when_canonical_any": ["göğüs ağrısı", "göğüste baskı"], "question_tr": "Şu an nefes darlığı, soğuk terleme veya ağrının sol kola/çeneye yayılması var mı?", "question_en": "Do you currently have shortness of breath, cold sweats, or pain spreading to your left arm or jaw?", "answer_type": "yes_no", "if_yes_escalate": "ER_NOW", "reason_tr": "Kalp krizi belirtisi olabileceği için acil değerlendirme önerilir.", "reason_en": "Emergency evaluation recommended due to possible heart attack signs."},
-    {"id": "headache_redflags", "when_canonical_any": ["baş ağrısı"], "question_tr": "Baş ağrısı ani ve çok şiddetli mi? Kusma veya ışığa hassasiyet eşlik ediyor mu?", "question_en": "Is the headache sudden and very severe? Any vomiting or sensitivity to light?", "answer_type": "yes_no", "if_yes_escalate": "ER_NOW", "reason_tr": "Beyin kanaması vb. acil durum ihtimali nedeniyle hemen değerlendirme önerilir.", "reason_en": "Immediate evaluation recommended due to possible brain hemorrhage or emergency."},
-    {"id": "abdominal_pain_redflags", "when_canonical_any": ["karın ağrısı"], "question_tr": "Ateşiniz var mı veya kusma/kanlı/siyah dışkı gibi bir belirti eşlik ediyor mu?", "question_en": "Do you have fever or symptoms like vomiting or bloody/black stools?", "answer_type": "yes_no", "if_yes_escalate": "SAME_DAY", "reason_tr": "Enfeksiyon veya kanama ihtimali nedeniyle bugün değerlendirme önerilir.", "reason_en": "Evaluation today recommended due to possible infection or bleeding."},
-    {"id": "cough_redflags", "when_canonical_any": ["öksürük", "balgam"], "question_tr": "Öksürükle kan veya pas rengi balgam geliyor mu? Nefes darlığınız belirgin mi?", "question_en": "Are you coughing blood or rust-colored phlegm? Is your shortness of breath significant?", "answer_type": "yes_no", "if_yes_escalate": "SAME_DAY", "reason_tr": "Akciğer enfeksiyonu veya kanama ihtimali nedeniyle değerlendirme önerilir.", "reason_en": "Evaluation recommended due to possible lung infection or bleeding."},
-    {"id": "psych_active_plan", "when_canonical_any": ["intihar/kendine zarar", "umutsuzluk"], "question_tr": "Kendinize zarar vermeyi veya hayatınıza son vermeyi düşünüyor musunuz? Aklınızda somut bir plan var mı?", "question_en": "Are you thinking about harming yourself or ending your life? Do you have a specific plan?", "answer_type": "yes_no", "if_yes_escalate": "ER_NOW", "reason_tr": "Aktif intihar planı psikiyatrik acil olarak değerlendirilir. Hemen destek alın.", "reason_en": "Active suicidal plan is a psychiatric emergency. Seek help immediately."},
-    {"id": "psych_harm_others", "when_canonical_any": ["intihar/kendine zarar", "anksiyete"], "question_tr": "Başkasına zarar verme düşünceniz var mı?", "question_en": "Do you have thoughts of harming others?", "answer_type": "yes_no", "if_yes_escalate": "ER_NOW", "reason_tr": "Başkasına zarar verme niyeti acil psikiyatrik değerlendirme gerektirir.", "reason_en": "Intent to harm others requires urgent psychiatric evaluation."},
-    {"id": "psych_psychosis", "when_canonical_any": ["anksiyete", "umutsuzluk", "sosyal izolasyon"], "question_tr": "Başkalarının duymadığı sesler duyuyor veya gerçek olmadığını bildiğiniz şeyler görüyor musunuz?", "question_en": "Do you hear voices others cannot hear, or see things you know aren't real?", "answer_type": "yes_no", "if_yes_escalate": "SAME_DAY", "reason_tr": "Psikotik belirti şüphesiyle aynı gün psikiyatrik değerlendirme önerilir.", "reason_en": "Same-day psychiatric evaluation recommended due to possible psychotic symptoms."},
-    {"id": "psych_duration", "when_canonical_any": ["düşük ruh hali", "uyku bozukluğu", "iştah kaybı", "konsantrasyon bozukluğu"], "question_tr": "Bu belirtiler 2 haftadan uzun süredir devam ediyor mu?", "question_en": "Have these symptoms been ongoing for more than 2 weeks?", "answer_type": "yes_no", "if_yes_escalate": "SAME_DAY", "reason_tr": "2 haftadan uzun süren depresif belirtiler psikiyatrist değerlendirmesi gerektirir.", "reason_en": "Depressive symptoms lasting more than 2 weeks require psychiatrist evaluation."}
+    {
+      "id": "chest_pain_redflags",
+      "when_canonical_any": [
+        "göğüs ağrısı",
+        "göğüste baskı"
+      ],
+      "question_tr": "Şu an nefes darlığı, soğuk terleme veya ağrının sol kola/çeneye yayılması var mı?",
+      "question_en": "Do you currently have shortness of breath, cold sweats, or pain spreading to your left arm or jaw?",
+      "answer_type": "yes_no",
+      "if_yes_escalate": "ER_NOW",
+      "reason_tr": "Kalp krizi belirtisi olabileceği için acil değerlendirme önerilir.",
+      "reason_en": "Emergency evaluation recommended due to possible heart attack signs."
+    },
+    {
+      "id": "headache_redflags",
+      "when_canonical_any": [
+        "baş ağrısı"
+      ],
+      "question_tr": "Baş ağrısı ani ve çok şiddetli mi? Kusma veya ışığa hassasiyet eşlik ediyor mu?",
+      "question_en": "Is the headache sudden and very severe? Any vomiting or sensitivity to light?",
+      "answer_type": "yes_no",
+      "if_yes_escalate": "ER_NOW",
+      "reason_tr": "Beyin kanaması vb. acil durum ihtimali nedeniyle hemen değerlendirme önerilir.",
+      "reason_en": "Immediate evaluation recommended due to possible brain hemorrhage or emergency."
+    },
+    {
+      "id": "abdominal_pain_redflags",
+      "when_canonical_any": [
+        "karın ağrısı"
+      ],
+      "question_tr": "Ateşiniz var mı veya kusma/kanlı/siyah dışkı gibi bir belirti eşlik ediyor mu?",
+      "question_en": "Do you have fever or symptoms like vomiting or bloody/black stools?",
+      "answer_type": "yes_no",
+      "if_yes_escalate": "SAME_DAY",
+      "reason_tr": "Enfeksiyon veya kanama ihtimali nedeniyle bugün değerlendirme önerilir.",
+      "reason_en": "Evaluation today recommended due to possible infection or bleeding."
+    },
+    {
+      "id": "cough_redflags",
+      "when_canonical_any": [
+        "öksürük",
+        "balgam"
+      ],
+      "question_tr": "Öksürükle kan veya pas rengi balgam geliyor mu? Nefes darlığınız belirgin mi?",
+      "question_en": "Are you coughing blood or rust-colored phlegm? Is your shortness of breath significant?",
+      "answer_type": "yes_no",
+      "if_yes_escalate": "SAME_DAY",
+      "reason_tr": "Akciğer enfeksiyonu veya kanama ihtimali nedeniyle değerlendirme önerilir.",
+      "reason_en": "Evaluation recommended due to possible lung infection or bleeding."
+    },
+    {
+      "id": "psych_active_plan",
+      "when_canonical_any": [
+        "intihar/kendine zarar",
+        "umutsuzluk"
+      ],
+      "question_tr": "Kendinize zarar vermeyi veya hayatınıza son vermeyi düşünüyor musunuz? Aklınızda somut bir plan var mı?",
+      "question_en": "Are you thinking about harming yourself or ending your life? Do you have a specific plan?",
+      "answer_type": "yes_no",
+      "if_yes_escalate": "ER_NOW",
+      "reason_tr": "Aktif intihar planı psikiyatrik acil olarak değerlendirilir. Hemen destek alın.",
+      "reason_en": "Active suicidal plan is a psychiatric emergency. Seek help immediately."
+    },
+    {
+      "id": "psych_harm_others",
+      "when_canonical_any": [
+        "intihar/kendine zarar",
+        "anksiyete"
+      ],
+      "question_tr": "Başkasına zarar verme düşünceniz var mı?",
+      "question_en": "Do you have thoughts of harming others?",
+      "answer_type": "yes_no",
+      "if_yes_escalate": "ER_NOW",
+      "reason_tr": "Başkasına zarar verme niyeti acil psikiyatrik değerlendirme gerektirir.",
+      "reason_en": "Intent to harm others requires urgent psychiatric evaluation."
+    },
+    {
+      "id": "psych_psychosis",
+      "when_canonical_any": [
+        "anksiyete",
+        "umutsuzluk",
+        "sosyal izolasyon"
+      ],
+      "question_tr": "Başkalarının duymadığı sesler duyuyor veya gerçek olmadığını bildiğiniz şeyler görüyor musunuz?",
+      "question_en": "Do you hear voices others cannot hear, or see things you know aren't real?",
+      "answer_type": "yes_no",
+      "if_yes_escalate": "SAME_DAY",
+      "reason_tr": "Psikotik belirti şüphesiyle aynı gün psikiyatrik değerlendirme önerilir.",
+      "reason_en": "Same-day psychiatric evaluation recommended due to possible psychotic symptoms."
+    },
+    {
+      "id": "psych_duration",
+      "when_canonical_any": [
+        "düşük ruh hali",
+        "uyku bozukluğu",
+        "iştah kaybı",
+        "konsantrasyon bozukluğu"
+      ],
+      "question_tr": "Bu belirtiler 2 haftadan uzun süredir devam ediyor mu?",
+      "question_en": "Have these symptoms been ongoing for more than 2 weeks?",
+      "answer_type": "yes_no",
+      "if_yes_escalate": "SAME_DAY",
+      "reason_tr": "2 haftadan uzun süren depresif belirtiler psikiyatrist değerlendirmesi gerektirir.",
+      "reason_en": "Depressive symptoms lasting more than 2 weeks require psychiatrist evaluation."
+    },
+    {
+      "id": "obgyn_pregnancy_bleeding",
+      "when_canonical_any": [
+        "gebelik şüphesi",
+        "vajinal kanama",
+        "gecikmiş adet"
+      ],
+      "question_tr": "Gebelik testiniz pozitif mi veya gebe olduğunuzu düşünüyor musunuz? Birlikte karın/kasık ağrısı ya da kanama var mı?",
+      "question_en": "Is your pregnancy test positive or do you think you might be pregnant? Is there any abdominal/pelvic pain or bleeding?",
+      "answer_type": "yes_no",
+      "if_yes_escalate": "ER_NOW",
+      "reason_tr": "Gebelikte kanama veya ağrı ektopik gebelik açısından acil değerlendirme gerektirir.",
+      "reason_en": "Bleeding or pain in pregnancy requires emergency evaluation for ectopic pregnancy."
+    },
+    {
+      "id": "obgyn_pregnancy_headache_vision",
+      "when_canonical_any": [
+        "gebelik şüphesi",
+        "baş ağrısı"
+      ],
+      "question_tr": "Gebe misiniz ve şiddetli baş ağrısıyla birlikte görme bozukluğu veya el/yüz şişmesi var mı?",
+      "question_en": "Are you pregnant with severe headache plus vision changes or swelling of hands/face?",
+      "answer_type": "yes_no",
+      "if_yes_escalate": "ER_NOW",
+      "reason_tr": "Gebelikte bu belirti kombinasyonu preeklampsi açısından acildir.",
+      "reason_en": "This symptom combination in pregnancy is an emergency due to possible preeclampsia."
+    },
+    {
+      "id": "obgyn_postpartum_bleeding",
+      "when_canonical_any": [
+        "vajinal kanama"
+      ],
+      "question_tr": "Son 6 hafta içinde doğum yaptınız mı ve kanamanız aşırı mı (saatte birden fazla ped doluyorsa)?",
+      "question_en": "Did you give birth in the last 6 weeks and is the bleeding excessive (soaking more than one pad per hour)?",
+      "answer_type": "yes_no",
+      "if_yes_escalate": "ER_NOW",
+      "reason_tr": "Postpartum aşırı kanama obstetrik acildir.",
+      "reason_en": "Postpartum excessive bleeding is an obstetric emergency."
+    }
   ]
 }
