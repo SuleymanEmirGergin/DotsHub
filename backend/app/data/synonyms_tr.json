@@ -328,6 +328,126 @@
         "takatim kalmadı",
         "halsizlik var"
       ]
+    },
+    {
+      "canonical": "uyku bozukluğu",
+      "type": "symptom",
+      "variants_tr": [
+        "uyuyamıyorum",
+        "uykuya dalamıyorum",
+        "gece uyanıyorum",
+        "sabah erken uyanıyorum",
+        "uykum bölünüyor",
+        "aşırı uyuyorum",
+        "uyku kalitem kötü",
+        "yatağa girince aklım çalışıyor",
+        "geceleri düşüncelerim durmuyor",
+        "insomnia"
+      ]
+    },
+    {
+      "canonical": "düşük ruh hali",
+      "type": "symptom",
+      "variants_tr": [
+        "kendimi çok kötü hissediyorum",
+        "moralim çok bozuk",
+        "çökkünüm",
+        "içim karardı",
+        "hiçbir şeyden zevk alamıyorum",
+        "her şey anlamsız geliyor",
+        "mutlu olamıyorum",
+        "sürekli üzgünüm",
+        "depresif hissediyorum",
+        "neşesizim",
+        "boşluk hissediyorum",
+        "ruhen çöküntü"
+      ]
+    },
+    {
+      "canonical": "anksiyete",
+      "type": "symptom",
+      "variants_tr": [
+        "anksiyete",
+        "kaygılanıyorum",
+        "sürekli endişeleniyorum",
+        "içim sıkışıyor",
+        "telaşlanıyorum",
+        "gergin hissediyorum",
+        "stres altındayım",
+        "aşırı endişe",
+        "gereksiz yere kaygılanıyorum",
+        "kafam çalışmıyor",
+        "kafam dolu",
+        "zihin yorgunluğu"
+      ]
+    },
+    {
+      "canonical": "panik atak",
+      "type": "symptom",
+      "variants_tr": [
+        "panik atak geçirdim",
+        "aniden kalp hızlandı ve korktum",
+        "birden nefes alamadım ve panikledim",
+        "aşırı korku dalgası geldi",
+        "ölüm korkusu yaşadım",
+        "atak geçirdim",
+        "panik krizi",
+        "aniden fenalaştım ve çok korktum"
+      ]
+    },
+    {
+      "canonical": "iştah kaybı",
+      "type": "symptom",
+      "variants_tr": [
+        "yemek yiyemiyorum",
+        "iştahım yok",
+        "bir şey yiyemiyorum",
+        "yemekten zevk almıyorum",
+        "kilo kaybettim isteksizce",
+        "hiç acıkmıyorum",
+        "yemek yemek istemiyorum"
+      ]
+    },
+    {
+      "canonical": "konsantrasyon bozukluğu",
+      "type": "symptom",
+      "variants_tr": [
+        "konsantre olamıyorum",
+        "dikkatimi toplayamıyorum",
+        "odaklanamıyorum",
+        "aklım dağılıyor",
+        "bir şeye uzun süre bakamıyorum",
+        "unutkanlık arttı",
+        "zihin bulanıklığı",
+        "düşüncelerim karışık"
+      ]
+    },
+    {
+      "canonical": "sosyal izolasyon",
+      "type": "symptom",
+      "variants_tr": [
+        "insanlardan uzaklaşıyorum",
+        "kimseyle görüşmek istemiyorum",
+        "sosyal ortamlardan kaçınıyorum",
+        "evden çıkamıyorum",
+        "yalnız kalmak istiyorum",
+        "arkadaşlarımla görüşmüyorum",
+        "dışarı çıkamıyorum"
+      ]
+    },
+    {
+      "canonical": "umutsuzluk",
+      "type": "symptom",
+      "variants_tr": [
+        "umudum yok",
+        "hiçbir şeyin düzelmeyeceğini düşünüyorum",
+        "her şey mahvoldu",
+        "geleceğe bakamıyorum",
+        "yaşamın anlamı yok",
+        "çıkış yolu göremiyorum",
+        "iyileşemeyeceğimi düşünüyorum",
+        "herşey boş geliyor"
+      ]
     }
   ]
 }

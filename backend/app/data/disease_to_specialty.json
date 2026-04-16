@@ -43,6 +43,18 @@
     {"disease_label": "Acne", "specialty_id": "dermatology", "specialty_tr": "Dermatoloji", "confidence": 0.9},
     {"disease_label": "Urinary tract infection", "specialty_id": "urology_internal", "specialty_tr": "Üroloji (gerekirse Dahiliye)", "confidence": 0.85},
     {"disease_label": "Psoriasis", "specialty_id": "dermatology", "specialty_tr": "Dermatoloji", "confidence": 0.9},
-    {"disease_label": "Impetigo", "specialty_id": "dermatology", "specialty_tr": "Dermatoloji", "confidence": 0.9}
+    {"disease_label": "Impetigo", "specialty_id": "dermatology", "specialty_tr": "Dermatoloji", "confidence": 0.9},
+    {"disease_label": "Majör Depresyon", "specialty_id": "psychiatry", "specialty_tr": "Psikiyatri", "confidence": 0.9},
+    {"disease_label": "Yaygın Anksiyete Bozukluğu", "specialty_id": "psychiatry", "specialty_tr": "Psikiyatri", "confidence": 0.9},
+    {"disease_label": "Panik Bozukluk", "specialty_id": "psychiatry", "specialty_tr": "Psikiyatri", "confidence": 0.9},
+    {"disease_label": "Obsesif-Kompulsif Bozukluk", "specialty_id": "psychiatry", "specialty_tr": "Psikiyatri", "confidence": 0.85},
+    {"disease_label": "Post-Travmatik Stres Bozukluğu", "specialty_id": "psychiatry", "specialty_tr": "Psikiyatri", "confidence": 0.85},
+    {"disease_label": "Bipolar Bozukluk", "specialty_id": "psychiatry", "specialty_tr": "Psikiyatri", "confidence": 0.85},
+    {"disease_label": "Sosyal Fobi", "specialty_id": "psychiatry", "specialty_tr": "Psikiyatri", "confidence": 0.85},
+    {"disease_label": "Uykusuzluk (İnsomnia)", "specialty_id": "psychiatry", "specialty_tr": "Psikiyatri", "confidence": 0.8},
+    {"disease_label": "Somatizasyon Bozukluğu", "specialty_id": "psychiatry", "specialty_tr": "Psikiyatri", "confidence": 0.8},
+    {"disease_label": "Uyum Bozukluğu", "specialty_id": "psychiatry", "specialty_tr": "Psikiyatri", "confidence": 0.8},
+    {"disease_label": "Postpartum Depresyon", "specialty_id": "psychiatry", "specialty_tr": "Psikiyatri", "confidence": 0.9},
+    {"disease_label": "Erken Psikoz", "specialty_id": "psychiatry", "specialty_tr": "Psikiyatri", "confidence": 0.9}
   ]
 }
