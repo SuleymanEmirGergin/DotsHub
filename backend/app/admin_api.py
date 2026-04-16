@@ -7,8 +7,12 @@ Provides endpoints for:
 """
 
 from __future__ import annotations
-from fastapi import APIRouter, HTTPException, Depends, Header
-from typing import Any, Dict
+import csv
+import io
+from typing import Any, Dict, List, Optional
+
+from fastapi import APIRouter, Depends, Header, Query
+from fastapi.responses import PlainTextResponse, Response
 
 from app.tuning_tasks import build_tuning_tasks_from_session
 from app.patchgen import build_synonyms_patch_from_task
@@ -34,7 +38,88 @@ def get_supabase():
             raise ValueError("Supabase credentials not configured")
         return create_client(url, key)
     except Exception as e:
-        raise HTTPException(500, f"Supabase client error: {e}")
+        raise HTTPException(500, f"Supabase client error: {e}") from e
+
+
+# ─── List & export (tenant-scoped, for dashboard proxy) ───
+
+TUNING_SORT_COLUMNS = ("created_at", "task_type", "title", "status")
+VALID_STATUS = ("open", "accepted", "rejected", "done")
+VALID_TYPE = ("KEYWORD_MISSING", "SPECIALTY_CONFUSION", "QUESTION_WEAKNESS")
+
+
+@router.get("")
+def list_tuning_tasks(
+    admin=Depends(require_admin),
+    status: Optional[str] = Query(None),
+    type: Optional[str] = Query(None, alias="type"),
+    sort: str = Query("created_at"),
+    order: str = Query("desc"),
+    limit: int = Query(100, ge=1, le=500),
+):
+    """List tuning tasks for the current tenant (for dashboard proxy)."""
+    sb = get_supabase()
+    tenant_id = admin.get("tenant_id") or "default"
+    sort_col = sort if sort in TUNING_SORT_COLUMNS else "created_at"
+    asc = order.lower() == "asc"
+
+    q = (
+        sb.table("tuning_tasks")
+        .select("id,created_at,task_type,severity,title,description,status,session_id,patch")
+        .eq("tenant_id", tenant_id)
+        .order(sort_col, desc=not asc)
+        .limit(limit)
+    )
+    if status and status in VALID_STATUS:
+        q = q.eq("status", status)
+    if type and type in VALID_TYPE:
+        q = q.eq("task_type", type)
+
+    res = q.execute()
+    return {"tasks": res.data or []}
+
+
+@router.get("/export", response_class=PlainTextResponse)
+def export_tuning_tasks_csv(
+    admin=Depends(require_admin),
+    status: Optional[str] = Query(None),
+    type: Optional[str] = Query(None, alias="type"),
+):
+    """Export tuning tasks as CSV for the current tenant (for dashboard proxy)."""
+    sb = get_supabase()
+    tenant_id = admin.get("tenant_id") or "default"
+
+    q = (
+        sb.table("tuning_tasks")
+        .select("id,created_at,task_type,severity,title,description,status,session_id")
+        .eq("tenant_id", tenant_id)
+        .order("created_at", desc=True)
+        .limit(500)
+    )
+    if status and status in VALID_STATUS:
+        q = q.eq("status", status)
+    if type and type in VALID_TYPE:
+        q = q.eq("task_type", type)
+
+    res = q.execute()
+    rows: List[Dict[str, Any]] = res.data or []
+    headers = ["id", "created_at", "task_type", "severity", "title", "description", "status", "session_id"]
+
+    buf = io.StringIO()
+    w = csv.writer(buf)
+    w.writerow(headers)
+    for r in rows:
+        w.writerow([r.get(h, "") for h in headers])
+    buf.seek(0)
+    csv_content = buf.getvalue()
+
+    return Response(
+        content=csv_content,
+        media_type="text/csv; charset=utf-8",
+        headers={
+            "Content-Disposition": f'attachment; filename="tuning-tasks-{tenant_id}.csv"',
+        },
+    )
 
 
 @router.post("/from-session/{session_id}")
@@ -46,9 +131,10 @@ def create_tasks_from_session(session_id: str, admin=Depends(require_admin)):
     for missing keywords, specialty confusion, and weak questions.
     """
     sb = get_supabase()
+    tenant_id = admin.get("tenant_id") or "default"
 
-    # Fetch session
-    res = sb.table("triage_sessions").select("*").eq("id", session_id).maybe_single().execute()
+    # Fetch session (tenant-scoped)
+    res = sb.table("triage_sessions").select("*").eq("id", session_id).eq("tenant_id", tenant_id).maybe_single().execute()
     session = res.data
     if not session:
         raise HTTPException(404, "Session not found")
@@ -58,10 +144,11 @@ def create_tasks_from_session(session_id: str, admin=Depends(require_admin)):
     if not tasks:
         return {"created": 0, "message": "No tuning tasks generated from this session"}
 
-    # Insert tasks
+    # Insert tasks (tenant-scoped)
     created_count = 0
     for t in tasks:
         t["created_by"] = admin.get("user_id")
+        t["tenant_id"] = tenant_id
         try:
             sb.table("tuning_tasks").insert(t).execute()
             created_count += 1
@@ -87,9 +174,10 @@ def generate_patch(task_id: str, admin=Depends(require_admin)):
     - QUESTION_WEAKNESS → (future) question adjustment patch
     """
     sb = get_supabase()
-    
-    # Fetch task
-    res = sb.table("tuning_tasks").select("*").eq("id", task_id).maybe_single().execute()
+    tenant_id = admin.get("tenant_id") or "default"
+
+    # Fetch task (tenant-scoped)
+    res = sb.table("tuning_tasks").select("*").eq("id", task_id).eq("tenant_id", tenant_id).maybe_single().execute()
     task = res.data
     if not task:
         raise HTTPException(404, "Task not found")
@@ -134,13 +222,14 @@ def apply_patch(task_id: str, admin=Depends(require_admin)):
     (usually via CI/CD automation, not directly here).
     """
     sb = get_supabase()
-    
-    # Update task status
+    tenant_id = admin.get("tenant_id") or "default"
+
+    # Update task status (tenant-scoped)
     res = sb.table("tuning_tasks").update({
         "status": "accepted",
         "applied_at": "now()",
         "applied_by": admin.get("user_id"),
-    }).eq("id", task_id).execute()
+    }).eq("id", task_id).eq("tenant_id", tenant_id).execute()
     
     if not res.data:
         raise HTTPException(404, "Task not found")

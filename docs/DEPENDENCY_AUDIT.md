@@ -1,6 +1,6 @@
 # Bağımlılık kontrolü (release öncesi veya periyodik)
 
-Release checklist’teki “0. Sürüm öncesi” adımında istenir; release yapmadan da periyodik kontrol için kullanılabilir.
+Release checklist’teki “0. Sürüm öncesi” adımında istenir; release yapmadan da periyodik kontrol (E.3) için kullanılabilir. Haftalık/aylık: dashboard ve mobile için pnpm audit / npm outdated, backend için pip list --outdated; sonuçları DEPENDENCY_UPDATES.md ile karşılaştırın.
 
 ---
 

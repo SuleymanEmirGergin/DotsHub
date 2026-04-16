@@ -19,6 +19,7 @@ import {
 } from "@/src/ui/primitives";
 import { API_BASE } from "@/constants";
 import { getDeviceId } from "@/utils/deviceId";
+import { fetchWithTimeout } from "@/src/api/fetchWithTimeout";
 import { useI18n } from "@/i18n/I18nProvider";
 
 type SessionItem = {
@@ -53,13 +54,14 @@ export default function HistoryScreen({ onBack, onViewSession }: Props) {
     setError(null);
 
     try {
-      const res = await fetch(
+      const res = await fetchWithTimeout(
         `${API_BASE}/v1/triage/history?limit=50`,
         {
           headers: {
             "x-device-id": getDeviceId(),
           },
-        }
+        },
+        10000
       );
 
       if (!res.ok) {

@@ -154,7 +154,6 @@ const styles = StyleSheet.create({
   },
   languageLink: {
     paddingVertical: tokens.spacing.sm,
-    paddingVertical: tokens.spacing.sm,
     paddingHorizontal: tokens.spacing.md,
     alignSelf: "center",
   },

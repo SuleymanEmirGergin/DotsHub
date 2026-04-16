@@ -1,5 +1,6 @@
-﻿import React from "react";
+import React from "react";
 import { Linking, ScrollView, StyleSheet, Text, View } from "react-native";
+import { unregisterPushTokenIfNeeded } from "@/src/api/pushClient";
 import { useTriageStore } from "@/src/state/triageStore";
 import { tokens } from "@/src/ui/designTokens";
 import {
@@ -53,7 +54,14 @@ export default function EmergencyScreen() {
           {t("emergency.notifyContact")}
         </PrimaryButton>
 
-        <SecondaryButton onPress={resetSession}>{t("common.newAssessment")}</SecondaryButton>
+        <SecondaryButton
+          onPress={() => {
+            unregisterPushTokenIfNeeded();
+            resetSession();
+          }}
+        >
+          {t("common.newAssessment")}
+        </SecondaryButton>
       </ScrollView>
     </ScreenContainer>
   );

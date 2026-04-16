@@ -48,7 +48,11 @@
     "recommendedSpecialty": "Рекомендуемая специальность",
     "confidence": "Уверенность",
     "facilities": "Медицинские учреждения",
+    "nearbyFacilities": "Медучреждения рядом",
     "openOnMap": "Открыть на карте",
+    "openInOsm": "Открыть в OSM",
+    "mapOpenError": "Не удалось открыть карту.",
+    "facilitiesLoadError": "Не удалось загрузить список учреждений.",
     "moreFacilities": "Больше учреждений",
     "sendSummaryEmail": "Отправить сводку по email",
     "emailPlaceholder": "Email адрес",
@@ -91,7 +95,9 @@
   "error": {
     "title": "Что-то пошло не так",
     "fallbackMessage": "Произошла непредвиденная ошибка.",
-    "code": "Код"
+    "code": "Код",
+    "connectionError": "Ошибка соединения. Проверьте интернет и попробуйте снова.",
+    "timeout": "Время запроса истекло. Попробуйте снова."
   },
   "history": {
     "title": "История сеансов",

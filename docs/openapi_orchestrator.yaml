@@ -1,11 +1,15 @@
 openapi: 3.1.0
 info:
-  title: PreTriage Orchestrator API
-  version: "0.1.0"
+  title: PreTriage Orchestrator API (Dotshub)
+  version: "4.0.0"
   description: |
-    Primary API contract for integrations.
+    Primary API contract for integrations (mobile, dashboard proxy).
     Unified triage: POST /v1/triage/turn; feedback, history, send-summary, export-summary,
-    push-token, facilities, and /health are documented below.
+    push-token, facilities, and /health. Rate-limited endpoints return 429 and
+    X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset. Admin and legacy
+    session endpoints are not covered here; see backend app.main routes.
+    Contract verified against backend app.main + api/routes (triage, feedback,
+    summary_email, push_token, facilities, health).
 servers:
   - url: http://localhost:8000
     description: Local development
@@ -46,6 +50,10 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Envelope"
+        "422":
+          description: Validation error (invalid request body)
+        "429":
+          description: Rate limit exceeded (triage/feedback bucket; check X-RateLimit-* headers)
               examples:
                 question:
                   summary: System asks a follow-up question
@@ -118,6 +126,10 @@ paths:
                 $ref: "#/components/schemas/FeedbackOut"
         "404":
           description: session_id not found
+        "422":
+          description: Validation error
+        "429":
+          description: Rate limit exceeded
 
   /v1/triage/history:
     get:
@@ -138,6 +150,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/TriageHistoryResponse"
+        "429":
+          description: Rate limit exceeded
 
   /v1/triage/send-summary:
     post:
@@ -161,6 +175,10 @@ paths:
                   message: { type: string }
         "404":
           description: Session not found
+        "422":
+          description: Validation error
+        "429":
+          description: Rate limit exceeded (5/min per IP for send-summary + export-summary)
 
   /v1/triage/export-summary:
     post:
@@ -178,6 +196,10 @@ paths:
           content:
             text/plain:
               schema: { type: string }
+        "422":
+          description: Validation error
+        "429":
+          description: Rate limit exceeded (5/min per IP for send-summary + export-summary)
 
   /v1/triage/push-token:
     post:
@@ -196,6 +218,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/PushTokenResponse"
+        "422":
+          description: Validation error (invalid body)
         "503":
           description: Persist failed (production)
     delete:
@@ -214,6 +238,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/PushTokenResponse"
+        "422":
+          description: Validation error (invalid body)
 
   /v1/facilities:
     get:
@@ -247,7 +273,8 @@ paths:
 
   /health:
     get:
-      summary: Health check
+      summary: Health check (liveness and optional Supabase reachability)
+      operationId: healthCheck
       responses:
         "200":
           description: Service status
@@ -255,10 +282,18 @@ paths:
             application/json:
               schema:
                 type: object
+                required: [status, service, version]
                 properties:
-                  status: { type: string }
-                  service: { type: string }
-                  version: { type: string }
+                  status: { type: string, example: "ok" }
+                  service: { type: string, example: "dotshub-api" }
+                  version: { type: string, example: "4.0.0" }
+                  supabase:
+                    type: string
+                    description: "ok, not_configured, error, or status_XXX"
+                  supabase_error:
+                    type: string
+                    description: "Error detail when supabase is error"
+                    maxLength: 200
 
 components:
   schemas:

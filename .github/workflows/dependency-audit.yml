@@ -1,0 +1,65 @@
+# Dependency audit: backend (pip-audit), dashboard (pnpm audit), mobile (npm audit).
+# Runs weekly and on manual dispatch. Optionally fail the job on high/critical findings.
+name: Dependency Audit
+
+on:
+  schedule:
+    - cron: "0 9 * * 1"
+  workflow_dispatch:
+    inputs:
+      fail_on_high:
+        description: "Fail job if high/critical vulnerability found"
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install pip-audit (backend)
+        run: pip install pip-audit
+
+      - name: Setup pnpm (dashboard)
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node (dashboard + mobile)
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+          cache-dependency-path: dashboard/pnpm-lock.yaml
+
+      - name: Install dashboard dependencies
+        working-directory: dashboard
+        run: pnpm install --frozen-lockfile
+
+      - name: Install mobile dependencies
+        working-directory: mobile
+        run: npm ci
+
+      - name: Run dependency audit
+        run: |
+          if [ "${{ github.event.inputs.fail_on_high }}" = "true" ]; then
+            ./scripts/audit-dependencies.sh --fail-on-high
+          else
+            ./scripts/audit-dependencies.sh
+          fi
+
+      - name: Upload audit summary
+        if: always()
+        run: |
+          echo "## Dependency Audit" >> "$GITHUB_STEP_SUMMARY"
+          echo "Completed. See job log for details." >> "$GITHUB_STEP_SUMMARY"

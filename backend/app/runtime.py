@@ -1,6 +1,6 @@
-"""Runtime config & cache loader — loaded once at startup, shared across requests.
+"""Runtime config & cache loader — tenant-aware (Faz 1: triage = default tenant).
 
-Adapts the actual data file formats in app/data/ to a clean Runtime object.
+Adapts the actual data file formats in app/data/ (or data_sets/<tenant_id>/) to a clean Runtime object.
 """
 
 from __future__ import annotations
@@ -8,6 +8,9 @@ import json
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
+
+# Per-tenant runtime cache (tenant_id -> Runtime)
+_runtime_cache: Dict[str, "Runtime"] = {}
 
 
 def load_json(path: str) -> Any:
@@ -147,9 +150,37 @@ def _build_specialty_by_id(spec_json: Dict[str, Any]) -> Dict[str, Dict[str, Any
     return out
 
 
-def load_runtime(data_dir: str = "app/data") -> Runtime:
+def _resolve_tenant_paths(tenant_id: str) -> tuple[str, Path]:
+    """Resolve (data_dir, config_dir) for tenant. Fallback for default to app/data and config/."""
+    from app.core.config import settings
+    data_dir: str = "app/data"
+    config_dir = Path("config")
+    if tenant_id and getattr(settings, "DATASETS_ROOT", None):
+        root = Path(settings.DATASETS_ROOT)
+        tenant_data = root / tenant_id
+        if tenant_data.exists():
+            data_dir = str(tenant_data)
+    if tenant_id and getattr(settings, "TENANT_CONFIG_ROOT", None):
+        root = Path(settings.TENANT_CONFIG_ROOT)
+        tenant_cfg = root / tenant_id
+        if tenant_cfg.exists():
+            config_dir = tenant_cfg
+    return data_dir, config_dir
+
+
+def get_runtime(tenant_id: str) -> Runtime:
+    """Return cached Runtime for tenant; load and cache if not present (Faz 1: triage uses default)."""
+    tid = (tenant_id or "default").strip() or "default"
+    if tid not in _runtime_cache:
+        data_dir, config_dir = _resolve_tenant_paths(tid)
+        _runtime_cache[tid] = load_runtime(data_dir=data_dir, config_dir=config_dir)
+    return _runtime_cache[tid]
+
+
+def load_runtime(data_dir: str = "app/data", config_dir: Optional[Path] = None) -> Runtime:
     """Load all config/cache files and build derived lookup structures."""
     d = Path(data_dir)
+    cfg_dir = config_dir if config_dir is not None else Path("config")
 
     disease_symptom_matrix = load_json(str(d / "kaggle_cache" / "disease_symptoms.json"))
     symptom_severity_en: Optional[Dict[str, int]] = None
@@ -220,15 +251,14 @@ def load_runtime(data_dir: str = "app/data") -> Runtime:
         pass  # Gracefully fallback to empty map
     rt.question_effectiveness = qe_map
 
-    # Load emergency rules
+    # Load emergency rules (tenant-scoped config dir)
     emergency_cfg: Dict[str, Any] = {}
     risk_cfg: Dict[str, Any] = {}
     try:
-        config_dir = Path("config")
-        emerg_path = config_dir / "emergency_rules.json"
+        emerg_path = cfg_dir / "emergency_rules.json"
         if emerg_path.exists():
             emergency_cfg = load_json(str(emerg_path))
-        risk_path = config_dir / "risk_rules.json"
+        risk_path = cfg_dir / "risk_rules.json"
         if risk_path.exists():
             risk_cfg = load_json(str(risk_path))
     except Exception:

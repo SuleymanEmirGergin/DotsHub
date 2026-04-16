@@ -13,19 +13,20 @@ Bu belge, Dotshub mobil uygulamasında push bildirimlerinin ne zaman ve nasıl k
 
 - **Expo Push Token:** Cihaza özel, bildirim göndermek için kullanılır. Backend’e `POST /v1/triage/push-token` ile kaydedilir.
 - **Saklama:** Token şu an loglanır; kalıcı depolama (örn. Supabase `push_tokens` tablosu) isteğe bağlı eklenebilir.
-- **Silme:** Kullanıcı bildirimleri kapatırsa veya uygulamadan çıkış yaparsa token silinebilir (ileride uygulanacak akış).
+- **Silme:** Kullanıcı "Yeni değerlendirme başlat" / "Yeni oturum" seçtiğinde mobil `unregisterPushTokenIfNeeded()` ile `DELETE /v1/triage/push-token` çağrılır (best-effort). Bildirimleri kapatma ayarı ileride eklenebilir.
 
 ## Backend–mobil push-token kontratı
 
+Backend: `backend/app/api/routes/push_token.py`. Mobil: `mobile/src/api/pushClient.ts`, `mobile/src/hooks/usePushRegistration.ts`. Kontrat uyumlu (A.1 doğrulandı).
+
 - **POST /v1/triage/push-token**  
-  Body (zorunlu): `expo_push_token` (string, 10–256 karakter), `device_id` (string, 1–128 karakter).  
-  Opsiyonel: `platform` (örn. `ios` / `android`), `locale` (örn. `tr-TR`, `en-US`).  
+  Body: `expo_push_token` (string, 10–256), `device_id` (string, 1–128), `platform` (string, max 20; mobil `Platform.OS` → `ios`/`android`), `locale` (string, max 10; mobil `toBackendLocale(locale)` → `tr-TR`, `en-US`, vb.).  
   Cevap: `{"ok": true}`. Hata: 422 (eksik/geçersiz alan), 503 (persist hatası, production'da).
 
 - **DELETE /v1/triage/push-token**  
   Body: `device_id` (string, zorunlu). Cevap: `{"ok": true}`.
 
-- **Mobil kullanım:** `registerPushToken(expoPushToken, deviceId, locale)` ve `unregisterPushToken(deviceId)`. `device_id` kaynağı: `getDeviceId()` (Expo Constants.sessionId / installationId veya fallback). Token alınıp device_id üretilemezse register çağrılmamalı; getDeviceId() şu an her zaman string döndürür (fallback ile).
+- **Mobil kullanım:** `registerPushToken(expoPushToken, deviceId, locale)` ve `unregisterPushToken(deviceId)`. `device_id`: `getDeviceId()`. Çıkış/yeni oturum: ResultScreen, ErrorScreen, EmergencyScreen’de "Yeni değerlendirme" / "Yeni oturum" butonuna basıldığında `unregisterPushTokenIfNeeded()` çağrılır (best-effort), ardından oturum sıfırlanır. İzin veya token yoksa register çağrılmaz; izin reddedilirse veya token alınamazsa `unregisterPushToken(deviceId)` çağrılır (best-effort).
 
 ## İzin
 

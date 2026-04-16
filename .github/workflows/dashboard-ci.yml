@@ -1,28 +1,69 @@
-# Dashboard: contract checks + E2E (Node, Playwright)
-name: Dashboard tests
+# Dashboard CI: quality (typecheck, contract, eslint) + E2E (Playwright)
+name: Dashboard CI
 
 on:
+  pull_request:
+    paths:
+      - "dashboard/**"
+      - ".github/workflows/dashboard-ci.yml"
   push:
     branches: [main]
     paths:
       - "dashboard/**"
-      - ".github/workflows/dashboard-tests.yml"
-  pull_request:
-    branches: [main]
-    paths:
-      - "dashboard/**"
-      - ".github/workflows/dashboard-tests.yml"
+      - ".github/workflows/dashboard-ci.yml"
+  workflow_dispatch: {}
+
+concurrency:
+  group: dashboard-ci-${{ github.ref }}
+  cancel-in-progress: true
 
 defaults:
   run:
     working-directory: dashboard
 
 jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+          cache-dependency-path: dashboard/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm run lint
+
+      - name: Proxy route contract checks
+        run: pnpm run test:routes
+
+      - name: ESLint
+        env:
+          npm_config_offline: "false"
+          HTTP_PROXY: ""
+          HTTPS_PROXY: ""
+          ALL_PROXY: ""
+        run: pnpm run lint:eslint
+
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4

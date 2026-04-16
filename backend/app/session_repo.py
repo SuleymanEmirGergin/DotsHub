@@ -13,14 +13,15 @@ from uuid import UUID
 from app.supabase_client import get_supabase
 
 
-def create_session(locale: str, input_text: str) -> UUID:
-    """Create a new triage session and return its UUID."""
+def create_session(locale: str, input_text: str, tenant_id: str = "default") -> UUID:
+    """Create a new triage session and return its UUID (tenant-scoped)."""
     sb = get_supabase()
     ins = sb.table("triage_sessions").insert({
         "locale": locale,
         "input_text": input_text,
         "envelope_type": "QUESTION",
         "turn_index": 0,
+        "tenant_id": tenant_id,
     }).execute()
 
     if not ins.data:
@@ -45,24 +46,23 @@ def append_event(
     session_id: UUID,
     event_type: str,
     payload: Dict[str, Any],
+    tenant_id: str = "default",
 ) -> None:
-    """Write a row to triage_events (immutable log)."""
+    """Write a row to triage_events (immutable log, tenant-scoped)."""
     sb = get_supabase()
     sb.table("triage_events").insert({
         "session_id": str(session_id),
         "event_type": event_type,
         "payload": payload,
+        "tenant_id": tenant_id,
     }).execute()
 
 
-def get_session(session_id: UUID) -> Optional[Dict[str, Any]]:
-    """Load a session by id. Returns None if not found."""
+def get_session(session_id: UUID, tenant_id: Optional[str] = None) -> Optional[Dict[str, Any]]:
+    """Load a session by id. If tenant_id is given, filter by it (admin/triage scope)."""
     sb = get_supabase()
-    res = (
-        sb.table("triage_sessions")
-        .select("*")
-        .eq("id", str(session_id))
-        .single()
-        .execute()
-    )
+    q = sb.table("triage_sessions").select("*").eq("id", str(session_id))
+    if tenant_id is not None:
+        q = q.eq("tenant_id", tenant_id)
+    res = q.single().execute()
     return res.data if res and res.data else None

@@ -1,5 +1,9 @@
 # Pre-Triage Agentic AI
 
+[![Backend CI](https://github.com/OWNER/REPO/actions/workflows/backend-ci.yml/badge.svg?branch=main)](https://github.com/OWNER/REPO/actions/workflows/backend-ci.yml)
+[![Dashboard CI](https://github.com/OWNER/REPO/actions/workflows/dashboard-ci.yml/badge.svg?branch=main)](https://github.com/OWNER/REPO/actions/workflows/dashboard-ci.yml)  
+*(Replace `OWNER/REPO` with your GitHub org/repo for live badges.)*
+
 Policy-driven, explainable, safety-first symptom pre-triage system.
 
 Medical disclaimer: This system is not a diagnostic tool and does not replace a physician.
@@ -43,7 +47,7 @@ guardrails, and rollback support.
 
 - `REDIS_URL` — optional; when set, rate limiting uses Redis (multi-instance). Omit for in-memory.
 - `RATE_LIMIT_WINDOW_SEC`, `RATE_LIMIT_MAX_REQ` — triage/feedback rate limit (default 60s, 20 req).
-- `SEND_SUMMARY_RATE_LIMIT_WINDOW_SEC`, `SEND_SUMMARY_RATE_LIMIT_MAX_REQ` — send-summary limit (default 60s, 10 req per IP).
+- `SEND_SUMMARY_RATE_LIMIT_WINDOW_SEC`, `SEND_SUMMARY_RATE_LIMIT_MAX_REQ` — send-summary limit (default 60s, 5 req per IP).
 - `ADMIN_RATE_LIMIT_WINDOW_SEC`, `ADMIN_RATE_LIMIT_MAX_REQ` — admin API limit (default 60s, 60 req).
 - `LOG_FORMAT=json` — JSON log lines with `request_id`; `LOG_LEVEL` (e.g. `INFO`).
 - `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` — for persistence and `/health` check.
@@ -51,7 +55,7 @@ guardrails, and rollback support.
 - `CORS_ORIGINS` — JSON array of allowed origins (e.g. mobile app and dashboard URLs). **Production:** set explicitly to your app/dashboard origins; do not use the default localhost list.
 
 **Rate limiting (multi-instance)**  
-By default, rate limits are stored in-memory per process. With **multiple API instances** (e.g. several workers or pods), each instance has its own buckets, so effective limits are multiplied. For a single shared limit across instances, set `REDIS_URL` (e.g. `redis://localhost:6379/0`). When `REDIS_URL` is set and reachable, triage/feedback, send-summary, and admin rate limits use Redis; see `backend/app/rate_limit.py` and `main.py` (middleware). If Redis is unavailable at startup, the app falls back to in-memory and logs a warning.
+By default, rate limits are stored in-memory per process. With **multiple API instances** (e.g. several workers or pods), each instance has its own buckets, so effective limits are multiplied. For a single shared limit across instances, set `REDIS_URL` (e.g. `redis://localhost:6379/0`). When `REDIS_URL` is set and reachable, triage/feedback, send-summary, and admin rate limits use Redis; if Redis is unavailable at startup, the app falls back to in-memory and logs a warning. **Full context:** env vars, key strategy, fail-open behavior, and production notes → [docs/RATE_LIMIT_REDIS.md](docs/RATE_LIMIT_REDIS.md).
 
 ## Core Philosophy
 

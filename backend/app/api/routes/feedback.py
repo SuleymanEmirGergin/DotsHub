@@ -11,6 +11,7 @@ from typing import Optional, Literal
 from uuid import UUID
 
 from app.supabase_client import get_supabase
+from app.tenant import get_tenant_id_for_triage
 
 logger = logging.getLogger(__name__)
 
@@ -40,12 +41,14 @@ def submit_feedback(payload: FeedbackIn):
     This keeps the feedback data clean and traceable.
     """
     sb = get_supabase()
+    tenant_id = get_tenant_id_for_triage()
 
-    # 1) Verify session exists
+    # 1) Verify session exists (tenant-scoped)
     session_resp = (
         sb.table("triage_sessions")
         .select("id")
         .eq("id", str(payload.session_id))
+        .eq("tenant_id", tenant_id)
         .limit(1)
         .execute()
     )
@@ -58,6 +61,7 @@ def submit_feedback(payload: FeedbackIn):
         "rating": payload.rating,
         "comment": payload.comment,
         "user_selected_specialty_id": payload.user_selected_specialty_id,
+        "tenant_id": tenant_id,
     }
     ins = sb.table("triage_feedback").insert(insert_obj).execute()
 

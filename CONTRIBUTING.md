@@ -54,8 +54,8 @@ npx expo start
 
 ## CI
 
-- **Backend:** `.github/workflows/backend-regression.yml` — unit/E2E testler + golden flow regression.
-- **Dashboard:** `.github/workflows/dashboard-quality.yml` — lint; `.github/workflows/dashboard-tests.yml` — contract (test:routes, test:i18n-contract) + Playwright E2E (dashboard değişince).
+- **Backend:** `.github/workflows/backend-ci.yml` — regression (golden flow) + Supabase DB smoke (path-aware).
+- **Dashboard:** `.github/workflows/dashboard-ci.yml` — quality (typecheck, contract, eslint) + E2E (Playwright).
 - PR’da ilgili path’ler değiştiğinde ilgili workflow tetiklenir.
 
 ## Kod Standartları

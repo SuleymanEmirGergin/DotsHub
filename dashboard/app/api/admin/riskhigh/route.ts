@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/requireAdmin";
 
 export async function GET(req: NextRequest) {
+  await requireAdmin();
   const base = process.env.NEXT_PUBLIC_API_BASE!;
   const key = process.env.ADMIN_API_KEY!;
   const url = new URL(req.url);

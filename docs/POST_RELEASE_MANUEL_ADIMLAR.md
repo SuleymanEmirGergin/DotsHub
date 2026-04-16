@@ -10,8 +10,8 @@ Release sonrası aşağıdaki adımlar **kod değişikliği gerektirmez**; repo 
 
 **Ne yapılacak:** [BRANCH_PROTECTION_CHECKLIST.md](BRANCH_PROTECTION_CHECKLIST.md) içindeki maddeleri uygulayın:
 
-- Required check’ler: `golden-flow-regression`, `dashboard-quality`
-- İsteğe bağlı: `supabase-db-smoke`, `guardrail`
+- Required check’ler: `backend-ci` (regression), `dashboard-ci` (quality)
+- İsteğe bağlı: `backend-ci` (supabase-db-smoke), `guardrail`
 - PR zorunluluğu, onay sayısı, konuşma çözümü vb. (checklist’teki tüm madde başlıkları)
 
 Bu adım yalnızca repo sahibi / admin tarafından yapılır.

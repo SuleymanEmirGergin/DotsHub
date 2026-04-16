@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/requireAdmin";
 
 export async function POST(
   _req: NextRequest,
   { params }: { params: Promise<{ task_id: string }> }
 ) {
+  await requireAdmin();
   const { task_id } = await params;
   const base = process.env.NEXT_PUBLIC_API_BASE;
   const key = process.env.ADMIN_API_KEY;

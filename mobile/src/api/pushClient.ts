@@ -6,6 +6,7 @@
 import { Platform } from "react-native";
 import { fetchWithTimeout } from "./fetchWithTimeout";
 import { API_BASE } from "@/src/config/runtime";
+import { getDeviceId } from "@/utils/deviceId";
 
 /** Backend locale format: tr-TR, en-US, de-DE, ru-RU, ar (max 10 char). */
 function toBackendLocale(locale: string): string {
@@ -68,4 +69,18 @@ export async function unregisterPushToken(
     throw new Error(resolveErrorMessage(err, res.status, "Unregister failed"));
   }
   return (await res.json()) as { ok: boolean };
+}
+
+/**
+ * Çıkış veya "yeni değerlendirme" öncesi push token'ı backend'den kaldırır (best-effort).
+ * device_id yoksa veya ağ hatası olursa sessizce atlanır.
+ */
+export async function unregisterPushTokenIfNeeded(): Promise<void> {
+  const deviceId = getDeviceId()?.trim();
+  if (!deviceId) return;
+  try {
+    await unregisterPushToken(deviceId);
+  } catch {
+    /* best-effort; UI bloklanmaz */
+  }
 }

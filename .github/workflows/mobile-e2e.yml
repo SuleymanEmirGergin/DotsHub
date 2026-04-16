@@ -40,10 +40,12 @@ jobs:
 
       - name: "Run Maestro smoke (no device: will skip/fail; use Maestro Cloud or local for real E2E)"
         run: |
-          "$HOME/.maestro/bin/maestro" test mobile/.maestro/triage_flow_smoke.yaml || true
-        continue-on-error: true
+          "$HOME/.maestro/bin/maestro" test mobile/.maestro/triage_flow_smoke.yaml
+        id: maestro
 
       - name: Summary
+        if: always()
         run: |
-          echo "Maestro E2E job tamamlandı. Gerçek cihaz/emülatör veya Maestro Cloud olmadan test adımları atlanmış veya fail etmiş olabilir."
-          echo "Yerel çalıştırma: cd mobile && npx expo run:ios (veya run:android), sonra maestro test .maestro/triage_flow_smoke.yaml"
+          echo "Maestro E2E job finished. Without a real device/emulator or Maestro Cloud, steps may have been skipped or failed."
+          echo "Maestro version: ${MAESTRO_VERSION:-unknown}"
+          echo "Local run: cd mobile && npx expo run:ios (or run:android), then maestro test .maestro/triage_flow_smoke.yaml"

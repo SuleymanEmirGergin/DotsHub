@@ -70,19 +70,20 @@ jobs:
         if: steps.decision.outputs.should_rollback == 'true'
         run: |
           MESSAGE="⚠️ Tuning Guardrail Alert: Deployment ${{ steps.decision.outputs.deployment_id }} failed checks and will be rolled back."
-          
-          # Slack
+          # Build webhook JSON safely (avoid shell/JSON injection)
+          PAYLOAD_SLACK=$(printf '%s' "$MESSAGE" | python3 -c "import sys,json; print(json.dumps({'text': sys.stdin.read()}))")
+          PAYLOAD_DISCORD=$(printf '%s' "$MESSAGE" | python3 -c "import sys,json; print(json.dumps({'content': sys.stdin.read()}))")
+
           if [ -n "${{ secrets.SLACK_WEBHOOK_URL }}" ]; then
-            curl -X POST "${{ secrets.SLACK_WEBHOOK_URL }}" \
+            curl -sS -X POST "${{ secrets.SLACK_WEBHOOK_URL }}" \
               -H 'Content-Type: application/json' \
-              -d "{\"text\":\"$MESSAGE\"}"
+              -d "$PAYLOAD_SLACK"
           fi
-          
-          # Discord
+
           if [ -n "${{ secrets.DISCORD_WEBHOOK_URL }}" ]; then
-            curl -X POST "${{ secrets.DISCORD_WEBHOOK_URL }}" \
+            curl -sS -X POST "${{ secrets.DISCORD_WEBHOOK_URL }}" \
               -H 'Content-Type: application/json' \
-              -d "{\"content\":\"$MESSAGE\"}"
+              -d "$PAYLOAD_DISCORD"
           fi
           
       - name: Create rollback PR

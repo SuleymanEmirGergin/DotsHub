@@ -50,7 +50,11 @@
     "recommendedSpecialty": "Önerilen branş",
     "confidence": "Güven",
     "facilities": "Sağlık tesisleri",
+    "nearbyFacilities": "Yakın sağlık kuruluşları",
     "openOnMap": "Haritada aç",
+    "openInOsm": "OSM'de aç",
+    "mapOpenError": "Harita açılamadı.",
+    "facilitiesLoadError": "Tesis listesi yüklenemedi.",
     "moreFacilities": "Daha fazla tesis",
     "sendSummaryEmail": "Özeti e-postaya gönder",
     "emailPlaceholder": "E-posta adresi",
@@ -93,7 +97,9 @@
   "error": {
     "title": "Bir sorun oldu",
     "fallbackMessage": "Beklenmeyen bir hata oluştu.",
-    "code": "Kod"
+    "code": "Kod",
+    "connectionError": "Bağlantı hatası. İnternet bağlantınızı kontrol edin ve tekrar deneyin.",
+    "timeout": "İstek zaman aşımına uğradı. Tekrar deneyin."
   },
   "history": {
     "title": "Geçmiş Oturumlar",

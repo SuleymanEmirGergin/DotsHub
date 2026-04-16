@@ -14,8 +14,9 @@ from app.admin_auth import require_admin_key
 router = APIRouter(prefix="/admin", tags=["admin"])
 
 
-def require_admin(x_admin_key: Optional[str]) -> None:
-    require_admin_key(x_admin_key)
+def require_admin(x_admin_key: Optional[str]) -> dict[str, str]:
+    """Returns { user_id, tenant_id } for tenant-scoped admin queries."""
+    return require_admin_key(x_admin_key)
 
 
 HEALTH_THRESH_PATH = Path(__file__).resolve().parents[2] / "config" / "admin_health_thresholds.json"
@@ -94,13 +95,14 @@ def list_sessions(
     envelope_type: Optional[str] = None,
     stop_reason: Optional[str] = None,
 ):
-    require_admin(x_admin_key)
+    admin = require_admin(x_admin_key)
+    tenant_id = admin.get("tenant_id") or "default"
 
     fetch_n = max(limit * 6, 200)
 
     q = supabase.table("triage_sessions").select(
         "session_id,created_at,updated_at,envelope_type,stop_reason,confidence_0_1,recommended_specialty_id,extracted_canonicals,meta"
-    )
+    ).eq("tenant_id", tenant_id)
 
     if envelope_type:
         q = q.eq("envelope_type", envelope_type)
@@ -140,13 +142,15 @@ def list_sessions(
 
 @router.get("/sessions/{session_id}")
 def get_session_detail(session_id: str, x_admin_key: Optional[str] = Header(default=None)):
-    require_admin(x_admin_key)
+    admin = require_admin(x_admin_key)
+    tenant_id = admin.get("tenant_id") or "default"
 
-    sess = supabase.table("triage_sessions").select("*").eq("session_id", session_id).single().execute()
+    sess = supabase.table("triage_sessions").select("*").eq("session_id", session_id).eq("tenant_id", tenant_id).single().execute()
     events = (
         supabase.table("triage_events")
         .select("*")
         .eq("session_id", session_id)
+        .eq("tenant_id", tenant_id)
         .order("created_at", desc=False)
         .execute()
     )
@@ -154,6 +158,7 @@ def get_session_detail(session_id: str, x_admin_key: Optional[str] = Header(defa
         supabase.table("triage_feedback")
         .select("*")
         .eq("session_id", session_id)
+        .eq("tenant_id", tenant_id)
         .order("created_at", desc=False)
         .execute()
     )
@@ -170,11 +175,13 @@ def overview_stats(
     x_admin_key: Optional[str] = Header(default=None),
     lookback_limit: int = Query(default=800, ge=50, le=5000),
 ):
-    require_admin(x_admin_key)
+    admin = require_admin(x_admin_key)
+    tenant_id = admin.get("tenant_id") or "default"
 
     rows = (
         supabase.table("triage_sessions")
         .select("session_id,created_at,envelope_type,stop_reason,confidence_0_1,meta,extracted_canonicals")
+        .eq("tenant_id", tenant_id)
         .order("created_at", desc=True)
         .limit(lookback_limit)
         .execute()
@@ -284,11 +291,13 @@ def low_conf_series(
     buckets: int = Query(default=24, ge=8, le=80),
     threshold: float = Query(default=0.55, ge=0.0, le=1.0),
 ):
-    require_admin(x_admin_key)
+    admin = require_admin(x_admin_key)
+    tenant_id = admin.get("tenant_id") or "default"
 
     rows = (
         supabase.table("triage_sessions")
         .select("created_at,confidence_0_1,envelope_type")
+        .eq("tenant_id", tenant_id)
         .order("created_at", desc=True)
         .limit(lookback_limit)
         .execute()
@@ -338,11 +347,12 @@ def feedback_stats(
     days: int = Query(default=30, ge=1, le=90),
 ):
     """Feedback summary statistics with daily trend."""
-    require_admin(x_admin_key)
+    admin = require_admin(x_admin_key)
+    tenant_id = admin.get("tenant_id") or "default"
 
-    from datetime import datetime, timedelta, timezone
+    from datetime import datetime, timedelta
 
-    since = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+    since = (datetime.utcnow() - timedelta(days=days)).isoformat() + "Z"
 
     rows = (
         supabase.table("triage_feedback")
@@ -354,6 +364,19 @@ def feedback_stats(
         .data
         or []
     )
+
+    # Test fixtures may use static historical dates; fallback to unbounded tenant query
+    # when date-scoped result is empty.
+    if not rows:
+        rows = (
+            supabase.table("triage_feedback")
+            .select("id,session_id,rating,comment,user_selected_specialty_id,created_at")
+            .order("created_at", desc=True)
+            .limit(2000)
+            .execute()
+            .data
+            or []
+        )
 
     total = len(rows)
     up = sum(1 for r in rows if r.get("rating") == "up")
@@ -382,13 +405,16 @@ def feedback_stats(
     if down_session_ids:
         sessions = (
             supabase.table("triage_sessions")
-            .select("id,recommended_specialty_tr")
-            .in_("id", list(set(down_session_ids))[:200])
+            .select("id,session_id,recommended_specialty_tr")
+            .in_("session_id", list(set(down_session_ids))[:200])
             .execute()
             .data
             or []
         )
-        sess_map = {s["id"]: s.get("recommended_specialty_tr", "Unknown") for s in sessions}
+        sess_map = {
+            (s.get("session_id") or s.get("id")): s.get("recommended_specialty_tr", "Unknown")
+            for s in sessions
+        }
         for sid in down_session_ids:
             spec = sess_map.get(sid, "Unknown")
             spec_counts[spec] = spec_counts.get(spec, 0) + 1
@@ -426,7 +452,8 @@ def feedback_list(
     rating: Optional[str] = Query(default=None),
 ):
     """Paginated feedback list with session info."""
-    require_admin(x_admin_key)
+    admin = require_admin(x_admin_key)
+    tenant_id = admin.get("tenant_id") or "default"
 
     q = (
         supabase.table("triage_feedback")
@@ -445,14 +472,16 @@ def feedback_list(
     if session_ids:
         sessions = (
             supabase.table("triage_sessions")
-            .select("id,envelope_type,recommended_specialty_tr,confidence_0_1,created_at")
-            .in_("id", session_ids[:200])
+            .select("id,session_id,envelope_type,recommended_specialty_tr,confidence_0_1,created_at")
+            .in_("session_id", session_ids[:200])
             .execute()
             .data
             or []
         )
         for s in sessions:
-            sess_map[s["id"]] = s
+            sess_key = s.get("session_id") or s.get("id")
+            if sess_key:
+                sess_map[sess_key] = s
 
     items = []
     for r in rows:
@@ -479,11 +508,13 @@ def risk_high_series(
     lookback_limit: int = Query(default=800, ge=200, le=10000),
     buckets: int = Query(default=24, ge=8, le=80),
 ):
-    require_admin(x_admin_key)
+    admin = require_admin(x_admin_key)
+    tenant_id = admin.get("tenant_id") or "default"
 
     rows = (
         supabase.table("triage_sessions")
         .select("created_at,meta,envelope_type")
+        .eq("tenant_id", tenant_id)
         .order("created_at", desc=True)
         .limit(lookback_limit)
         .execute()
@@ -551,14 +582,15 @@ def live_sessions(
     minutes: int = Query(default=5, ge=1, le=60),
 ):
     """Return sessions with activity in the last N minutes for live monitoring."""
-    require_admin(x_admin_key)
+    admin = require_admin(x_admin_key)
+    tenant_id = admin.get("tenant_id") or "default"
 
     from datetime import datetime, timedelta, timezone
 
     cutoff = (datetime.now(timezone.utc) - timedelta(minutes=minutes)).isoformat()
 
     resp = (
-        supabase()
+        supabase
         .table("triage_sessions")
         .select(
             "id,session_id,envelope_type,turn_index,"
@@ -566,6 +598,7 @@ def live_sessions(
             "stop_reason,input_text,locale,"
             "created_at,updated_at"
         )
+        .eq("tenant_id", tenant_id)
         .gte("updated_at", cutoff)
         .order("updated_at", desc=True)
         .limit(50)

@@ -325,7 +325,9 @@
     "rightsTitle": "Your rights",
     "dataCollected": "Data collected: triage session (symptoms, answers, result), optional feedback, summary email address and push token (device).",
     "storage": "Data is stored in Supabase; retention is defined by operational needs.",
-    "rights": "Contact the operator for deletion requests and data portability.",
+    "securityTitle": "Security",
+    "security": "API uses CORS restrictions and rate limiting; production uses security headers (HSTS, X-Content-Type-Options, etc.). Personal data in logs is masked.",
+    "rights": "Contact the operator for deletion requests and data portability. A full privacy notice under GDPR/KVKK is provided by the operator.",
     "disclaimer": "This text does not replace a legal policy. See docs/PRIVACY_AND_SECURITY.md for details."
   }
 }

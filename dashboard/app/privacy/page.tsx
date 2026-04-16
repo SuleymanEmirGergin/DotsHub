@@ -56,6 +56,12 @@ export default async function PrivacyPage() {
         </p>
       </section>
       <section style={{ marginBottom: 20 }}>
+        <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 8 }}>{getText(locale, "privacy.securityTitle")}</h2>
+        <p style={{ fontSize: 14, lineHeight: 1.6, color: "var(--dash-text)" }}>
+          {getText(locale, "privacy.security")}
+        </p>
+      </section>
+      <section style={{ marginBottom: 20 }}>
         <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 8 }}>{getText(locale, "privacy.rightsTitle")}</h2>
         <p style={{ fontSize: 14, lineHeight: 1.6, color: "var(--dash-text)" }}>
           {getText(locale, "privacy.rights")}

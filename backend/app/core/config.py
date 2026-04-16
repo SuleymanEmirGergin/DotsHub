@@ -39,6 +39,18 @@ class Settings(BaseSettings):
     CORS_ORIGINS: str = '["http://localhost:8081","http://localhost:19006","http://localhost:3000"]'
     ADMIN_API_KEY: str = ""
 
+    # Multi-tenant dataset config
+    # Default tenant id (used when header / key'den tenant çözülemez)
+    DEFAULT_TENANT_ID: str = "default"
+    # JSON object: { "admin_api_key_value": "tenant_id", ... }
+    TENANT_ADMIN_KEYS_JSON: str = "{}"
+    # JSON array: ["tenant_id_1", "tenant_id_2", ...] — public triage için izin verilen tenant listesi
+    TENANT_ALLOWLIST_JSON: str = "[]"
+    # Dataset kök klasörü (her tenant için alt klasör)
+    DATASETS_ROOT: str = "backend/data_sets"
+    # Tenant-bazlı config kökü (emergency_rules.json, risk_rules.json, vb.)
+    TENANT_CONFIG_ROOT: str = "config"
+
     # Webhook notifications
     WEBHOOK_ENABLED: bool = False
     WEBHOOK_SLACK_URL: str = ""

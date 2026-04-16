@@ -48,7 +48,11 @@
     "recommendedSpecialty": "Empfohlene Fachrichtung",
     "confidence": "Vertrauen",
     "facilities": "Gesundheitseinrichtungen",
+    "nearbyFacilities": "Gesundheitseinrichtungen in der Nähe",
     "openOnMap": "Auf der Karte öffnen",
+    "openInOsm": "In OSM öffnen",
+    "mapOpenError": "Karte konnte nicht geöffnet werden.",
+    "facilitiesLoadError": "Liste der Einrichtungen konnte nicht geladen werden.",
     "moreFacilities": "Mehr Einrichtungen",
     "sendSummaryEmail": "Zusammenfassung per E-Mail senden",
     "emailPlaceholder": "E-Mail-Adresse",
@@ -91,7 +95,9 @@
   "error": {
     "title": "Etwas ist schiefgelaufen",
     "fallbackMessage": "Ein unerwarteter Fehler ist aufgetreten.",
-    "code": "Code"
+    "code": "Code",
+    "connectionError": "Verbindungsfehler. Bitte Internet prüfen und erneut versuchen.",
+    "timeout": "Zeitüberschreitung. Bitte erneut versuchen."
   },
   "history": {
     "title": "Sitzungsverlauf",

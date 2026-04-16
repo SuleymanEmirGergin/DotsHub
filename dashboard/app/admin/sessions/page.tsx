@@ -15,35 +15,43 @@ async function getLocale(): Promise<Locale> {
 
 const SORT_COLUMNS = ["created_at", "envelope_type", "recommended_specialty_tr", "confidence_label_tr", "stop_reason"] as const;
 
-function sessionsTableHref(params: { feedback?: string; sort?: string; order?: string }, col: string) {
+function sessionsTableHref(params: { feedback?: string; envelope_type?: string; sort?: string; order?: string }, col: string) {
   const nextOrder = params.sort === col && params.order === "desc" ? "asc" : "desc";
   const sp = new URLSearchParams();
   if (params.feedback) sp.set("feedback", params.feedback);
+  if (params.envelope_type) sp.set("envelope_type", params.envelope_type);
   sp.set("sort", col);
   sp.set("order", nextOrder);
   return `/admin/sessions?${sp.toString()}`;
 }
 
+function sessionsExportHref(params: { feedback?: string; envelope_type?: string }): string {
+  const sp = new URLSearchParams();
+  if (params.feedback) sp.set("feedback", params.feedback);
+  if (params.envelope_type) sp.set("envelope_type", params.envelope_type);
+  const q = sp.toString();
+  return q ? `/api/admin/export/sessions?${q}` : "/api/admin/export/sessions";
+}
+
+const ENVELOPE_TYPES = ["RESULT", "EMERGENCY", "QUESTION", "SAME_DAY", "ERROR"] as const;
+
 export default async function SessionsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ feedback?: string; sort?: string; order?: string }>;
+  searchParams: Promise<{ feedback?: string; envelope_type?: string; sort?: string; order?: string }>;
 }) {
   await requireAdmin();
   const locale = await getLocale();
   const params = await searchParams;
-  const { feedback: feedbackFilter, sort: sortCol, order: orderDir } = params;
+  const { feedback: feedbackFilter, envelope_type: envelopeFilter, sort: sortCol, order: orderDir } = params;
   const sort: (typeof SORT_COLUMNS)[number] = SORT_COLUMNS.includes(sortCol as (typeof SORT_COLUMNS)[number])
     ? (sortCol as (typeof SORT_COLUMNS)[number])
     : "created_at";
   const ascending = orderDir === "asc";
 
-  // Use admin client for data fetching (RLS bypass, works without auth setup)
   const sb = supabaseAdmin();
 
-  // Feedback filter: find session_ids with matching feedback rating
   let sessionIds: string[] | null = null;
-
   if (feedbackFilter === "down" || feedbackFilter === "up") {
     const { data: fb } = await sb
       .from("triage_feedback")
@@ -69,6 +77,9 @@ export default async function SessionsPage({
     .limit(100);
 
   if (sessionIds) q = q.in("id", sessionIds);
+  if (envelopeFilter && ENVELOPE_TYPES.includes(envelopeFilter as (typeof ENVELOPE_TYPES)[number])) {
+    q = q.eq("envelope_type", envelopeFilter);
+  }
 
   const { data, error } = await q;
 
@@ -83,6 +94,7 @@ export default async function SessionsPage({
           <p className="text-muted-foreground mt-1.5">
             {getText(locale, "sessions.last100")}
             {feedbackFilter ? ` \u2022 ${getText(locale, "sessions.filterFeedback")}=${feedbackFilter}` : ""}
+            {envelopeFilter ? ` \u2022 type=${envelopeFilter}` : ""}
           </p>
         </div>
         <div className="flex gap-2.5">
@@ -98,15 +110,16 @@ export default async function SessionsPage({
           <a href="/admin/tuning-report" className="no-underline text-foreground font-extrabold text-[13px] hover:text-primary">
             {getText(locale, "sessions.tuningLink")} &rarr;
           </a>
-          <a href="/api/admin/export/sessions" download className="no-underline text-primary font-bold text-[13px] hover:underline">
+          <a href={sessionsExportHref(params)} download className="no-underline text-primary font-bold text-[13px] hover:underline">
             {getText(locale, "sessions.exportCsvLink")}
           </a>
         </div>
       </div>
 
-      <div className="flex gap-2.5 mt-4">
+      <div className="flex gap-2.5 mt-4 flex-wrap">
+        <span className="text-muted-foreground text-xs self-center">{getText(locale, "sessions.filterFeedback")}:</span>
         <a
-          href="/admin/sessions"
+          href={envelopeFilter ? `/admin/sessions?envelope_type=${envelopeFilter}` : "/admin/sessions"}
           className={cn(
             "py-2 px-4 rounded-[10px] border border-border no-underline text-[13px] font-bold",
             !feedbackFilter ? "bg-primary text-primary-foreground" : "bg-card text-foreground"
@@ -115,7 +128,7 @@ export default async function SessionsPage({
           {getText(locale, "sessions.all")}
         </a>
         <a
-          href="/admin/sessions?feedback=down"
+          href={envelopeFilter ? `/admin/sessions?feedback=down&envelope_type=${envelopeFilter}` : "/admin/sessions?feedback=down"}
           className={cn(
             "py-2 px-4 rounded-[10px] border border-border no-underline text-[13px] font-extrabold",
             feedbackFilter === "down" ? "bg-red-600 text-white" : "bg-card text-red-700"
@@ -124,7 +137,7 @@ export default async function SessionsPage({
           {getText(locale, "sessions.downOnly")}
         </a>
         <a
-          href="/admin/sessions?feedback=up"
+          href={envelopeFilter ? `/admin/sessions?feedback=up&envelope_type=${envelopeFilter}` : "/admin/sessions?feedback=up"}
           className={cn(
             "py-2 px-4 rounded-[10px] border border-border no-underline text-[13px] font-bold",
             feedbackFilter === "up" ? "bg-green-700 text-white" : "bg-card text-green-800"
@@ -132,6 +145,33 @@ export default async function SessionsPage({
         >
           {getText(locale, "sessions.upOnly")}
         </a>
+        <span className="text-muted-foreground text-xs self-center ml-2">type:</span>
+        <a
+          href={feedbackFilter ? `/admin/sessions?feedback=${feedbackFilter}` : "/admin/sessions"}
+          className={cn(
+            "py-2 px-4 rounded-[10px] border border-border no-underline text-[13px] font-bold",
+            !envelopeFilter ? "bg-primary text-primary-foreground" : "bg-card text-foreground"
+          )}
+        >
+          All
+        </a>
+        {ENVELOPE_TYPES.map((et) => {
+          const href = feedbackFilter
+            ? `/admin/sessions?envelope_type=${et}&feedback=${feedbackFilter}`
+            : `/admin/sessions?envelope_type=${et}`;
+          return (
+            <a
+              key={et}
+              href={href}
+              className={cn(
+                "py-2 px-4 rounded-[10px] border border-border no-underline text-[13px] font-bold",
+                envelopeFilter === et ? "bg-primary text-primary-foreground" : "bg-card text-foreground"
+              )}
+            >
+              {et}
+            </a>
+          );
+        })}
       </div>
 
       <div className="mt-4 w-full overflow-hidden rounded-xl border border-border bg-card shadow-sm">

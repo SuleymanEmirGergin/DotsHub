@@ -4,6 +4,18 @@ Backend, Dashboard ve Mobil uygulama için deploy adımları ve ortam değişken
 
 ---
 
+## Rollback hızlı referans
+
+| Stack | Rollback kısa adımlar |
+|-------|------------------------|
+| **Backend** | Önceki image/artifact’a dön; DB şeması geriye uyumlu olsun; `/health` ile doğrula. |
+| **Dashboard** | Vercel: "Promote to Production" ile önceki deployment’ı canlıya al; veya git revert + yeniden deploy. |
+| **Mobil** | Store’da önceki sürümü yayına al; veya EAS Update ile önceki OTA’ya dön. |
+
+Ayrıntılar aşağıda ilgili bölümlerde.
+
+---
+
 ## Backend (FastAPI)
 
 ### Çalıştırma (geliştirme)
@@ -31,6 +43,12 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 | `SEND_SUMMARY_RATE_LIMIT_MAX_REQ` | send-summary ve export-summary limiti (örn. 5/dk) | `5` |
 | `SEND_SUMMARY_EMAIL` | `1` ise özet e-postası açık | `0` veya `1` |
 | `RESEND_API_KEY` | Resend API anahtarı (e-posta için) | — |
+| `DEFAULT_TENANT_ID` | Triage için varsayılan tenant (Faz 1: tek tenant) | `default` |
+| `TENANT_ADMIN_KEYS_JSON` | Admin key → tenant eşlemesi (JSON obje). Boş/yanlışsa tek `ADMIN_API_KEY` kullanılır | `{"key1":"tenant1","key2":"tenant2"}` |
+| `DATASETS_ROOT` | Dataset kök klasörü (tenant alt klasörleri) | `backend/data_sets` |
+| `TENANT_CONFIG_ROOT` | Tenant config kökü (emergency_rules, risk_rules vb.) | `config` |
+
+**Multi-tenant migration:** Supabase’e `tenant_id` sütunlarını eklemek için **[MIGRATION_TENANT_ID.md](MIGRATION_TENANT_ID.md)** içindeki adımları uygulayın (`backend/sql/20260306_add_tenant_id.sql`).
 
 ### Rollback
 

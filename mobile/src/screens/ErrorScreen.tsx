@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { triageTurn } from "@/src/api/triageClient";
+import { unregisterPushTokenIfNeeded } from "@/src/api/pushClient";
 import { useTriageStore } from "@/src/state/triageStore";
 import { tokens } from "@/src/ui/designTokens";
 import { Card, PrimaryButton, ScreenContainer, SectionTitle } from "@/src/ui/primitives";
@@ -35,7 +36,11 @@ export default function ErrorScreen() {
           <Text style={styles.icon}>!</Text>
           <SectionTitle style={styles.title}>{t("error.title")}</SectionTitle>
           <Text style={styles.message}>
-            {error?.message_tr || t("error.fallbackMessage")}
+            {error?.code === "TIMEOUT"
+              ? t("error.timeout")
+              : error?.code === "NETWORK_ERROR"
+                ? t("error.connectionError")
+                : error?.message_tr || t("error.fallbackMessage")}
           </Text>
           {error?.code ? <Text style={styles.code}>{t("error.code")}: {error.code}</Text> : null}
         </Card>
@@ -50,7 +55,13 @@ export default function ErrorScreen() {
           </PrimaryButton>
         ) : null}
 
-        <PrimaryButton style={styles.retryButton} onPress={resetSession}>
+        <PrimaryButton
+          style={styles.retryButton}
+          onPress={() => {
+            unregisterPushTokenIfNeeded();
+            resetSession();
+          }}
+        >
           {t("common.newSession")}
         </PrimaryButton>
       </View>

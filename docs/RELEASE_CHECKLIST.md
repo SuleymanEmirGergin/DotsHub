@@ -44,7 +44,7 @@ Her sürüm çıkarırken aşağıdaki sırayı izleyin.
 
 - [ ] [BRANCH_PROTECTION_CHECKLIST.md](BRANCH_PROTECTION_CHECKLIST.md) — required check’ler tanımlı. Branch protection ve production kontrolü **manuel adımlar** için: [POST_RELEASE_MANUEL_ADIMLAR.md](POST_RELEASE_MANUEL_ADIMLAR.md).
 - [ ] `.github/workflows/secret-scan.yml` PR/push’ta çalışıyor (gerekirse workflow_dispatch ile denendi).
-- [ ] `backend-regression`, `dashboard-quality` (ve varsa `dashboard-tests`) bir PR’da yeşil.
+- [ ] `backend-ci` (regression), `dashboard-ci` (quality + test) bir PR’da yeşil.
 
 ---
 

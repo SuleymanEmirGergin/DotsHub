@@ -86,9 +86,14 @@ def build_rl_key(ip: Optional[str], device_id: Optional[str]) -> str:
     return "anon"
 
 
-def build_admin_rl_key(ip: Optional[str]) -> str:
-    """Admin API rate limit key: IP only."""
-    return f"ip:{ip}" if ip else "anon"
+def build_admin_rl_key(ip: Optional[str], tenant_id: Optional[str] = None) -> str:
+    """Admin API rate limit key: per-tenant per-IP when tenant_id is set."""
+    tid = (tenant_id or "").strip() or None
+    if tid and ip:
+        return f"admin:{tid}:{ip}"
+    if ip:
+        return f"ip:{ip}"
+    return "anon"
 
 
 def build_send_summary_rl_key(ip: Optional[str]) -> str:

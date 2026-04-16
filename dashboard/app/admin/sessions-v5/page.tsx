@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { Breadcrumb } from "@/app/components/Breadcrumb";
 
 type SessionRow = {
   session_id: string;
@@ -204,6 +205,7 @@ export default function SessionsPageV5() {
 
   return (
     <div className="p-6 space-y-5">
+      <Breadcrumb items={[{ label: "Admin", href: "/admin/sessions" }, { label: "Sessions V5" }]} />
       <div className="flex items-center justify-between">
         <div>
           <div className="flex items-center gap-2">

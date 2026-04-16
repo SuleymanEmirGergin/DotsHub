@@ -23,6 +23,7 @@ from app.api.routes.push_token import router as push_token_router
 from app.admin_api import router as admin_router
 from app.admin_v5 import router as admin_v5_router
 from app.middleware.security_headers import SecurityHeadersMiddleware
+from app.admin_auth import get_tenant_id_from_admin_key
 from app.rate_limit import (
     check_rate_limit,
     check_rate_limit_redis,
@@ -143,12 +144,14 @@ async def rate_limit_middleware(request, call_next):
 
 @app.middleware("http")
 async def admin_rate_limit_middleware(request, call_next):
-    """Stricter rate limit for /v1/admin/* (per IP)."""
+    """Stricter rate limit for /v1/admin/* (per tenant per IP when key present)."""
     path = request.scope.get("path", "")
     if not path.startswith("/v1/admin"):
         return await call_next(request)
     ip = request.client.host if request.client else None
-    key = build_admin_rl_key(ip)
+    x_admin_key = request.headers.get("x-admin-key")
+    tenant_id = get_tenant_id_from_admin_key(x_admin_key)
+    key = build_admin_rl_key(ip, tenant_id)
     redis = getattr(request.app.state, "redis", None)
     if redis:
         allowed, remaining, reset_in = await check_admin_rate_limit_redis(redis, key)

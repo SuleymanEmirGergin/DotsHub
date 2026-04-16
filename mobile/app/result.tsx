@@ -13,6 +13,7 @@ import EmergencyBanner from '../components/EmergencyBanner';
 import { buildSummaryHtml, shareSummaryAsPdf } from '../utils/sharePdf';
 import { API_BASE } from '../constants';
 import { getCurrentLocation } from '../utils/location';
+import { useI18n } from '@/i18n/I18nProvider';
 
 function getMapUrl(f: { address: string; lat?: number; lon?: number }): string {
   if (typeof f.lat === 'number' && typeof f.lon === 'number') {
@@ -24,6 +25,13 @@ function getMapUrl(f: { address: string; lat?: number; lon?: number }): string {
   return `https://www.google.com/maps/search/?api=1&query=${q}`;
 }
 
+function getOsmUrl(f: { lat?: number; lon?: number }): string | null {
+  if (typeof f.lat === 'number' && typeof f.lon === 'number') {
+    return `https://www.openstreetmap.org/?mlat=${f.lat}&mlon=${f.lon}&zoom=17`;
+  }
+  return null;
+}
+
 const URGENCY_CONFIG: Record<string, { color: string; label: string; icon: string }> = {
   ER_NOW: { color: Colors.urgencyER, label: 'Hemen Acil', icon: '🔴' },
   SAME_DAY: { color: Colors.urgencySameDay, label: 'Bugün İçinde', icon: '🟠' },
@@ -33,6 +41,7 @@ const URGENCY_CONFIG: Record<string, { color: string; label: string; icon: strin
 
 export default function ResultScreen() {
   const router = useRouter();
+  const { t } = useI18n();
   const {
     candidates, recommendedSpecialty, urgency, riskLevel,
     rationale, emergencyWatchouts, emergencyReason,
@@ -116,8 +125,11 @@ export default function ResultScreen() {
       const loc = await getCurrentLocation();
       const params = new URLSearchParams({
         specialty: facilityDiscovery.specialty_id,
-        limit: '10',
+        limit: '15',
       });
+      if (typeof (facilityDiscovery as { city?: string }).city === 'string') {
+        params.set('city', (facilityDiscovery as { city?: string }).city ?? '');
+      }
       if (loc) {
         params.set('lat', String(loc.lat));
         params.set('lon', String(loc.lon));
@@ -127,7 +139,7 @@ export default function ResultScreen() {
       if (data?.items?.length) setMoreFacilities(data.items);
       else setMoreFacilities(facilityDiscovery.items);
     } catch {
-      Alert.alert('Hata', 'Tesis listesi yüklenemedi.');
+      Alert.alert(t('result.alertError'), t('result.facilitiesLoadError'));
     } finally {
       setLoadingMoreFacilities(false);
     }
@@ -198,27 +210,42 @@ export default function ResultScreen() {
 
       {facilityDiscovery && (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Yakın sağlık kuruluşları</Text>
-          {(moreFacilities ?? facilityDiscovery.items).map((f, idx) => (
-            <View key={`${f.name}-${idx}`} style={styles.facilityCard}>
-              <Text style={styles.facilityName}>{f.name}</Text>
-              <Text style={styles.facilityAddress}>{f.address}</Text>
-              {typeof f.distance_km === 'number' && (
-                <Text style={styles.facilityDistance}>{`${f.distance_km.toFixed(1)} km`}</Text>
-              )}
-              <TouchableOpacity
-                style={styles.mapLink}
-                onPress={() => Linking.openURL(getMapUrl(f)).catch(() => Alert.alert('Hata', 'Harita açılamadı.'))}
-                accessibilityLabel="Haritada aç"
-                accessibilityRole="button"
-              >
-                <Text style={styles.mapLinkText}>Haritada aç</Text>
-              </TouchableOpacity>
-            </View>
-          ))}
+          <Text style={styles.sectionTitle}>{t('result.nearbyFacilities')}</Text>
+          {(moreFacilities ?? facilityDiscovery.items).map((f, idx) => {
+            const osmUrl = getOsmUrl(f);
+            return (
+              <View key={`${f.name}-${idx}`} style={styles.facilityCard}>
+                <Text style={styles.facilityName}>{f.name}</Text>
+                <Text style={styles.facilityAddress}>{f.address}</Text>
+                {typeof f.distance_km === 'number' && (
+                  <Text style={styles.facilityDistance}>{`${f.distance_km.toFixed(1)} km`}</Text>
+                )}
+                <View style={styles.mapLinksRow}>
+                  <TouchableOpacity
+                    style={styles.mapLink}
+                    onPress={() => Linking.openURL(getMapUrl(f)).catch(() => Alert.alert(t('result.alertError'), t('result.mapOpenError')))}
+                    accessibilityLabel={t('result.openOnMap')}
+                    accessibilityRole="button"
+                  >
+                    <Text style={styles.mapLinkText}>{t('result.openOnMap')}</Text>
+                  </TouchableOpacity>
+                  {osmUrl && (
+                    <TouchableOpacity
+                      style={styles.mapLink}
+                      onPress={() => Linking.openURL(osmUrl).catch(() => Alert.alert(t('result.alertError'), t('result.mapOpenError')))}
+                      accessibilityLabel={t('result.openInOsm')}
+                      accessibilityRole="button"
+                    >
+                      <Text style={styles.mapLinkText}>{t('result.openInOsm')}</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              </View>
+            );
+          })}
           {!moreFacilities && (
             <TouchableOpacity style={styles.moreFacilitiesButton} onPress={handleLoadMoreFacilities} disabled={loadingMoreFacilities}>
-              {loadingMoreFacilities ? <ActivityIndicator size="small" color={Colors.primary} /> : <Text style={styles.moreFacilitiesText}>Daha fazla tesis göster</Text>}
+              {loadingMoreFacilities ? <ActivityIndicator size="small" color={Colors.primary} /> : <Text style={styles.moreFacilitiesText}>{t('result.moreFacilities')}</Text>}
             </TouchableOpacity>
           )}
           <Text style={styles.facilityDisclaimer}>{facilityDiscovery.disclaimer}</Text>
@@ -286,7 +313,8 @@ const styles = StyleSheet.create({
   facilityName: { fontSize: FontSizes.md, fontWeight: '700', color: Colors.textPrimary, marginBottom: 4 },
   facilityAddress: { fontSize: FontSizes.sm, color: Colors.textSecondary, lineHeight: 20 },
   facilityDistance: { fontSize: FontSizes.xs, color: Colors.textLight, marginTop: 6 },
-  mapLink: { marginTop: 8, alignSelf: 'flex-start' },
+  mapLinksRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginTop: 8 },
+  mapLink: { alignSelf: 'flex-start' },
   mapLinkText: { fontSize: FontSizes.sm, fontWeight: '600', color: Colors.primary },
   facilityDisclaimer: { fontSize: FontSizes.xs, color: Colors.textLight, lineHeight: 18, marginTop: Spacing.xs },
   moreFacilitiesButton: { paddingVertical: Spacing.sm, alignItems: 'center', marginTop: Spacing.xs },

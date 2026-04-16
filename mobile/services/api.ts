@@ -40,6 +40,8 @@ export interface FacilityDiscoveryItem {
   type: string;
   address: string;
   distance_km?: number;
+  lat?: number;
+  lon?: number;
 }
 
 export interface FacilityDiscovery {

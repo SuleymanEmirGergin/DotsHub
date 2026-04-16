@@ -64,16 +64,14 @@ export async function triageTurn(req: TriageTurnRequest): Promise<Envelope> {
 
     return (await res.json()) as Envelope;
   } catch (err: any) {
+    const isTimeout = err?.name === "AbortError";
     return {
       type: "ERROR",
       session_id: req.session_id ?? "unknown",
       turn_index: 0,
       payload: {
-        code: "NETWORK_ERROR",
-        message_tr:
-          err?.name === "AbortError"
-            ? "İstek zaman aşımına uğradı."
-            : "Bağlantı hatası oluştu.",
+        code: isTimeout ? "TIMEOUT" : "NETWORK_ERROR",
+        message_tr: isTimeout ? "İstek zaman aşımına uğradı." : "Bağlantı hatası oluştu.",
       },
     };
   }

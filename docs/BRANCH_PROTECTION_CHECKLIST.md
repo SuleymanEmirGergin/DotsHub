@@ -17,12 +17,12 @@ Use this checklist when configuring protection rules for `main`.
 
 Mark these checks as required in branch protection:
 
-- `golden-flow-regression / golden-flow-regression` (from `backend-regression.yml`)
-- `dashboard-quality / dashboard-quality` (from `dashboard-quality.yml`)
+- `regression / regression` (from `backend-ci.yml`)
+- `quality / quality` (from `dashboard-ci.yml`)
 
 ## Optional but Recommended Checks
 
-- `supabase-db-smoke / supabase-db-smoke`
+- `supabase-db-smoke / supabase-db-smoke` (from `backend-ci.yml`)
 - `guardrail / guardrail`
 
 ## Rollout Steps

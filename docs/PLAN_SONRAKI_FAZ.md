@@ -67,11 +67,11 @@ Aşağıdaki maddeler “Kalan işler planı” Faz 4 ile eşleşir; sprint plan
 | # | Yapılacak | Detay |
 |---|-----------|--------|
 | F4.1 | OpenAPI senkron | [docs/openapi_orchestrator.yaml](openapi_orchestrator.yaml) (veya kullanılan OpenAPI) ile güncel API uyumlu hale getirilir; yeni endpoint’ler eklenir. |
-| F4.2 | Dashboard: breadcrumb | Admin alt sayfalarında breadcrumb navigasyonu. |
-| F4.3 | Dashboard: tablo iyileştirmeleri | Sessions ve tuning-tasks tablolarında sütun sıralama ve filtre; listeler için CSV/Excel export (YAPILACAKLAR_LISTESI). |
-| F4.4 | Mobil: tesis harita linki | Sonuç ekranında tesis için harita linki (Google/Apple Maps veya OSM). |
-| F4.5 | Mobil: daha fazla tesis | “Daha fazla tesis” ile GET /v1/facilities kullanımı (YAPILACAKLAR_LISTESI). |
-| F4.6 | Backend: Redis rate limit | Çok instance için rate limit’te Redis kullanımı (şu an in-memory); README vb. ile dokümante. |
+| F4.2 | Dashboard: breadcrumb | Admin alt sayfalarında breadcrumb navigasyonu. Tamamlandı: sessions-v5 sayfasına breadcrumb eklendi; diğer admin sayfaları zaten vardı. |
+| F4.3 | Dashboard: tablo iyileştirmeleri | Sessions ve tuning-tasks: sütun sıralama ve filtre zaten vardı; export mevcut filtreyle eşlendi (sessions envelope_type filtresi + CSV filtreli; tuning-tasks CSV filtreli). Excel: CSV Excel’de açılabilir. |
+| F4.4 | Mobil: tesis harita linki | Sonuç ekranında tesis için harita linki (Google/Apple Maps veya OSM). Tamamlandı: app/result.tsx’te “Haritada aç” (Apple/Google) + “OSM’de aç” (OpenStreetMap), i18n (nearbyFacilities, openOnMap, openInOsm, mapOpenError). |
+| F4.5 | Mobil: daha fazla tesis | “Daha fazla tesis” ile GET /v1/facilities kullanımı Tamamlandı: result.tsx GET /v1/facilities (limit 15, city); facilitiesLoadError i18n. |
+| F4.6 | Backend: Redis rate limit | Çok instance için rate limit’te Redis kullanımı (şu an in-memory); Tamamlandı: docs/RATE_LIMIT_REDIS.md; README linki. |
 
 ---
 

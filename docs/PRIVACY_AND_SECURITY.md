@@ -23,6 +23,7 @@ Bu belge, Dotshub projesinde veri ve güvenlikle ilgili genel prensipleri özetl
 
 ## Güvenlik önlemleri
 
+- **Dashboard admin API:** Tüm `/api/admin/*` proxy route’ları `requireAdmin()` ile korunur (Supabase Auth + admin_users); yetkisiz erişim engellenir.
 - **API:** CORS kısıtlı; rate limit (triage, feedback, send-summary) uygulanıyor.
 - **Header’lar:** Production’da SecurityHeadersMiddleware (HSTS, X-Content-Type-Options vb.) kullanılabilir.
 - **Gizlilik:** PII maskeleme (log’larda); hassas env değişkenleri (API key, Supabase key) ortam üzerinden verilir, repoda tutulmaz.
@@ -31,7 +32,7 @@ Bu belge, Dotshub projesinde veri ve güvenlikle ilgili genel prensipleri özetl
 
 ## Uygulama içi gizlilik linki
 
-- **Dashboard:** `/privacy` sayfası mevcut; metin `messages` (tr/en) ile i18n.
+- **Dashboard:** `/privacy` sayfası mevcut; metin `messages` (tr/en) ile i18n. Bu sayfa, bu belgedeki özeti kullanıcıya yansıtan **uygulama içi kısa özet**tir (toplanan veriler, saklama, güvenlik, haklar, KVKK/GDPR referansı).
 - **Mobil:** Giriş ekranında "Gizlilik politikası" linki, `EXPO_PUBLIC_PRIVACY_URL` tanımlıysa gösterilir ve tarayıcıda açar; genelde dashboard `/privacy` veya statik politika URL’i kullanılır.
 
 ---

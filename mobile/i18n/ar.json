@@ -48,7 +48,11 @@
     "recommendedSpecialty": "التخصص الموصى به",
     "confidence": "الثقة",
     "facilities": "المرافق الصحية",
+    "nearbyFacilities": "المرافق الصحية القريبة",
     "openOnMap": "فتح على الخريطة",
+    "openInOsm": "فتح في OSM",
+    "mapOpenError": "تعذر فتح الخريطة.",
+    "facilitiesLoadError": "تعذر تحميل قائمة المرافق.",
     "moreFacilities": "المزيد من المرافق",
     "sendSummaryEmail": "إرسال الملخص بالبريد",
     "emailPlaceholder": "عنوان البريد الإلكتروني",
@@ -91,7 +95,9 @@
   "error": {
     "title": "حدث خطأ ما",
     "fallbackMessage": "حدث خطأ غير متوقع.",
-    "code": "الرمز"
+    "code": "الرمز",
+    "connectionError": "خطأ في الاتصال. تحقق من الإنترنت وحاول مرة أخرى.",
+    "timeout": "انتهت مهلة الطلب. يرجى المحاولة مرة أخرى."
   },
   "history": {
     "title": "سجل الجلسات",

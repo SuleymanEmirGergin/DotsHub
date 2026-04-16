@@ -15,4 +15,5 @@ Tüm projelerde (backend, dashboard, mobile) güvenlik açığı taraması için
 
 ## CI'da kullanım
 
-İsteğe bağlı: workflow içinde `scripts/audit-dependencies.sh --fail-on-high` çalıştırarak high/critical bulunursa pipeline'ı kırabilirsiniz.
+- **`.github/workflows/dependency-audit.yml`:** Haftalık (Pazartesi 09:00 UTC) ve manuel (`workflow_dispatch`) çalışır. Manuel tetiklemede "Fail on high" seçeneği ile high/critical bulunursa job fail eder. Detay için workflow dosyasına bakın.
+- İsteğe bağlı: workflow içinde `scripts/audit-dependencies.sh --fail-on-high` çalıştırarak high/critical bulunursa pipeline'ı kırabilirsiniz.

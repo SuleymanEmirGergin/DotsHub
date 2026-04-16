@@ -1,6 +1,5 @@
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { requireAdmin } from "@/lib/requireAdmin";
-import { supabaseAdmin } from "@/lib/supabaseServer";
 import { getText } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
 import { Breadcrumb } from "@/app/components/Breadcrumb";
@@ -62,26 +61,23 @@ export default async function TuningTasksPage({
         : "created_at";
     const ascending = params.order === "asc";
 
-    const sb = supabaseAdmin();
-
-    let q = sb
-        .from("tuning_tasks")
-        .select("id,created_at,task_type,severity,title,description,status,session_id,patch")
-        .order(sortCol, { ascending })
-        .limit(100);
-
-    if (statusFilter !== "all") {
-        q = q.eq("status", statusFilter);
-    }
-    if (typeFilter !== "all") {
-        q = q.eq("task_type", typeFilter);
-    }
-
-    const { data: tasks, error } = await q;
+    const h = await headers();
+    const host = h.get("host") ?? "localhost:3000";
+    const proto = h.get("x-forwarded-proto") ?? "http";
+    const origin = `${proto}://${host}`;
+    const sp = new URLSearchParams();
+    if (statusFilter !== "all") sp.set("status", statusFilter);
+    if (typeFilter !== "all") sp.set("type", typeFilter);
+    sp.set("sort", sortCol);
+    sp.set("order", ascending ? "asc" : "desc");
+    sp.set("limit", "100");
+    const res = await fetch(`${origin}/api/admin/tuning-tasks?${sp.toString()}`, { cache: "no-store" });
+    const body = await res.json().catch(() => ({}));
+    const tasks: Array<Record<string, unknown>> = Array.isArray(body.tasks) ? body.tasks : [];
 
     const locale = await getLocale();
 
-    if (error) return <div className="p-6">{getText(locale, "common.error")}: {error.message}</div>;
+    if (!res.ok) return <div className="p-6">{getText(locale, "common.error")}: {body?.error ?? res.statusText}</div>;
 
     const taskCount = tasks?.length ?? 0;
 
@@ -93,7 +89,20 @@ export default async function TuningTasksPage({
                 <div className="text-muted-foreground mt-1.5">
                     {getText(locale, "tuningTasks.subtitle")} <b>{taskCount}</b>
                     {" · "}
-                    <a href="/api/admin/export/tuning-tasks" download className="text-primary font-bold no-underline hover:underline">{getText(locale, "tuningTasks.exportCsv")}</a>
+                    <a
+                        href={
+                            statusFilter !== "all" || typeFilter !== "all"
+                                ? `/api/admin/export/tuning-tasks?${new URLSearchParams({
+                                    ...(statusFilter !== "all" && { status: statusFilter }),
+                                    ...(typeFilter !== "all" && { type: typeFilter }),
+                                  }).toString()}`
+                                : "/api/admin/export/tuning-tasks"
+                        }
+                        download
+                        className="text-primary font-bold no-underline hover:underline"
+                    >
+                        {getText(locale, "tuningTasks.exportCsv")}
+                    </a>
                 </div>
 
                 <div className="mt-3.5 flex gap-2.5 flex-wrap items-center">

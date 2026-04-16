@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/requireAdmin";
 
 /**
  * Proxy POST to backend admin generate-patch. Uses ADMIN_API_KEY so the
@@ -8,6 +9,7 @@ export async function POST(
   _req: NextRequest,
   { params }: { params: Promise<{ taskId: string }> }
 ) {
+  await requireAdmin();
   const { taskId } = await params;
   const base = process.env.NEXT_PUBLIC_API_BASE;
   const key = process.env.ADMIN_API_KEY;

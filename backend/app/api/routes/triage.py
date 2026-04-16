@@ -110,18 +110,16 @@ def _build_facility_discovery(
 # ──────────────────────────────────────────────────────────
 
 def _handle_turn_supabase(request: TriageTurnRequest) -> Envelope:
-    """Handle a turn using Supabase sessions + deterministic triage engine."""
+    """Handle a turn using Supabase sessions + deterministic triage engine (Faz 1: single tenant)."""
     from app.triage_types import TriageTurnIn
     from app.session_repo import create_session, update_session, append_event, get_session
     from app.triage_engine import run_orchestrator_turn
-    from app.runtime import load_runtime
+    from app.runtime import get_runtime
+    from app.tenant import get_tenant_id_for_triage
     from app.pii import redact_pii
 
-    # Load runtime (cached at module level after first call)
-    global _RUNTIME
-    if "_RUNTIME" not in globals() or _RUNTIME is None:
-        _RUNTIME = load_runtime()
-    runtime = _RUNTIME
+    tenant_id = get_tenant_id_for_triage()
+    runtime = get_runtime(tenant_id)
 
     # Convert legacy request model to new model
     session_id_str = request.session_id
@@ -130,18 +128,18 @@ def _handle_turn_supabase(request: TriageTurnRequest) -> Envelope:
     # Redact PII before storing
     user_msg_redacted = redact_pii(request.user_message or "")
 
-    # 1) Session load/create
+    # 1) Session load/create (Faz 1: triage tenant = default)
     if session_id_uuid is None:
-        sid = create_session(request.locale or "tr-TR", user_msg_redacted)
-        session = get_session(sid)
+        sid = create_session(request.locale or "tr-TR", user_msg_redacted, tenant_id=tenant_id)
+        session = get_session(sid, tenant_id=tenant_id)
         turn_index = 0
         answers: dict = {}
         asked: list = []
         input_text = user_msg_redacted
-        append_event(sid, "SESSION_CREATED", {"input_text": input_text})
+        append_event(sid, "SESSION_CREATED", {"input_text": input_text}, tenant_id=tenant_id)
     else:
         sid = session_id_uuid
-        session = get_session(sid)
+        session = get_session(sid, tenant_id=tenant_id)
         if not session:
             raise HTTPException(status_code=404, detail="session_id not found")
 
@@ -162,10 +160,10 @@ def _handle_turn_supabase(request: TriageTurnRequest) -> Envelope:
         append_event(sid, "ANSWER_RECEIVED", {
             "canonical": request.answer.canonical,
             "value": request.answer.value,
-        })
+        }, tenant_id=tenant_id)
 
     if user_msg_redacted:
-        append_event(sid, "USER_MESSAGE", {"text": user_msg_redacted})
+        append_event(sid, "USER_MESSAGE", {"text": user_msg_redacted}, tenant_id=tenant_id)
 
     # 3) Run deterministic orchestrator
     envelope_type, payload, debug_patch = run_orchestrator_turn(
@@ -197,7 +195,7 @@ def _handle_turn_supabase(request: TriageTurnRequest) -> Envelope:
     
     # Event payload keeps _meta and adds turn index
     event_payload["_turn_index"] = turn_index + 1
-    append_event(sid, f"ENVELOPE_{envelope_type}", event_payload)
+    append_event(sid, f"ENVELOPE_{envelope_type}", event_payload, tenant_id=tenant_id)
 
     session_meta = session.get("meta") if isinstance(session, dict) and isinstance(session.get("meta"), dict) else {}
     if envelope_type == "RESULT" and isinstance(client_payload.get("risk"), dict):
@@ -250,28 +248,75 @@ def _handle_turn_supabase(request: TriageTurnRequest) -> Envelope:
 
 
 # ──────────────────────────────────────────────────────────
-# Legacy: in-memory orchestrator (agents-based)
+# Legacy: in-memory deterministic pipeline (no Supabase; tenant-aware runtime)
 # ──────────────────────────────────────────────────────────
 
-async def _handle_turn_legacy(request: TriageTurnRequest) -> Envelope:
-    """Handle a turn using the legacy agentic orchestrator."""
-    from app.agents.orchestrator import orchestrator
+# In-memory session state for legacy path (keyed by session_id)
+_legacy_sessions: dict[str, dict] = {}
 
-    result = await orchestrator.handle_turn(
-        session_id=request.session_id,
-        user_message=request.user_message or "",
-        answer_canonical=request.answer.canonical if request.answer else None,
-        answer_value=request.answer.value if request.answer else None,
-        locale=request.locale or "tr-TR",
+
+def _handle_turn_legacy(request: TriageTurnRequest) -> Envelope:
+    """Handle a turn using the same deterministic pipeline as Supabase path, with in-memory session (tenant-aware runtime)."""
+    from app.triage_engine import run_orchestrator_turn
+    from app.runtime import get_runtime
+    from app.tenant import get_tenant_id_for_triage
+    from app.pii import redact_pii
+
+    tenant_id = get_tenant_id_for_triage()
+    runtime = get_runtime(tenant_id)
+    user_msg_redacted = redact_pii(request.user_message or "")
+
+    session_id_str = request.session_id
+    if not session_id_str:
+        import uuid
+        sid = str(uuid.uuid4())
+        _legacy_sessions[sid] = {
+            "answers": {},
+            "asked_canonicals": [],
+            "input_text": user_msg_redacted,
+            "turn_index": 0,
+        }
+    else:
+        sid = session_id_str
+        if sid not in _legacy_sessions:
+            raise HTTPException(status_code=404, detail="session_id not found")
+        state = _legacy_sessions[sid]
+        state["input_text"] = (state.get("input_text") or "").strip()
+        if user_msg_redacted:
+            state["input_text"] = (state["input_text"] + "\n" + user_msg_redacted).strip()
+        state["answers"] = state.get("answers") or {}
+        state["asked_canonicals"] = state.get("asked_canonicals") or []
+
+    state = _legacy_sessions[sid]
+    if request.answer is not None:
+        state["answers"][request.answer.canonical] = request.answer.value
+        if request.answer.canonical not in state["asked_canonicals"]:
+            state["asked_canonicals"].append(request.answer.canonical)
+
+    turn_index = state.get("turn_index", 0) + 1
+    envelope_type, payload, debug_patch = run_orchestrator_turn(
+        runtime=runtime,
+        input_text=state.get("input_text") or "",
+        answers=state.get("answers") or {},
+        asked_canonicals=state.get("asked_canonicals") or [],
+        turn_index=turn_index,
     )
+
+    state["turn_index"] = turn_index
+    state["input_text"] = state.get("input_text") or ""
+    state["answers"] = state.get("answers") or {}
+    state["asked_canonicals"] = state.get("asked_canonicals") or []
+
+    client_payload = deepcopy(payload or {})
+    client_payload.pop("_meta", None)
     facility_discovery = _build_facility_discovery(
-        result["type"], result["payload"], lat=request.lat, lon=request.lon
+        envelope_type, client_payload, lat=request.lat, lon=request.lon
     )
     return Envelope(
-        type=result["type"],
-        session_id=result["session_id"],
-        turn_index=result.get("turn_index", 0),
-        payload=result["payload"],
+        type=envelope_type,
+        session_id=sid,
+        turn_index=turn_index,
+        payload=client_payload,
         meta=_make_meta(facility_discovery=facility_discovery),
     )
 
@@ -279,8 +324,6 @@ async def _handle_turn_legacy(request: TriageTurnRequest) -> Envelope:
 # ──────────────────────────────────────────────────────────
 # Route
 # ──────────────────────────────────────────────────────────
-
-_RUNTIME = None  # module-level cache
 
 
 @router.get("/triage/history")
@@ -299,11 +342,14 @@ def triage_history(
         return {"items": []}
 
     from app.supabase_client import get_supabase as _get_sb
+    from app.tenant import get_tenant_id_for_triage
     sb = _get_sb()
+    tenant_id = get_tenant_id_for_triage()
 
     q = (
         sb.table("triage_sessions")
         .select("id,created_at,envelope_type,recommended_specialty_tr,confidence_label_tr,confidence_0_1,stop_reason")
+        .eq("tenant_id", tenant_id)
         .order("created_at", desc=True)
         .eq("device_id", x_device_id)
         .limit(min(limit, 100))
@@ -360,9 +406,9 @@ async def triage_turn(request: TriageTurnRequest):
                         "Supabase schema missing (triage_sessions/triage_events). Falling back to legacy orchestrator: %s",
                         exc,
                     )
-                    return await _handle_turn_legacy(request)
+                    return _handle_turn_legacy(request)
                 raise
-        return await _handle_turn_legacy(request)
+        return _handle_turn_legacy(request)
 
     except HTTPException:
         raise

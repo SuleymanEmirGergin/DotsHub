@@ -50,7 +50,11 @@
     "recommendedSpecialty": "Recommended specialty",
     "confidence": "Confidence",
     "facilities": "Healthcare facilities",
+    "nearbyFacilities": "Nearby healthcare facilities",
     "openOnMap": "Open on map",
+    "openInOsm": "Open in OSM",
+    "mapOpenError": "Could not open map.",
+    "facilitiesLoadError": "Could not load facilities list.",
     "moreFacilities": "More facilities",
     "sendSummaryEmail": "Send summary by email",
     "emailPlaceholder": "Email address",
@@ -93,7 +97,9 @@
   "error": {
     "title": "Something went wrong",
     "fallbackMessage": "An unexpected error occurred.",
-    "code": "Code"
+    "code": "Code",
+    "connectionError": "Connection error. Check your internet and try again.",
+    "timeout": "Request timed out. Please try again."
   },
   "history": {
     "title": "Session History",

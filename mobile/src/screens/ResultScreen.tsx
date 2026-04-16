@@ -25,8 +25,11 @@ import {
 } from "@/src/ui/primitives";
 import ConfidenceBar from "@/src/ui/ConfidenceBar";
 import { usePushRegistration } from "@/src/hooks/usePushRegistration";
+import { unregisterPushTokenIfNeeded } from "@/src/api/pushClient";
 import { buildSummaryHtml, shareSummaryAsPdf } from "@/utils/sharePdf";
 import { useI18n, RTL_TEXT_STYLE } from "@/i18n/I18nProvider";
+import * as FileSystem from "expo-file-system/legacy";
+import * as Sharing from "expo-sharing";
 
 export default function ResultScreen() {
   const { t, isRTL, locale } = useI18n();
@@ -91,10 +94,26 @@ export default function ResultScreen() {
     setDownloadingText(true);
     try {
       const text = await exportSummary(result, locale === "en" ? "en" : "tr-TR");
-      await Share.share({
-        message: text,
-        title: t("summary.title"),
-      });
+      const canShareFile = await Sharing.isAvailableAsync();
+      if (canShareFile && FileSystem.cacheDirectory) {
+        const dateStr = new Date().toISOString().slice(0, 10);
+        const filename = `triyaj-ozeti-${dateStr}.txt`;
+        const path = FileSystem.cacheDirectory + filename;
+        await FileSystem.writeAsStringAsync(path, text, { encoding: FileSystem.EncodingType.UTF8 });
+        try {
+          await Sharing.shareAsync(path, {
+            mimeType: "text/plain",
+            dialogTitle: t("result.shareTitle"),
+          });
+        } finally {
+          await FileSystem.deleteAsync(path, { idempotent: true });
+        }
+      } else {
+        await Share.share({
+          message: text,
+          title: t("result.shareTitle"),
+        });
+      }
     } catch (e) {
       Alert.alert(t("common.error"), t("result.downloadError") + " " + (e instanceof Error ? e.message : ""));
     } finally {
@@ -325,7 +344,10 @@ export default function ResultScreen() {
         </Card>
 
         <PrimaryButton
-          onPress={resetSession}
+          onPress={() => {
+            unregisterPushTokenIfNeeded();
+            resetSession();
+          }}
           style={styles.resetBtn}
           accessibilityRole="button"
           accessibilityLabel={t("common.newAssessment")}

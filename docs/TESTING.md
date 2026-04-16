@@ -48,7 +48,7 @@ pnpm run test:e2e             # Playwright E2E (yerelde dev server otomatik baş
 pnpm run test:e2e:ui          # Playwright E2E (UI modu)
 ```
 
-E2E testler: `dashboard/e2e/` (örn. `admin.spec.ts`). Yerelde `pnpm run test:e2e` çalıştırıldığında Playwright config (`playwright.config.ts`) dev server’ı `pnpm run dev` ile başlatır; `PLAYWRIGHT_BASE_URL` ile farklı URL verilebilir. CI’da `.github/workflows/dashboard-tests.yml` dashboard değişince contract testleri + Playwright E2E (chromium) çalıştırır; pnpm kullanır.
+E2E testler: `dashboard/e2e/` (örn. `admin.spec.ts`). Yerelde `pnpm run test:e2e` çalıştırıldığında Playwright config (`playwright.config.ts`) dev server’ı `pnpm run dev` ile başlatır; `PLAYWRIGHT_BASE_URL` ile farklı URL verilebilir. CI’da `.github/workflows/dashboard-ci.yml` dashboard değişince quality (typecheck, contract, eslint) + E2E (Playwright chromium) çalıştırır; pnpm kullanır.
 
 ---
 
