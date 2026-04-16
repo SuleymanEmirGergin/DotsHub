@@ -1,5 +1,5 @@
 {
-  "version": "0.1.0",
+  "version": "0.2.0",
   "language": "tr-TR",
   "rules": {
     "double_count_policy": "NO_DOUBLE_COUNT_SAME_CANONICAL",
@@ -18,7 +18,17 @@
         "oda dönüyor",
         "dengem bozuldu",
         "sersemledim",
-        "gözüm kararıyor"
+        "gözüm kararıyor",
+        "etrafım dönüyor gibi",
+        "baş dönmesi geçiriyorum",
+        "dengesizlik hissediyorum",
+        "baş dönmesi atağım var",
+        "vertigo tuttu",
+        "vertigo geçiriyorum",
+        "ayakta durmak zorlaştı",
+        "dengemim kayboldu",
+        "sersemleme var",
+        "baygın gibi hissediyorum"
       ]
     },
     {
@@ -28,17 +38,42 @@
         "midem bulanıyor",
         "midem kalkıyor",
         "içim bulanıyor",
-        "kusacak gibi oluyorum"
+        "kusacak gibi oluyorum",
+        "bulantı hissediyorum",
+        "mide bulantısı var",
+        "mide mide oluyor",
+        "iç bulantısı hissediyorum",
+        "midemi buluyor",
+        "midem rahatsız hissettiriyor",
+        "midemi tutan bir şey var",
+        "bulantı tuttu",
+        "mide bulanıklığı var",
+        "midede rahatsızlık hissediyorum",
+        "bulantı atağı geçiriyorum",
+        "midemi boş hissediyorum ama kusacak gibiyim"
       ]
     },
     {
       "canonical": "kusma",
       "type": "symptom",
       "variants_tr": [
+        "yemeklerimi çıkardım",
+        "mide içeriğim yukarı geliyor",
+        "yediklerimi geri çıkardım",
+        "geri çıkarıyorum",
         "kustum",
         "kusuyorum",
         "istifra ettim",
-        "çıkardım"
+        "çıkardım",
+        "kusmak zorunda kaldım",
+        "safra kusuyorum",
+        "kusmam var",
+        "sabah kusuyorum",
+        "her yemekten sonra geri çıkarıyorum",
+        "mide içeriğimi çıkarıyorum",
+        "istifra yapıyorum",
+        "sürekli kusuyorum",
+        "kusma geçiriyorum"
       ]
     },
     {
@@ -48,7 +83,19 @@
         "sulu dışkı",
         "tuvalete çok çıkıyorum",
         "ishalim",
-        "bağırsaklarım bozuldu"
+        "bağırsaklarım bozuldu",
+        "sulu kakam var",
+        "dışkım sıvı halde",
+        "çok sık dışkı yapıyorum",
+        "gün içinde birçok kez tuvalete gidiyorum",
+        "karın krampıyla tuvalete koşuyorum",
+        "ishale yakalandım",
+        "bağırsak bozukluğum var",
+        "gıda zehirlenmesi gibi geçiriyor",
+        "dışkım su gibi akıyor",
+        "ishal krizi geçiriyorum",
+        "dışkı kontrol etmek güçleşti",
+        "bağırsak hareketlerim arttı"
       ]
     },
     {
@@ -57,7 +104,20 @@
       "variants_tr": [
         "tuvalete çıkamıyorum",
         "günlerdir yapamıyorum",
-        "sert dışkı"
+        "sert dışkı",
+        "bağırsaklarım çalışmıyor",
+        "dışkım çıkmıyor",
+        "tuvalette zorlanıyorum",
+        "uzun süredir tuvalete gidemedim",
+        "dışkı yapmakta güçlük çekiyorum",
+        "dışkım taş gibi sert",
+        "bağırsak hareketlerim yavaşladı",
+        "tuvalete gidemiyorum",
+        "müshil almak zorunda kalıyorum",
+        "dışkım pek çok gündür çıkmıyor",
+        "karın şişmesi var kabızlık nedeniyle",
+        "dışkı yapamıyorum",
+        "bağırsaklarım hareketsiz kaldı"
       ]
     },
     {
@@ -66,7 +126,20 @@
       "variants_tr": [
         "göğsüm ağrıyor",
         "göğüste ağrı",
-        "göğsümde ağrı var"
+        "göğsümde ağrı var",
+        "göğsümde sızı var",
+        "göğüs kafesimde ağrı var",
+        "soluk alırken göğsüm ağrıyor",
+        "göğsümde kesici ağrı var",
+        "nefes alırken göğsüm acıyor",
+        "sol göğsümde ağrı var",
+        "sağ göğsümde ağrı var",
+        "göğsümden yayılan ağrı var",
+        "göğüs altında ağrı var",
+        "göğsüm sızlıyor",
+        "göğüs bölgemde ağrı hissediyorum",
+        "kosta ağrısı var",
+        "göğüs ortasında ağrı var"
       ]
     },
     {
@@ -75,7 +148,20 @@
       "variants_tr": [
         "göğsümde baskı var",
         "göğsüm sıkışıyor",
-        "göğsümde ağırlık var"
+        "göğsümde ağırlık var",
+        "göğsüm eziliyor gibi",
+        "göğsümde bir baskı hissediyorum",
+        "göğsüm gergin",
+        "göğsüm kasılıyor gibi",
+        "sanki göğsüme bastırılıyor",
+        "göğsüm daralıyor",
+        "göğsümde basınç hissediyorum",
+        "göğsüm tıkılıyor gibi",
+        "göğüs kasılması var",
+        "kalp bölgesinde baskı hissediyorum",
+        "göğüs kafesinde baskı var",
+        "göğsüm dar geliyor",
+        "göğsümde sıkışma var"
       ]
     },
     {
@@ -92,7 +178,12 @@
         "nefesim tıkanıyor",
         "nefes almakta zorlanıyorum",
         "havasızlık",
-        "nefes darlığım var"
+        "nefes darlığım var",
+        "soluk almak güç",
+        "soluk alış güçleşti",
+        "akciğerlerimde daralma var",
+        "hava yetmiyor",
+        "ciğerlerim dolmuyor"
       ]
     },
     {
@@ -101,7 +192,21 @@
       "variants_tr": [
         "kalbim hızlı atıyor",
         "kalbim küt küt atıyor",
-        "kalp çarpıntısı"
+        "kalp çarpıntısı",
+        "kalbim çarpıyor",
+        "kalp atışım hızlandı",
+        "yüreğim çarpar gibi",
+        "kalbim düzensiz atıyor",
+        "taşikardi hissediyorum",
+        "kalbim fırlamak istiyor gibi",
+        "kalbim güçlü atıyor",
+        "kalbimin attığını hissediyorum",
+        "çarpıntı hissediyorum",
+        "nabzım hızlı",
+        "kalbim durmadan çarpıyor",
+        "palpitasyon yaşıyorum",
+        "kalbim hopluyor",
+        "kalbim çarpmaya başladı"
       ]
     },
     {
@@ -111,7 +216,19 @@
         "ateşim var",
         "ateşlendim",
         "titremem var",
-        "üşüme terleme"
+        "üşüme terleme",
+        "vücudum yanıyor",
+        "vücut ısım yükseldi",
+        "ateş ölçtüm yüksek çıktı",
+        "üşüyorum titriyorum",
+        "gece terlemeleri oluyor",
+        "üşüttüm sanırım",
+        "vücudum çok sıcak",
+        "ısım yüksek",
+        "soğuk sıcak bastırıyor",
+        "titreyerek terledim",
+        "bedenimde ateş var",
+        "ateş yaptım"
       ]
     },
     {
@@ -120,7 +237,21 @@
       "variants_tr": [
         "boğazım ağrıyor",
         "yutkunurken acıyor",
-        "genzim yanıyor"
+        "genzim yanıyor",
+        "boğazımda ağrı var",
+        "boğazım şişti",
+        "boğazım kızardı",
+        "yutkunmak zor",
+        "boğazıma bir şey takıldı gibi",
+        "bademciklerim şişti",
+        "bademciklerim ağrıyor",
+        "boğazımda yanma var",
+        "öksürünce boğazım ağrıyor",
+        "boğazım kaşınıyor",
+        "gırtlağım ağrıyor",
+        "tonsillerim büyüdü",
+        "angın tuttu",
+        "boğaz tarafımda şişlik var"
       ]
     },
     {
@@ -133,7 +264,16 @@
         "öksürüyorum sürekli",
         "kuru öksürük",
         "balgamlı öksürük",
-        "öksürük var"
+        "öksürük var",
+        "inatçı öksürük var",
+        "gece öksürüyorum",
+        "öksürük krizi geçiriyorum",
+        "aralıksız öksürüyorum",
+        "öksürük atağım var",
+        "boğulur gibi öksürüyorum",
+        "sabah öksürüğüm var",
+        "öksürük geçmiyor",
+        "uzun süredir öksürüyorum"
       ]
     },
     {
@@ -145,7 +285,17 @@
         "migrenim tuttu",
         "baş ağrım var",
         "kafa ağrısı",
-        "şiddetli baş ağrısı"
+        "şiddetli baş ağrısı",
+        "ense ağrısı var",
+        "alın bölgemde ağrı var",
+        "şakaklarım ağrıyor",
+        "migrenli baş ağrısı var",
+        "başımın arkası ağrıyor",
+        "baş ağrısı atağım var",
+        "kafam zonkluyor",
+        "baş ağrısı geçmiyor",
+        "başım zonk zonk ağrıyor",
+        "baş ağrısından uyuyamıyorum"
       ]
     },
     {
@@ -155,7 +305,20 @@
         "kolum tutmuyor",
         "bacağım tutmuyor",
         "tek tarafım uyuştu",
-        "yüzüm kaydı"
+        "yüzüm kaydı",
+        "vücudumun bir tarafı tutmuyor",
+        "tek taraflı his kaybı var",
+        "sağ kolum uyuştu",
+        "sol kolum güçsüzleşti",
+        "yarım vücudum uyuştu",
+        "bir tarafım güçsüzleşti",
+        "kolum kaldıramıyorum",
+        "sağ tarafım uyuştu",
+        "sol tarafım tutmuyor",
+        "elim güçsüzleşti",
+        "bacağımda his yok",
+        "kolumda kuvvetsizlik var",
+        "vücudumun bir yanı tutmuyor"
       ]
     },
     {
@@ -164,7 +327,20 @@
       "variants_tr": [
         "konuşamıyorum",
         "konuşmam bozuldu",
-        "dilim dolaşıyor"
+        "dilim dolaşıyor",
+        "kelimeler doğru çıkmıyor",
+        "sözcükleri bulamıyorum",
+        "konuşurken takılıyorum",
+        "sesim anlaşılmıyor",
+        "söylemek istediklerimi söyleyemiyorum",
+        "anlaşılır konuşamıyorum",
+        "dil sürçmesi yaşıyorum",
+        "konuşmamda güçlük var",
+        "dilim bağlandı",
+        "kelimeler gelmiyor aklıma",
+        "sözlerin çıkışında sorun var",
+        "konuşmaya çalışırken zorlanıyorum",
+        "cümle kuramıyorum"
       ]
     },
     {
@@ -173,7 +349,20 @@
       "variants_tr": [
         "idrar yaparken yanıyor",
         "çiş yaparken yanma",
-        "idrar yanması var"
+        "idrar yanması var",
+        "idrar yaparken acıyor",
+        "işerken yanıyor",
+        "çiş yaparken acı var",
+        "idrar yollarımda yanma var",
+        "idrar kanalımda yanma hissediyorum",
+        "küçük abdest yaparken yanıyor",
+        "işeme sırasında yanma hissediyorum",
+        "çiş yaparken kesme hissi var",
+        "idrarda yanma sancısı var",
+        "idrar çıkarırken ağrı var",
+        "mesanem yanıyor",
+        "idrar yaparken acı veriyor",
+        "idrar kanalı yanıyor"
       ]
     },
     {
@@ -183,7 +372,19 @@
         "kurdeşen",
         "ürtiker",
         "vücudum kabardı",
-        "kaşıntılı döküntü"
+        "kaşıntılı döküntü",
+        "derimde döküntü çıktı",
+        "vücudumda döküntü var",
+        "alerjik döküntü var",
+        "alerji tuttu sanırım",
+        "cildimde kabarık izler çıktı",
+        "ürtiker atağı geçiriyorum",
+        "kurdeşen tuttu",
+        "cildimde şişlikler çıktı",
+        "alerjik cilt reaksiyonu var",
+        "vücudum kabarıyor",
+        "döküntü yüzünden rahatsızım",
+        "deride alerjik belirtiler var"
       ]
     },
     {
@@ -192,7 +393,20 @@
       "variants_tr": [
         "dudaklarım şişti",
         "yüzüm şişti",
-        "göz kapaklarım şişti"
+        "göz kapaklarım şişti",
+        "dudaklarım kabarıyor",
+        "yüzüm şişiyor",
+        "ağzım şişti",
+        "yanak bölgem şişti",
+        "gözlerim şişti",
+        "dudaklarımda şişlik var",
+        "yüz bölgemde ödem var",
+        "yüzümde ödem var",
+        "ağzımda şişme var",
+        "dilim şişti",
+        "yanağım şişti",
+        "yüzüm kabarıyor",
+        "anjiyoödem gibiyim"
       ]
     },
     {
@@ -201,7 +415,20 @@
       "variants_tr": [
         "intihar edeceğim",
         "kendimi öldürmek istiyorum",
-        "kendime zarar vereceğim"
+        "kendime zarar vereceğim",
+        "yaşamak istemiyorum",
+        "ölmek istiyorum",
+        "canıma kıymak istiyorum",
+        "kendime zarar veriyorum",
+        "intihar düşüncelerim var",
+        "hayatıma son vermek istiyorum",
+        "kendimi incitmek istiyorum",
+        "hayattan vazgeçiyorum",
+        "kendimi yok etmek istiyorum",
+        "artık yaşamak istemiyorum",
+        "kendime kötü davranıyorum",
+        "daha fazla dayanamıyorum hayata",
+        "kendime zarar vermeyi düşünüyorum"
       ]
     },
     {
@@ -211,7 +438,19 @@
         "çok sık idrara çıkıyorum",
         "sık idrarım geliyor",
         "idrarım sürekli varmış gibi",
-        "sık sık tuvalete gidiyorum"
+        "sık sık tuvalete gidiyorum",
+        "idrara çıkma sıklığım arttı",
+        "sürekli idrara gidiyorum",
+        "mesanem çok dolduruyor",
+        "idrar sürekli geliyor",
+        "saatte birkaç kez idrara çıkıyorum",
+        "tuvalete gitme ihtiyacım sıklaştı",
+        "idrar tutamıyorum",
+        "sık idrar şikayetim var",
+        "gece de idrara kalkıyorum",
+        "idrar aciliyeti var",
+        "idrar ihtiyacım çok sık geliyor",
+        "sürekli çiş gelme hissi var"
       ]
     },
     {
@@ -220,7 +459,20 @@
       "variants_tr": [
         "kaşıntım var",
         "çok kaşınıyorum",
-        "cildim kaşınıyor"
+        "cildim kaşınıyor",
+        "ciltten kaşınma var",
+        "tüm vücudum kaşınıyor",
+        "aralıksız kaşınıyorum",
+        "kaşıma ihtiyacı hissediyorum",
+        "derimde kaşıma var",
+        "ciltte tahriş var",
+        "derim çok kaşınıyor",
+        "vücudum durmadan kaşınıyor",
+        "cilt kaşıntısı çekiyorum",
+        "kaşıntıdan uyuyamıyorum",
+        "özellikle gece kaşınıyorum",
+        "kaşıntı krizi yaşıyorum",
+        "derim sürekli kaşınıyor"
       ]
     },
     {
@@ -229,7 +481,20 @@
       "variants_tr": [
         "cildimde kızarıklık var",
         "kızardı",
-        "kırmızı lekeler çıktı"
+        "kırmızı lekeler çıktı",
+        "derimde kırmızılık var",
+        "ciltte kızarma var",
+        "vücudum kızardı",
+        "kızarma çıktı",
+        "eritem var",
+        "ciltte pembeleşme var",
+        "kızarmış bölgeler var",
+        "derim kırmızıya döndü",
+        "yanık gibi kızardı",
+        "vücudumda kızarıklık belirdi",
+        "derimde kırmızı alanlar var",
+        "güneş yanığı gibi kızardı",
+        "ciltte ani kızarıklık oldu"
       ]
     },
     {
@@ -238,7 +503,20 @@
       "variants_tr": [
         "sivilcem çıktı",
         "irinli sivilce var",
-        "siyah nokta var"
+        "siyah nokta var",
+        "sivilce çıkıyor",
+        "yüzümde sivilce var",
+        "akne var",
+        "akne sorunu yaşıyorum",
+        "sivilcelerim kötüleşti",
+        "yüzümde sivilce bölgeleri var",
+        "alın veya yanaklarımda sivilce var",
+        "sivilce sorunum var",
+        "irinli leke gibi sivilce çıktı",
+        "yüzüm sivilce dolu",
+        "sivilce izleri var",
+        "akne komedonu var",
+        "cildimde irin dolu sivilce var"
       ]
     },
     {
@@ -247,7 +525,20 @@
       "variants_tr": [
         "cildimde leke var",
         "ciltte renk değişikliği var",
-        "tenimde lekelenme var"
+        "tenimde lekelenme var",
+        "ciltte pigment değişikliği var",
+        "derimde renklenme var",
+        "ten lekesi çıktı",
+        "güneş lekesi var",
+        "ciltte kahverengi leke var",
+        "cilt tonu değişti",
+        "lekelenme sorunum var",
+        "ciltte koyu lekeler var",
+        "beyaz leke var cildimde",
+        "cilt rengi değişiyor",
+        "vücudumda leke bölgeleri var",
+        "melazma gibi lekeler var",
+        "cilt lekeleri arttı"
       ]
     },
     {
@@ -256,7 +547,20 @@
       "variants_tr": [
         "cildimde kabarcık var",
         "su dolu kabarcıklar var",
-        "derimde kabarma var"
+        "derimde kabarma var",
+        "cildimde su kabarcığı var",
+        "derimde şeffaf kabarcık var",
+        "kabarcıklar çıktı",
+        "derimde ufak kabarcıklar oluştu",
+        "ciltte veziküller var",
+        "herpes gibi kabarcık var",
+        "dudaklarımda uçuk çıktı",
+        "yanma ile kabarcık çıktı",
+        "ellerde su kabarcığı var",
+        "parmak aralarında kabarcık var",
+        "sulu lezyon var derimde",
+        "kabarcık patladı",
+        "kabarcıklar kaşıtıcı"
       ]
     },
     {
@@ -266,7 +570,19 @@
         "eklemde şişlik var",
         "eklem şişliği",
         "dizde şişlik",
-        "bilekte şişlik"
+        "bilekte şişlik",
+        "eklemlerim şişti",
+        "dizim şişiyor",
+        "ayak bileğim şişiyor",
+        "topuğum şişti",
+        "eklem bölgesinde şişlik var",
+        "elde şişlik var",
+        "bacağımda ödem var",
+        "diz kapağım şişti",
+        "eklemimde ödem var",
+        "omzumda şişlik var",
+        "kalça eklemim şişti",
+        "mafsalımda şişme var"
       ]
     },
     {
@@ -275,7 +591,20 @@
       "variants_tr": [
         "eklemlerimde tutukluk var",
         "sabah tutukluğu yaşıyorum",
-        "hareket ederken eklemim açılmıyor"
+        "hareket ederken eklemim açılmıyor",
+        "eklemlerim sabah tutulu",
+        "eklemlerimi oynatamıyorum",
+        "eklemim kilitlendi",
+        "hareket etmem zor eklemler yüzünden",
+        "kalkınca eklemlerim tutuklu",
+        "romatizma tutukluğu gibi",
+        "eklem hareketim kısıtlandı",
+        "dizim kilitlendi",
+        "sabahları eklemlerim açılmıyor",
+        "ayağa kalkmak zor eklemler nedeniyle",
+        "eklem hareket açıklığı azaldı",
+        "tutukluk geçmiyor",
+        "mafsallarım sertleşti"
       ]
     },
     {
@@ -284,7 +613,20 @@
       "variants_tr": [
         "makatta ağrı var",
         "anal bölgede ağrı var",
-        "dışkılarken ağrı oluyor"
+        "dışkılarken ağrı oluyor",
+        "anüste ağrı var",
+        "makat bölgesinde ağrı var",
+        "tuvalette çok ağrı oluyor",
+        "oturunca makatta ağrıyorum",
+        "anüste yanma var",
+        "hemoroid gibi ağrı var",
+        "makatta kanama var",
+        "tuvalette kan gördüm",
+        "anal bölgede yanma var",
+        "anüs bölgesinde rahatsızlık var",
+        "tuvalet sonrası ağrı devam ediyor",
+        "makat çevresinde ağrı var",
+        "anüs bölgesi ağrılı"
       ]
     },
     {
@@ -293,7 +635,20 @@
       "variants_tr": [
         "balgamda kan var",
         "kanlı balgam çıkarıyorum",
-        "öksürürken kan geliyor"
+        "öksürürken kan geliyor",
+        "öksürünce kan görüyorum",
+        "ağzımdan kanlı balgam geliyor",
+        "balgamımda kırmızılık var",
+        "kanlı öksürük var",
+        "balgamda kırmızı çizgiler var",
+        "öksürünce kan tükürüyorum",
+        "kan balgam var",
+        "balgamım kırmızı renkte",
+        "ağızdan kan geldi öksürünce",
+        "akciğerden kan geliyor gibiyim",
+        "öksürük sırasında kan var",
+        "balgam rengi kırmızı",
+        "kanlı öksürük oluştu"
       ]
     },
     {
@@ -304,7 +659,18 @@
         "karnım ağrıyor",
         "mide ağrısı",
         "göbek ağrısı",
-        "karın bölgemde ağrı var"
+        "karın bölgemde ağrı var",
+        "karnım sancıyor",
+        "karın krampı var",
+        "karnımda kesici ağrı var",
+        "alt karın ağrısı var",
+        "üst karın ağrısı var",
+        "karın bölgesinde sancı var",
+        "bağırsak ağrısı var",
+        "karnımda batma var",
+        "mide bölgesinde ağrı var",
+        "karın ağrısı geçmiyor",
+        "karnımda şiddetli sancı var"
       ]
     },
     {
@@ -315,7 +681,18 @@
         "balgamım var",
         "öksürünce balgam geliyor",
         "yeşil balgam",
-        "sarı balgam"
+        "sarı balgam",
+        "beyaz balgam var",
+        "koyu balgam çıkarıyorum",
+        "balgam miktarı arttı",
+        "kalın balgam var",
+        "balgam atıyorum",
+        "sümüklü balgam var",
+        "balgam boğazımda birikiyor",
+        "sabah balgam var",
+        "bol balgam çıkarıyorum",
+        "balgam temizleyemiyorum",
+        "balgam rengi değişti"
       ]
     },
     {
@@ -326,7 +703,18 @@
         "yorgunum",
         "bitkinim",
         "takatim kalmadı",
-        "halsizlik var"
+        "halsizlik var",
+        "enerjim yok",
+        "kendimi çok yorgun hissediyorum",
+        "ayağa kalkmak zor",
+        "yapamıyorum hiçbir şeyi yorgunluktan",
+        "dinlensem de geçmiyor",
+        "kronik yorgunluk gibi",
+        "kaslarım yorgun",
+        "her şey zor geliyor yorgunluktan",
+        "uyandığımda bile yorgunum",
+        "halsizliğim geçmiyor",
+        "tükenmiş hissediyorum"
       ]
     },
     {
