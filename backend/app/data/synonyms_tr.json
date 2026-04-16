@@ -328,6 +328,145 @@
         "takatim kalmadı",
         "halsizlik var"
       ]
+    },
+    {
+      "canonical": "vajinal kanama",
+      "type": "symptom",
+      "variants_tr": [
+        "vajinal kanama var",
+        "aşağıdan kanıyorum",
+        "vajinadan kan geliyor",
+        "lekelenme var",
+        "ara kanama",
+        "postkoital kanama",
+        "ilişki sonrası kanama",
+        "anormal kanama",
+        "beklenmedik kanama"
+      ]
+    },
+    {
+      "canonical": "gecikmiş adet",
+      "type": "symptom",
+      "variants_tr": [
+        "adetim gecikti",
+        "adetim gelmedi",
+        "adetim yok",
+        "ay halim olmadı",
+        "reglim gelmedi",
+        "teorik tarihim geçti",
+        "amenore",
+        "adetim kesildi"
+      ]
+    },
+    {
+      "canonical": "pelvik ağrı",
+      "type": "symptom",
+      "variants_tr": [
+        "alt karın ağrısı",
+        "kasık ağrısı",
+        "pelvik bölgede ağrı",
+        "rahim bölgesi ağrıyor",
+        "yumurtalık ağrısı",
+        "alt karın krampları",
+        "aşağı bölge ağrısı",
+        "kasıklarım ağrıyor"
+      ]
+    },
+    {
+      "canonical": "adet düzensizliği",
+      "type": "symptom",
+      "variants_tr": [
+        "adetlerim düzensiz",
+        "ay halim düzensiz",
+        "reglim her ay farklı",
+        "bazen çok erken bazen geç geliyor",
+        "düzensiz adet",
+        "oligomenore",
+        "menorajim var",
+        "adet kanaması çok uzun sürüyor"
+      ]
+    },
+    {
+      "canonical": "dismenore",
+      "type": "symptom",
+      "variants_tr": [
+        "adet ağrısı",
+        "regl ağrısı",
+        "adet döneminde çok ağrı oluyor",
+        "kramp çok şiddetli",
+        "adet krampları",
+        "bayılacak gibi ağrıyor",
+        "adet sancısı",
+        "her adet çok acı veriyor"
+      ]
+    },
+    {
+      "canonical": "gebelik şüphesi",
+      "type": "symptom",
+      "variants_tr": [
+        "hamile olabilirim",
+        "gebelik testi pozitif",
+        "gebeyim",
+        "hamilelik testi yaptım pozitif çıktı",
+        "bebek bekliyorum",
+        "hamilelik şüphesi",
+        "hamile miyim bilmiyorum",
+        "test yaptım iki çizgi çıktı"
+      ]
+    },
+    {
+      "canonical": "meme şikayeti",
+      "type": "symptom",
+      "variants_tr": [
+        "memem ağrıyor",
+        "göğsüm ağrıyor",
+        "meme akıntısı",
+        "memeden akıntı geliyor",
+        "memede kitle var",
+        "memem şişti",
+        "göğsümde ağrı var",
+        "meme hassasiyeti"
+      ]
+    },
+    {
+      "canonical": "vajinal akıntı",
+      "type": "symptom",
+      "variants_tr": [
+        "vajinal akıntı var",
+        "aşağıdan akıntı geliyor",
+        "beyaz akıntı",
+        "sarı akıntı",
+        "kötü kokulu akıntı",
+        "köpüklü akıntı",
+        "peynir kıvamında akıntı",
+        "akıntım arttı",
+        "pıhtılı akıntı"
+      ]
+    },
+    {
+      "canonical": "vajinal kaşıntı",
+      "type": "symptom",
+      "variants_tr": [
+        "aşağısı kaşınıyor",
+        "vajina kaşıntısı",
+        "genital bölge kaşınıyor",
+        "kasık bölgesi kaşınıyor",
+        "yanma ve kaşıntı var"
+      ]
+    },
+    {
+      "canonical": "menopoz belirtisi",
+      "type": "symptom",
+      "variants_tr": [
+        "ateş basması",
+        "gece terlemesi",
+        "adetlerim kesildi",
+        "klimakterium",
+        "menopoza girdim",
+        "menopoz belirtileri var",
+        "sıcak basması",
+        "adet kesilmesi"
+      ]
     }
   ]
 }

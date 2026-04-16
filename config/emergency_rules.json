@@ -174,6 +174,103 @@
                     ]
                 }
             ]
+        },
+        {
+            "id": "ectopic_pregnancy_suspect",
+            "severity": 3,
+            "title_tr": "Ektopik gebelik şüphesi",
+            "message_tr": "Gebelikle birlikte şiddetli tek taraflı pelvik ağrı ve/veya vajinal kanama ektopik gebelik belirtisi olabilir. Yaşamı tehdit eden bir acildir; hemen acil servise gidin.",
+            "recommendation_tr": "112 / Acil Servis",
+            "keyword_any": [
+                "hamile",
+                "gebeyim",
+                "gebelik testi pozitif",
+                "test pozitif çıktı"
+            ],
+            "canonical_any": [
+                "gebelik şüphesi"
+            ],
+            "require_any_group": [
+                {
+                    "keyword_any": [
+                        "şiddetli karın ağrısı",
+                        "tek taraflı ağrı",
+                        "omza vuran ağrı",
+                        "bayılacak gibi",
+                        "kanama var"
+                    ]
+                },
+                {
+                    "canonical_any": [
+                        "pelvik ağrı",
+                        "vajinal kanama"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "preeclampsia_suspect",
+            "severity": 3,
+            "title_tr": "Preeklampsi şüphesi",
+            "message_tr": "Gebelikte şiddetli baş ağrısı, görme bozukluğu veya yüz-el şişmesi preeklampsi belirtisi olabilir. Acil değerlendirme gereklidir.",
+            "recommendation_tr": "112 / Acil Servis",
+            "keyword_any": [
+                "gebeyim",
+                "hamile",
+                "hamileyim"
+            ],
+            "canonical_any": [
+                "gebelik şüphesi"
+            ],
+            "require_any_group": [
+                {
+                    "keyword_any": [
+                        "çok şiddetli baş ağrısı",
+                        "gözlerim kararıyor",
+                        "görme bozuldu",
+                        "ellerim şişti",
+                        "yüzüm şişti",
+                        "nefes alamıyorum"
+                    ]
+                },
+                {
+                    "canonical_any": [
+                        "baş ağrısı",
+                        "görme bozukluğu",
+                        "şişlik"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "postpartum_hemorrhage",
+            "severity": 3,
+            "title_tr": "Postpartum aşırı kanama",
+            "message_tr": "Doğum sonrası aşırı vajinal kanama hayati tehlike oluşturabilir. Hemen acil yardım çağırın.",
+            "recommendation_tr": "112 / Acil Servis",
+            "keyword_any": [
+                "doğum yaptım",
+                "yeni doğum",
+                "postpartum",
+                "lohusa"
+            ],
+            "canonical_any": [],
+            "require_any_group": [
+                {
+                    "keyword_any": [
+                        "çok kan geliyor",
+                        "kanama durmuyor",
+                        "ped dolup taşıyor",
+                        "aşırı kanama",
+                        "saatte birden fazla ped"
+                    ]
+                },
+                {
+                    "canonical_any": [
+                        "vajinal kanama"
+                    ]
+                }
+            ]
         }
     ]
 }

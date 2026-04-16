@@ -282,8 +282,28 @@
     {
       "id": "obgyn",
       "specialty": "Kadın Hastalıkları ve Doğum",
-      "clusters": ["düzensiz kanama", "alt karın ağrısı", "adet gecikmesi", "gebelik şüphesi"],
-      "urgency_rules": [{ "if": { "pregnancy": true, "bleeding": true }, "then": "ER_NOW" }]
+      "clusters": [
+        "düzensiz kanama",
+        "vajinal kanama",
+        "alt karın ağrısı",
+        "pelvik ağrı",
+        "adet gecikmesi",
+        "gecikmiş adet",
+        "gebelik şüphesi",
+        "dismenore",
+        "adet düzensizliği",
+        "vajinal akıntı",
+        "vajinal kaşıntı",
+        "meme şikayeti",
+        "menopoz belirtisi",
+        "yumurtalık ağrısı"
+      ],
+      "urgency_rules": [
+        { "if": { "pregnancy": true, "bleeding": true }, "then": "ER_NOW" },
+        { "if": { "pregnancy": true, "severe_pain": true }, "then": "ER_NOW" },
+        { "if": { "postpartum": true, "bleeding": true }, "then": "ER_NOW" },
+        { "if": { "canonical_any": ["dismenore", "pelvik ağrı"], "severity": "severe" }, "then": "SAME_DAY" }
+      ]
     }
   ],
   "urgency_definitions": {

@@ -43,6 +43,19 @@
     {"disease_label": "Acne", "specialty_id": "dermatology", "specialty_tr": "Dermatoloji", "confidence": 0.9},
     {"disease_label": "Urinary tract infection", "specialty_id": "urology_internal", "specialty_tr": "Üroloji (gerekirse Dahiliye)", "confidence": 0.85},
     {"disease_label": "Psoriasis", "specialty_id": "dermatology", "specialty_tr": "Dermatoloji", "confidence": 0.9},
-    {"disease_label": "Impetigo", "specialty_id": "dermatology", "specialty_tr": "Dermatoloji", "confidence": 0.9}
+    {"disease_label": "Impetigo", "specialty_id": "dermatology", "specialty_tr": "Dermatoloji", "confidence": 0.9},
+    {"disease_label": "Dismenore", "specialty_id": "obgyn", "specialty_tr": "Kadın Hastalıkları ve Doğum", "confidence": 0.9},
+    {"disease_label": "PCOS (Polikistik Over Sendromu)", "specialty_id": "obgyn", "specialty_tr": "Kadın Hastalıkları ve Doğum", "confidence": 0.9},
+    {"disease_label": "Endometriosis", "specialty_id": "obgyn", "specialty_tr": "Kadın Hastalıkları ve Doğum", "confidence": 0.9},
+    {"disease_label": "Myoma Uteri", "specialty_id": "obgyn", "specialty_tr": "Kadın Hastalıkları ve Doğum", "confidence": 0.85},
+    {"disease_label": "Ovaryan Kist", "specialty_id": "obgyn", "specialty_tr": "Kadın Hastalıkları ve Doğum", "confidence": 0.85},
+    {"disease_label": "Menopoz", "specialty_id": "obgyn", "specialty_tr": "Kadın Hastalıkları ve Doğum", "confidence": 0.9},
+    {"disease_label": "Vajinit", "specialty_id": "obgyn", "specialty_tr": "Kadın Hastalıkları ve Doğum", "confidence": 0.9},
+    {"disease_label": "Pelvik İnflamatuvar Hastalık (PID)", "specialty_id": "obgyn", "specialty_tr": "Kadın Hastalıkları ve Doğum", "confidence": 0.9},
+    {"disease_label": "Normal Gebelik", "specialty_id": "obgyn", "specialty_tr": "Kadın Hastalıkları ve Doğum", "confidence": 0.9},
+    {"disease_label": "Abortus İmminens", "specialty_id": "obgyn", "specialty_tr": "Kadın Hastalıkları ve Doğum", "confidence": 0.9},
+    {"disease_label": "Ektopik Gebelik", "specialty_id": "obgyn", "specialty_tr": "Kadın Hastalıkları ve Doğum (ACİL)", "confidence": 0.95},
+    {"disease_label": "Preeklampsi", "specialty_id": "obgyn", "specialty_tr": "Kadın Hastalıkları ve Doğum (ACİL)", "confidence": 0.95},
+    {"disease_label": "Üriner İnkontinans", "specialty_id": "obgyn", "specialty_tr": "Kadın Hastalıkları ve Doğum (gerekirse Üroloji)", "confidence": 0.8}
   ]
 }
