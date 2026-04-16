@@ -174,6 +174,48 @@
                     ]
                 }
             ]
+        },
+        {
+            "id": "psychiatric_emergency_active_plan",
+            "severity": 3,
+            "title_tr": "Aktif intihar planı / psikiyatrik acil",
+            "message_tr": "Aktif intihar planı veya kendine/başkasına zarar verme niyeti psikiyatrik acildir. Hemen güvenli bir yere geç, yalnız kalma ve 182 (ALO Psikiyatri) ya da 112'yi ara.",
+            "recommendation_tr": "182 ALO Psikiyatri / 112 Acil Servis",
+            "keyword_any": [
+                "intihar planı",
+                "nasıl öleceğimi düşündüm",
+                "ilaçları biriktirdim",
+                "kendimi öldürmeyi planladım",
+                "bugün öleceğim",
+                "bu gece biteceğim",
+                "başkasına zarar vereceğim",
+                "birisini öldüreceğim",
+                "gerçek olmayan sesler",
+                "sesler bana söylüyor",
+                "beni öldürecekler",
+                "persekütif"
+            ],
+            "canonical_any": [
+                "intihar/kendine zarar"
+            ],
+            "require_any_group": [
+                {
+                    "keyword_any": [
+                        "plan",
+                        "biriktirdim",
+                        "bugün",
+                        "bu gece",
+                        "yöntem",
+                        "ses",
+                        "başkasına"
+                    ]
+                },
+                {
+                    "canonical_any": [
+                        "intihar/kendine zarar"
+                    ]
+                }
+            ]
         }
     ]
 }

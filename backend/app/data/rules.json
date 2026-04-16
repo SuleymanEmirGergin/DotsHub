@@ -276,8 +276,29 @@
     {
       "id": "psychiatry",
       "specialty": "Psikiyatri",
-      "clusters": ["panik", "anksiyete", "uyku bozukluğu", "depresif ruh hali"],
-      "urgency_rules": [{ "if": { "self_harm": true }, "then": "ER_NOW" }]
+      "clusters": [
+        "panik",
+        "panik atak",
+        "anksiyete",
+        "kaygı",
+        "uyku bozukluğu",
+        "depresif ruh hali",
+        "düşük ruh hali",
+        "umutsuzluk",
+        "sosyal izolasyon",
+        "konsantrasyon bozukluğu",
+        "iştah kaybı",
+        "obsesyon",
+        "halüsinasyon",
+        "travma sonrası stres",
+        "bipolar",
+        "psikoz"
+      ],
+      "urgency_rules": [
+        { "if": { "self_harm": true }, "then": "ER_NOW" },
+        { "if": { "psychosis": true }, "then": "SAME_DAY" },
+        { "if": { "duration_days_gte": 14, "canonical_any": ["düşük ruh hali", "uyku bozukluğu"] }, "then": "SAME_DAY" }
+      ]
     },
     {
       "id": "obgyn",
