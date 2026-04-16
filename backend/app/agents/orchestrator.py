@@ -42,6 +42,7 @@ from app.agents.context_questions import (
     parse_context_answer,
 )
 from app.free_text_parse import parse_free_text_answer, parsed_to_symptom_item
+from app.top_conditions_filter import filter_top_conditions
 from app.core.i18n import get_text
 from app.models.schemas import (
     SafetyGuardOutput,
@@ -719,13 +720,16 @@ class Orchestrator:
             if "Heart attack" in top_disease or "Paralysis" in top_disease:
                 urgency = "SAME_DAY"
 
-        # Top conditions
-        top_conditions = []
-        for d in state.disease_candidates[:3]:
-            top_conditions.append({
-                "disease_label": d["disease_label"],
-                "score_0_1": round(d["score_0_1"], 2),
-            })
+        # Top conditions — A9 gate + label override
+        raw_top_conditions = [
+            {"disease_label": d["disease_label"], "score_0_1": round(d["score_0_1"], 2)}
+            for d in state.disease_candidates[:3]
+        ]
+        top_conditions = filter_top_conditions(
+            raw_top_conditions,
+            confidence=getattr(state, "confidence", None),
+            envelope_type="RESULT",
+        )
 
         # Recommended specialty
         spec_id = top_id or "internal_gi"
