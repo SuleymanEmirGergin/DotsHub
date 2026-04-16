@@ -18,10 +18,10 @@ import {
   SecondaryButton,
   SectionTitle,
 } from "@/src/ui/primitives";
-
-const LOADING_TEXT = "Değerlendiriyorum…";
+import { useI18n } from "@/i18n/I18nProvider";
 
 export default function QuestionScreen() {
+  const { t } = useI18n();
   const q = useTriageStore((s) => s.pendingQuestion)!;
   const sessionId = useTriageStore((s) => s.sessionId);
   const { appendMessage, setLoading, setLastRequest, applyEnvelope } = useTriageStore();
@@ -41,7 +41,7 @@ export default function QuestionScreen() {
     });
     setLoading(true);
     setLastRequest(req);
-    appendMessage({ role: "assistant", text: LOADING_TEXT });
+    appendMessage({ role: "assistant", text: t("chat.evaluating") });
 
     const env = await triageTurn(req);
     applyEnvelope(env);
@@ -58,7 +58,7 @@ export default function QuestionScreen() {
 
           {q.why_asking_tr ? (
             <View style={styles.whyBox}>
-              <Text style={styles.whyLabel}>Neden soruyoruz?</Text>
+              <Text style={styles.whyLabel}>{t("question.whyAsking")}</Text>
               <MutedText style={styles.whyText}>{q.why_asking_tr}</MutedText>
             </View>
           ) : null}
@@ -66,10 +66,10 @@ export default function QuestionScreen() {
           {q.answer_type === "yes_no" ? (
             <View style={styles.yesNoRow}>
               <PrimaryButton style={styles.flexButton} onPress={() => answer("yes")}>
-                Evet
+                {t("common.yes")}
               </PrimaryButton>
               <SecondaryButton style={styles.flexButton} onPress={() => answer("no")}>
-                Hayır
+                {t("common.no")}
               </SecondaryButton>
             </View>
           ) : null}
@@ -79,7 +79,7 @@ export default function QuestionScreen() {
               <TextInput
                 value={freeText}
                 onChangeText={setFreeText}
-                placeholder="Kısa yanıt yaz…"
+                placeholder={t("question.freeTextPlaceholder")}
                 placeholderTextColor={tokens.colors.textMuted}
                 style={[styles.freeInput, styles.freeInputMultiline]}
                 multiline
@@ -89,7 +89,7 @@ export default function QuestionScreen() {
                 style={styles.continueButton}
                 onPress={() => answer(freeText.trim() || "bilmiyorum")}
               >
-                Devam
+                {t("common.continue")}
               </PrimaryButton>
             </View>
           ) : null}
@@ -99,7 +99,7 @@ export default function QuestionScreen() {
               <TextInput
                 value={freeText}
                 onChangeText={setFreeText}
-                placeholder="Sayı gir…"
+                placeholder={t("question.numberPlaceholder")}
                 placeholderTextColor={tokens.colors.textMuted}
                 keyboardType="numeric"
                 style={styles.freeInput}

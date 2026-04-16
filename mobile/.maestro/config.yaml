@@ -1,0 +1,7 @@
+# Maestro E2E config — Dotshub mobile
+# Run: maestro test .maestro/intro_smoke.yaml
+# App: Expo app with bundle id com.dotshub.app (iOS) / com.dotshub.app (Android)
+
+env:
+  APP_ID_IOS: com.dotshub.app
+  APP_ID_ANDROID: com.dotshub.app

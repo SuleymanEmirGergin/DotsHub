@@ -23,11 +23,18 @@ function verifyTuningPatchProxyRoute() {
   assert.match(source, /"x-admin-key"/);
   assert.match(source, /NEXT_PUBLIC_API_BASE/);
   assert.match(source, /ADMIN_API_KEY/);
+  assert.match(source, /status:\s*response\.status/);
+}
+
+function verifyTuningTasksPageUsesProxy() {
+  const source = readRoute(path.join("app", "admin", "tuning-tasks", "page.tsx"));
+  assert.match(source, /\/api\/admin\/tuning-tasks\/\$\{task\.id\}\/generate-patch/);
 }
 
 function main() {
   verifySessionProxyRoute();
   verifyTuningPatchProxyRoute();
+  verifyTuningTasksPageUsesProxy();
   console.log("admin_proxy_contract_check: PASS");
 }
 

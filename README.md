@@ -34,15 +34,24 @@ guardrails, and rollback support.
 - `GET /health` — liveness and Supabase reachability
 - Admin: `GET/POST /v1/admin/*` — admin API (separate rate limit per IP)
 
+**Other endpoints**
+
+- `POST /v1/triage/send-summary` — send session summary by email (rate-limited per IP, see below).
+- `POST /v1/triage/export-summary` — export summary as plain text.
+
 **Environment (backend)**
 
 - `REDIS_URL` — optional; when set, rate limiting uses Redis (multi-instance). Omit for in-memory.
 - `RATE_LIMIT_WINDOW_SEC`, `RATE_LIMIT_MAX_REQ` — triage/feedback rate limit (default 60s, 20 req).
+- `SEND_SUMMARY_RATE_LIMIT_WINDOW_SEC`, `SEND_SUMMARY_RATE_LIMIT_MAX_REQ` — send-summary limit (default 60s, 10 req per IP).
 - `ADMIN_RATE_LIMIT_WINDOW_SEC`, `ADMIN_RATE_LIMIT_MAX_REQ` — admin API limit (default 60s, 60 req).
 - `LOG_FORMAT=json` — JSON log lines with `request_id`; `LOG_LEVEL` (e.g. `INFO`).
 - `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` — for persistence and `/health` check.
 - `ADMIN_API_KEY` — for admin API auth (Bearer / `X-API-Key` / `x-admin-key`).
 - `CORS_ORIGINS` — JSON array of allowed origins (e.g. mobile app and dashboard URLs). **Production:** set explicitly to your app/dashboard origins; do not use the default localhost list.
+
+**Rate limiting (multi-instance)**  
+By default, rate limits are stored in-memory per process. With **multiple API instances** (e.g. several workers or pods), each instance has its own buckets, so effective limits are multiplied. For a single shared limit across instances, set `REDIS_URL` (e.g. `redis://localhost:6379/0`). When `REDIS_URL` is set and reachable, triage/feedback, send-summary, and admin rate limits use Redis; see `backend/app/rate_limit.py` and `main.py` (middleware). If Redis is unavailable at startup, the app falls back to in-memory and logs a warning.
 
 ## Core Philosophy
 
@@ -159,8 +168,8 @@ Backend:
 
 Frontend:
 
-- Expo (mobile)
-- Next.js (admin and ops)
+- Expo (mobile): i18n (TR/EN/DE/RU/AR, RTL for Arabic), offline banner (NetInfo), send-summary/export-summary from result screen.
+- Next.js (admin and ops): locale switcher, error/404 pages.
 
 Ops and safety:
 
@@ -243,6 +252,18 @@ cd dashboard && npm run lint:eslint
 3. Same-day and question loop runs when needed
 4. Result shows specialty, risk, and explainability
 5. Admin panel shows trace, trends, and health status
+
+## Documentation
+
+- [Deploy & environment](docs/DEPLOY_AND_ENV.md) — deployment and env vars.
+- [Architecture](docs/ARCHITECTURE.md) — high-level diagrams and components.
+- [Privacy & security](docs/PRIVACY_AND_SECURITY.md) — data handling, retention, KVKD/GDPR notes.
+- [Push notifications policy](docs/PUSH_NOTIFICATIONS_POLICY.md) — mobile push registration and usage.
+- [Plan (remaining steps)](docs/PLAN_KALAN_ADIMLAR.md) — checklist and follow-ups.
+- [Next phase plan](docs/PLAN_SONRAKI_FAZ.md) — optional polish, tests, accessibility, release.
+- [Dependency updates](docs/DEPENDENCY_UPDATES.md) — pip/npm outdated report and recommendations.
+- [Dashboard theme](docs/DASHBOARD_THEME.md) — light/dark CSS variables and consistency.
+- [Release checklist](docs/RELEASE_CHECKLIST.md) — CHANGELOG → tag → release notu (sırasıyla).
 
 ## Status
 

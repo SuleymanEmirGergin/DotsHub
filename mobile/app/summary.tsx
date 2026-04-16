@@ -6,11 +6,15 @@ import React, { useEffect } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, Share, Alert,
 } from 'react-native';
+import { useI18n } from '@/i18n/I18nProvider';
 import { Colors, Spacing, FontSizes, BorderRadius } from '../constants/theme';
 import { useSessionStore } from '../store/useSessionStore';
 import RiskBadge from '../components/RiskBadge';
 
+const DATE_LOCALE_MAP: Record<string, string> = { tr: 'tr-TR', en: 'en-US', de: 'de-DE', ru: 'ru-RU', ar: 'ar' };
+
 export default function SummaryScreen() {
+  const { t, locale } = useI18n();
   const {
     summary, recommendedSpecialty, urgency, candidates,
     emergencyWatchouts, messages, riskLevel, doctorSummary,
@@ -26,52 +30,53 @@ export default function SummaryScreen() {
   const handleShare = async () => {
     const text = buildSummaryText();
     try {
-      await Share.share({ message: text, title: 'Ön-Triyaj Asistanı - Sağlık Özeti' });
+      await Share.share({ message: text, title: t('summary.shareTitle') });
     } catch {
-      Alert.alert('Hata', 'Paylaşım sırasında bir hata oluştu.');
+      Alert.alert(t('summary.errorTitle'), t('summary.shareError'));
     }
   };
 
   const buildSummaryText = () => {
     const lines: string[] = [];
     lines.push('═══════════════════════════════');
-    lines.push('ÖN-TRİYAJ ASISTANI - SAĞLIK ÖZETİ');
+    lines.push(t('summary.exportHeaderTitle'));
     lines.push('═══════════════════════════════\n');
 
     if (ds) {
-      lines.push('BELIRTILER:');
+      lines.push(t('summary.exportSymptoms'));
       ds.symptoms_tr.forEach((s) => lines.push(`  • ${s}`));
-      lines.push(`\nSÜRE: ${ds.timeline_tr}`);
-      lines.push(`RİSK SEVİYESİ: ${ds.risk_level}`);
+      lines.push(`\n${t('summary.exportTimeline')} ${ds.timeline_tr}`);
+      lines.push(`${t('summary.exportRiskLevel')} ${ds.risk_level}`);
     }
 
     if (recommendedSpecialty) {
-      lines.push(`\nÖNERİLEN BRANŞ: ${recommendedSpecialty}`);
-      lines.push(`ACİLİYET: ${urgency}`);
+      lines.push(`\n${t('summary.exportRecommendedSpecialty')} ${recommendedSpecialty}`);
+      lines.push(`${t('summary.exportUrgency')} ${urgency}`);
     }
 
     if (candidates.length > 0) {
-      lines.push('\nOLASI DURUMLAR:');
+      lines.push(`\n${t('summary.exportPossibleConditions')}`);
       candidates.forEach((c) => lines.push(`  %${Math.round(c.probability_0_1 * 100)} - ${c.label_tr}`));
     }
 
     const qaMessages = messages.filter((m) => m.role === 'user' || m.role === 'ai');
     if (qaMessages.length > 0) {
-      lines.push('\nSORU-CEVAP GEÇMİŞİ:');
+      lines.push(`\n${t('summary.exportQaHistory')}`);
       qaMessages.forEach((m) => {
-        const prefix = m.role === 'ai' ? 'Asistan' : 'Hasta';
+        const prefix = m.role === 'ai' ? t('summary.assistant') : t('summary.patient');
         lines.push(`  ${prefix}: ${m.content}`);
       });
     }
 
     if (emergencyWatchouts.length > 0) {
-      lines.push('\nACİL UYARILAR:');
+      lines.push(`\n${t('summary.exportWatchouts')}`);
       emergencyWatchouts.forEach((w) => lines.push(`  • ${w}`));
     }
 
     lines.push('\n───────────────────────────────');
     lines.push(disclaimer);
-    lines.push(`Tarih: ${new Date().toLocaleDateString('tr-TR')}`);
+    const dateLocale = DATE_LOCALE_MAP[locale] || 'en-US';
+    lines.push(`${t('summary.exportDate')} ${new Date().toLocaleDateString(dateLocale)}`);
 
     return lines.join('\n');
   };
@@ -79,7 +84,7 @@ export default function SummaryScreen() {
   if (!ds && !recommendedSpecialty) {
     return (
       <View style={styles.emptyContainer}>
-        <Text style={styles.emptyText}>Özet yükleniyor...</Text>
+        <Text style={styles.emptyText}>{t('summary.loading')}</Text>
       </View>
     );
   }
@@ -87,9 +92,9 @@ export default function SummaryScreen() {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
       <View style={styles.headerCard}>
-        <Text style={styles.headerTitle}>Doktora Gösterilecek Özet</Text>
+        <Text style={styles.headerTitle}>{t('summary.headerTitle')}</Text>
         <Text style={styles.headerSubtitle}>
-          Bu özeti doktorunuzla paylaşarak daha verimli bir muayene süreci geçirebilirsiniz.
+          {t('summary.headerSubtitle')}
         </Text>
       </View>
 
@@ -104,7 +109,7 @@ export default function SummaryScreen() {
 
       {ds && ds.symptoms_tr.length > 0 && (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Belirtiler</Text>
+          <Text style={styles.sectionTitle}>{t('summary.symptoms')}</Text>
           {ds.symptoms_tr.map((s, idx) => (
             <View key={idx} style={styles.bulletRow}>
               <Text style={styles.bullet}>•</Text>
@@ -116,14 +121,14 @@ export default function SummaryScreen() {
 
       {ds && ds.timeline_tr && (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Süre / Zaman Çizelgesi</Text>
+          <Text style={styles.sectionTitle}>{t('summary.timeline')}</Text>
           <Text style={styles.timelineText}>{ds.timeline_tr}</Text>
         </View>
       )}
 
       {ds && ds.qa_highlights_tr.length > 0 && (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Önemli Notlar</Text>
+          <Text style={styles.sectionTitle}>{t('summary.importantNotes')}</Text>
           {ds.qa_highlights_tr.map((h, idx) => (
             <View key={idx} style={styles.bulletRow}>
               <Text style={styles.bullet}>•</Text>
@@ -135,7 +140,7 @@ export default function SummaryScreen() {
 
       {candidates.length > 0 && (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Olası Durumlar</Text>
+          <Text style={styles.sectionTitle}>{t('summary.possibleConditions')}</Text>
           {candidates.map((c, idx) => (
             <View key={idx} style={styles.conditionRow}>
               <View style={styles.conditionBar}>
@@ -148,10 +153,10 @@ export default function SummaryScreen() {
       )}
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Soru-Cevap Geçmişi</Text>
+        <Text style={styles.sectionTitle}>{t('summary.qaHistory')}</Text>
         {messages.filter((m) => m.role !== 'system').map((m, idx) => (
           <View key={idx} style={[styles.chatRow, m.role === 'user' ? styles.chatRowUser : styles.chatRowAI]}>
-            <Text style={styles.chatRole}>{m.role === 'user' ? 'Hasta' : 'Asistan'}</Text>
+            <Text style={styles.chatRole}>{m.role === 'user' ? t('summary.patient') : t('summary.assistant')}</Text>
             <Text style={styles.chatContent}>{m.content}</Text>
           </View>
         ))}
@@ -159,7 +164,7 @@ export default function SummaryScreen() {
 
       {emergencyWatchouts.length > 0 && (
         <View style={styles.watchoutSection}>
-          <Text style={styles.watchoutTitle}>Dikkat Edilmesi Gerekenler</Text>
+          <Text style={styles.watchoutTitle}>{t('summary.watchoutsTitle')}</Text>
           {emergencyWatchouts.map((w, idx) => (
             <Text key={idx} style={styles.watchoutItem}>• {w}</Text>
           ))}
@@ -168,7 +173,7 @@ export default function SummaryScreen() {
 
       <View style={styles.actions}>
         <TouchableOpacity style={styles.shareButton} onPress={handleShare}>
-          <Text style={styles.shareButtonText}>Özeti Paylaş</Text>
+          <Text style={styles.shareButtonText}>{t('summary.shareButton')}</Text>
         </TouchableOpacity>
       </View>
 

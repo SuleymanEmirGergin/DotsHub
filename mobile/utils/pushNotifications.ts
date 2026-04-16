@@ -1,71 +1,116 @@
 /**
- * Push bildirim izni ve token yardımcıları.
- * Kullanım: docs/PUSH_NOTIFICATIONS_MOBILE.md
+ * Push notification helpers.
+ * Works with expo-notifications when available; otherwise degrades safely.
  */
 
-import * as Notifications from "expo-notifications";
-import Constants from "expo-constants";
 import { Platform } from "react-native";
 
 export type PushPermissionStatus = "granted" | "denied" | "undetermined";
 
-/**
- * Mevcut push iznini döndürür.
- */
+type ExpoNotificationsLike = {
+  AndroidImportance?: { DEFAULT?: number };
+  getPermissionsAsync?: () => Promise<{ status?: string }>;
+  requestPermissionsAsync?: () => Promise<{ status?: string }>;
+  setNotificationChannelAsync?: (
+    channelId: string,
+    channel: {
+      name: string;
+      importance?: number;
+      vibrationPattern?: number[];
+      lightColor?: string;
+    },
+  ) => Promise<unknown>;
+  getExpoPushTokenAsync?: (args?: { projectId?: string }) => Promise<{ data?: string }>;
+  getDevicePushTokenAsync?: () => Promise<{ data?: string }>;
+};
+
+function loadExpoNotifications(): ExpoNotificationsLike | null {
+  try {
+    const safeRequire = Function("return require")() as (name: string) => unknown;
+    const mod = safeRequire("expo-notifications") as ExpoNotificationsLike;
+    return mod ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function getProjectId(): string | undefined {
+  try {
+    const safeRequire = Function("return require")() as (name: string) => unknown;
+    const constants = safeRequire("expo-constants") as {
+      expoConfig?: { extra?: { eas?: { projectId?: string } } };
+      eas?: { projectId?: string };
+    };
+    return (
+      constants?.expoConfig?.extra?.eas?.projectId ??
+      constants?.eas?.projectId ??
+      undefined
+    );
+  } catch {
+    return undefined;
+  }
+}
+
 export async function getPushPermissionStatus(): Promise<PushPermissionStatus> {
-  const { status } = await Notifications.getPermissionsAsync();
+  const notifications = loadExpoNotifications();
+  if (!notifications?.getPermissionsAsync) return "undetermined";
+
+  const { status } = await notifications.getPermissionsAsync();
   if (status === "granted") return "granted";
   if (status === "denied") return "denied";
   return "undetermined";
 }
 
-/**
- * Kullanıcıdan push bildirimi izni ister. granted ise true döner.
- */
 export async function requestPushPermission(): Promise<boolean> {
+  const notifications = loadExpoNotifications();
+  if (!notifications?.requestPermissionsAsync) return false;
+
   const existing = await getPushPermissionStatus();
   if (existing === "granted") return true;
   if (existing === "denied") return false;
-  const { status } = await Notifications.requestPermissionsAsync();
+  const { status } = await notifications.requestPermissionsAsync();
   return status === "granted";
 }
 
-/**
- * Android için varsayılan bildirim kanalını oluşturur (Android 8+).
- */
 export async function setupNotificationChannel(): Promise<void> {
-  if (Platform.OS !== "android") return;
-  await Notifications.setNotificationChannelAsync("default", {
-    name: "Varsayılan",
-    importance: Notifications.AndroidImportance.DEFAULT,
+  const notifications = loadExpoNotifications();
+  if (
+    Platform.OS !== "android" ||
+    !notifications?.setNotificationChannelAsync
+  ) {
+    return;
+  }
+
+  await notifications.setNotificationChannelAsync("default", {
+    name: "Default",
+    importance: notifications.AndroidImportance?.DEFAULT ?? 3,
     vibrationPattern: [0, 250, 250, 250],
     lightColor: "#FF6B00",
   });
 }
 
-/**
- * Expo Push Token döndürür (Expo servisi kullanılıyorsa).
- * İzin yoksa null.
- */
 export async function getExpoPushTokenAsync(): Promise<string | null> {
+  const notifications = loadExpoNotifications();
+  if (!notifications?.getExpoPushTokenAsync) return null;
+
   const granted = await requestPushPermission();
   if (!granted) return null;
   await setupNotificationChannel();
-  const projectId =
-    Constants.expoConfig?.extra?.eas?.projectId ?? (Constants as { eas?: { projectId?: string } }).eas?.projectId;
-  const tokenData = await Notifications.getExpoPushTokenAsync({
-    projectId: projectId ?? undefined,
+
+  const tokenData = await notifications.getExpoPushTokenAsync({
+    projectId: getProjectId(),
   });
-  return tokenData.data;
+  return tokenData?.data ?? null;
 }
 
-/**
- * Cihaz push token'ı (FCM/APNs) – kendi backend ile gönderim için.
- */
 export async function getDevicePushTokenAsync(): Promise<string | null> {
+  const notifications = loadExpoNotifications();
+  if (!notifications?.getDevicePushTokenAsync) return null;
+
   const granted = await requestPushPermission();
   if (!granted) return null;
   await setupNotificationChannel();
-  const tokenData = await Notifications.getDevicePushTokenAsync();
-  return tokenData.data;
+
+  const tokenData = await notifications.getDevicePushTokenAsync();
+  return tokenData?.data ?? null;
 }

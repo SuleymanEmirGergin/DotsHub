@@ -39,6 +39,11 @@ class Settings(BaseSettings):
     CORS_ORIGINS: str = '["http://localhost:8081","http://localhost:19006","http://localhost:3000"]'
     ADMIN_API_KEY: str = ""
 
+    # Webhook notifications
+    WEBHOOK_ENABLED: bool = False
+    WEBHOOK_SLACK_URL: str = ""
+    WEBHOOK_DISCORD_URL: str = ""
+
     @property
     def cors_origins_list(self) -> List[str]:
         return json.loads(self.CORS_ORIGINS)

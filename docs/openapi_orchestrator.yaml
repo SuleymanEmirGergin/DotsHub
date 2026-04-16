@@ -4,8 +4,8 @@ info:
   version: "0.1.0"
   description: |
     Primary API contract for integrations.
-    Unified triage endpoint — frontend calls POST /v1/triage/turn
-    and renders based on the response type field.
+    Unified triage: POST /v1/triage/turn; feedback, history, send-summary, export-summary,
+    push-token, facilities, and /health are documented below.
 servers:
   - url: http://localhost:8000
     description: Local development
@@ -98,6 +98,152 @@ paths:
                         - "112'yi ara veya en yakın acile başvur."
                         - "Yalnızsan bir yakınını haberdar et."
                         - "Göğüs ağrısı artarsa bekleme."
+
+  /v1/triage/feedback:
+    post:
+      summary: Submit user feedback on a triage result
+      operationId: triageFeedback
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FeedbackIn"
+      responses:
+        "200":
+          description: Feedback recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FeedbackOut"
+        "404":
+          description: session_id not found
+
+  /v1/triage/history:
+    get:
+      summary: List recent triage sessions for the device
+      operationId: triageHistory
+      parameters:
+        - name: limit
+          in: query
+          schema: { type: integer, default: 50, minimum: 1, maximum: 100 }
+        - name: x-device-id
+          in: header
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: List of session summaries
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TriageHistoryResponse"
+
+  /v1/triage/send-summary:
+    post:
+      summary: Send session summary by email
+      operationId: sendSummary
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SendSummaryRequest"
+      responses:
+        "200":
+          description: Email sent or queued
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, example: "ok" }
+                  message: { type: string }
+        "404":
+          description: Session not found
+
+  /v1/triage/export-summary:
+    post:
+      summary: Export session summary as plain text (locale-aware)
+      operationId: exportSummary
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExportSummaryRequest"
+      responses:
+        "200":
+          description: Plain text summary
+          content:
+            text/plain:
+              schema: { type: string }
+
+  /v1/triage/push-token:
+    post:
+      summary: Register or update Expo Push Token for a device
+      operationId: registerPushToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PushTokenRequest"
+      responses:
+        "200":
+          description: Token registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PushTokenResponse"
+        "503":
+          description: Persist failed (production)
+    delete:
+      summary: Unregister (deactivate) push token for a device
+      operationId: unregisterPushToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PushTokenDeleteRequest"
+      responses:
+        "200":
+          description: Token deactivated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PushTokenResponse"
+
+  /v1/facilities:
+    get:
+      summary: List facilities by specialty and optional location
+      operationId: getFacilities
+      parameters:
+        - name: specialty
+          in: query
+          required: true
+          schema: { type: string }
+          description: Specialty key (e.g. neurology, cardiology)
+        - name: city
+          in: query
+          schema: { type: string }
+        - name: lat
+          in: query
+          schema: { type: number }
+        - name: lon
+          in: query
+          schema: { type: number }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 5, minimum: 1, maximum: 20 }
+      responses:
+        "200":
+          description: Facility list with items and disclaimer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FacilitiesResponse"
 
   /health:
     get:
@@ -238,3 +384,86 @@ components:
         retryable:
           type: boolean
           default: true
+
+    FeedbackIn:
+      type: object
+      required: [session_id, rating]
+      properties:
+        session_id: { type: string, format: uuid }
+        rating: { type: string, enum: [up, down] }
+        comment: { type: string, maxLength: 2000 }
+        user_selected_specialty_id: { type: string, maxLength: 80 }
+
+    FeedbackOut:
+      type: object
+      properties:
+        ok: { type: boolean, default: true }
+
+    TriageHistoryResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: string }
+              created_at: { type: string }
+              envelope_type: { type: string }
+              recommended_specialty_tr: { type: string }
+              confidence_label_tr: { type: string }
+              confidence_0_1: { type: number }
+              stop_reason: { type: string }
+
+    SendSummaryRequest:
+      type: object
+      required: [session_id, email]
+      properties:
+        session_id: { type: string }
+        email: { type: string, format: email }
+        locale: { type: string, default: "tr" }
+
+    ExportSummaryRequest:
+      type: object
+      required: [payload]
+      properties:
+        payload: { type: object }
+        locale: { type: string, default: "tr-TR" }
+
+    PushTokenRequest:
+      type: object
+      required: [expo_push_token, device_id]
+      properties:
+        expo_push_token: { type: string, minLength: 10, maxLength: 256 }
+        device_id: { type: string, minLength: 1, maxLength: 128 }
+        platform: { type: string, default: "unknown", maxLength: 20 }
+        locale: { type: string, default: "tr-TR", maxLength: 10 }
+
+    PushTokenDeleteRequest:
+      type: object
+      required: [device_id]
+      properties:
+        device_id: { type: string, minLength: 1, maxLength: 128 }
+
+    PushTokenResponse:
+      type: object
+      properties:
+        ok: { type: boolean, default: true }
+
+    FacilitiesResponse:
+      type: object
+      properties:
+        specialty_id: { type: string }
+        city: { type: string }
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: string }
+              name: { type: string }
+              address: { type: string }
+              lat: { type: number }
+              lon: { type: number }
+              distance_km: { type: number }
+        disclaimer: { type: string }

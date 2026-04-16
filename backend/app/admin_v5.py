@@ -332,6 +332,147 @@ def low_conf_series(
     return {"points": pts}
 
 
+@router.get("/feedback/stats")
+def feedback_stats(
+    x_admin_key: Optional[str] = Header(default=None),
+    days: int = Query(default=30, ge=1, le=90),
+):
+    """Feedback summary statistics with daily trend."""
+    require_admin(x_admin_key)
+
+    from datetime import datetime, timedelta, timezone
+
+    since = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+
+    rows = (
+        supabase.table("triage_feedback")
+        .select("id,session_id,rating,comment,user_selected_specialty_id,created_at")
+        .gte("created_at", since)
+        .order("created_at", desc=True)
+        .limit(2000)
+        .execute()
+        .data
+        or []
+    )
+
+    total = len(rows)
+    up = sum(1 for r in rows if r.get("rating") == "up")
+    down = sum(1 for r in rows if r.get("rating") == "down")
+    satisfaction = round((up / total) * 100, 1) if total else 0.0
+
+    # Daily trend
+    daily: Dict[str, Dict[str, int]] = {}
+    for r in rows:
+        day = (r.get("created_at") or "")[:10]
+        if not day:
+            continue
+        if day not in daily:
+            daily[day] = {"up": 0, "down": 0}
+        daily[day][r.get("rating", "up")] += 1
+
+    trend = sorted(
+        [{"date": d, "up": v["up"], "down": v["down"]} for d, v in daily.items()],
+        key=lambda x: x["date"],
+    )
+
+    # Top down specialties — join with sessions
+    down_session_ids = [r["session_id"] for r in rows if r.get("rating") == "down" and r.get("session_id")]
+    spec_counts: Dict[str, int] = {}
+
+    if down_session_ids:
+        sessions = (
+            supabase.table("triage_sessions")
+            .select("id,recommended_specialty_tr")
+            .in_("id", list(set(down_session_ids))[:200])
+            .execute()
+            .data
+            or []
+        )
+        sess_map = {s["id"]: s.get("recommended_specialty_tr", "Unknown") for s in sessions}
+        for sid in down_session_ids:
+            spec = sess_map.get(sid, "Unknown")
+            spec_counts[spec] = spec_counts.get(spec, 0) + 1
+
+    top_down_specialties = sorted(spec_counts.items(), key=lambda kv: kv[1], reverse=True)[:10]
+
+    # Recent comments
+    recent_comments = [
+        {
+            "session_id": r["session_id"],
+            "rating": r["rating"],
+            "comment": r.get("comment"),
+            "created_at": r.get("created_at"),
+        }
+        for r in rows
+        if r.get("comment")
+    ][:10]
+
+    return {
+        "total": total,
+        "up": up,
+        "down": down,
+        "satisfaction_pct": satisfaction,
+        "trend": trend,
+        "top_down_specialties": top_down_specialties,
+        "recent_comments": recent_comments,
+        "days": days,
+    }
+
+
+@router.get("/feedback/list")
+def feedback_list(
+    x_admin_key: Optional[str] = Header(default=None),
+    limit: int = Query(default=50, ge=1, le=200),
+    rating: Optional[str] = Query(default=None),
+):
+    """Paginated feedback list with session info."""
+    require_admin(x_admin_key)
+
+    q = (
+        supabase.table("triage_feedback")
+        .select("id,session_id,rating,comment,user_selected_specialty_id,created_at")
+        .order("created_at", desc=True)
+    )
+    if rating in ("up", "down"):
+        q = q.eq("rating", rating)
+
+    rows = q.limit(limit).execute().data or []
+
+    # enrich with session data
+    session_ids = list(set(r["session_id"] for r in rows if r.get("session_id")))
+    sess_map: Dict[str, Dict[str, Any]] = {}
+
+    if session_ids:
+        sessions = (
+            supabase.table("triage_sessions")
+            .select("id,envelope_type,recommended_specialty_tr,confidence_0_1,created_at")
+            .in_("id", session_ids[:200])
+            .execute()
+            .data
+            or []
+        )
+        for s in sessions:
+            sess_map[s["id"]] = s
+
+    items = []
+    for r in rows:
+        sess = sess_map.get(r.get("session_id", ""), {})
+        items.append({
+            "id": r.get("id"),
+            "session_id": r.get("session_id"),
+            "rating": r.get("rating"),
+            "comment": r.get("comment"),
+            "user_selected_specialty_id": r.get("user_selected_specialty_id"),
+            "created_at": r.get("created_at"),
+            "session_envelope_type": sess.get("envelope_type"),
+            "session_specialty": sess.get("recommended_specialty_tr"),
+            "session_confidence": sess.get("confidence_0_1"),
+            "session_created_at": sess.get("created_at"),
+        })
+
+    return {"items": items, "count": len(items)}
+
+
 @router.get("/stats/risk_high_series")
 def risk_high_series(
     x_admin_key: Optional[str] = Header(default=None),
@@ -384,3 +525,152 @@ def risk_high_series(
         )
 
     return {"points": pts}
+
+
+@router.get("/webhook/status")
+def webhook_status(
+    x_admin_key: Optional[str] = Header(default=None),
+):
+    """Return webhook notification configuration status."""
+    require_admin(x_admin_key)
+
+    from app.core.config import settings as cfg
+
+    return {
+        "enabled": cfg.WEBHOOK_ENABLED,
+        "channels": {
+            "slack": bool(cfg.WEBHOOK_SLACK_URL),
+            "discord": bool(cfg.WEBHOOK_DISCORD_URL),
+        },
+    }
+
+
+@router.get("/live")
+def live_sessions(
+    x_admin_key: Optional[str] = Header(default=None),
+    minutes: int = Query(default=5, ge=1, le=60),
+):
+    """Return sessions with activity in the last N minutes for live monitoring."""
+    require_admin(x_admin_key)
+
+    from datetime import datetime, timedelta, timezone
+
+    cutoff = (datetime.now(timezone.utc) - timedelta(minutes=minutes)).isoformat()
+
+    resp = (
+        supabase()
+        .table("triage_sessions")
+        .select(
+            "id,session_id,envelope_type,turn_index,"
+            "recommended_specialty_tr,confidence_0_1,confidence_label_tr,"
+            "stop_reason,input_text,locale,"
+            "created_at,updated_at"
+        )
+        .gte("updated_at", cutoff)
+        .order("updated_at", desc=True)
+        .limit(50)
+        .execute()
+    )
+
+    rows = resp.data or []
+    now = datetime.now(timezone.utc)
+
+    items = []
+    for r in rows:
+        updated = r.get("updated_at", "")
+        created = r.get("created_at", "")
+        envelope = r.get("envelope_type", "QUESTION")
+
+        # Compute status
+        if envelope in ("RESULT", "EMERGENCY"):
+            status = "completed"
+        elif updated:
+            try:
+                dt = datetime.fromisoformat(updated.replace("Z", "+00:00"))
+                age_sec = (now - dt).total_seconds()
+                status = "active" if age_sec < 30 else "waiting"
+            except Exception:
+                status = "waiting"
+        else:
+            status = "waiting"
+
+        items.append({
+            "id": r.get("session_id") or r.get("id"),
+            "envelope_type": envelope,
+            "turn_index": r.get("turn_index", 0),
+            "specialty": r.get("recommended_specialty_tr"),
+            "confidence": r.get("confidence_0_1"),
+            "confidence_label": r.get("confidence_label_tr"),
+            "stop_reason": r.get("stop_reason"),
+            "input_text": (r.get("input_text") or "")[:80],
+            "locale": r.get("locale", "tr-TR"),
+            "status": status,
+            "created_at": created,
+            "updated_at": updated,
+        })
+
+    return {"items": items, "cutoff_minutes": minutes}
+
+
+@router.post("/webhook/test")
+def webhook_test(
+    x_admin_key: Optional[str] = Header(default=None),
+):
+    """Send a test message to all configured webhook channels."""
+    require_admin(x_admin_key)
+
+    from app.notifier import send_test
+
+    results = send_test()
+    return {"results": results}
+
+
+@router.get("/users")
+def list_admin_users(
+    x_admin_key: Optional[str] = Header(default=None),
+):
+    """List all admin users."""
+    require_admin(x_admin_key)
+
+    resp = (
+        supabase()
+        .table("admin_users")
+        .select("id,user_id,email,role,created_at")
+        .order("created_at", desc=True)
+        .execute()
+    )
+    return {"users": resp.data or []}
+
+
+@router.post("/users")
+def add_admin_user(
+    x_admin_key: Optional[str] = Header(default=None),
+    email: str = Query(...),
+    user_id: str = Query(...),
+    role: str = Query(default="admin"),
+):
+    """Add a new admin user."""
+    require_admin(x_admin_key)
+
+    resp = (
+        supabase()
+        .table("admin_users")
+        .upsert(
+            {"user_id": user_id, "email": email, "role": role},
+            on_conflict="user_id",
+        )
+        .execute()
+    )
+    return {"ok": True, "data": resp.data}
+
+
+@router.delete("/users/{user_id}")
+def remove_admin_user(
+    user_id: str,
+    x_admin_key: Optional[str] = Header(default=None),
+):
+    """Remove an admin user."""
+    require_admin(x_admin_key)
+
+    supabase().table("admin_users").delete().eq("user_id", user_id).execute()
+    return {"ok": True}

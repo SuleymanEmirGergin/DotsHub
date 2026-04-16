@@ -26,4 +26,11 @@ test("tuning task generate-patch proxy route forwards to v1 backend endpoint wit
   assert.match(source, /"x-admin-key"/);
   assert.match(source, /NEXT_PUBLIC_API_BASE/);
   assert.match(source, /ADMIN_API_KEY/);
+  assert.match(source, /status:\s*response\.status/);
+});
+
+test("tuning tasks page calls internal admin proxy route", () => {
+  const source = readRoute(path.join("app", "admin", "tuning-tasks", "page.tsx"));
+
+  assert.match(source, /\/api\/admin\/tuning-tasks\/\$\{task\.id\}\/generate-patch/);
 });

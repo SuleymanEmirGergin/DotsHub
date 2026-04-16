@@ -3,15 +3,24 @@
  * Use with expo-localization for system locale, or set locale manually.
  */
 
-export type Locale = "tr" | "en";
+export type Locale = "tr" | "en" | "de" | "ru" | "ar";
 
 import tr from "./tr.json";
 import en from "./en.json";
+import de from "./de.json";
+import ru from "./ru.json";
+import ar from "./ar.json";
 
 const messages: Record<Locale, Record<string, unknown>> = {
   tr: tr as Record<string, unknown>,
   en: en as Record<string, unknown>,
+  de: de as Record<string, unknown>,
+  ru: ru as Record<string, unknown>,
+  ar: ar as Record<string, unknown>,
 };
+
+/** Dil seçicide gösterilecek tüm diller (kod, etiket). */
+export const SUPPORTED_LOCALES: Locale[] = ["tr", "en", "de", "ru", "ar"];
 
 let currentLocale: Locale = "tr";
 

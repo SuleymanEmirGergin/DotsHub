@@ -71,3 +71,10 @@ def compute_confidence(
     }
 
     return conf, label, explain, debug
+
+
+# Re-export for discoverability — the authoritative definition lives in
+# backend.app.top_conditions_filter to keep the A9 gate self-contained.
+from app.top_conditions_filter import MIN_CONFIDENCE_FOR_CONDITIONS
+
+__all__ = ["compute_confidence", "confidence_label_tr", "clamp01", "MIN_CONFIDENCE_FOR_CONDITIONS"]

@@ -28,7 +28,7 @@ export async function POST(
   const url = `${base.replace(/\/+$/, "")}/v1/admin/tuning-tasks/${taskId}/generate-patch`;
   const r = await fetch(url, {
     method: "POST",
-    headers: { "X-API-Key": key, "Content-Type": "application/json" },
+    headers: { "x-admin-key": key, "Content-Type": "application/json" },
     cache: "no-store",
   });
 

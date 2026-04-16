@@ -10,6 +10,7 @@ import {
   View,
 } from "react-native";
 import { sendFeedback } from "@/src/api/feedbackClient";
+import { sendSummaryEmail, exportSummary } from "@/src/api/summaryClient";
 import { useTriageStore } from "@/src/state/triageStore";
 import { computeConfidence } from "@/src/state/confidence";
 import { inputHeights, tokens } from "@/src/ui/designTokens";
@@ -23,12 +24,20 @@ import {
   SectionTitle,
 } from "@/src/ui/primitives";
 import ConfidenceBar from "@/src/ui/ConfidenceBar";
-import { buildSummaryHtml, shareSummaryAsPdf } from "../../../utils/sharePdf";
+import { usePushRegistration } from "@/src/hooks/usePushRegistration";
+import { buildSummaryHtml, shareSummaryAsPdf } from "@/utils/sharePdf";
+import { useI18n, RTL_TEXT_STYLE } from "@/i18n/I18nProvider";
 
 export default function ResultScreen() {
+  const { t, isRTL, locale } = useI18n();
+  const rtlText = isRTL ? RTL_TEXT_STYLE : undefined;
   const result = useTriageStore((s) => s.result)!;
   const sessionId = useTriageStore((s) => s.sessionId);
   const resetSession = useTriageStore((s) => s.resetSession);
+
+  usePushRegistration(locale);
+
+  // Backend accepts tr | en | de | ru | ar and normalizes content (de/ru/ar -> tr)
 
   // Use backend confidence if available, otherwise compute locally
   const backendConf = result.confidence_0_1;
@@ -45,16 +54,51 @@ export default function ResultScreen() {
   const [comment, setComment] = useState("");
 
   const [sharingPdf, setSharingPdf] = useState(false);
-  const disclaimer = "Bu uygulama tanı koymaz; bilgilendirme ve yönlendirme amaçlıdır.";
+  const [email, setEmail] = useState("");
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
+  const [downloadingText, setDownloadingText] = useState(false);
+  const disclaimer = t("result.disclaimer");
 
   async function onShareSummary() {
     try {
       await Share.share({
         message: summaryText + "\n\n" + disclaimer,
-        title: "Ön-Triyaj Sonuç Özeti",
+        title: t("result.shareTitle"),
       });
     } catch {
-      Alert.alert("Hata", "Paylaşım açılamadı.");
+      Alert.alert(t("result.alertError"), t("result.shareError"));
+    }
+  }
+
+  async function onSendEmail() {
+    const trimmed = email.trim();
+    if (!sessionId || !trimmed || sendingEmail || emailSent) return;
+    setSendingEmail(true);
+    try {
+      await sendSummaryEmail(sessionId, trimmed, locale);
+      setEmailSent(true);
+      Alert.alert(t("common.ok"), t("result.emailSent"));
+    } catch (e) {
+      Alert.alert(t("common.error"), t("result.emailError") + " " + (e instanceof Error ? e.message : ""));
+    } finally {
+      setSendingEmail(false);
+    }
+  }
+
+  async function onDownloadText() {
+    if (downloadingText) return;
+    setDownloadingText(true);
+    try {
+      const text = await exportSummary(result, locale === "en" ? "en" : "tr-TR");
+      await Share.share({
+        message: text,
+        title: t("summary.title"),
+      });
+    } catch (e) {
+      Alert.alert(t("common.error"), t("result.downloadError") + " " + (e instanceof Error ? e.message : ""));
+    } finally {
+      setDownloadingText(false);
     }
   }
 
@@ -62,14 +106,14 @@ export default function ResultScreen() {
     setSharingPdf(true);
     try {
       const html = buildSummaryHtml({
-        title: "Ön-Triyaj Asistanı - Sonuç Özeti",
+        title: t("result.pdfTitle"),
         specialty: result.recommended_specialty.name_tr,
         urgency:
           result.urgency === "ROUTINE"
-            ? "Rutin"
+            ? t("result.urgencyRoutine")
             : result.urgency === "SAME_DAY"
-              ? "Bugün İçinde"
-              : "Acil",
+              ? t("result.urgencySameDay")
+              : t("result.urgencyAcil"),
         rationale: Array.isArray(result.why_specialty_tr) ? result.why_specialty_tr : undefined,
         candidates: result.top_conditions.map((c) => ({
           label: c.disease_label,
@@ -79,9 +123,9 @@ export default function ResultScreen() {
         disclaimer,
       });
       const ok = await shareSummaryAsPdf(html, onShareSummary);
-      if (!ok) Alert.alert("Bilgi", "PDF paylaşımı bu cihazda desteklenmiyor; metin paylaşıldı.");
+      if (!ok) Alert.alert(t("result.alertInfo"), t("result.pdfNotSupported"));
     } catch {
-      Alert.alert("Hata", "PDF oluşturulamadı.");
+      Alert.alert(t("result.alertError"), t("result.pdfError"));
     } finally {
       setSharingPdf(false);
     }
@@ -96,11 +140,11 @@ export default function ResultScreen() {
         comment: rating === "down" ? comment.trim() || null : null,
         user_selected_specialty_id: null,
       });
-      Alert.alert("Teşekkürler", "Geri bildirimin alındı.");
+      Alert.alert(t("result.feedbackThanksTitle"), t("result.feedbackThanksMessage"));
       setFbMode(rating);
       setFbSent(true);
     } catch {
-      Alert.alert("Hata", "Geri bildirim gönderilemedi.");
+      Alert.alert(t("result.alertError"), t("result.feedbackError"));
     }
   }
 
@@ -113,14 +157,14 @@ export default function ResultScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <Card style={styles.cardSpacing}>
-          <MutedText style={styles.cardLabel}>Nereye gitmeliyim?</MutedText>
-          <Text style={styles.specialtyName}>{result.recommended_specialty.name_tr}</Text>
+          <MutedText style={[styles.cardLabel, rtlText]}>{t("result.whereToGo")}</MutedText>
+          <Text style={[styles.specialtyName, rtlText]}>{result.recommended_specialty.name_tr}</Text>
           <Badge style={styles.urgencyBadge} textStyle={styles.urgencyText}>
             {result.urgency === "ROUTINE"
-              ? "Rutin"
+              ? t("result.urgencyRoutine")
               : result.urgency === "SAME_DAY"
-                ? "Bugün İçinde"
-                : "Acil"}
+                ? t("result.urgencySameDay")
+                : t("result.urgencyAcil")}
           </Badge>
         </Card>
 
@@ -130,9 +174,9 @@ export default function ResultScreen() {
 
         {Array.isArray(whySpecialty) && whySpecialty.length > 0 ? (
           <Card style={styles.cardSpacing}>
-            <SectionTitle>Neden bu branş?</SectionTitle>
+            <SectionTitle style={rtlText}>{t("result.whySpecialty")}</SectionTitle>
             {whySpecialty.map((line, i) => (
-              <Text key={i} style={styles.bulletText}>
+              <Text key={i} style={[styles.bulletText, rtlText]}>
                 • {line}
               </Text>
             ))}
@@ -140,45 +184,70 @@ export default function ResultScreen() {
         ) : null}
 
         <Card style={styles.cardSpacing}>
-          <SectionTitle>Olası durumlar (tahmini)</SectionTitle>
+          <SectionTitle style={rtlText}>{t("result.possibleConditions")}</SectionTitle>
           {result.top_conditions.map((c, i) => (
             <View key={i} style={styles.conditionRow}>
-              <Text style={styles.conditionLabel}>{c.disease_label}</Text>
-              <Text style={styles.conditionScore}>%{Math.round(c.score_0_1 * 100)}</Text>
+              <Text style={[styles.conditionLabel, rtlText]}>{c.disease_label}</Text>
+              <Text style={[styles.conditionScore, rtlText]}>%{Math.round(c.score_0_1 * 100)}</Text>
             </View>
           ))}
         </Card>
 
         <Card style={styles.cardSpacing}>
           <View style={styles.summaryHeader}>
-            <SectionTitle style={styles.summaryTitle}>Doktora gösterilecek özet</SectionTitle>
+            <SectionTitle style={[styles.summaryTitle, rtlText]}>{t("result.summaryForDoctor")}</SectionTitle>
             <View style={styles.shareRow}>
               <SecondaryButton onPress={onShareSummary} style={styles.copyButton} textStyle={styles.copyButtonText}>
-                Metin
+                {t("result.shareAsText")}
               </SecondaryButton>
               <SecondaryButton onPress={onSharePdf} disabled={sharingPdf} style={styles.copyButton} textStyle={styles.copyButtonText}>
-                {sharingPdf ? "…" : "PDF"}
+                {sharingPdf ? "…" : t("result.pdf")}
+              </SecondaryButton>
+              <SecondaryButton onPress={onDownloadText} disabled={downloadingText} style={styles.copyButton} textStyle={styles.copyButtonText}>
+                {downloadingText ? "…" : t("result.downloadText")}
               </SecondaryButton>
             </View>
           </View>
           {result.doctor_ready_summary_tr.map((line, i) => (
-            <Text key={i} style={styles.bulletText}>
+            <Text key={i} style={[styles.bulletText, rtlText]}>
               • {line}
             </Text>
           ))}
         </Card>
 
         <Card style={styles.cardSpacing}>
-          <SectionTitle>Uyarılar</SectionTitle>
+          <SectionTitle style={rtlText}>{t("result.sendSummaryEmail")}</SectionTitle>
+          <TextInput
+            value={email}
+            onChangeText={setEmail}
+            placeholder={t("result.emailPlaceholder")}
+            placeholderTextColor={tokens.colors.textMuted}
+            style={[styles.emailInput, rtlText]}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoCorrect={false}
+            editable={!emailSent && !sendingEmail}
+          />
+          <PrimaryButton
+            onPress={onSendEmail}
+            disabled={!sessionId || !email.trim() || sendingEmail || emailSent}
+            style={styles.sendEmailButton}
+          >
+            {sendingEmail ? t("common.loading") : emailSent ? t("result.emailSent") : t("result.sendEmail")}
+          </PrimaryButton>
+        </Card>
+
+        <Card style={styles.cardSpacing}>
+          <SectionTitle style={rtlText}>{t("result.warnings")}</SectionTitle>
           {result.safety_notes_tr.map((note, i) => (
-            <Text key={i} style={styles.safetyNote}>
+            <Text key={i} style={[styles.safetyNote, rtlText]}>
               {note}
             </Text>
           ))}
         </Card>
 
         <Card style={styles.cardSpacing}>
-          <SectionTitle>Bu değerlendirme yardımcı oldu mu?</SectionTitle>
+          <SectionTitle style={rtlText}>{t("result.feedbackQuestion")}</SectionTitle>
 
           <View style={styles.feedbackRow}>
             <Pressable
@@ -188,14 +257,18 @@ export default function ResultScreen() {
                 fbMode === "up" && styles.feedbackBtnActive,
               ]}
               disabled={fbSent}
+              accessibilityRole="button"
+              accessibilityLabel={t("common.yes")}
+              accessibilityState={{ disabled: fbSent }}
             >
               <Text
                 style={[
                   styles.feedbackBtnText,
                   fbMode === "up" && styles.feedbackBtnTextActive,
+                  rtlText,
                 ]}
               >
-                Evet
+                {t("common.yes")}
               </Text>
             </Pressable>
 
@@ -209,27 +282,31 @@ export default function ResultScreen() {
                 fbMode === "down" && styles.feedbackBtnActive,
               ]}
               disabled={fbSent}
+              accessibilityRole="button"
+              accessibilityLabel={t("common.no")}
+              accessibilityState={{ disabled: fbSent }}
             >
               <Text
                 style={[
                   styles.feedbackBtnText,
                   fbMode === "down" && styles.feedbackBtnTextActive,
+                  rtlText,
                 ]}
               >
-                Hayır
+                {t("common.no")}
               </Text>
             </Pressable>
           </View>
 
           {fbMode === "down" && !fbSent ? (
             <View style={styles.feedbackCommentBox}>
-              <Text style={styles.feedbackHint}>Neyi eksik veya yanlış buldun? (opsiyonel)</Text>
+              <Text style={[styles.feedbackHint, rtlText]}>{t("result.feedbackCommentHint")}</Text>
               <TextInput
                 value={comment}
                 onChangeText={setComment}
-                placeholder="Kısa not..."
+                placeholder={t("result.feedbackCommentPlaceholder")}
                 placeholderTextColor={tokens.colors.textMuted}
-                style={styles.feedbackInput}
+                style={[styles.feedbackInput, rtlText]}
                 multiline
                 textAlignVertical="top"
               />
@@ -237,18 +314,23 @@ export default function ResultScreen() {
                 onPress={() => submitFeedback("down")}
                 style={styles.feedbackSubmitButton}
               >
-                Gönder
+                {t("result.feedbackSubmit")}
               </PrimaryButton>
             </View>
           ) : null}
 
           {fbSent ? (
-            <Text style={styles.feedbackThanks}>Geri bildirimin kaydedildi. Teşekkürler!</Text>
+            <Text style={[styles.feedbackThanks, rtlText]}>{t("result.feedbackThanksInline")}</Text>
           ) : null}
         </Card>
 
-        <PrimaryButton onPress={resetSession} style={styles.resetBtn}>
-          Yeni Değerlendirme
+        <PrimaryButton
+          onPress={resetSession}
+          style={styles.resetBtn}
+          accessibilityRole="button"
+          accessibilityLabel={t("common.newAssessment")}
+        >
+          {t("common.newAssessment")}
         </PrimaryButton>
       </ScrollView>
     </ScreenContainer>
@@ -329,6 +411,20 @@ const styles = StyleSheet.create({
   copyButtonText: {
     fontSize: 13,
     lineHeight: 18,
+  },
+  emailInput: {
+    ...tokens.typography.body,
+    color: tokens.colors.textPrimary,
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+    borderRadius: tokens.radius.md,
+    paddingHorizontal: tokens.spacing.md,
+    paddingVertical: tokens.spacing.sm,
+    minHeight: inputHeights.md,
+    marginBottom: tokens.spacing.sm,
+  },
+  sendEmailButton: {
+    marginTop: tokens.spacing.xs,
   },
   safetyNote: {
     ...tokens.typography.bodySmall,

@@ -1,20 +1,54 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
 
-const sb = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-);
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
+const isSupabaseConfigured =
+  supabaseUrl.length > 0 &&
+  !supabaseUrl.includes("xxxx") &&
+  supabaseAnonKey.length > 0 &&
+  supabaseAnonKey !== "your_anon_key";
 
-export default function LoginPage() {
+const sb = isSupabaseConfigured
+  ? createClient(supabaseUrl, supabaseAnonKey)
+  : null;
+
+const RATE_LIMIT_COOLDOWN_SEC = 60;
+
+function LoginForm() {
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
   const [error, setError] = useState("");
+  const [cooldownSec, setCooldownSec] = useState(0);
+
+  useEffect(() => {
+    const err = searchParams.get("error");
+    const msg = searchParams.get("message");
+    if (err === "callback" && msg) {
+      setError(decodeURIComponent(msg));
+    } else if (err === "missing_code") {
+      setError("Giriş linki geçersiz veya eksik. Lütfen yeniden magic link isteyin.");
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (cooldownSec <= 0) return;
+    const t = setInterval(() => setCooldownSec((s) => (s <= 1 ? 0 : s - 1)), 1000);
+    return () => clearInterval(t);
+  }, [cooldownSec]);
 
   async function sendMagicLink() {
     setError("");
+    if (!sb) {
+      setError(
+        "Supabase yapılandırılmamış. Giriş için dashboard/.env.local içinde NEXT_PUBLIC_SUPABASE_URL ve NEXT_PUBLIC_SUPABASE_ANON_KEY değerlerini gerçek Supabase projenizden alıp ayarlayın."
+      );
+      return;
+    }
     const { error: err } = await sb.auth.signInWithOtp({
       email,
       options: {
@@ -22,7 +56,15 @@ export default function LoginPage() {
       },
     });
     if (err) {
-      setError(err.message);
+      const isRateLimit =
+        err.message?.toLowerCase().includes("rate limit") ||
+        err.message?.toLowerCase().includes("too many");
+      if (isRateLimit) {
+        setError("Çok fazla deneme. Birkaç dakika sonra tekrar deneyin.");
+        setCooldownSec(RATE_LIMIT_COOLDOWN_SEC);
+      } else {
+        setError(err.message);
+      }
     } else {
       setSent(true);
     }
@@ -55,6 +97,23 @@ export default function LoginPage() {
         <p style={{ color: "var(--dash-text-muted)", fontSize: 14, marginBottom: 24 }}>
           PreTriage Dashboard
         </p>
+
+        {!isSupabaseConfigured && (
+          <div
+            style={{
+              padding: 14,
+              marginBottom: 20,
+              borderRadius: 12,
+              background: "var(--dash-accent-bg)",
+              color: "var(--dash-text-muted)",
+              fontSize: 13,
+              border: "1px solid var(--dash-border)",
+            }}
+          >
+            Supabase yapılandırılmamış. Magic link ile giriş için <code>.env.local</code> içinde{" "}
+            <code>NEXT_PUBLIC_SUPABASE_URL</code> ve <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code> değerlerini gerçek Supabase projenizden ayarlayın.
+          </div>
+        )}
 
         {sent ? (
           <div
@@ -92,21 +151,23 @@ export default function LoginPage() {
             />
             <button
               onClick={sendMagicLink}
-              disabled={!email.includes("@")}
+              disabled={!email.includes("@") || !isSupabaseConfigured || cooldownSec > 0}
               style={{
                 width: "100%",
                 marginTop: 14,
                 padding: 14,
                 borderRadius: 12,
                 border: "none",
-                background: "var(--dash-accent)",
+                background: cooldownSec > 0 ? "var(--dash-border)" : "var(--dash-accent)",
                 color: "var(--dash-bg)",
                 fontSize: 15,
                 fontWeight: 700,
-                cursor: "pointer",
+                cursor: cooldownSec > 0 ? "not-allowed" : "pointer",
               }}
             >
-              Send magic link
+              {cooldownSec > 0
+                ? `${cooldownSec} saniye sonra tekrar deneyin`
+                : "Send magic link"}
             </button>
             {error && (
               <p style={{ color: "#ef4444", marginTop: 12, fontSize: 13 }}>
@@ -117,5 +178,13 @@ export default function LoginPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>Yükleniyor...</div>}>
+      <LoginForm />
+    </Suspense>
   );
 }

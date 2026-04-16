@@ -18,8 +18,14 @@ ADMIN_WINDOW_SEC = int(os.getenv("ADMIN_RATE_LIMIT_WINDOW_SEC", "60"))
 ADMIN_MAX_REQ = int(os.getenv("ADMIN_RATE_LIMIT_MAX_REQ", "60"))
 ADMIN_REDIS_KEY_PREFIX = "admin_rl:"
 
+# Send-summary + export-summary: shared per-IP limit (5/min)
+SEND_SUMMARY_WINDOW_SEC = int(os.getenv("SEND_SUMMARY_RATE_LIMIT_WINDOW_SEC", "60"))
+SEND_SUMMARY_MAX_REQ = int(os.getenv("SEND_SUMMARY_RATE_LIMIT_MAX_REQ", "5"))
+SEND_SUMMARY_REDIS_KEY_PREFIX = "rl_send_summary:"
+
 # key -> timestamps queue (in-memory fallback)
 _BUCKETS: Dict[str, Deque[float]] = {}
+_SEND_SUMMARY_BUCKETS: Dict[str, Deque[float]] = {}
 
 
 def _prune(q: Deque[float], now: float) -> None:
@@ -83,6 +89,51 @@ def build_rl_key(ip: Optional[str], device_id: Optional[str]) -> str:
 def build_admin_rl_key(ip: Optional[str]) -> str:
     """Admin API rate limit key: IP only."""
     return f"ip:{ip}" if ip else "anon"
+
+
+def build_send_summary_rl_key(ip: Optional[str]) -> str:
+    """Send-summary rate limit key: IP only."""
+    return f"ip:{ip}" if ip else "anon"
+
+
+def _prune_send_summary(q: Deque[float], now: float) -> None:
+    cutoff = now - SEND_SUMMARY_WINDOW_SEC
+    while q and q[0] < cutoff:
+        q.popleft()
+
+
+def check_send_summary_rate_limit(key: str) -> Tuple[bool, int, int]:
+    """In-memory send-summary rate limit. Returns (allowed, remaining, reset_in_sec)."""
+    now = time.time()
+    q = _SEND_SUMMARY_BUCKETS.get(key)
+    if q is None:
+        q = deque()
+        _SEND_SUMMARY_BUCKETS[key] = q
+    _prune_send_summary(q, now)
+    if len(q) >= SEND_SUMMARY_MAX_REQ:
+        reset_in = int(SEND_SUMMARY_WINDOW_SEC - (now - q[0])) if q else SEND_SUMMARY_WINDOW_SEC
+        return False, 0, max(reset_in, 1)
+    q.append(now)
+    remaining = SEND_SUMMARY_MAX_REQ - len(q)
+    reset_in = int(SEND_SUMMARY_WINDOW_SEC - (now - q[0])) if q else SEND_SUMMARY_WINDOW_SEC
+    return True, remaining, max(reset_in, 1)
+
+
+async def check_send_summary_rate_limit_redis(redis: "Redis", key: str) -> Tuple[bool, int, int]:
+    """Redis-backed send-summary rate limit. Returns (allowed, remaining, reset_in_sec)."""
+    rkey = f"{SEND_SUMMARY_REDIS_KEY_PREFIX}{key}"
+    try:
+        count = await redis.incr(rkey)
+        if count == 1:
+            await redis.expire(rkey, SEND_SUMMARY_WINDOW_SEC)
+        ttl = await redis.ttl(rkey)
+        reset_in = max(ttl, 1) if ttl > 0 else SEND_SUMMARY_WINDOW_SEC
+        if count > SEND_SUMMARY_MAX_REQ:
+            await redis.decr(rkey)
+            return False, 0, reset_in
+        return True, SEND_SUMMARY_MAX_REQ - count, reset_in
+    except Exception:
+        return True, SEND_SUMMARY_MAX_REQ - 1, SEND_SUMMARY_WINDOW_SEC
 
 
 def check_admin_rate_limit(key: str) -> Tuple[bool, int, int]:

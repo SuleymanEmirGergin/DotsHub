@@ -1,34 +1,38 @@
+import { cookies } from "next/headers";
 import { requireAdmin } from "@/lib/requireAdmin";
 import { supabaseAdmin } from "@/lib/supabaseServer";
+import { getText } from "@/lib/i18n";
+import type { Locale } from "@/lib/i18n";
 import { Breadcrumb } from "@/app/components/Breadcrumb";
+import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
-function Pill({ text, color }: { text: string; color?: string }) {
-    const bg = color === "high" ? "#fee2e2" : color === "medium" ? "#fff7ed" : "#f3f4f6";
-    const fg = color === "high" ? "#991b1b" : color === "medium" ? "#9a3412" : "#374151";
+async function getLocale(): Promise<Locale> {
+  const store = await cookies();
+  return store.get("NEXT_LOCALE")?.value === "en" ? "en" : "tr";
+}
 
-    return (
-        <span style={{ display: "inline-block", padding: "4px 10px", borderRadius: 999, background: bg, color: fg, fontSize: 12, fontWeight: 700 }}>
-            {text}
-        </span>
-    );
+function Pill({ text, color }: { text: string; color?: string }) {
+  const cls = cn(
+    "inline-block py-1 px-2.5 rounded-full text-xs font-bold",
+    color === "high" && "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300",
+    color === "medium" && "bg-amber-50 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300",
+    (!color || color !== "high" && color !== "medium") && "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300"
+  );
+  return <span className={cls}>{text}</span>;
 }
 
 function StatusBadge({ status }: { status: string }) {
-    const colors: Record<string, { bg: string; fg: string }> = {
-        open: { bg: "#eef2ff", fg: "#3730a3" },
-        accepted: { bg: "#e6fffa", fg: "#065f46" },
-        rejected: { bg: "#fee2e2", fg: "#991b1b" },
-        done: { bg: "#f3f4f6", fg: "#374151" },
-    };
-    const c = colors[status] || colors.open;
-
-    return (
-        <span style={{ padding: "4px 10px", borderRadius: 999, background: c.bg, color: c.fg, fontWeight: 900, fontSize: 12 }}>
-            {status.toUpperCase()}
-        </span>
-    );
+  const cls = cn(
+    "py-1 px-2.5 rounded-full font-black text-xs",
+    status === "open" && "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300",
+    status === "accepted" && "bg-teal-50 text-teal-800 dark:bg-teal-900/40 dark:text-teal-300",
+    status === "rejected" && "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300",
+    status === "done" && "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
+    !["open", "accepted", "rejected", "done"].includes(status) && "bg-indigo-100 text-indigo-800"
+  );
+  return <span className={cls}>{status.toUpperCase()}</span>;
 }
 
 const TUNING_SORT_COLUMNS = ["created_at", "task_type", "title", "status"] as const;
@@ -53,7 +57,9 @@ export default async function TuningTasksPage({
     const params = await searchParams;
     const statusFilter = params.status ?? "all";
     const typeFilter = params.type ?? "all";
-    const sortCol = TUNING_SORT_COLUMNS.includes(params.sort as any) ? params.sort : "created_at";
+    const sortCol: (typeof TUNING_SORT_COLUMNS)[number] = TUNING_SORT_COLUMNS.includes(params.sort as any)
+        ? (params.sort as (typeof TUNING_SORT_COLUMNS)[number])
+        : "created_at";
     const ascending = params.order === "asc";
 
     const sb = supabaseAdmin();
@@ -73,133 +79,102 @@ export default async function TuningTasksPage({
 
     const { data: tasks, error } = await q;
 
-    if (error) return <div style={{ padding: 24 }}>Error: {error.message}</div>;
+    const locale = await getLocale();
+
+    if (error) return <div className="p-6">{getText(locale, "common.error")}: {error.message}</div>;
 
     const taskCount = tasks?.length ?? 0;
 
     return (
-        <div style={{ padding: 24, fontFamily: "ui-sans-serif", background: "var(--dash-bg)", color: "var(--dash-text)", minHeight: "100vh" }}>
-            <div style={{ maxWidth: 1400, margin: "0 auto" }}>
-                <Breadcrumb items={[{ label: "Admin", href: "/admin/sessions" }, { label: "Tuning tasks" }]} />
-                <h1 style={{ fontSize: 26, fontWeight: 900, margin: 0 }}>Tuning Tasks</h1>
-                <div style={{ color: "var(--dash-text-muted)", marginTop: 6 }}>
-                    Auto-generated improvement tasks • showing <b>{taskCount}</b>
+        <div className="p-6 bg-background text-foreground min-h-screen font-sans">
+            <div className="max-w-[1400px] mx-auto">
+                <Breadcrumb items={[{ label: getText(locale, "nav.admin"), href: "/admin/sessions" }, { label: getText(locale, "nav.tuningTasks") }]} />
+                <h1 className="text-[26px] font-black m-0">{getText(locale, "tuningTasks.title")}</h1>
+                <div className="text-muted-foreground mt-1.5">
+                    {getText(locale, "tuningTasks.subtitle")} <b>{taskCount}</b>
                     {" · "}
-                    <a href="/api/admin/export/tuning-tasks" download style={{ color: "var(--dash-accent)", fontWeight: 700, textDecoration: "none" }}>Export CSV</a>
+                    <a href="/api/admin/export/tuning-tasks" download className="text-primary font-bold no-underline hover:underline">{getText(locale, "tuningTasks.exportCsv")}</a>
                 </div>
 
-                {/* Filters */}
-                <div style={{ marginTop: 14, display: "flex", gap: 10, flexWrap: "wrap" }}>
-                    <span style={{ color: "var(--dash-text-muted)", fontSize: 12, alignSelf: "center" }}>Status:</span>
+                <div className="mt-3.5 flex gap-2.5 flex-wrap items-center">
+                    <span className="text-muted-foreground text-xs">{getText(locale, "tuningTasks.statusLabel")}</span>
                     {["all", "open", "accepted", "rejected", "done"].map((s) => (
                         <a
                             key={s}
                             href={`/admin/tuning-tasks?status=${s}${typeFilter !== "all" ? `&type=${typeFilter}` : ""}`}
-                            style={{
-                                padding: "6px 12px",
-                                borderRadius: 999,
-                                border: "1px solid var(--dash-border)",
-                                background: statusFilter === s ? "var(--dash-accent)" : "var(--dash-bg-card)",
-                                color: statusFilter === s ? "var(--dash-bg)" : "var(--dash-text)",
-                                fontWeight: 800,
-                                textDecoration: "none",
-                                fontSize: 12,
-                            }}
+                            className={cn(
+                                "py-1.5 px-3 rounded-full border border-border no-underline font-extrabold text-xs",
+                                statusFilter === s ? "bg-primary text-primary-foreground" : "bg-card text-foreground"
+                            )}
                         >
                             {s}
                         </a>
                     ))}
-
-                    <span style={{ marginLeft: 8, color: "var(--dash-text-muted)", fontSize: 12, alignSelf: "center" }}>Type:</span>
+                    <span className="ml-2 text-muted-foreground text-xs">{getText(locale, "tuningTasks.typeLabel")}</span>
                     {["all", "KEYWORD_MISSING", "SPECIALTY_CONFUSION", "QUESTION_WEAKNESS"].map((t) => (
                         <a
                             key={t}
                             href={`/admin/tuning-tasks?type=${t}${statusFilter !== "all" ? `&status=${statusFilter}` : ""}`}
-                            style={{
-                                padding: "6px 12px",
-                                borderRadius: 999,
-                                border: "1px solid var(--dash-border)",
-                                background: typeFilter === t ? "var(--dash-accent)" : "var(--dash-bg-card)",
-                                color: typeFilter === t ? "var(--dash-bg)" : "var(--dash-text)",
-                                fontWeight: 800,
-                                textDecoration: "none",
-                                fontSize: 12,
-                            }}
+                            className={cn(
+                                "py-1.5 px-3 rounded-full border border-border no-underline font-extrabold text-xs",
+                                typeFilter === t ? "bg-primary text-primary-foreground" : "bg-card text-foreground"
+                            )}
                         >
                             {t === "all" ? "all" : t.replace(/_/g, " ")}
                         </a>
                     ))}
                 </div>
 
-                {/* Table */}
-                <div style={{ marginTop: 14, background: "var(--dash-bg-card)", borderRadius: 16, border: "1px solid var(--dash-border)", overflow: "hidden" }}>
-                    <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <div className="mt-3.5 bg-card rounded-2xl border border-border overflow-hidden">
+                    <table className="w-full border-collapse">
                         <thead>
-                            <tr style={{ background: "var(--dash-accent-bg)", borderBottom: "1px solid var(--dash-border)" }}>
-                                <th style={{ padding: 12, textAlign: "left", fontWeight: 900, fontSize: 12 }}>
-                                    <a href={tuningTableHref(params, "created_at")} style={{ color: "var(--dash-accent)", textDecoration: "none" }}>Created {sortCol === "created_at" && (ascending ? "↑" : "↓")}</a>
+                            <tr className="bg-accent border-b border-border">
+                                <th className="p-3 text-left font-black text-xs">
+                                    <a href={tuningTableHref(params, "created_at")} className="text-primary no-underline hover:underline">{getText(locale, "tuningTasks.columnCreated")} {sortCol === "created_at" && (ascending ? "↑" : "↓")}</a>
                                 </th>
-                                <th style={{ padding: 12, textAlign: "left", fontWeight: 900, fontSize: 12 }}>
-                                    <a href={tuningTableHref(params, "task_type")} style={{ color: "var(--dash-accent)", textDecoration: "none" }}>Type {sortCol === "task_type" && (ascending ? "↑" : "↓")}</a>
+                                <th className="p-3 text-left font-black text-xs">
+                                    <a href={tuningTableHref(params, "task_type")} className="text-primary no-underline hover:underline">{getText(locale, "tuningTasks.columnType")} {sortCol === "task_type" && (ascending ? "↑" : "↓")}</a>
                                 </th>
-                                <th style={{ padding: 12, textAlign: "left", fontWeight: 900, fontSize: 12 }}>
-                                    <a href={tuningTableHref(params, "title")} style={{ color: "var(--dash-accent)", textDecoration: "none" }}>Title {sortCol === "title" && (ascending ? "↑" : "↓")}</a>
+                                <th className="p-3 text-left font-black text-xs">
+                                    <a href={tuningTableHref(params, "title")} className="text-primary no-underline hover:underline">{getText(locale, "tuningTasks.columnTitle")} {sortCol === "title" && (ascending ? "↑" : "↓")}</a>
                                 </th>
-                                <th style={{ padding: 12, textAlign: "left", fontWeight: 900, fontSize: 12 }}>Severity</th>
-                                <th style={{ padding: 12, textAlign: "left", fontWeight: 900, fontSize: 12 }}>
-                                    <a href={tuningTableHref(params, "status")} style={{ color: "var(--dash-accent)", textDecoration: "none" }}>Status {sortCol === "status" && (ascending ? "↑" : "↓")}</a>
+                                <th className="p-3 text-left font-black text-xs">{getText(locale, "tuningTasks.severity")}</th>
+                                <th className="p-3 text-left font-black text-xs">
+                                    <a href={tuningTableHref(params, "status")} className="text-primary no-underline hover:underline">{getText(locale, "tuningTasks.columnStatus")} {sortCol === "status" && (ascending ? "↑" : "↓")}</a>
                                 </th>
-                                <th style={{ padding: 12, textAlign: "left", fontWeight: 900, fontSize: 12 }}>Patch</th>
-                                <th style={{ padding: 12, textAlign: "left", fontWeight: 900, fontSize: 12 }}>Actions</th>
+                                <th className="p-3 text-left font-black text-xs">{getText(locale, "tuningTasks.patch")}</th>
+                                <th className="p-3 text-left font-black text-xs">{getText(locale, "tuningTasks.actions")}</th>
                             </tr>
                         </thead>
                         <tbody>
                             {(tasks || []).map((task) => {
                                 const hasPatch = task.patch && Object.keys(task.patch).length > 0;
-
                                 return (
-                                    <tr key={task.id} style={{ borderTop: "1px solid var(--dash-border)" }}>
-                                        <td style={{ padding: 12, fontSize: 12, color: "var(--dash-text-muted)" }}>
-                                            {new Date(task.created_at).toLocaleDateString()}
-                                        </td>
-                                        <td style={{ padding: 12, fontSize: 12 }}>
-                                            {task.task_type.replace(/_/g, " ")}
-                                        </td>
-                                        <td style={{ padding: 12, fontSize: 14, fontWeight: 700 }}>
+                                    <tr key={task.id} className="border-t border-border">
+                                        <td className="p-3 text-xs text-muted-foreground">{new Date(task.created_at).toLocaleDateString()}</td>
+                                        <td className="p-3 text-xs">{task.task_type.replace(/_/g, " ")}</td>
+                                        <td className="p-3 text-sm font-bold">
                                             {task.title}
-                                            <div style={{ fontSize: 12, color: "var(--dash-text-muted)", marginTop: 4 }}>
-                                                {task.description.slice(0, 80)}...
-                                            </div>
+                                            <div className="text-xs text-muted-foreground mt-1">{task.description.slice(0, 80)}...</div>
                                         </td>
-                                        <td style={{ padding: 12 }}>
-                                            <Pill text={task.severity} color={task.severity} />
+                                        <td className="p-3"><Pill text={task.severity} color={task.severity} /></td>
+                                        <td className="p-3"><StatusBadge status={task.status} /></td>
+                                        <td className="p-3 text-xs">
+                                            {hasPatch ? <span className="text-teal-700 dark:text-teal-400">✓ {getText(locale, "tuningTasks.generated")}</span> : <span className="text-gray-400">—</span>}
                                         </td>
-                                        <td style={{ padding: 12 }}>
-                                            <StatusBadge status={task.status} />
-                                        </td>
-                                        <td style={{ padding: 12, fontSize: 12 }}>
-                                            {hasPatch ? (
-                                                <span style={{ color: "#065f46" }}>✓ Generated</span>
-                                            ) : (
-                                                <span style={{ color: "#9ca3af" }}>—</span>
-                                            )}
-                                        </td>
-                                        <td style={{ padding: 12 }}>
-                                            <div style={{ display: "flex", gap: 8 }}>
+                                        <td className="p-3">
+                                            <div className="flex gap-2">
                                                 {task.session_id && (
-                                                    <a
-                                                        href={`/admin/sessions/${task.session_id}/replay`}
-                                                        style={{ fontSize: 12, fontWeight: 800, color: "var(--dash-text)", textDecoration: "none" }}
-                                                    >
-                                                        Replay
+                                                    <a href={`/admin/sessions/${task.session_id}/replay`} className="text-xs font-extrabold text-foreground no-underline hover:underline">
+                                                        {getText(locale, "tuningTasks.replay")}
                                                     </a>
                                                 )}
                                                 {!hasPatch && task.status === "open" && (
                                                     <button
                                                         onClick={() => fetch(`/api/admin/tuning-tasks/${task.id}/generate-patch`, { method: "POST" }).then(() => location.reload())}
-                                                        style={{ fontSize: 12, fontWeight: 800, background: "var(--dash-accent)", color: "var(--dash-bg)", border: "none", padding: "4px 8px", borderRadius: 6, cursor: "pointer" }}
+                                                        className="text-xs font-extrabold bg-primary text-primary-foreground border-none py-1 px-2 rounded-md cursor-pointer hover:opacity-90"
                                                     >
-                                                        Generate Patch
+                                                        {getText(locale, "tuningTasks.generatePatch")}
                                                     </button>
                                                 )}
                                             </div>
@@ -209,11 +184,8 @@ export default async function TuningTasksPage({
                             })}
                         </tbody>
                     </table>
-
                     {taskCount === 0 && (
-                        <div style={{ padding: 40, textAlign: "center", color: "var(--dash-text-muted)" }}>
-                            No tuning tasks found
-                        </div>
+                        <div className="p-10 text-center text-muted-foreground">{getText(locale, "tuningTasks.noTasks")}</div>
                     )}
                 </div>
             </div>

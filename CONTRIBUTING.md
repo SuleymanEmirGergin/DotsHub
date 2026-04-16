@@ -16,6 +16,8 @@ Pre-Triage Agentic AI projesine katkı için kısa rehber.
 
 ## Testleri Çalıştırma
 
+Ayrıntılı komutlar ve test dosyaları: [docs/TESTING.md](docs/TESTING.md).
+
 ### Backend
 
 ```bash
@@ -24,25 +26,17 @@ pip install -r requirements.txt
 python -m unittest discover -s tests -p "test_*.py" -v
 ```
 
-Dashboard birim testleri (Node test runner): `cd dashboard && node --test tests/*.test.cjs`
-Mobil birim testleri (Jest): `cd mobile && npm test`
-
-Tam regression (golden flows dahil):
-
-```bash
-cd backend
-python scripts/run_backend_regression.py
-```
+Pytest ile: `python -m pytest tests/ -v`. Tam regression (golden flows dahil): `python scripts/run_backend_regression.py`.
 
 ### Dashboard
 
 ```bash
 cd dashboard
-npm install
-npm run lint
+pnpm install
+pnpm run lint
 ```
 
-E2E (Playwright): `dashboard/playwright.config.ts` ve `dashboard/e2e/` mevcut. Kurulum: `cd dashboard && npm install -D @playwright/test && npx playwright install chromium`. Çalıştırma: `npx playwright test` (dev server’ı ayrı başlatın veya config’teki webServer kullanın).
+Contract testleri: `pnpm run test:routes`, `pnpm run test:i18n-contract`. E2E: `pnpm run test:e2e` (bkz. [docs/TESTING.md](docs/TESTING.md)).
 
 ### Mobil
 
@@ -61,7 +55,7 @@ npx expo start
 ## CI
 
 - **Backend:** `.github/workflows/backend-regression.yml` — unit/E2E testler + golden flow regression.
-- **Dashboard:** `.github/workflows/dashboard-quality.yml` — lint.
+- **Dashboard:** `.github/workflows/dashboard-quality.yml` — lint; `.github/workflows/dashboard-tests.yml` — contract (test:routes, test:i18n-contract) + Playwright E2E (dashboard değişince).
 - PR’da ilgili path’ler değiştiğinde ilgili workflow tetiklenir.
 
 ## Kod Standartları
