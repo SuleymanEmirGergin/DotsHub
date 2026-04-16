@@ -1,0 +1,16 @@
+{
+  "scenario": "OB-GYN dysmenorrhea",
+  "description": "Kullanıcı her adet döneminde şiddetli kramp ve ağrı bildiriyor. Rutin OB-GYN yönlendirmesi bekleniyor.",
+  "input": [
+    {
+      "user_message": "Her adet dönemimde çok şiddetli kramplar oluyor, bazen okula/işe gidemiyorum. Bu ay da çok kötüydü.",
+      "answer": null
+    }
+  ],
+  "expected": {
+    "final_type": "RESULT",
+    "recommended_specialty": "obgyn",
+    "top_condition_contains": "Dismenore",
+    "urgency": "ROUTINE"
+  }
+}

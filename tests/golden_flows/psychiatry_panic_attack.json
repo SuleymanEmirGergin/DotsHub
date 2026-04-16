@@ -1,0 +1,16 @@
+{
+  "scenario": "Psychiatry panic attack",
+  "description": "Kullanıcı ani kalp hızlanması, nefes darlığı ve ölüm korkusuyla gelen panik atak tanımlıyor. Kardiyoloji false-positive olmadan psikiyatri yönlendirmesi bekleniyor.",
+  "input": [
+    {
+      "user_message": "Aniden kalbim hızlandı, nefes alamadım, öleceğimi sandım. Geçti ama çok korktum. Daha önce de birkaç kez oldu.",
+      "answer": null
+    }
+  ],
+  "expected": {
+    "final_type": "RESULT",
+    "recommended_specialty": "psychiatry",
+    "top_condition_contains": "Panik Bozukluk",
+    "urgency": "ROUTINE"
+  }
+}

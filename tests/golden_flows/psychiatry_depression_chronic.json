@@ -1,0 +1,16 @@
+{
+  "scenario": "Psychiatry chronic depression",
+  "description": "Kullanıcı 3 haftadır süren düşük ruh hali, uyku sorunu ve iştahsızlık bildiriyor. Psikiyatri yönlendirmesi bekleniyor.",
+  "input": [
+    {
+      "user_message": "Yaklaşık 3 haftadır çok kötü hissediyorum. Hiçbir şeyden zevk alamıyorum, uyuyamıyorum ve yemek yiyemiyorum.",
+      "answer": null
+    }
+  ],
+  "expected": {
+    "final_type": "RESULT",
+    "recommended_specialty": "psychiatry",
+    "top_condition_contains": "Majör Depresyon",
+    "urgency": "ROUTINE"
+  }
+}

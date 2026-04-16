@@ -16,6 +16,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from app.duration_parse import extract_duration_days
 from app.explainability import build_explanation_trace
 from app.risk import compute_risk
+from app.top_conditions_filter import filter_top_conditions
 
 
 class EnvelopeType(str, Enum):
@@ -229,9 +230,14 @@ def build_result(
     same_day: Optional[Dict[str, Any]],
     risk_rules: Dict[str, Any],
 ) -> Dict[str, Any]:
-    top_conditions = ctx.top_conditions or [
+    raw_top_conditions = ctx.top_conditions or [
         {"name": "Belirsiz / degerlendirme gerekli", "score": max(ctx.confidence_0_1, 0.3)}
     ]
+    top_conditions = filter_top_conditions(
+        raw_top_conditions,
+        confidence=ctx.confidence_0_1,
+        envelope_type="RESULT",
+    )
 
     risk = compute_risk(
         extracted_canonicals=ctx.extracted_canonicals,

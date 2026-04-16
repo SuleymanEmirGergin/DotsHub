@@ -293,14 +293,55 @@
     {
       "id": "psychiatry",
       "specialty": "Psikiyatri",
-      "clusters": ["panik", "anksiyete", "uyku bozukluğu", "depresif ruh hali"],
-      "urgency_rules": [{ "if": { "self_harm": true }, "then": "ER_NOW" }]
+      "clusters": [
+        "panik",
+        "panik atak",
+        "anksiyete",
+        "kaygı",
+        "uyku bozukluğu",
+        "depresif ruh hali",
+        "düşük ruh hali",
+        "umutsuzluk",
+        "sosyal izolasyon",
+        "konsantrasyon bozukluğu",
+        "iştah kaybı",
+        "obsesyon",
+        "halüsinasyon",
+        "travma sonrası stres",
+        "bipolar",
+        "psikoz"
+      ],
+      "urgency_rules": [
+        { "if": { "self_harm": true }, "then": "ER_NOW" },
+        { "if": { "psychosis": true }, "then": "SAME_DAY" },
+        { "if": { "duration_days_gte": 14, "canonical_any": ["düşük ruh hali", "uyku bozukluğu"] }, "then": "SAME_DAY" }
+      ]
     },
     {
       "id": "obgyn",
       "specialty": "Kadın Hastalıkları ve Doğum",
-      "clusters": ["düzensiz kanama", "alt karın ağrısı", "adet gecikmesi", "gebelik şüphesi"],
-      "urgency_rules": [{ "if": { "pregnancy": true, "bleeding": true }, "then": "ER_NOW" }]
+      "clusters": [
+        "düzensiz kanama",
+        "vajinal kanama",
+        "alt karın ağrısı",
+        "pelvik ağrı",
+        "adet gecikmesi",
+        "gecikmiş adet",
+        "gebelik şüphesi",
+        "dismenore",
+        "adet düzensizliği",
+        "vajinal akıntı",
+        "vajinal kaşıntı",
+        "meme şikayeti",
+        "menopoz belirtisi",
+        "yumurtalık ağrısı"
+      ],
+      "urgency_rules": [
+        { "if": { "pregnancy": true, "bleeding": true }, "then": "ER_NOW" },
+        { "if": { "pregnancy": true, "severe_pain": true }, "then": "ER_NOW" },
+        { "if": { "postpartum": true, "bleeding": true }, "then": "ER_NOW" },
+        { "if": { "canonical_any": ["dismenore", "pelvik ağrı"], "severity": "severe" }, "then": "SAME_DAY" }
+      ]
     }
   ],
   "urgency_definitions": {
