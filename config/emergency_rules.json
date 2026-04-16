@@ -313,6 +313,60 @@
           ]
         }
       ]
+    },
+    {
+      "id": "acute_glaucoma_crisis",
+      "severity": 3,
+      "title_tr": "Akut glokom krizi şüphesi",
+      "message_tr": "Şiddetli tek taraflı göz ağrısı, bulantı/kusma ve bulanık görme kombinasyonu akut glokom krizidir. Görme kaybını önlemek için hemen acile gidin.",
+      "recommendation_tr": "Acil Servis / Göz Hastalıkları Nöbeti",
+      "keyword_any": [
+        "gözüm çok ağrıyor",
+        "göz ağrısı ve bulantı",
+        "göz içi basıncı arttı",
+        "göz içi basıncım yüksek"
+      ],
+      "canonical_any": [
+        "göz ağrısı"
+      ],
+      "require_any_group": [
+        {
+          "keyword_any": [
+            "bulantı",
+            "kusma",
+            "bulanık görme",
+            "göz önünde hale",
+            "ışık çemberi",
+            "gökkuşağı gibi"
+          ]
+        },
+        {
+          "canonical_any": [
+            "bulantı",
+            "fotofobi"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sudden_vision_loss",
+      "severity": 3,
+      "title_tr": "Ani görme kaybı — retina dekolmanı / vasküler olay şüphesi",
+      "message_tr": "Ani tek taraflı görme kaybı, gözde perde hissi veya yıldız yağmuru görme retina dekolmanı ya da vasküler tıkanma belirtisi olabilir. Görme penceresini kaçırmamak için hemen acile gidin.",
+      "recommendation_tr": "Acil Servis / Göz Hastalıkları Nöbeti",
+      "keyword_any": [
+        "aniden göremiyorum",
+        "bir gözüm görmüyor",
+        "gözümde perde indi",
+        "karanlık perde",
+        "yıldız yağıyor",
+        "görme birden kesildi",
+        "gözde kara nokta",
+        "bir tarafım görmüyor"
+      ],
+      "canonical_any": [
+        "ani görme kaybı"
+      ]
     }
   ]
 }

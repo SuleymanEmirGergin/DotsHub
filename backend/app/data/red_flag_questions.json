@@ -145,6 +145,33 @@
       "if_yes_escalate": "ER_NOW",
       "reason_tr": "Postpartum aşırı kanama obstetrik acildir.",
       "reason_en": "Postpartum excessive bleeding is an obstetric emergency."
+    },
+    {
+      "id": "ophth_sudden_vision_loss",
+      "when_canonical_any": [
+        "ani görme kaybı",
+        "göz ağrısı",
+        "çift görme"
+      ],
+      "question_tr": "Görme kaybı veya bozukluğu son 24 saat içinde mi başladı? Tek taraflı mı?",
+      "question_en": "Did vision loss or disturbance start within the last 24 hours? Is it in one eye only?",
+      "answer_type": "yes_no",
+      "if_yes_escalate": "ER_NOW",
+      "reason_tr": "Ani tek taraflı görme kaybı retina dekolmanı veya vasküler olay açısından acildir.",
+      "reason_en": "Sudden unilateral vision loss is an emergency due to possible retinal detachment or vascular event."
+    },
+    {
+      "id": "ophth_trauma_diplopia",
+      "when_canonical_any": [
+        "çift görme",
+        "baş ağrısı"
+      ],
+      "question_tr": "Kafa veya göz travması sonrasında mı başladı bu şikayet?",
+      "question_en": "Did this complaint start after head or eye trauma?",
+      "answer_type": "yes_no",
+      "if_yes_escalate": "ER_NOW",
+      "reason_tr": "Travma sonrası çift görme nörolojik veya göz acili olabilir.",
+      "reason_en": "Post-trauma diplopia may indicate neurological or ocular emergency."
     }
   ]
 }

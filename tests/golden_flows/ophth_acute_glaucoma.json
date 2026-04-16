@@ -1,0 +1,15 @@
+{
+  "scenario": "Ophthalmology acute glaucoma crisis — EMERGENCY",
+  "description": "Kullanıcı sol gözde çok şiddetli ağrı, bulantı ve bulanık görme bildiriyor. Akut glokom krizi şüphesiyle EMERGENCY envelope tetiklenmeli.",
+  "input": [
+    {
+      "user_message": "Sol gözüm aniden çok şiddetli ağrımaya başladı, bulantım var ve görüşüm bulanıklaştı. Işıkların etrafında hale görüyorum.",
+      "answer": null
+    }
+  ],
+  "expected": {
+    "final_type": "EMERGENCY",
+    "recommended_specialty": "ophthalmology",
+    "urgency": "ER_NOW"
+  }
+}
