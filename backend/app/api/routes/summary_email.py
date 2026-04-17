@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import Any
+from typing import Any, Optional
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import PlainTextResponse
@@ -26,6 +26,7 @@ class SendSummaryRequest(BaseModel):
     session_id: str
     email: constr(min_length=3, max_length=320, pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
     locale: str = "tr"  # tr | en | de | ru | ar (de/ru/ar use Turkish content for now)
+    device_id: Optional[str] = None  # Session ownership verification (optional for backward compat)
 
 
 class ExportSummaryRequest(BaseModel):
@@ -83,6 +84,12 @@ async def send_summary(body: SendSummaryRequest) -> dict[str, str]:
     session = _get_session_by_id(body.session_id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
+
+    # Device ownership check: if both request and session have device_id,
+    # they must match. Missing device_id on either side → allow (backward compat).
+    stored_device_id = session.get("device_id")
+    if stored_device_id and body.device_id and stored_device_id != body.device_id:
+        raise HTTPException(status_code=403, detail="session_id does not belong to this device")
 
     sender = _get_sender()
     content_locale = _content_locale(body.locale)

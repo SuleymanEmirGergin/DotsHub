@@ -230,12 +230,24 @@ class ExpectedCanonicalExpansionGuardTests(unittest.TestCase):
         variant under a *different* canonical, adding it would silently
         double-tag. Flag it so the expansion author can choose: rename,
         relocate the variant, or merge the canonicals.
+
+        Note: If the expected canonical has already been implemented (i.e.
+        appears as a variant of a canonical with the same normalized label),
+        that is NOT a collision — it's "already done" and audit_coverage
+        handles it as "present" rather than "missing".
         """
         hits: list[tuple[str, str]] = []
         for new_c in self.expected:
             nn = normalize_text_tr(new_c)
-            if nn in self.existing_variants:
-                hits.append((new_c, self.existing_variants[nn]))
+            if nn not in self.existing_variants:
+                continue
+            owner_canonical = self.existing_variants[nn]
+            # Self-match: expected canonical already exists as its own canonical.
+            # The matcher auto-adds canonical → canonical in build_synonym_patterns,
+            # so this is the expected end state after expansion, not a collision.
+            if normalize_text_tr(owner_canonical) == nn:
+                continue
+            hits.append((new_c, owner_canonical))
         self.assertEqual(hits, [],
                          f"Expected canonicals collide with existing variants "
                          f"(new_canonical -> existing_canonical_owning_it): {hits!r}")

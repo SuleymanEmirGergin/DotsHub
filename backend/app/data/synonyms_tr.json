@@ -927,12 +927,10 @@
       "type": "symptom",
       "variants_tr": [
         "memem ağrıyor",
-        "göğsüm ağrıyor",
         "meme akıntısı",
         "memeden akıntı geliyor",
         "memede kitle var",
         "memem şişti",
-        "göğsümde ağrı var",
         "meme hassasiyeti"
       ]
     },
@@ -1207,7 +1205,6 @@
       "canonical": "poliüri",
       "type": "symptom",
       "variants_tr": [
-        "çok sık idrara çıkıyorum",
         "çok fazla idrar yapıyorum",
         "geceleri çok kalkıyorum idrara",
         "idrar miktarı arttı",
@@ -1250,6 +1247,46 @@
         "kasık bölgesinde yumru",
         "fıtık çıktı",
         "kasıkta şişme"
+      ]
+    },
+    {
+      "canonical": "bel ağrısı",
+      "type": "symptom",
+      "review_status": "draft",
+      "variants_tr": [
+        "belim ağrıyor",
+        "bel ağrısı çekiyorum",
+        "belimde sürekli ağrı",
+        "belim tutuldu",
+        "lomber ağrı",
+        "sırt bel ağrısı",
+        "belime ağrı giriyor",
+        "bacağıma vuran bel ağrısı",
+        "siyatik ağrısı",
+        "belim çok ağrılı",
+        "bele saplanan ağrı",
+        "bel kasılması",
+        "bel zonklaması",
+        "dayanılmaz bel ağrısı",
+        "şiddetli bel ağrısı"
+      ]
+    },
+    {
+      "canonical": "kulak ağrısı",
+      "type": "symptom",
+      "review_status": "draft",
+      "variants_tr": [
+        "kulağım ağrıyor",
+        "kulağımda şiddetli ağrı",
+        "kulağımda zonklama",
+        "sağ kulağım ağrıyor",
+        "sol kulağım ağrıyor",
+        "kulak bölgesinde sancı",
+        "kulağım çok sancılı",
+        "kulak iltihabı ağrısı",
+        "orta kulak ağrısı",
+        "kulaklarım ağrıyor",
+        "kulağımın içinde ağrı"
       ]
     }
   ]

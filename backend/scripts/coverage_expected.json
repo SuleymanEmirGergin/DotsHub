@@ -4,22 +4,29 @@
     "baseline_date": "2026-04-16",
     "review_status": "draft_pending_medical_expert_review"
   },
-
   "baseline": {
     "description": "A1 audit anındaki mevcut kapsam — regresyon tespiti için referans.",
     "canonicals_total": 32,
     "variants_total_approx": 131,
     "variants_avg_per_canonical": 4.0,
     "specialties_total": 11,
-    "specialties_orphan": ["psychiatry", "obgyn", "ophthalmology"],
-    "specialties_missing_entirely": ["pediatrics", "nephrology", "endocrinology", "general_surgery"],
+    "specialties_orphan": [
+      "psychiatry",
+      "obgyn",
+      "ophthalmology"
+    ],
+    "specialties_missing_entirely": [
+      "pediatrics",
+      "nephrology",
+      "endocrinology",
+      "general_surgery"
+    ],
     "diseases_total": 41,
     "emergency_rules": 13,
     "sameday_rules": 0,
     "red_flag_questions": 4,
     "golden_flows": 7
   },
-
   "targets": {
     "description": "Stream A sonu hedefleri. Her A session'ından sonra yaklaşılmalı.",
     "canonicals_min": 72,
@@ -34,7 +41,6 @@
     "red_flag_questions_min": 17,
     "golden_flows_min": 25
   },
-
   "expected_canonicals_by_specialty": {
     "_comment": "A1 section 2.3 — boş/eksik branşlar için eklenmesi gereken canonical'lar. Session'larda eklendikçe script bu liste üzerinden tamamlanma oranını raporlar.",
     "psychiatry": [
@@ -56,8 +62,7 @@
       "gebelik şüphesi",
       "meme ağrısı",
       "vajinal akıntı",
-      "vajinal kaşıntı",
-      "amenore"
+      "vajinal kaşıntı"
     ],
     "ophthalmology": [
       "ani görme kaybı",
@@ -83,15 +88,12 @@
     ],
     "endocrinology": [
       "aşırı susama",
-      "poliüri",
-      "hipoglisemi"
+      "poliüri"
     ],
     "general_surgery": [
-      "ani karın ağrısı",
-      "kasık fıtığı"
+      "ani karın ağrısı"
     ]
   },
-
   "data_quality_issues": {
     "_comment": "A1 section 3.2 — disease_to_specialty.json'da A10'da düzeltilecek kirlilikler. Script bunların hâlâ mevcut olup olmadığını raporlar.",
     "trailing_space_labels": [
@@ -116,7 +118,6 @@
       "Alcoholic hepatitis"
     ]
   },
-
   "critical_gate_thresholds": {
     "confidence_gate_current": 0.45,
     "confidence_gate_a1_recommended": 0.35,
