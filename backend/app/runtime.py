@@ -5,9 +5,37 @@ Adapts the actual data file formats in app/data/ to a clean Runtime object.
 
 from __future__ import annotations
 import json
+import logging
+import os
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
+
+logger = logging.getLogger(__name__)
+
+
+# ---------------------------------------------------------------------------
+# Config directory resolution
+# ---------------------------------------------------------------------------
+#
+# Safety-critical config lives in <repo_root>/config/  (emergency_rules.json,
+# risk_rules.json, stop_rules.json, etc.). We must NOT resolve that path via
+# os.getcwd(), because CI and the regression runner cd into backend/ before
+# invoking tests — which would silently miss the file and load 0 emergency
+# rules. Instead, resolve from __file__ so the path is invariant under cwd.
+#
+# Override order (first match wins):
+#   1. PRETRIAGE_CONFIG_DIR env var (explicit override for deploys)
+#   2. <repo_root>/config/    (derived from __file__: backend/app/runtime.py → ../../..)
+
+_REPO_ROOT = Path(__file__).resolve().parent.parent.parent  # backend/app/runtime.py → repo root
+
+
+def _resolve_config_dir() -> Path:
+    override = os.environ.get("PRETRIAGE_CONFIG_DIR", "").strip()
+    if override:
+        return Path(override).resolve()
+    return _REPO_ROOT / "config"
 
 
 def load_json(path: str) -> Any:
@@ -220,19 +248,57 @@ def load_runtime(data_dir: str = "app/data") -> Runtime:
         pass  # Gracefully fallback to empty map
     rt.question_effectiveness = qe_map
 
-    # Load emergency rules
+    # Load emergency & risk rules from the cwd-independent config directory.
+    # A missing/empty emergency_rules.json is a production risk (every emergency
+    # rule becomes dead code), so we log loudly — never silent-swallow.
+    config_dir = _resolve_config_dir()
     emergency_cfg: Dict[str, Any] = {}
     risk_cfg: Dict[str, Any] = {}
-    try:
-        config_dir = Path("config")
-        emerg_path = config_dir / "emergency_rules.json"
-        if emerg_path.exists():
+
+    emerg_path = config_dir / "emergency_rules.json"
+    if emerg_path.exists():
+        try:
             emergency_cfg = load_json(str(emerg_path))
-        risk_path = config_dir / "risk_rules.json"
-        if risk_path.exists():
+            n_rules = len(emergency_cfg.get("rules", []) or [])
+            if n_rules == 0:
+                logger.warning(
+                    "emergency_rules.json loaded but contains 0 rules "
+                    "(path=%s) — every emergency rule will be dead.",
+                    emerg_path,
+                )
+            else:
+                logger.info(
+                    "Loaded %d emergency rules from %s", n_rules, emerg_path
+                )
+        except Exception as exc:  # noqa: BLE001 — log and continue, do NOT silence
+            logger.error(
+                "Failed to parse emergency_rules.json at %s: %s",
+                emerg_path,
+                exc,
+            )
+    else:
+        logger.warning(
+            "emergency_rules.json not found at %s — emergency routing will "
+            "fall back to stop_rules.json only. Check PRETRIAGE_CONFIG_DIR "
+            "or repo layout.",
+            emerg_path,
+        )
+
+    risk_path = config_dir / "risk_rules.json"
+    if risk_path.exists():
+        try:
             risk_cfg = load_json(str(risk_path))
-    except Exception:
-        pass  # Gracefully fallback to empty config
+        except Exception as exc:  # noqa: BLE001
+            logger.error(
+                "Failed to parse risk_rules.json at %s: %s", risk_path, exc
+            )
+    else:
+        logger.warning(
+            "risk_rules.json not found at %s — risk stratification will use "
+            "defaults.",
+            risk_path,
+        )
+
     rt.emergency_rules_cfg = emergency_cfg
     rt.risk_rules_cfg = risk_cfg
 
