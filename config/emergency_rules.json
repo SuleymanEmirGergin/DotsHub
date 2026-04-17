@@ -239,7 +239,12 @@
             "tek taraflı ağrı",
             "omza vuran ağrı",
             "bayılacak gibi",
-            "kanama var"
+            "kanama var",
+            "kasığımda şiddetli ağrı",
+            "sağ kasığımda ağrı",
+            "sol kasığımda ağrı",
+            "kasıkta ağrı",
+            "tek taraflı kasık ağrısı"
           ]
         },
         {
@@ -324,10 +329,14 @@
         "gözüm çok ağrıyor",
         "göz ağrısı ve bulantı",
         "göz içi basıncı arttı",
-        "göz içi basıncım yüksek"
+        "göz içi basıncım yüksek",
+        "ışıkların etrafında hale",
+        "ışıkların etrafında halka",
+        "ışıkta hale görüyorum"
       ],
       "canonical_any": [
-        "göz ağrısı"
+        "göz ağrısı",
+        "ışık haleleri"
       ],
       "require_any_group": [
         {
@@ -380,10 +389,20 @@
         "1 aylık bebeğim",
         "yenidoğan ateş",
         "bebek çok küçük ateşi var",
-        "3 aydan küçük"
+        "3 aydan küçük",
+        "6 haftalık",
+        "5 haftalık",
+        "4 haftalık",
+        "7 haftalık",
+        "8 haftalık",
+        "10 haftalık",
+        "yenidoğan bebeğim",
+        "bebeğim 6 haftalık",
+        "bebeğim 2 aylık"
       ],
       "canonical_any": [
-        "çocukta yüksek ateş"
+        "çocukta yüksek ateş",
+        "yenidoğan ateşi"
       ],
       "require_any_group": [
         {
@@ -392,7 +411,13 @@
             "39",
             "40",
             "ateş var",
-            "ateşi var"
+            "ateşi var",
+            "38.5",
+            "38,5",
+            "39.0",
+            "39,0",
+            "ateşi çıktı",
+            "termometre 38"
           ]
         },
         {
@@ -514,7 +539,12 @@
       "keyword_any": [
         "sağ alt karın ağrısı",
         "apandis ağrısı",
-        "apandisit"
+        "apandisit",
+        "sağ alt karın bölgem",
+        "sağ alt karnımda",
+        "sağ alt karın bölgemde",
+        "sağ alt kadranda",
+        "karnımın sağ alt kısmı"
       ],
       "canonical_any": [
         "sağ alt karın ağrısı"
