@@ -57,42 +57,79 @@ class GoldenFlowTests(unittest.TestCase):
         for scenario_path in scenario_files:
             scenario = json.loads(scenario_path.read_text(encoding="utf-8"))
             expected = scenario.get("expected", {})
+            xfail_reason = expected.get("xfail_reason")
             with self.subTest(scenario=scenario_path.name):
                 final_type, payload = self._run_scenario(scenario)
-                self.assertEqual(final_type, expected.get("final_type"))
 
-                expected_specialty = expected.get("recommended_specialty")
-                if expected_specialty:
-                    self.assertEqual(
-                        (payload.get("recommended_specialty") or {}).get("id"),
-                        expected_specialty,
-                    )
+                def _run_assertions():
+                    self.assertEqual(final_type, expected.get("final_type"))
 
-                expected_top = expected.get("top_condition_contains")
-                if expected_top:
-                    top_conditions = [
-                        c.get("disease_label")
-                        for c in (payload.get("top_conditions") or [])
-                        if isinstance(c, dict)
-                    ]
-                    self.assertTrue(
-                        any(expected_top in (label or "") for label in top_conditions),
-                        f"Expected '{expected_top}' in top conditions: {top_conditions}",
-                    )
-
-                for condition in (payload.get("top_conditions") or []):
-                    if not isinstance(condition, dict):
-                        continue
-                    if "disease_description" in condition:
-                        description = condition.get("disease_description")
-                        self.assertTrue(
-                            isinstance(description, str) and bool(description.strip()),
-                            f"Invalid disease_description in condition: {condition}",
+                    expected_specialty = expected.get("recommended_specialty")
+                    if expected_specialty:
+                        self.assertEqual(
+                            (payload.get("recommended_specialty") or {}).get("id"),
+                            expected_specialty,
                         )
 
-                expected_urgency = expected.get("urgency")
-                if expected_urgency:
-                    self.assertEqual(payload.get("urgency"), expected_urgency)
+                    expected_top = expected.get("top_condition_contains")
+                    if expected_top:
+                        top_conditions = [
+                            c.get("disease_label")
+                            for c in (payload.get("top_conditions") or [])
+                            if isinstance(c, dict)
+                        ]
+                        self.assertTrue(
+                            any(expected_top in (label or "") for label in top_conditions),
+                            f"Expected '{expected_top}' in top conditions: {top_conditions}",
+                        )
+
+                    # Negative assertion: ensure a false-positive label is NOT in top_conditions.
+                    # Used by edge-case fixtures (e.g. panic attack must not surface
+                    # "Akut koroner sendrom şüphesi" in cardiology false-positive scenarios).
+                    forbidden_top = expected.get("top_condition_not_contains")
+                    if forbidden_top:
+                        top_conditions = [
+                            c.get("disease_label")
+                            for c in (payload.get("top_conditions") or [])
+                            if isinstance(c, dict)
+                        ]
+                        self.assertFalse(
+                            any(forbidden_top in (label or "") for label in top_conditions),
+                            f"Forbidden '{forbidden_top}' appeared in top conditions: {top_conditions}",
+                        )
+
+                    for condition in (payload.get("top_conditions") or []):
+                        if not isinstance(condition, dict):
+                            continue
+                        if "disease_description" in condition:
+                            description = condition.get("disease_description")
+                            self.assertTrue(
+                                isinstance(description, str) and bool(description.strip()),
+                                f"Invalid disease_description in condition: {condition}",
+                            )
+
+                    expected_urgency = expected.get("urgency")
+                    if expected_urgency:
+                        self.assertEqual(payload.get("urgency"), expected_urgency)
+
+                if xfail_reason:
+                    # Strict xfail: assertions MUST fail today. If they start passing,
+                    # the bug is fixed — the test fails loudly so xfail_reason gets removed.
+                    try:
+                        _run_assertions()
+                    except AssertionError as xfail_err:
+                        print(
+                            f"[XFAIL as expected] {scenario_path.name}: "
+                            f"{xfail_reason} | {xfail_err}"
+                        )
+                        continue
+                    self.fail(
+                        f"XPASS: {scenario_path.name} unexpectedly passed. "
+                        f"The underlying bug appears fixed — remove xfail_reason "
+                        f"from the fixture. Reason was: {xfail_reason}"
+                    )
+                else:
+                    _run_assertions()
 
 
 class GoldenFlowsLLMABTests(unittest.TestCase):
