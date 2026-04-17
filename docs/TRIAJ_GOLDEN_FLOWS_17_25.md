@@ -1,6 +1,6 @@
 # Golden Flows 17/25 Regresyon Triajı
 
-**Tarih:** 2026-04-17
+**Tarih:** 2026-04-17 (güncel: commit `0c6e94e` sonrası)
 **Kapsam:** `tests/golden_flows/` altındaki 25 senaryonun baseline (deterministic) durumu
 **Kaynak veri:** `backend/scripts/shadow_eval.py` JSON raporu
 
@@ -8,9 +8,10 @@
 
 - **25 golden flow senaryosundan 17'si fail** (deterministic mod, cwd `backend/`).
 - **14 non-xfail fail kategorize edildi**; 1 senaryo A2 xfail, 2 senaryo ek assertion fail.
-- **İki ayrı root cause** teyit edildi:
-  1. **P0 safety:** `backend/app/runtime.py` relative path bug → `config/emergency_rules.json` CI/test koşumunda **hiç yüklenmiyor** (0 rule).
-  2. **P1 coverage:** NLU Türkçe canonical extraction 5 senaryoda hiç eşleşme üretmiyor → `internal_gi` fallback + emergency rule'ların `canonical_any` clause'ları ölü kalıyor.
+- **Üç ayrı root cause** teyit edildi (üçüncüsü P0 fix sonrası ortaya çıktı):
+  1. **P0 runtime path bug:** `runtime.py` cwd-relative → `emergency_rules_cfg` boş. ✅ Fix edildi (`0c6e94e`).
+  2. **P0b orchestrator wiring gap:** Aktif orkestratör `runtime.emergency_rules_cfg`'ye bakmıyor, `runtime.rules_json` kullanıyor. İki paralel kural kaynağı var ve aktif flow zayıf olanı tüketiyor. ❌ Henüz fix yok.
+  3. **P1 NLU coverage:** Türkçe canonical extraction 5+ senaryoda eşleşme üretmiyor. ❌ Henüz fix yok.
 
 ## Kategori Dağılımı (14 non-xfail fail)
 
@@ -78,23 +79,35 @@ emergency_disease_keywords: ["Heart attack", "Paralysis", "Stroke", "Aortic", "P
 ```
 Bu yüzden `emergency_chest.json` ve `pedi_bronchiolitis.json` EMERGENCY dönebiliyor (cardiology branşı kazanınca `stop_rules`'tan EMERGENCY escalate ediyor), ama config dosyasındaki **19 specialized emergency rule'un 17'si hiç çalışmıyor**: `psychiatric_emergency_active_plan`, `infant_fever_under3months`, `sudden_vision_loss`, `acute_glaucoma_crisis`, `dka_suspect`, `ectopic_pregnancy_suspect`, `febrile_seizure_active`, `acute_appendicitis_suspect`, vd.
 
-### Önerilen fix (ayrı küçük PR)
+### Fix — commit `0c6e94e` (tamamlandı)
 
+- `_REPO_ROOT = Path(__file__).resolve().parent.parent.parent` ile cwd-independent path.
+- `PRETRIAGE_CONFIG_DIR` env var override.
+- `except Exception: pass` kaldırıldı → missing/empty/malformed config artık `app.runtime` logger üzerinden WARN/ERROR log atıyor.
+- 8 unit test (`backend/tests/test_runtime_config_loading.py`) regresyonu pinliyor.
+
+### Beklenmedik bulgu — Root Cause #1b (orchestrator wiring gap)
+
+Shadow eval before/after diff: **0 senaryo değişti.** Deterministic accuracy hem öncesi hem sonrası %50.
+
+Sebep: Aktif orkestratör (`backend/app/triage_engine.py:206`):
 ```python
-# backend/app/runtime.py
-from pathlib import Path
-
-# repo root: backend/app/runtime.py → ../../  -> repo root
-_REPO_ROOT = Path(__file__).resolve().parent.parent.parent
-config_dir = _REPO_ROOT / "config"
+emergency = safety_guard_check(input_text, answers, runtime.rules_json)
 ```
 
-Ayrıca `except Exception: pass` sessiz yutmayı kaldır → boş rules yüklenince WARN log at (silent regression'dan kaçın).
+**İki paralel emergency kural kaynağı var:**
 
-**Fix ile kurtulan senaryolar (doğrudan kanıtlı):**
-- `psychiatry_active_suicidal_plan` ✅ (canonical `intihar kendine zarar` → `psychiatric_emergency_active_plan` sev=3)
+| Kaynak | Path | Kim tüketiyor | Rule sayısı |
+|---|---|---|---|
+| `runtime.rules_json` | `backend/app/data/rules.json` | `triage_engine.safety_guard_check` (canlı) | zayıf |
+| `runtime.emergency_rules_cfg` | `config/emergency_rules.json` | `orchestrator_v5.emergency_router` (deneysel) | 19 curated |
 
-Diğer safety-critical senaryolar için path fix tek başına yetmiyor — Root Cause #2 ile birleşmeli.
+Path fix zorunluydu çünkü:
+1. `orchestrator_v5` aktif olduğu flow'larda (admin_v5, api_v5) artık rules var
+2. Silent swallow kaldırıldı → gelecek regresyonlar görünür
+3. **Synonym/keyword audit'in önkoşulu** — audit etmeden önce rules gerçekten yükleniyor olmalı
+
+Ama canlı akış için **ek bir wiring PR'ı lazım**: `triage_engine` ya `runtime.emergency_rules_cfg` üzerinden `evaluate_emergency()`'yi çağırmalı, ya da iki kaynak tek dosyada konsolide edilmeli. Bu tercih karar gerektirir.
 
 ## Root Cause #2 — NLU canonical coverage boşluğu (P1)
 
@@ -130,14 +143,17 @@ Rule'lar için bu senaryolarda ya `canonical_any` match'i yok, ya da `keyword_an
 
 `pedi_bronchiolitis` (8 aylık, hırıltı, hafif ateş, 2 gün): stop_rules "pediatrics → emergency" agresif tetikleniyor. Çözüm: pediatrik wheezing için age_months ve respiratory_distress şiddet gate'i ekle.
 
-## Öncelik ve PR planı
+## Öncelik ve PR planı (güncel)
 
-| # | İş | Öncelik | Süre | Etkilenecek senaryo sayısı |
-|---|---|---|---|---|
-| 1 | **Runtime path fix + silent swallow kaldır** | P0 (safety) | 30 dk | 1 net kanıt + emergency rules artık canlı |
-| 2 | Synonym genişletmesi + keyword audit | P1 | 2-3 saat | ~10 senaryo |
-| 3 | `pedi_bronchiolitis` false-positive | P2 | 1 saat | 1 senaryo |
-| 4 | A2 panic-vs-cardio softener (xfail fix) | P2 | 1-2 saat | 1 senaryo (xfail→pass) |
+| # | İş | Öncelik | Süre | Durum | Etki |
+|---|---|---|---|---|---|
+| 1 | Runtime path fix + silent swallow kaldır | P0 (safety) | 30 dk | ✅ `0c6e94e` | Rules artık yüklü; silent failure kapısı kapandı |
+| 1b | **Orchestrator wiring: canlı akış `emergency_rules_cfg`'yi tüketsin** (veya iki kaynağı konsolide et) | P0 (safety) | 2-4 saat | ❌ Açık | 8 safety-critical senaryo + ek emergency kapsaması |
+| 2 | Synonym genişletmesi + `keyword_any` audit | P1 | 2-3 saat | ❌ Açık | ~10 senaryo, NLU kapsaması |
+| 3 | `pedi_bronchiolitis` false-positive | P2 | 1 saat | ❌ Açık | 1 senaryo |
+| 4 | A2 panic-vs-cardio softener (xfail→pass) | P2 | 1-2 saat | ❌ Açık | 1 senaryo |
+
+**Not:** #1b #2'nin önkoşulu — synonym genişletmesini test etmeden önce canlı akış zengin rule setini kullanıyor olmalı, aksi halde audit'in gerçek etkisi ölçülemez.
 
 ### İlgili referanslar
 - Shadow eval tool: `backend/scripts/shadow_eval.py`
