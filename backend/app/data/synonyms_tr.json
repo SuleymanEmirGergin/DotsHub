@@ -183,7 +183,10 @@
         "soluk alış güçleşti",
         "akciğerlerimde daralma var",
         "hava yetmiyor",
-        "ciğerlerim dolmuyor"
+        "ciğerlerim dolmuyor",
+        "nefes alamadım",
+        "nefesim daraldı",
+        "nefesim kesildi"
       ]
     },
     {
@@ -206,7 +209,10 @@
         "kalbim durmadan çarpıyor",
         "palpitasyon yaşıyorum",
         "kalbim hopluyor",
-        "kalbim çarpmaya başladı"
+        "kalbim çarpmaya başladı",
+        "kalbim hızlandı",
+        "kalp hızlanması",
+        "kalbim atıyor gibi"
       ]
     },
     {
@@ -780,7 +786,12 @@
         "ölüm korkusu yaşadım",
         "atak geçirdim",
         "panik krizi",
-        "aniden fenalaştım ve çok korktum"
+        "aniden fenalaştım ve çok korktum",
+        "öleceğimi sandım",
+        "öleceğim korkusu",
+        "kontrolü kaybetme korkusu",
+        "aniden korktum",
+        "panik yaşadım"
       ]
     },
     {
@@ -891,7 +902,10 @@
         "düzensiz adet",
         "oligomenore",
         "menorajim var",
-        "adet kanaması çok uzun sürüyor"
+        "adet kanaması çok uzun sürüyor",
+        "2-3 ayda bir adet",
+        "adetler seyrek",
+        "adet gecikmesi"
       ]
     },
     {
@@ -905,7 +919,9 @@
         "adet krampları",
         "bayılacak gibi ağrıyor",
         "adet sancısı",
-        "her adet çok acı veriyor"
+        "her adet çok acı veriyor",
+        "şiddetli kramplar",
+        "adet dönemimde çok şiddetli kramplar"
       ]
     },
     {
@@ -987,7 +1003,13 @@
         "görüşüm aniden bozuldu",
         "bir taraf görmüyor",
         "görme kayboldu",
-        "ani körlük"
+        "ani körlük",
+        "perde indi",
+        "perde iniyor",
+        "göremiyorum",
+        "o taraf görmüyor",
+        "gözümde perde",
+        "aniden kör oldum"
       ]
     },
     {
@@ -1013,7 +1035,9 @@
         "gözüm pembe",
         "konjonktivit",
         "gözüm kan çanağına döndü",
-        "gözlerim çok kızarık"
+        "gözlerim çok kızarık",
+        "gözlerim kırmızı",
+        "iki gözüm de kırmızı"
       ]
     },
     {
@@ -1151,7 +1175,14 @@
         "febril nöbet",
         "ateşli havale",
         "havale geçirdi ateşle",
-        "ateşte kasılma oldu"
+        "ateşte kasılma oldu",
+        "kasılmaya başladı",
+        "havale geçirdi",
+        "havale",
+        "gözleri döndü",
+        "bilinci gitti",
+        "kasılıyor",
+        "nöbet geçirdi"
       ]
     },
     {
@@ -1165,7 +1196,12 @@
         "bel yanı ağrısı",
         "kasığa vuran yan ağrısı",
         "renal kolik",
-        "dalga tarzı ağrı böbrek"
+        "dalga tarzı ağrı böbrek",
+        "sol böbreğim ağrıyor",
+        "sağ böbreğim ağrıyor",
+        "sol böbrek ağrısı",
+        "sağ böbrek ağrısı",
+        "lomber ağrı"
       ]
     },
     {
@@ -1177,7 +1213,12 @@
         "kırmızı idrar",
         "kanlı işedim",
         "pembe idrar",
-        "idrar rengi değişti kana döndü"
+        "idrar rengi değişti kana döndü",
+        "kırmızımsı idrar",
+        "idrarımda kan",
+        "idrarda kan",
+        "idrarımın rengi kırmızı",
+        "kan işedim"
       ]
     },
     {
@@ -1237,7 +1278,10 @@
         "sağ kasık bölgesi ağrıyor",
         "sağ alt bölge ağrısı",
         "sağda alt kısım çok ağrıyor",
-        "göbek altı sağ ağrı"
+        "göbek altı sağ ağrı",
+        "sağ alt karnım ağrıyor",
+        "sağ alt karın bölgem",
+        "sağ alt kadranda ağrı"
       ]
     },
     {
@@ -1250,6 +1294,50 @@
         "kasık bölgesinde yumru",
         "fıtık çıktı",
         "kasıkta şişme"
+      ]
+    },
+    {
+      "canonical": "ışık haleleri",
+      "type": "symptom",
+      "variants_tr": [
+        "ışıkların etrafında hale",
+        "ışıkların etrafında halka",
+        "ışıkta hale görüyorum",
+        "ışıkların etrafında çember",
+        "halo görme"
+      ]
+    },
+    {
+      "canonical": "yenidoğan ateşi",
+      "type": "symptom",
+      "variants_tr": [
+        "6 haftalık bebeğim ateş",
+        "2 aylık bebeğim ateş",
+        "yenidoğanda ateş",
+        "1 aylık bebeğim 38",
+        "3 aydan küçük bebeğim ateş",
+        "yenidoğan bebeğim ateşlendi",
+        "bebeğim 6 haftalık ve 38",
+        "bebeğim 6 haftalık ve termometre 38"
+      ]
+    },
+    {
+      "canonical": "hirsutizm",
+      "type": "symptom",
+      "variants_tr": [
+        "yüzümde tüylenme",
+        "erkeksi kıllanma",
+        "yüzde kıllanma arttı",
+        "istenmeyen tüylenme"
+      ]
+    },
+    {
+      "canonical": "konjunktivit",
+      "type": "symptom",
+      "variants_tr": [
+        "gözüm hem kaşınıyor hem sulanıyor",
+        "göz kaşıntısı ve sulanma",
+        "kaşınıyor sulanıyor kırmızı"
       ]
     }
   ]
