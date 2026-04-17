@@ -22,6 +22,7 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 from app.runtime import Runtime
 from app.canonical_extract import extract_canonicals_tr
 from app.safety_guard import safety_guard_check
+from app.emergency_router import evaluate_emergency
 from app.confidence import compute_confidence
 from app.stop_eval import should_stop
 from app.scoring_v2 import (
@@ -35,6 +36,49 @@ from app.risk import compute_risk
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
+
+
+# Map emergency rule_id → recommended specialty for the EMERGENCY envelope.
+# Consumed by the golden-flow suite (scenarios assert both final_type and
+# recommended_specialty on EMERGENCY). Prefix match; first hit wins.
+# Keep the prefixes aligned with config/emergency_rules.json rule ids.
+_EMERGENCY_RULE_TO_SPECIALTY: List[Tuple[str, str, str]] = [
+    # (rule_id prefix, specialty_id, specialty_tr)
+    ("psychiatric_emergency", "psychiatry", "Psikiyatri"),
+    ("suicidal_selfharm", "psychiatry", "Psikiyatri"),
+    ("stroke_redflags", "neurology", "Nöroloji"),
+    ("severe_headache_neuro", "neurology", "Nöroloji"),
+    ("chest_pain_sob", "cardiology", "Kardiyoloji"),
+    ("acute_glaucoma_crisis", "ophthalmology", "Göz Hastalıkları"),
+    ("sudden_vision_loss", "ophthalmology", "Göz Hastalıkları"),
+    ("infant_fever_under3months", "pediatrics", "Pediatri"),
+    ("petechial_rash_child", "pediatrics", "Pediatri"),
+    ("febrile_seizure_active", "pediatrics", "Pediatri"),
+    ("dka_suspect", "endocrinology", "Endokrinoloji"),
+    ("severe_hypoglycemia", "endocrinology", "Endokrinoloji"),
+    ("ectopic_pregnancy_suspect", "obgyn", "Kadın Hastalıkları ve Doğum"),
+    ("preeclampsia_suspect", "obgyn", "Kadın Hastalıkları ve Doğum"),
+    ("postpartum_hemorrhage", "obgyn", "Kadın Hastalıkları ve Doğum"),
+    ("acute_appendicitis_suspect", "general_surgery", "Genel Cerrahi"),
+    # Truly systemic emergencies — no single specialty, route to ER.
+    ("anaphylaxis", "emergency", "Acil Tıp"),
+    ("severe_bleeding", "emergency", "Acil Tıp"),
+    ("high_fever_with_red_flags", "emergency", "Acil Tıp"),
+]
+
+
+def _emergency_specialty_for(rule_id: Optional[str]) -> Tuple[str, str]:
+    """Return (specialty_id, specialty_tr) for an emergency rule_id.
+
+    Default: ('emergency', 'Acil Tıp'). Keeps the EMERGENCY envelope's
+    recommended_specialty populated so downstream consumers (golden-flow
+    fixtures, UI, session logs) don't need to special-case nulls.
+    """
+    if rule_id:
+        for prefix, spec_id, spec_tr in _EMERGENCY_RULE_TO_SPECIALTY:
+            if rule_id.startswith(prefix):
+                return spec_id, spec_tr
+    return "emergency", "Acil Tıp"
 
 
 #Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Disease candidate generator (deterministic, Kaggle-based) Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
@@ -203,20 +247,55 @@ def run_orchestrator_turn(
     # Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
     # 1) Safety guard Ã¢â‚¬â€ EMERGENCY check
     # Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+    # Two parallel emergency rule sources are consulted (defense in depth):
+    #   (a) runtime.rules_json         — text-only regex/keyword triggers
+    #                                    (backend/app/data/rules.json)
+    #   (b) runtime.emergency_rules_cfg — richer keyword + canonical rules
+    #                                    (config/emergency_rules.json, 19 curated)
+    # Either hit → EMERGENCY. Kept separate because they have different schemas
+    # and different owners. See docs/TRIAJ_GOLDEN_FLOWS_17_25.md RC #1b.
     emergency = safety_guard_check(input_text, answers, runtime.rules_json)
+    if not emergency and runtime.emergency_rules_cfg:
+        # Pre-compute deterministic canonicals for the richer rule set.
+        # Safety checks must be fast — do NOT wait on LLM augmentation here;
+        # LLM extraction runs later in Step 2 for routing.
+        _safety_canonicals = extract_canonicals_tr(
+            text_tr=input_text,
+            answers=answers,
+            synonyms_json=runtime.synonyms,
+        )
+        _em_match = evaluate_emergency(
+            user_text=input_text,
+            canonicals_tr=_safety_canonicals,
+            rules_cfg=runtime.emergency_rules_cfg,
+        )
+        if _em_match is not None:
+            emergency = {
+                "rule_id": _em_match.rule_id,
+                "reason_tr": _em_match.message_tr or _em_match.title_tr,
+                "instructions_tr": [_em_match.recommendation_tr]
+                if _em_match.recommendation_tr
+                else ["112'yi ara veya en yakın acile başvur."],
+            }
     if emergency:
+        _rule_id = emergency.get("rule_id")
+        _spec_id, _spec_tr = _emergency_specialty_for(_rule_id)
         payload = {
-            "urgency": "EMERGENCY",
-            "reason_tr": emergency.get("reason_tr", "Acil deÃ„Å¸erlendirme gerekebilir."),
+            # "ER_NOW" matches the action value used in rules.json hard_triggers
+            # and the golden-flow fixtures. Distinct from the "EMERGENCY"
+            # envelope type (which is the outer return value).
+            "urgency": "ER_NOW",
+            "recommended_specialty": {"id": _spec_id, "name_tr": _spec_tr},
+            "reason_tr": emergency.get("reason_tr", "Acil değerlendirme gerekebilir."),
             "instructions_tr": emergency.get(
-                "instructions_tr", ["112'yi ara veya en yakÃ„Â±n acile baÃ…Å¸vur."]
+                "instructions_tr", ["112'yi ara veya en yakın acile başvur."]
             ),
         }
         debug_patch = {
             "user_canonicals_tr": [],
             "top_conditions": [],
-            "recommended_specialty_id": None,
-            "recommended_specialty_tr": None,
+            "recommended_specialty_id": _spec_id,
+            "recommended_specialty_tr": _spec_tr,
             "confidence_0_1": 1.0,
             "confidence_label_tr": "YÃƒÂ¼ksek",
             "confidence_explain_tr": "Acil uyarÃ„Â± kurallarÃ„Â± tetiklendi.",
