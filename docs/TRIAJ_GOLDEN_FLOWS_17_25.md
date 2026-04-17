@@ -148,12 +148,24 @@ Rule'lar için bu senaryolarda ya `canonical_any` match'i yok, ya da `keyword_an
 | # | İş | Öncelik | Süre | Durum | Etki |
 |---|---|---|---|---|---|
 | 1 | Runtime path fix + silent swallow kaldır | P0 (safety) | 30 dk | ✅ `0c6e94e` | Rules artık yüklü; silent failure kapısı kapandı |
-| 1b | **Orchestrator wiring: canlı akış `emergency_rules_cfg`'yi tüketsin** (veya iki kaynağı konsolide et) | P0 (safety) | 2-4 saat | ❌ Açık | 8 safety-critical senaryo + ek emergency kapsaması |
-| 2 | Synonym genişletmesi + `keyword_any` audit | P1 | 2-3 saat | ❌ Açık | ~10 senaryo, NLU kapsaması |
-| 3 | `pedi_bronchiolitis` false-positive | P2 | 1 saat | ❌ Açık | 1 senaryo |
-| 4 | A2 panic-vs-cardio softener (xfail→pass) | P2 | 1-2 saat | ❌ Açık | 1 senaryo |
+| 1b | Orchestrator wiring + EMERGENCY envelope metadata | P0 (safety) | 2 saat | ✅ `6528065` | 2 senaryo kurtuldu: suicidal_plan, dka |
+| 2a | Synonym audit — ilk tur (44 variant + 4 canonical) | P1 | 1.5 saat | ✅ `a55a0c1` | 3 senaryo kurtuldu + 2 kısmi iyileşme |
+| 2b | Emergency rule `keyword_any`/`canonical_any` audit (özellikle `infant_fever_under3months` → `yenidoğan ateşi`) | P1 | 1-2 saat | ❌ Açık | ~2 senaryo |
+| 3 | A2 panic-softener (2 xfail → pass) | P1 | 1-2 saat | ❌ Açık | 2 senaryo (panic_attack + panic_vs_cardio_edge) |
+| 4 | Specialty scoring boost (pcos/obgyn, conjunctivitis/ophth) | P2 | 2 saat | ❌ Açık | ~3 senaryo |
+| 5 | `pedi_bronchiolitis` false-positive gate | P2 | 1 saat | ❌ Açık | 1 senaryo |
+| 6 | Ectopic pregnancy pattern wiring | P2 | 1 saat | ❌ Açık | 1 senaryo |
 
-**Not:** #1b #2'nin önkoşulu — synonym genişletmesini test etmeden önce canlı akış zengin rule setini kullanıyor olmalı, aksi halde audit'in gerçek etkisi ölçülemez.
+## İlerleme özeti
+
+| Milestone | Fail count | Subtests passed | Det. specialty accuracy |
+|---|---|---|---|
+| Baseline (4557ccb) | 18 | 7 | 50.0% |
+| + path fix (0c6e94e) | 17 | 8 | 50.0% |
+| + wiring (6528065) | 15 | 10 | 54.2% |
+| + synonym audit (a55a0c1) | 12 | 13 | **66.7%** |
+
+**Kazanım:** 18 → 12 fail (6 senaryo kurtuldu), accuracy 50 → 67% (%17 mutlak artış), 3 commit, tümü test'lerle pin'li.
 
 ### İlgili referanslar
 - Shadow eval tool: `backend/scripts/shadow_eval.py`
