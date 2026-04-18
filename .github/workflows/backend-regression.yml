@@ -33,13 +33,15 @@ jobs:
         with:
           python-version: "3.11"
           cache: "pip"
-          cache-dependency-path: "backend/requirements.txt"
+          cache-dependency-path: "backend/requirements-dev.txt"
 
       - name: Install backend dependencies
         run: |
           cd backend
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          # requirements-dev pulls in runtime deps via -r and adds
+          # coverage / pytest for the hot-path coverage gate step.
+          pip install -r requirements-dev.txt
 
       - name: Run backend regression (CI parity)
         run: |

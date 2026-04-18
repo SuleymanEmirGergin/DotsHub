@@ -34,7 +34,20 @@ THRESHOLDS: dict[str, float] = {
 
 
 def _run_coverage() -> int:
-    """Run the test suite under coverage, collect into .coverage."""
+    """Run the test suite under coverage, collect into .coverage.
+
+    REDIS_URL is forced empty so the rate-limit tests fall back to the
+    in-memory bucket (same override run_backend_regression.py applies
+    to the backend_test_suite step). Without this, CI runners can
+    refuse the Redis connection and fail a handful of send-summary /
+    export-summary tests, which surfaces here as "tests failed —
+    coverage gate skipped."
+    """
+    import os
+
+    env = os.environ.copy()
+    env["REDIS_URL"] = ""
+
     return subprocess.run(
         [
             sys.executable,
@@ -52,6 +65,7 @@ def _run_coverage() -> int:
             "-q",
         ],
         check=False,
+        env=env,
     ).returncode
 
 
