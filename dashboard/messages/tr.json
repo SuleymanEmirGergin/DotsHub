@@ -174,7 +174,15 @@
     "resultTypeDistribution": "Zarf tipi dağılımı (anonim)",
     "sameDay": "SAME_DAY",
     "question": "QUESTION",
-    "error": "ERROR"
+    "error": "ERROR",
+    "accuracy7dTitle": "Son 7 Gün Doğruluk",
+    "top1Accuracy": "Branş İsabeti (Top-1)",
+    "top1AccuracySub": "down feedback oranına göre",
+    "lowConfRate": "Düşük Güven Oranı",
+    "lowConfRateSub": "conf < 0.35 olan RESULT",
+    "feedbackOverrideRate": "Kullanıcı Düzeltme Oranı",
+    "feedbackOverrideRateSub": "feedback içinde branş düzeltildi",
+    "accuracyNoData": "Son 7 günde yeterli veri yok"
   },
   "live": {
     "title": "Canli Oturum Izleme",

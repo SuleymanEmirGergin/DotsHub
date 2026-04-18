@@ -121,10 +121,60 @@ export default async function AnalyticsPage() {
 
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  const sevenDaysAgoIso = sevenDaysAgo.toISOString();
   const { data: dailySessions } = await sb
     .from("triage_sessions")
     .select("created_at")
-    .gte("created_at", sevenDaysAgo.toISOString());
+    .gte("created_at", sevenDaysAgoIso);
+
+  // ── 7-day accuracy KPIs (B2) ─────────────────────────────────────────
+  // 1) Top-1 specialty accuracy (proxy): 1 - (down feedback with
+  //    user_selected_specialty_id / RESULT sessions in last 7d).
+  // 2) Low-confidence rate: RESULT sessions with confidence_0_1 < 0.35.
+  // 3) Feedback override rate: feedback entries with user_selected_
+  //    specialty_id / total feedback in last 7d.
+  const LOW_CONF_THRESHOLD = 0.35;
+
+  const { count: result7dTotal } = await sb
+    .from("triage_sessions")
+    .select("id", { count: "exact", head: true })
+    .eq("envelope_type", "RESULT")
+    .gte("created_at", sevenDaysAgoIso);
+
+  const { count: result7dLowConf } = await sb
+    .from("triage_sessions")
+    .select("id", { count: "exact", head: true })
+    .eq("envelope_type", "RESULT")
+    .gte("created_at", sevenDaysAgoIso)
+    .lt("confidence_0_1", LOW_CONF_THRESHOLD);
+
+  const { count: feedback7dTotal } = await sb
+    .from("triage_feedback")
+    .select("id", { count: "exact", head: true })
+    .gte("created_at", sevenDaysAgoIso);
+
+  const { count: feedback7dOverrides } = await sb
+    .from("triage_feedback")
+    .select("id", { count: "exact", head: true })
+    .gte("created_at", sevenDaysAgoIso)
+    .not("user_selected_specialty_id", "is", null);
+
+  const { count: feedback7dDown } = await sb
+    .from("triage_feedback")
+    .select("id", { count: "exact", head: true })
+    .gte("created_at", sevenDaysAgoIso)
+    .eq("rating", "down")
+    .not("user_selected_specialty_id", "is", null);
+
+  const top1AccuracyPct = (result7dTotal ?? 0) > 0
+    ? Math.max(0, 100 - (100 * (feedback7dDown ?? 0)) / (result7dTotal ?? 1))
+    : null;
+  const lowConfPct = (result7dTotal ?? 0) > 0
+    ? (100 * (result7dLowConf ?? 0)) / (result7dTotal ?? 1)
+    : null;
+  const overridePct = (feedback7dTotal ?? 0) > 0
+    ? (100 * (feedback7dOverrides ?? 0)) / (feedback7dTotal ?? 1)
+    : null;
 
   const dailyCounts: Record<string, number> = {};
   (dailySessions ?? []).forEach((s: any) => {
@@ -205,6 +255,33 @@ export default async function AnalyticsPage() {
         <Stat label={t("analytics.result")} value={resultSessions ?? 0} />
         <Stat label={t("analytics.emergency")} value={emergencySessions ?? 0} />
         <Stat label={t("analytics.feedback")} value={`${fbUpCount ?? 0} / ${fbDownCount ?? 0}`} sub={t("analytics.feedbackSub")} />
+      </div>
+
+      <div className="mt-5">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">{t("analytics.accuracy7dTitle")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-3 gap-3">
+              <Stat
+                label={t("analytics.top1Accuracy")}
+                value={top1AccuracyPct === null ? "—" : `${top1AccuracyPct.toFixed(1)}%`}
+                sub={top1AccuracyPct === null ? t("analytics.accuracyNoData") : t("analytics.top1AccuracySub")}
+              />
+              <Stat
+                label={t("analytics.lowConfRate")}
+                value={lowConfPct === null ? "—" : `${lowConfPct.toFixed(1)}%`}
+                sub={lowConfPct === null ? t("analytics.accuracyNoData") : t("analytics.lowConfRateSub")}
+              />
+              <Stat
+                label={t("analytics.feedbackOverrideRate")}
+                value={overridePct === null ? "—" : `${overridePct.toFixed(1)}%`}
+                sub={overridePct === null ? t("analytics.accuracyNoData") : t("analytics.feedbackOverrideRateSub")}
+              />
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {envelopeDistribution.length > 0 && (

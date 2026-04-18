@@ -174,7 +174,15 @@
     "resultTypeDistribution": "Result type distribution (anonymous)",
     "sameDay": "SAME_DAY",
     "question": "QUESTION",
-    "error": "ERROR"
+    "error": "ERROR",
+    "accuracy7dTitle": "Accuracy — Last 7 Days",
+    "top1Accuracy": "Top-1 Specialty Accuracy",
+    "top1AccuracySub": "based on down-feedback rate",
+    "lowConfRate": "Low-Confidence Rate",
+    "lowConfRateSub": "RESULT with conf < 0.35",
+    "feedbackOverrideRate": "User Override Rate",
+    "feedbackOverrideRateSub": "feedback with specialty correction",
+    "accuracyNoData": "Not enough data in last 7 days"
   },
   "live": {
     "title": "Live Session Monitor",
