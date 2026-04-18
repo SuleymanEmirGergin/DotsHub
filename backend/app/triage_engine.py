@@ -535,6 +535,23 @@ def run_orchestrator_turn(
         stop_rules=runtime.stop_rules,
     )
 
+    # PCOS context injection: obgyn + hirsutism → surface "PCOS". The
+    # hirsutism canonical alone is a strong PCOS fingerprint in the
+    # pre-triage context (it's rarely standalone without menstrual or
+    # metabolic issues, and obgyn routing already filters non-obgyn cases).
+    if (
+        top_spec.get("id") == "obgyn"
+        and "hirsutizm" in _safety_canonicals
+        and not any(
+            "PCOS" in (c.get("disease_label") or "")
+            or "Polikistik" in (c.get("disease_label") or "")
+            for c in candidates[:3]
+        )
+    ):
+        candidates = [
+            {"disease_label": "PCOS (Polikistik Over Sendromu)", "score_0_1": 0.7}
+        ] + candidates[:2]
+
     # Dysmenorrhea context injection: obgyn + dismenore canonical →
     # surface "Dismenore" as the top condition. Kaggle matrix has no
     # dysmenorrhea entry.
