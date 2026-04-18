@@ -159,7 +159,20 @@
         "arpacık",
         "göz kapağı şişti",
         "konjonktivit",
-        "katarakt"
+        "katarakt",
+        "iki gözüm kaşınıyor",
+        "gözlerim kaşınıyor",
+        "gözüm hem kaşınıyor",
+        "gözlerim kırmızı",
+        "konjunktivit",
+        "gözüm sulanıyor ve kırmızı",
+        "alerjik göz",
+        "baharda gözüm",
+        "perde indi",
+        "o taraf görmüyor",
+        "göremiyorum",
+        "ışıkların etrafında hale",
+        "ışık çemberi"
       ],
       "negative_keywords_tr": []
     },
@@ -254,7 +267,18 @@
         "akıntı",
         "rahim",
         "myom",
-        "kist"
+        "kist",
+        "adetlerim düzensiz",
+        "adetlerim seyrek",
+        "2-3 ayda bir",
+        "adetlerim geç geliyor",
+        "yüzümde tüylenme",
+        "tüylenme arttı",
+        "istenmeyen tüylenme",
+        "hirsutizm",
+        "kilo aldım adet",
+        "gebelik testi pozitif",
+        "kasığımda ağrı"
       ],
       "negative_keywords_tr": []
     },
