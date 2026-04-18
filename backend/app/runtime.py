@@ -186,7 +186,20 @@ def _build_specialty_by_id(spec_json: Dict[str, Any]) -> Dict[str, Dict[str, Any
     return out
 
 
-def load_runtime(data_dir: str = "app/data") -> Runtime:
+def load_runtime(data_dir: str = "app/data", tenant_id: str = "default") -> Runtime:
+    """Load the Runtime for a given tenant (multi-tenant C1).
+
+    The only tenant-scoped asset today is the curated_conditions
+    catalog. Lookup order for the catalog:
+      1. <data_dir>/curated_conditions.<tenant_id>.json  (tenant-specific)
+      2. <data_dir>/curated_conditions.json              (default fallback)
+
+    All other data files stay shared across tenants (emergency rules,
+    disease matrix, synonyms, etc.). If the tenant file is missing
+    the loader transparently falls back to the default — so partial
+    tenant customization is supported: a hospital can override just
+    a few labels while inheriting the rest.
+    """
     """Load all config/cache files and build derived lookup structures."""
     d = Path(data_dir)
 
@@ -313,25 +326,37 @@ def load_runtime(data_dir: str = "app/data") -> Runtime:
     rt.emergency_rules_cfg = emergency_cfg
     rt.risk_rules_cfg = risk_cfg
 
-    # Curated "possible conditions" catalog (C2). This is data-dir scoped
-    # (not config/), because the initial single-tenant release ships one
-    # default set. Multi-tenant (A-hastanesi / B-hastanesi farklı dataset)
-    # wiring is tracked as a follow-up — the file already carries a
-    # tenant_scope field to make that migration safe.
+    # Curated "possible conditions" catalog — tenant-aware (C1).
+    # Lookup order:
+    #   1) curated_conditions.<tenant_id>.json   (tenant-specific override)
+    #   2) curated_conditions.json               (default fallback)
+    # A missing tenant file transparently falls back to default — so a
+    # hospital can ship a partial override without re-authoring the full
+    # catalog. Logger makes the chosen path visible at startup.
     curated_conditions: Dict[str, Any] = {}
+    curated_load_source: Optional[str] = None
     try:
-        curated_path = d / "curated_conditions.json"
-        if curated_path.exists():
-            raw_curated = load_json(str(curated_path))
+        tenant_specific = d / f"curated_conditions.{tenant_id}.json"
+        default_path = d / "curated_conditions.json"
+        chosen_path = tenant_specific if tenant_specific.exists() else default_path
+        if chosen_path.exists():
+            raw_curated = load_json(str(chosen_path))
             if isinstance(raw_curated, dict):
-                # We cache the top-level payload; callers read
-                # raw_curated["conditions"] for the label lookup.
                 curated_conditions = raw_curated
+                curated_load_source = str(chosen_path.name)
     except Exception as exc:
         logger.warning(
-            "Failed to load curated_conditions.json at %s: %s",
-            d / "curated_conditions.json",
+            "Failed to load curated_conditions for tenant=%r at %s: %s",
+            tenant_id,
+            d,
             exc,
+        )
+    if curated_load_source:
+        logger.info(
+            "Loaded curated_conditions (tenant=%r) from %s — %d condition labels",
+            tenant_id,
+            curated_load_source,
+            len((curated_conditions or {}).get("conditions", {})),
         )
     rt.curated_conditions = curated_conditions
 

@@ -43,17 +43,12 @@ def _result_top_gate() -> float:
         return 0.25
 
 
-# Canonical-injected disease labels (Panik Bozukluk, Majör Depresyon,
-# Akut Otitis Media, Bronşiolit, Renal Kolik, Dismenore, PCOS,
-# Alerjik Konjonktivit) are tagged as "curated" so the UI can:
-#  - badge them differently from raw Kaggle candidates
-#  - bypass the low-confidence gate (these were synthesized from a
-#    deterministic canonical pattern, not a fragile overlap score)
-#  - attach patient-facing prep fields (doktora sorular, self-care, …)
-#    from backend/app/data/curated_conditions.json.
-#
-# Anything not in this set falls through as source_type="kaggle_candidate".
-_CURATED_INJECTED_LABELS = frozenset({
+# Fallback set of curated-injected labels — used ONLY when the runtime's
+# curated_conditions catalog is empty (e.g. a broken tenant config). In
+# normal operation, _curated_injected_labels(runtime) derives the set
+# from the active tenant's curated_conditions catalog, so different
+# tenants can inject different labels without a code change.
+_CURATED_INJECTED_LABELS_FALLBACK = frozenset({
     "Panik Bozukluk",
     "Majör Depresyon",
     "Akut Otitis Media",
@@ -63,6 +58,21 @@ _CURATED_INJECTED_LABELS = frozenset({
     "PCOS (Polikistik Over Sendromu)",
     "Alerjik Konjonktivit",
 })
+
+
+def _curated_injected_labels(runtime: Runtime) -> frozenset[str]:
+    """Labels that get source_type='curated' for the active tenant.
+
+    Derived live from runtime.curated_conditions so multi-tenant
+    catalogs work without touching this file. Falls back to the
+    hardcoded set when the catalog is missing or empty — that way a
+    config-loader failure doesn't silently drop every injected label
+    to 'kaggle_candidate'.
+    """
+    conditions = (runtime.curated_conditions or {}).get("conditions", {}) or {}
+    if conditions:
+        return frozenset(conditions.keys())
+    return _CURATED_INJECTED_LABELS_FALLBACK
 
 
 def _annotate_and_enrich_top_conditions(
@@ -80,13 +90,14 @@ def _annotate_and_enrich_top_conditions(
         "Bu liste tanı değildir, yalnızca hazırlık amaçlıdır. Kesin "
         "değerlendirme için lütfen hekiminize başvurun.",
     )
+    curated_labels = _curated_injected_labels(runtime)
     out: List[Dict[str, Any]] = []
     for c in top_conditions or []:
         if not isinstance(c, dict):
             continue
         label = c.get("disease_label") or ""
         entry = dict(c)
-        if label in _CURATED_INJECTED_LABELS:
+        if label in curated_labels:
             entry["source_type"] = "curated"
             meta = catalog.get(label) or {}
             # Copy only the UI-facing fields; keep the envelope lean.
