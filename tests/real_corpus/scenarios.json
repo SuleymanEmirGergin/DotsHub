@@ -1,0 +1,288 @@
+{
+  "version": "1.0",
+  "description": "Real-corpus regression set (C1). Blend of phrasing-variation, new-scenario, and ambiguous-edge cases, hand-labeled. Runs like golden_flows but against a wider set of patient utterances to measure robustness beyond the fixture-coverage baseline. Not safety-critical by itself — failures here become candidates for synonym/rule/scoring tuning, not EMERGENCY hotfixes.",
+  "_labeling_notes": [
+    "source=paraphrase  : same clinical case as an existing golden_flow, different Turkish phrasing. Tests canonical/keyword robustness.",
+    "source=synthetic_new: a clinical pattern not yet covered in golden_flows. Tests scoring coverage gaps.",
+    "source=ambiguous   : two or more specialties plausible. Expected is the most-pre-triage-appropriate one.",
+    "urgency values are advisory — only asserted when present."
+  ],
+  "scenarios": [
+    {
+      "id": "cardio_chest_paraphrase_01",
+      "source": "paraphrase",
+      "user_message": "Göğsümün tam ortasında sıkıştırıcı, baskı gibi bir ağrı başladı. Terliyorum ve nefesim daralıyor.",
+      "expected": {"final_type": "EMERGENCY", "recommended_specialty": "cardiology"}
+    },
+    {
+      "id": "cardio_chest_paraphrase_02",
+      "source": "paraphrase",
+      "user_message": "Kolum ve çenemde uyuşma var, göğsüm baskı altında gibi hissediyorum, terleme ve bulantı başladı.",
+      "expected": {"final_type": "EMERGENCY", "recommended_specialty": "cardiology"}
+    },
+    {
+      "id": "cardio_palpitation_new_01",
+      "source": "synthetic_new",
+      "user_message": "Son birkaç haftadır ara sıra kalbim düzensiz atıyor gibi hissediyorum, merdiven çıkınca nefes darlığı oluyor.",
+      "expected": {"final_type": "RESULT", "recommended_specialty": "cardiology"}
+    },
+    {
+      "id": "neuro_migraine_paraphrase_01",
+      "source": "paraphrase",
+      "user_message": "3 saattir tek taraflı, zonklayıcı bir baş ağrım var. Işık ve sese hassasım, mide bulantım da var.",
+      "expected": {"final_type": "RESULT", "recommended_specialty": "neurology", "top_condition_contains": "Migren"}
+    },
+    {
+      "id": "neuro_migraine_paraphrase_02",
+      "source": "paraphrase",
+      "user_message": "Tekrarlayan şiddetli baş ağrılarım var, genelde sağ tarafta oluyor, ışığa bakınca daha da kötüleşiyor.",
+      "expected": {"final_type": "RESULT", "recommended_specialty": "neurology", "top_condition_contains": "Migren"}
+    },
+    {
+      "id": "neuro_stroke_redflag_01",
+      "source": "synthetic_new",
+      "user_message": "Annemin aniden yüzü kaydı, konuşurken kelimeleri bulamıyor ve sol kolunu kaldıramıyor. 15 dakika oldu.",
+      "expected": {"final_type": "EMERGENCY"}
+    },
+    {
+      "id": "neuro_vertigo_ambiguous",
+      "source": "ambiguous",
+      "user_message": "Başım dönüyor, dengemde sorun var. 2 gündür ayağa kalkınca oda dönüyor gibi.",
+      "expected": {"final_type": "RESULT"}
+    },
+    {
+      "id": "psych_panic_paraphrase_01",
+      "source": "paraphrase",
+      "user_message": "Metroda aniden kalbim çok hızlandı, nefes alamıyormuş gibi oldum, kendimi kötü hissettim. 10 dakika sonra geçti.",
+      "expected": {"final_type": "RESULT", "recommended_specialty": "psychiatry"}
+    },
+    {
+      "id": "psych_depression_paraphrase_01",
+      "source": "paraphrase",
+      "user_message": "Bir aydır hiçbir şeyden zevk alamıyorum. İşe gitmek istemiyorum, uykum çok bozuldu ve iştahım yok.",
+      "expected": {"final_type": "RESULT", "recommended_specialty": "psychiatry"}
+    },
+    {
+      "id": "psych_anxiety_new_01",
+      "source": "synthetic_new",
+      "user_message": "Sürekli endişeliyim, küçük şeylere bile takılıp kalıyorum. Gece uyuyamıyorum, kaslarım gergin.",
+      "expected": {"final_type": "RESULT", "recommended_specialty": "psychiatry"}
+    },
+    {
+      "id": "psych_suicidal_redflag_01",
+      "source": "synthetic_new",
+      "user_message": "Artık dayanacak gücüm yok, bu dünyadan gitmek istiyorum. Uzun süredir bu düşünceler var.",
+      "expected": {"final_type": "EMERGENCY", "recommended_specialty": "psychiatry"}
+    },
+    {
+      "id": "derm_acne_paraphrase_01",
+      "source": "paraphrase",
+      "user_message": "Yüzümde ve sırtımda uzun süredir sivilceler var, bazıları iltihaplanıyor.",
+      "expected": {"final_type": "RESULT", "recommended_specialty": "dermatology", "top_condition_contains": "Akne"}
+    },
+    {
+      "id": "derm_eczema_new_01",
+      "source": "synthetic_new",
+      "user_message": "Dirseklerimde ve dizlerimin arkasında çok kaşıntılı, kuru, pullu bir döküntü var. Kışın daha kötü oluyor.",
+      "expected": {"final_type": "RESULT", "recommended_specialty": "dermatology"}
+    },
+    {
+      "id": "derm_urticaria_new_01",
+      "source": "synthetic_new",
+      "user_message": "Birden vücudumun her yerinde kabarcıklar çıktı, çok kaşınıyor. Daha önce olmamıştı.",
+      "expected": {"final_type": "RESULT", "recommended_specialty": "dermatology"}
+    },
+    {
+      "id": "ent_sore_throat_new_01",
+      "source": "synthetic_new",
+      "user_message": "3 gündür boğazım çok ağrıyor, yutkunurken acıyor. Hafif ateşim de var.",
+      "expected": {"final_type": "RESULT", "recommended_specialty": "ent"}
+    },
+    {
+      "id": "ent_sinusitis_new_01",
+      "source": "synthetic_new",
+      "user_message": "Yüzümün alın ve yanak bölgelerinde basınç hissi var, burnum tıkalı ve akıyor. 2 haftadır geçmiyor.",
+      "expected": {"final_type": "RESULT", "recommended_specialty": "ent"}
+    },
+    {
+      "id": "pulm_cough_chronic_new_01",
+      "source": "synthetic_new",
+      "user_message": "1 aydır kuru öksürüğüm geçmiyor, özellikle geceleri artıyor.",
+      "expected": {"final_type": "RESULT", "recommended_specialty": "pulmonology"}
+    },
+    {
+      "id": "pulm_hemoptysis_paraphrase_01",
+      "source": "paraphrase",
+      "user_message": "Bu sabah öksürürken balgamımda kan gördüm, 3 haftadır öksürük ve gece terlemesi var.",
+      "expected": {"final_type": "RESULT", "recommended_specialty": "pulmonology"}
+    },
+    {
+      "id": "pulm_asthma_attack_new_01",
+      "source": "synthetic_new",
+      "user_message": "Astımım var. Son 2 saattir inhalere rağmen nefes alamıyorum, hırıltım çok arttı.",
+      "expected": {"final_type": "EMERGENCY"}
+    },
+    {
+      "id": "ortho_back_pain_new_01",
+      "source": "synthetic_new",
+      "user_message": "3 gündür belimde çok şiddetli bir ağrı var, bacağıma da vuruyor. Otururken artıyor.",
+      "expected": {"final_type": "RESULT", "recommended_specialty": "orthopedics_rheum"}
+    },
+    {
+      "id": "ortho_knee_new_01",
+      "source": "synthetic_new",
+      "user_message": "Sağ dizim spor yaparken döndü, şişti ve ağrıyor. Basamıyorum.",
+      "expected": {"final_type": "RESULT", "recommended_specialty": "orthopedics_rheum"}
+    },
+    {
+      "id": "ortho_arthritis_paraphrase_01",
+      "source": "paraphrase",
+      "user_message": "Sabahları eklemlerim tutuk, ellerim şişiyor ve ağrıyor. 1 saatten fazla sürüyor bu tutukluk.",
+      "expected": {"final_type": "RESULT", "recommended_specialty": "orthopedics_rheum", "top_condition_contains": "Artrit"}
+    },
+    {
+      "id": "gi_gerd_new_01",
+      "source": "synthetic_new",
+      "user_message": "Yemeklerden sonra göğsümün arkasında yanma hissi oluyor, yatınca ağzıma ekşi geliyor.",
+      "expected": {"final_type": "RESULT", "recommended_specialty": "internal_gi"}
+    },
+    {
+      "id": "gi_constipation_new_01",
+      "source": "synthetic_new",
+      "user_message": "2 haftadır dışkılama zor, sert ve seyrek. Karnım şiş hissediyorum.",
+      "expected": {"final_type": "RESULT", "recommended_specialty": "internal_gi"}
+    },
+    {
+      "id": "gi_diarrhea_acute_new_01",
+      "source": "synthetic_new",
+      "user_message": "3 gündür günde 5-6 kez sulu ishalim var, karın ağrısı ve bulantı da var.",
+      "expected": {"final_type": "RESULT", "recommended_specialty": "internal_gi"}
+    },
+    {
+      "id": "gi_hemorrhoids_paraphrase_01",
+      "source": "paraphrase",
+      "user_message": "Tuvalet sırasında kanama ve anal bölgede ağrı var. Kaşıntı da oluyor bazen.",
+      "expected": {"final_type": "RESULT", "recommended_specialty": "internal_gi", "top_condition_contains": "Hemoroid"}
+    },
+    {
+      "id": "endo_dm2_paraphrase_01",
+      "source": "paraphrase",
+      "user_message": "Tip 2 diyabetliyim. Son günlerde şekerim yüksek seyrediyor, çok idrara çıkıyorum ve susuyorum.",
+      "expected": {"final_type": "RESULT", "recommended_specialty": "endocrinology", "top_condition_contains": "Diyabet"}
+    },
+    {
+      "id": "endo_hypothyroid_new_01",
+      "source": "synthetic_new",
+      "user_message": "Son aylarda çok yorgunum, kilo aldım, saçlarım döküldü ve üşüyorum.",
+      "expected": {"final_type": "RESULT", "recommended_specialty": "endocrinology"}
+    },
+    {
+      "id": "endo_dka_paraphrase_01",
+      "source": "paraphrase",
+      "user_message": "Tip 1 diyabetim var. 2 gündür çok susuyorum, bulantım var, nefesim aseton kokuyor, halsizim.",
+      "expected": {"final_type": "EMERGENCY", "recommended_specialty": "endocrinology"}
+    },
+    {
+      "id": "nephro_stone_paraphrase_01",
+      "source": "paraphrase",
+      "user_message": "Sağ yan tarafımda dalga dalga gelen çok şiddetli bir ağrı var, idrarımda kan görüyorum.",
+      "expected": {"final_type": "RESULT", "recommended_specialty": "nephrology"}
+    },
+    {
+      "id": "uro_uti_paraphrase_01",
+      "source": "paraphrase",
+      "user_message": "İdrar yaparken yanma ve sık sık idrara çıkma ihtiyacı var. Alt karnımda da hafif ağrı.",
+      "expected": {"final_type": "RESULT", "recommended_specialty": "urology_internal", "top_condition_contains": "İdrar yolu enfeksiyonu"}
+    },
+    {
+      "id": "ophth_glaucoma_paraphrase_01",
+      "source": "paraphrase",
+      "user_message": "Sağ gözüm aniden çok ağrımaya başladı, bulanık görüyorum ve ışıklara bakınca halka görüyorum.",
+      "expected": {"final_type": "EMERGENCY", "recommended_specialty": "ophthalmology"}
+    },
+    {
+      "id": "ophth_conj_paraphrase_01",
+      "source": "paraphrase",
+      "user_message": "Her iki gözüm de kırmızı, kaşıntılı ve sulanıyor. Polen sezonunda hep oluyor.",
+      "expected": {"final_type": "RESULT", "recommended_specialty": "ophthalmology"}
+    },
+    {
+      "id": "ophth_sudden_loss_paraphrase_01",
+      "source": "paraphrase",
+      "user_message": "Sol gözümde aniden perde indi gibi, o tarafı göremiyorum. Öncesinde siyah lekeler görüyordum.",
+      "expected": {"final_type": "EMERGENCY", "recommended_specialty": "ophthalmology"}
+    },
+    {
+      "id": "pedi_fever_infant_paraphrase_01",
+      "source": "paraphrase",
+      "user_message": "6 haftalık bebeğimin ateşi 38.7 derece. Ne yapmam gerekiyor?",
+      "expected": {"final_type": "EMERGENCY", "recommended_specialty": "pediatrics"}
+    },
+    {
+      "id": "pedi_otitis_paraphrase_01",
+      "source": "paraphrase",
+      "user_message": "3 yaşındaki kızım kulağını çekiştiriyor ve huzursuz. Ateşi de var.",
+      "expected": {"final_type": "RESULT", "recommended_specialty": "pediatrics", "top_condition_contains": "Otitis"}
+    },
+    {
+      "id": "pedi_seizure_paraphrase_01",
+      "source": "paraphrase",
+      "user_message": "5 yaşındaki oğlum ateşli iken aniden kasılmaya başladı, gözleri döndü ve bilinci kapandı.",
+      "expected": {"final_type": "EMERGENCY", "recommended_specialty": "pediatrics"}
+    },
+    {
+      "id": "obgyn_pcos_paraphrase_01",
+      "source": "paraphrase",
+      "user_message": "Adetlerim 3-4 ayda bir oluyor, kilo almaktayım ve çene bölgemde tüylenme var.",
+      "expected": {"final_type": "RESULT", "recommended_specialty": "obgyn"}
+    },
+    {
+      "id": "obgyn_dysmenorrhea_paraphrase_01",
+      "source": "paraphrase",
+      "user_message": "Her adet dönemimde çok şiddetli kramp ve bel ağrım oluyor, okula gidemiyorum.",
+      "expected": {"final_type": "RESULT", "recommended_specialty": "obgyn", "top_condition_contains": "Dismenore"}
+    },
+    {
+      "id": "obgyn_ectopic_paraphrase_01",
+      "source": "paraphrase",
+      "user_message": "Gebe olduğumu biliyorum ama sol kasığımda çok şiddetli ağrı var ve hafif kanama oluyor.",
+      "expected": {"final_type": "EMERGENCY", "recommended_specialty": "obgyn"}
+    },
+    {
+      "id": "ambiguous_fatigue",
+      "source": "ambiguous",
+      "user_message": "3 aydır sürekli yorgunum, halsizlik hissediyorum, nedenini bulamıyorum.",
+      "expected": {"final_type": "RESULT"}
+    },
+    {
+      "id": "ambiguous_chest_reflux_vs_cardio",
+      "source": "ambiguous",
+      "user_message": "Göğsümde ara ara yanma ve baskı hissi oluyor, yemek sonrası daha belirgin.",
+      "expected": {"final_type": "RESULT"}
+    },
+    {
+      "id": "ambiguous_back_vs_renal",
+      "source": "ambiguous",
+      "user_message": "Belimde bir ağrı var, bazen yan tarafa vuruyor. Dün sabah başladı.",
+      "expected": {"final_type": "RESULT"}
+    },
+    {
+      "id": "surg_appendicitis_paraphrase_01",
+      "source": "paraphrase",
+      "user_message": "Sağ alt karnımda giderek artan bir ağrı var, ateş 38 ve yürürken daha çok acıyor.",
+      "expected": {"final_type": "EMERGENCY", "recommended_specialty": "general_surgery"}
+    },
+    {
+      "id": "emergency_bleeding_new_01",
+      "source": "synthetic_new",
+      "user_message": "Bileğimi kestim, kan bir türlü durmuyor, bandajlamama rağmen çok kanıyor.",
+      "expected": {"final_type": "EMERGENCY"}
+    },
+    {
+      "id": "emergency_anaphylaxis_new_01",
+      "source": "synthetic_new",
+      "user_message": "Badem yedikten sonra dudaklarım ve boğazım şişti, nefes alamıyorum, kurdeşen çıktı.",
+      "expected": {"final_type": "EMERGENCY"}
+    }
+  ]
+}
