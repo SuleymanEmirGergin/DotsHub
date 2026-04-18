@@ -531,6 +531,23 @@ def run_orchestrator_turn(
         stop_rules=runtime.stop_rules,
     )
 
+    # Depression context injection: when psychiatry is the top specialty
+    # and the patient described low mood ("düşük ruh hali"), ensure the
+    # top_conditions list contains "Majör Depresyon" — the Kaggle disease
+    # matrix has no depression entry, so without this injection the RESULT
+    # envelope lacks the clinically expected condition label.
+    if (
+        top_spec.get("id") == "psychiatry"
+        and "düşük ruh hali" in _safety_canonicals
+        and not any(
+            "Depresyon" in (c.get("disease_label") or "")
+            for c in candidates[:3]
+        )
+    ):
+        candidates = [
+            {"disease_label": "Majör Depresyon", "score_0_1": 0.6}
+        ] + candidates[:2]
+
     # A2 panic softener override: when the panic context was confirmed
     # earlier (panic canonical present, no hard cardio/anaphylaxis
     # signals), short-circuit the question loop and force a psychiatry

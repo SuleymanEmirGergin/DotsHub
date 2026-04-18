@@ -230,7 +230,14 @@
         "yas",
         "uyum sorunu",
         "somatizasyon",
-        "postpartum"
+        "postpartum",
+        "3 haftadır kötü",
+        "çok kötü hissediyorum",
+        "yemek yiyemiyorum",
+        "kendimi kötü hissediyorum",
+        "hiçbir şey istemiyor canım",
+        "zevk alamıyorum",
+        "hiçbir şeyden zevk"
       ],
       "negative_keywords_tr": []
     },
@@ -350,7 +357,13 @@
         "terleme ve kilo kaybı",
         "cushing",
         "kortizol",
-        "hipoglisemi"
+        "hipoglisemi",
+        "tip 2 diyabetim",
+        "tip 1 diyabetim",
+        "şekerim yükseldi",
+        "şekerim çok yükseldi",
+        "sık idrara çıkıyorum",
+        "poliüri"
       ],
       "negative_keywords_tr": []
     },
