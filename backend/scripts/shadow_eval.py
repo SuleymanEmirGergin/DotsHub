@@ -181,29 +181,30 @@ def _to_mode_result(
 def _run_with_llm_flag(
     runtime: Any, scenario: Dict[str, Any], llm_enabled: bool
 ) -> ModeResult:
-    """Execute a scenario with LLM_NLU_ENABLED forced to the given value."""
+    """Execute a scenario with LLM_NLU_ENABLED forced to the given value.
+
+    We mutate the real settings object instead of using patch() + MagicMock:
+    the llm_nlu_client reads many settings attributes (WIRO_API_KEY,
+    WIRO_API_SECRET, WIRO_BASE_URL, ...) and a MagicMock replacement would
+    make every attribute access return a Mock object, causing the LLM call
+    to fail silently and fall back to deterministic. Direct mutation
+    preserves the .env-loaded values and only overrides the feature flag
+    and the supabase-logging flag.
+    """
+    from app.core.config import settings as real_settings
+
+    original_enabled = real_settings.LLM_NLU_ENABLED
+    original_log = getattr(real_settings, "LLM_NLU_LOG_TO_SUPABASE", True)
+    real_settings.LLM_NLU_ENABLED = llm_enabled
+    real_settings.LLM_NLU_LOG_TO_SUPABASE = False  # never log shadow eval
+
     start = time.perf_counter()
     try:
-        with patch("app.core.config.settings") as mock_s:
-            # Preserve defaults we care about; override only the flag under test.
-            from app.core.config import settings as real_settings
-
-            mock_s.LLM_NLU_ENABLED = llm_enabled
-            mock_s.MAX_QUESTIONS = getattr(real_settings, "MAX_QUESTIONS", 6)
-            mock_s.LLM_PROVIDER = getattr(real_settings, "LLM_PROVIDER", "wiro")
-            mock_s.LLM_NLU_MODEL = getattr(
-                real_settings, "LLM_NLU_MODEL", "google/gemini-2-5-flash"
-            )
-            mock_s.LLM_NLU_TIMEOUT_SECONDS = getattr(
-                real_settings, "LLM_NLU_TIMEOUT_SECONDS", 15.0
-            )
-            mock_s.LLM_NLU_POLL_INTERVAL_SECONDS = getattr(
-                real_settings, "LLM_NLU_POLL_INTERVAL_SECONDS", 0.5
-            )
-            mock_s.LLM_NLU_LOG_TO_SUPABASE = False  # never log shadow eval to prod
-            final_type, payload = _run_scenario(runtime, scenario)
+        final_type, payload = _run_scenario(runtime, scenario)
     except Exception as exc:  # noqa: BLE001 — keep going across scenarios
         elapsed = int((time.perf_counter() - start) * 1000)
+        real_settings.LLM_NLU_ENABLED = original_enabled
+        real_settings.LLM_NLU_LOG_TO_SUPABASE = original_log
         return ModeResult(
             final_type="ERROR",
             specialty_id=None,
@@ -214,6 +215,8 @@ def _run_with_llm_flag(
             error=f"{type(exc).__name__}: {exc}",
         )
     elapsed = int((time.perf_counter() - start) * 1000)
+    real_settings.LLM_NLU_ENABLED = original_enabled
+    real_settings.LLM_NLU_LOG_TO_SUPABASE = original_log
     return _to_mode_result(final_type, payload, elapsed)
 
 
