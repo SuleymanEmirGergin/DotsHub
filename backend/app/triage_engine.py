@@ -733,6 +733,64 @@ def run_orchestrator_turn(
     ):
         _prepend_if_absent("Hipotiroidi", 0.6, "Hipotiroidi")
 
+    # B2 coverage expansion injections — one liner each so the hot path
+    # stays shallow. All specialty-first gated, all idempotent via
+    # _prepend_if_absent.
+
+    if top_spec.get("id") == "pulmonology" and (
+        "öksürük" in _safety_canonicals
+        and (
+            "pnömoni" in _text_norm_for_inject
+            or ("balgam" in _safety_canonicals and "göğüs ağrısı" in _safety_canonicals and "ateş" in _safety_canonicals)
+        )
+    ):
+        _prepend_if_absent("Pnömoni", 0.6, "Pnömoni")
+
+    if top_spec.get("id") == "ent" and (
+        "sinüs basıncı" in _safety_canonicals or "sinüzit" in _text_norm_for_inject
+    ):
+        _prepend_if_absent("Sinüzit", 0.6, "Sinüzit")
+    if top_spec.get("id") == "ent" and (
+        "bademcik iltihabı" in _safety_canonicals or "tonsillit" in _text_norm_for_inject
+    ):
+        _prepend_if_absent("Tonsillit", 0.6, "Tonsillit")
+    if top_spec.get("id") == "ent" and "kulak kanalı akıntısı" in _safety_canonicals:
+        _prepend_if_absent("Eksternal Otit", 0.6, "Otit")
+
+    if top_spec.get("id") == "endocrinology" and "hipertiroidi belirtisi" in _safety_canonicals:
+        _prepend_if_absent("Hipertiroidi", 0.6, "Hipertiroidi")
+
+    if top_spec.get("id") == "dermatology" and "ayak mantarı" in _safety_canonicals:
+        _prepend_if_absent("Fungal enfeksiyon (ayak)", 0.6, "Fungal")
+    if top_spec.get("id") == "dermatology" and "psoriasis belirtisi" in _safety_canonicals:
+        _prepend_if_absent("Psoriasis", 0.6, "Psoriasis")
+
+    if top_spec.get("id") == "orthopedics_rheum" and "bel ağrısı" in _safety_canonicals and (
+        "bacağıma vur" in _text_norm_for_inject
+        or "siyatik" in _text_norm_for_inject
+        or "bacağa yay" in _text_norm_for_inject
+    ):
+        _prepend_if_absent("Bel fıtığı / Siyatik", 0.55, "Siyatik")
+    if top_spec.get("id") == "orthopedics_rheum" and "omuz ağrısı" in _safety_canonicals and (
+        "kaldıramıyorum" in _text_norm_for_inject or "donuk" in _text_norm_for_inject
+    ):
+        _prepend_if_absent("Donuk Omuz (Adhesif Kapsülit)", 0.55, "Donuk")
+    if top_spec.get("id") == "orthopedics_rheum" and "diz yaralanması" in _safety_canonicals:
+        _prepend_if_absent("Diz yaralanması", 0.55, "Diz yaralanması")
+
+    if top_spec.get("id") == "psychiatry" and "obsesif kompülsif belirti" in _safety_canonicals:
+        _prepend_if_absent("OKB (Obsesif Kompülsif Bozukluk)", 0.6, "OKB")
+
+    if top_spec.get("id") == "ophthalmology" and "görme bulanıklığı ilerleyen" in _safety_canonicals:
+        _prepend_if_absent("Katarakt", 0.55, "Katarakt")
+    if top_spec.get("id") == "ophthalmology" and "arpacık belirtisi" in _safety_canonicals:
+        _prepend_if_absent("Arpacık (Hordeolum)", 0.55, "Arpacık")
+
+    if top_spec.get("id") == "obgyn" and "gebelik takibi isteği" in _safety_canonicals:
+        _prepend_if_absent("Gebelik Takibi", 0.55, "Gebelik")
+    if top_spec.get("id") == "obgyn" and "menopoz belirtisi yaşam" in _safety_canonicals:
+        _prepend_if_absent("Menopoz", 0.55, "Menopoz")
+
     # Hemorrhoids: anal pain + bleeding signal. Kaggle has
     # "Dimorphic hemmorhoids(piles)" which we already override to
     # "Hemoroid" — so the injection is only a safety net when scoring

@@ -43,7 +43,16 @@ from app.triage_engine import run_orchestrator_turn
 #      specialty-keyword audit + Migren/Diyabet/Hipertansiyon/
 #      Hipotiroidi/Hemoroid context injections + stroke 3rd-person
 #      regex. synthetic_new still at 39.5% — next tuning target.)
-MIN_PASS_RATE = 0.55
+#   commit B2-cover  (79 scenarios): 57/79 = 72.2%  threshold 0.65
+#     (synthetic_new 39.5% → 63.2% after adding 14 new canonicals
+#      — ayak mantarı, psoriasis, sinüs basıncı, bademcik iltihabı,
+#      bel ağrısı, diz yaralanması, omuz ağrısı, arpacık, katarakt,
+#      hipertiroidi, OKB, gebelik takibi, menopoz, kulak kanalı
+#      akıntısı — plus Pnömoni/Sinüzit/Tonsillit/Hipertiroidi/
+#      ayak mantarı/Psoriasis/Bel fıtığı/Donuk Omuz/OKB/Katarakt/
+#      Arpacık/Gebelik/Menopoz context injections, plus self_harm
+#      regex expansion for paraphrased suicidal ideation.)
+MIN_PASS_RATE = 0.65
 
 
 class RealCorpusTests(unittest.TestCase):

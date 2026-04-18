@@ -285,7 +285,10 @@
         "boğulur gibi öksürüyorum",
         "sabah öksürüğüm var",
         "öksürük geçmiyor",
-        "uzun süredir öksürüyorum"
+        "uzun süredir öksürüyorum",
+        "1 aydır kuru öksürük",
+        "kuru öksürüğüm geçmiyor",
+        "geceleri artıyor öksürük"
       ]
     },
     {
@@ -311,7 +314,8 @@
         "tekrarlayan şiddetli baş ağrıları",
         "ayda birkaç kez şiddetli baş ağrısı",
         "zonklayıcı baş ağrısı",
-        "tek taraflı zonklayıcı"
+        "tek taraflı zonklayıcı",
+        "başım ağrıyor ve halsizlik"
       ]
     },
     {
@@ -753,7 +757,9 @@
         "her şey zor geliyor yorgunluktan",
         "uyandığımda bile yorgunum",
         "halsizliğim geçmiyor",
-        "tükenmiş hissediyorum"
+        "tükenmiş hissediyorum",
+        "halsiz hissediyorum",
+        "çok yorgunum kilo aldım"
       ]
     },
     {
@@ -769,7 +775,10 @@
         "uyku kalitem kötü",
         "yatağa girince aklım çalışıyor",
         "geceleri düşüncelerim durmuyor",
-        "insomnia"
+        "insomnia",
+        "2 aydır uyuyamıyorum",
+        "3-4 saat uyuyabiliyorum",
+        "uykuya dalmakta zorlanıyorum"
       ]
     },
     {
@@ -868,7 +877,9 @@
         "bir şeye uzun süre bakamıyorum",
         "unutkanlık arttı",
         "zihin bulanıklığı",
-        "düşüncelerim karışık"
+        "düşüncelerim karışık",
+        "kontrol etme takıntım var",
+        "sürekli endişeliyim"
       ]
     },
     {
@@ -1189,7 +1200,10 @@
         "bebeğimde kızarıklık ve ateş çıktı",
         "ateşle birlikte leke çıktı",
         "vücudunda döküntü ve ateşi var",
-        "döküntü ateşle birlikte geldi"
+        "döküntü ateşle birlikte geldi",
+        "4 yaşındaki oğlumun vücudunda kırmızı noktalar",
+        "kırmızı noktalar çıktı ateş",
+        "boynunda bez var ateşi"
       ]
     },
     {
@@ -1239,7 +1253,10 @@
         "bebek ishal ve susuz kaldı",
         "çocuk çok ishal yapıyor ve dudakları kurudu",
         "dehidrasyon belirtisi var çocukta",
-        "çocukta sulu ishal ve gözleri çöküyor"
+        "çocukta sulu ishal ve gözleri çöküyor",
+        "3 yaşındaki kızım 2 gündür ishalde",
+        "2 yaşındaki oğlum ishal",
+        "günde 5-6 kez sulu ishal"
       ]
     },
     {
@@ -1452,7 +1469,164 @@
         "tansiyonum 180",
         "tansiyonum çıktı",
         "yüksek tansiyonum var",
-        "doktorum yüksek tansiyon"
+        "doktorum yüksek tansiyon",
+        "170/100",
+        "180/110",
+        "tansiyonum 170/100",
+        "evde ölçtüm 170"
+      ]
+    },
+    {
+      "canonical": "ayak mantarı",
+      "type": "symptom",
+      "variants_tr": [
+        "ayak parmaklarımın arasında kaşıntılı",
+        "ayak parmakları arası kaşıntı",
+        "ayakta soyulan döküntü",
+        "havuza gittikten sonra kaşıntı",
+        "atlet ayağı"
+      ]
+    },
+    {
+      "canonical": "psoriasis belirtisi",
+      "type": "symptom",
+      "variants_tr": [
+        "gümüş beyaz kepekli plaklar",
+        "dirseklerim gümüş kepekli",
+        "saçlı derimde kepekli plaklar",
+        "kırmızı plaklar kepekli",
+        "psoriasis",
+        "sedef hastalığı"
+      ]
+    },
+    {
+      "canonical": "kulak kanalı akıntısı",
+      "type": "symptom",
+      "variants_tr": [
+        "kulak kanalım ağrıyor",
+        "kulakta akıntı kaşıntı",
+        "yüzerken kulağıma su kaçtı",
+        "dış kulak iltihabı"
+      ]
+    },
+    {
+      "canonical": "sinüs basıncı",
+      "type": "symptom",
+      "variants_tr": [
+        "yüzümde basınç",
+        "alın ve yanak bölgesinde basınç",
+        "yüzümde alın ve yanak basınç",
+        "burnum tıkalı ve akıyor",
+        "sinüzit"
+      ]
+    },
+    {
+      "canonical": "bademcik iltihabı",
+      "type": "symptom",
+      "variants_tr": [
+        "bademciklerim şiş",
+        "bademciklerim beyaz lekeli",
+        "tonsillit",
+        "yutkunamıyorum ateş"
+      ]
+    },
+    {
+      "canonical": "bel ağrısı",
+      "type": "symptom",
+      "variants_tr": [
+        "belimde çok şiddetli ağrı",
+        "belim ağrıyor",
+        "bel ağrım bacağıma vuruyor",
+        "bel ağrısı bacağa yayılıyor",
+        "siyatik ağrı",
+        "siyatik",
+        "otururken artıyor bel ağrısı"
+      ]
+    },
+    {
+      "canonical": "diz yaralanması",
+      "type": "symptom",
+      "variants_tr": [
+        "dizim döndü",
+        "dizim şişti ve ağrıyor",
+        "dize basamıyorum",
+        "menisküs",
+        "bağ yaralanması"
+      ]
+    },
+    {
+      "canonical": "omuz ağrısı",
+      "type": "symptom",
+      "variants_tr": [
+        "omzum ağrıyor",
+        "omzumu kaldıramıyorum",
+        "donuk omuz",
+        "frozen shoulder",
+        "omuz hareketi kısıtlı"
+      ]
+    },
+    {
+      "canonical": "arpacık belirtisi",
+      "type": "symptom",
+      "variants_tr": [
+        "göz kapağımda ağrılı kırmızı şişlik",
+        "göz kapağında küçük şişlik",
+        "arpacık",
+        "göz kapağı sivilce gibi"
+      ]
+    },
+    {
+      "canonical": "görme bulanıklığı ilerleyen",
+      "type": "symptom",
+      "variants_tr": [
+        "görüşüm yavaş yavaş bulanıklaştı",
+        "geceleri farlar etrafında kamaşma",
+        "kataract",
+        "göz merceği bulanıklaşması",
+        "yaş bağlı görme azalması"
+      ]
+    },
+    {
+      "canonical": "hipertiroidi belirtisi",
+      "type": "symptom",
+      "variants_tr": [
+        "kilo verdim çarpıntım var",
+        "ellerim titriyor ve çok terliyorum",
+        "iştahım iyi ama zayıflıyorum",
+        "hipertiroidi",
+        "tiroid yüksek"
+      ]
+    },
+    {
+      "canonical": "obsesif kompülsif belirti",
+      "type": "symptom",
+      "variants_tr": [
+        "günde 20 kez ellerimi yıkıyorum",
+        "kontrol etme takıntı",
+        "takıntı var",
+        "kompülsiyon",
+        "obsesif",
+        "evden çıkamıyorum takıntı"
+      ]
+    },
+    {
+      "canonical": "gebelik takibi isteği",
+      "type": "symptom",
+      "variants_tr": [
+        "adetim gecikti test pozitif",
+        "gebeyim ilk kontrol",
+        "gebelik takibi",
+        "ilk prenatal kontrol"
+      ]
+    },
+    {
+      "canonical": "menopoz belirtisi yaşam",
+      "type": "symptom",
+      "variants_tr": [
+        "sıcak basması gece terlemesi",
+        "6 aydır adet görmedim",
+        "50 yaşında adet yok",
+        "menopoz dönemi"
       ]
     }
   ]

@@ -131,9 +131,16 @@
           "intihar",
           "kendimi öldürmek",
           "kendime zarar",
-          "ölmek istiyorum"
+          "ölmek istiyorum",
+          "kendime zarar vermeyi planlıyorum",
+          "bu dünyadan gitmek istiyorum",
+          "yaşamak istemiyorum",
+          "dayanacak gücüm yok",
+          "artık dayanacak gücüm yok",
+          "ilaçları biriktirdim",
+          "ilaç biriktirdim"
         ],
-        "regex": "\\b(intihar|kendimi\\s*öldürmek|kendime\\s*zarar|ölmek\\s*istiyorum)\\b",
+        "regex": "\\b(intihar|kendimi\\s*öldürmek|kendime\\s*zarar|ölmek\\s*istiyorum|bu\\s*dünyadan\\s*gitmek\\s*istiyorum|yaşamak\\s*istemiyorum|dayanacak\\s*gücüm\\s*yok|ilaç(ları|\\s+)\\s*biriktir)\\b",
         "action": "ER_NOW"
       },
       {

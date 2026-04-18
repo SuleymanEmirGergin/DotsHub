@@ -18,7 +18,18 @@
         "işitme azaldı",
         "ses kısıklığı",
         "bademcik",
-        "tonsil"
+        "tonsil",
+        "yüzümde basınç",
+        "alın ve yanak bölgelerinde basınç",
+        "burnum tıkalı ve akıyor",
+        "bademciklerim şiş",
+        "bademciklerim beyaz lekeli",
+        "tonsillit",
+        "yutkunamıyorum ateş",
+        "kulak kanalım ağrıyor",
+        "kulakta akıntı kaşıntı",
+        "yüzerken kulağıma su kaçtı",
+        "dış kulak iltihabı"
       ],
       "negative_keywords_tr": [
         "göğüs ağrısı",
@@ -42,7 +53,14 @@
         "balgamımda kan gördüm",
         "öksürürken balgamımda kan",
         "gece terlemesi ve öksürük",
-        "3 haftadır öksürük kanlı balgam"
+        "3 haftadır öksürük kanlı balgam",
+        "1 aydır kuru öksürük",
+        "kuru öksürüğüm geçmiyor",
+        "geceleri artıyor öksürük",
+        "5 gündür öksürük balgam göğüs ağrısı",
+        "öksürük balgam ateş nefes darlığı",
+        "pnömoni",
+        "akciğer enfeksiyonu"
       ],
       "negative_keywords_tr": [
         "göğsümde baskı",
@@ -69,7 +87,11 @@
         "ensem ağrıyor",
         "kalp çarpıntım",
         "sıkıştırıcı göğüs ağrısı",
-        "baskı gibi ağrı"
+        "baskı gibi ağrı",
+        "tansiyon 170/100",
+        "tansiyon 180/110",
+        "evde ölçtüm 170",
+        "başım ağrıyor tansiyon"
       ],
       "negative_keywords_tr": []
     },
@@ -153,7 +175,17 @@
         "yüzümde ve sırtımda sivilce",
         "uzun süredir sivilceler",
         "iltihaplı sivilce",
-        "derin iltihaplı sivilceler"
+        "derin iltihaplı sivilceler",
+        "ayak parmaklarımın arasında kaşıntılı",
+        "ayakta soyulan döküntü",
+        "havuza gittikten sonra",
+        "atlet ayağı",
+        "ayak mantarı",
+        "gümüş beyaz kepekli plaklar",
+        "dirseklerim gümüş kepekli",
+        "saçlı derimde kepekli plaklar",
+        "psoriasis",
+        "sedef hastalığı"
       ],
       "negative_keywords_tr": [
         "dudak şişti",
@@ -209,7 +241,14 @@
         "polen sezonunda gözüm",
         "ışıklara bakınca halka",
         "bulanık görüyorum",
-        "ışıklara bakınca halo"
+        "ışıklara bakınca halo",
+        "görüşüm yavaş yavaş bulanıklaştı",
+        "geceleri farlar etrafında kamaşma",
+        "kataract",
+        "yaş bağlı görme azalması",
+        "göz kapağımda ağrılı kırmızı şişlik",
+        "göz kapağı sivilce gibi",
+        "arpacık göz"
       ],
       "negative_keywords_tr": []
     },
@@ -231,7 +270,18 @@
         "sabahları eklemlerim tutuk",
         "ellerim şişiyor ve ağrıyor",
         "1 saatten fazla tutukluk",
-        "sabah tutukluğu 1 saat"
+        "sabah tutukluğu 1 saat",
+        "belimde şiddetli ağrı",
+        "belim ağrıyor bacağa vuruyor",
+        "siyatik",
+        "siyatik ağrı",
+        "dizim döndü",
+        "dizim şişti",
+        "dize basamıyorum",
+        "omzum ağrıyor kaldıramıyorum",
+        "donuk omuz",
+        "frozen shoulder",
+        "omuz hareketi kısıtlı"
       ],
       "negative_keywords_tr": []
     },
@@ -285,7 +335,16 @@
         "bu dünyadan gitmek istiyorum",
         "kendimi kötü hissettim geçti",
         "öleceğim hissine kapılıyorum",
-        "metroda aniden kalbim"
+        "metroda aniden kalbim",
+        "günde 20 kez ellerimi yıkıyorum",
+        "kontrol etme takıntı",
+        "takıntı var",
+        "evden çıkamıyorum takıntı",
+        "2 aydır 3-4 saat uyuyorum",
+        "uykuya dalmakta zorlanıyorum",
+        "3-4 saat uyuyabiliyorum",
+        "dayanacak gücüm yok",
+        "artık dayanacak gücüm yok"
       ],
       "negative_keywords_tr": []
     },
@@ -341,7 +400,15 @@
         "sol kasığımda şiddetli ağrı",
         "gebeyim kasık ağrısı",
         "gebe olduğumu biliyorum kasık ağrısı",
-        "hafif kanama oluyor"
+        "hafif kanama oluyor",
+        "adetim gecikti test pozitif",
+        "gebeyim ilk kontrol",
+        "gebelik takibi",
+        "ilk prenatal kontrol",
+        "sıcak basması gece terlemesi",
+        "6 aydır adet görmedim",
+        "50 yaşında adet yok",
+        "menopoz dönemi"
       ],
       "negative_keywords_tr": []
     },
@@ -374,7 +441,14 @@
         "pediatri",
         "18 aylık bebeğim kulağını çekiyor",
         "bebeğim kulağını çekiyor",
-        "bebeğim geceleri uyuyamıyor kulağını çekiyor"
+        "bebeğim geceleri uyuyamıyor kulağını çekiyor",
+        "3 yaşındaki kızım ishalde",
+        "2 yaşındaki oğlum ishal",
+        "günde 5-6 kez sulu ishal",
+        "3 yaşındaki ishal ateş",
+        "4 yaşındaki kırmızı noktalar",
+        "4 yaşındaki oğlumun vücudunda kırmızı noktalar",
+        "boynunda bez var ateşi"
       ],
       "negative_keywords_tr": []
     },
@@ -440,7 +514,13 @@
         "çok yorgunum kilo aldım cildim kuru",
         "kilo aldım cildim kuru saçlarım dökülüyor",
         "üşüyorum sürekli kilo aldım",
-        "hipotiroidi belirtileri"
+        "hipotiroidi belirtileri",
+        "tiroid yüksek",
+        "kilo verdim çarpıntım var ellerim titriyor",
+        "kilo verdim çarpıntı",
+        "ellerim titriyor terliyorum",
+        "iştahım iyi ama zayıflıyorum",
+        "yorgunum kilo aldım cildim kuru saçlarım dökülüyor"
       ],
       "negative_keywords_tr": []
     },
