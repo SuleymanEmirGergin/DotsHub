@@ -227,10 +227,17 @@
         "hamile",
         "gebeyim",
         "gebelik testi pozitif",
-        "test pozitif çıktı"
+        "test pozitif çıktı",
+        "gebelik testim pozitif",
+        "gebelik testim pozitif çıktı",
+        "testim pozitif",
+        "gebe kaldım"
       ],
       "canonical_any": [
-        "gebelik şüphesi"
+        "gebelik şüphesi",
+        "pelvik ağrı",
+        "vajinal kanama",
+        "kasık şişliği"
       ],
       "require_any_group": [
         {
@@ -244,7 +251,15 @@
             "sağ kasığımda ağrı",
             "sol kasığımda ağrı",
             "kasıkta ağrı",
-            "tek taraflı kasık ağrısı"
+            "tek taraflı kasık ağrısı",
+            "kasığımda",
+            "kasığımda ağrı",
+            "kasığımda çok şiddetli ağrı",
+            "sağ kasığımda şiddetli",
+            "sol kasığımda şiddetli",
+            "kanama oluyor",
+            "az kanama",
+            "az miktarda kanama"
           ]
         },
         {
