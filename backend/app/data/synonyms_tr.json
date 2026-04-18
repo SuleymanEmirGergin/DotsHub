@@ -1227,7 +1227,12 @@
         "sağ böbreğim ağrıyor",
         "sol böbrek ağrısı",
         "sağ böbrek ağrısı",
-        "lomber ağrı"
+        "lomber ağrı",
+        "sol böbreğim çok şiddetli ağrıyor",
+        "sağ böbreğim çok şiddetli ağrıyor",
+        "böbreğimde ağrı",
+        "böbrekte ağrı",
+        "şiddetli böbrek ağrısı"
       ]
     },
     {
@@ -1244,7 +1249,10 @@
         "idrarımda kan",
         "idrarda kan",
         "idrarımın rengi kırmızı",
-        "kan işedim"
+        "kan işedim",
+        "idrarımın rengi kırmızımsı",
+        "idrar rengi kırmızımsı",
+        "idrarım kırmızımsı"
       ]
     },
     {

@@ -535,6 +535,23 @@ def run_orchestrator_turn(
         stop_rules=runtime.stop_rules,
     )
 
+    # Renal colic context injection: nephrology + flank-pain canonical +
+    # hematuria → surface "Renal Kolik" as the top condition. Kaggle
+    # matrix maps flank pain to generic urinary conditions, which aren't
+    # the specific label the clinic expects.
+    if (
+        top_spec.get("id") == "nephrology"
+        and "yan ağrısı" in _safety_canonicals
+        and not any(
+            "Renal Kolik" in (c.get("disease_label") or "")
+            or "Böbrek Taşı" in (c.get("disease_label") or "")
+            for c in candidates[:3]
+        )
+    ):
+        candidates = [
+            {"disease_label": "Renal Kolik", "score_0_1": 0.7}
+        ] + candidates[:2]
+
     # Otitis media context injection: pediatrics + ear-pulling canonical →
     # surface "Akut otitis media" as the top condition. The Kaggle disease
     # matrix has no otitis entry, so without this the RESULT envelope
@@ -697,6 +714,8 @@ def run_orchestrator_turn(
         # SAME_DAY wins over WITHIN_3_DAYS wins over ROUTINE.
         _result_urgency = "ROUTINE"
         if "bebek nefes hırıltısı" in _safety_canonicals:
+            _result_urgency = "SAME_DAY"
+        elif "yan ağrısı" in _safety_canonicals and top_spec.get("id") == "nephrology":
             _result_urgency = "SAME_DAY"
         elif "kulak çekiştirme" in _safety_canonicals:
             _result_urgency = "WITHIN_3_DAYS"

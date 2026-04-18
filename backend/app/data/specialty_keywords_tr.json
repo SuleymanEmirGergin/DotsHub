@@ -333,7 +333,17 @@
         "böbrek yetmezliği",
         "diyaliz",
         "kreatinin yüksek",
-        "nefrotik"
+        "nefrotik",
+        "sol böbreğim",
+        "sağ böbreğim",
+        "böbreğimde ağrı",
+        "şiddetli böbrek ağrısı",
+        "idrar kırmızımsı",
+        "idrarımın rengi kırmızımsı",
+        "kırmızımsı idrar",
+        "böbrek ağrısı gelip geçiyor",
+        "renal kolik benzeri",
+        "gelip geçen yan ağrısı"
       ],
       "negative_keywords_tr": []
     },
