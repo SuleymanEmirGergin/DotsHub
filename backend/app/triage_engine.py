@@ -601,6 +601,21 @@ def run_orchestrator_turn(
             {"disease_label": "Renal Kolik", "score_0_1": 0.7}
         ] + candidates[:2]
 
+    # Bronchiolitis context injection: pediatrics + infant noisy-breathing
+    # canonical → surface "Bronşiolit" as the top condition. Kaggle
+    # matrix's respiratory labels aren't pediatric-specific enough.
+    if (
+        top_spec.get("id") == "pediatrics"
+        and "bebek nefes hırıltısı" in _safety_canonicals
+        and not any(
+            "Bronşiolit" in (c.get("disease_label") or "")
+            for c in candidates[:3]
+        )
+    ):
+        candidates = [
+            {"disease_label": "Bronşiolit", "score_0_1": 0.7}
+        ] + candidates[:2]
+
     # Otitis media context injection: pediatrics + ear-pulling canonical →
     # surface "Akut otitis media" as the top condition. The Kaggle disease
     # matrix has no otitis entry, so without this the RESULT envelope
