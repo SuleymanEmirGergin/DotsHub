@@ -627,7 +627,8 @@ function ConditionItem({
     (condition.izlenecek_belirtiler_tr?.length ?? 0) > 0 ||
     (condition.ne_zaman_tekrar_basvur_tr?.length ?? 0) > 0 ||
     (condition.self_care_tr?.length ?? 0) > 0 ||
-    !!condition.aciliyet_notu_tr;
+    !!condition.aciliyet_notu_tr ||
+    !!condition.ipucu_tr;
 
   return (
     <View>
@@ -677,6 +678,16 @@ function ConditionItem({
               <Text style={[styles.conditionDescText, rtlText]}>
                 {condition.disease_description_tr ??
                   condition.disease_description}
+              </Text>
+            </>
+          ) : null}
+          {condition.ipucu_tr ? (
+            <>
+              <Text style={[styles.conditionSectionLabel, rtlText]}>
+                İpucu
+              </Text>
+              <Text style={[styles.conditionDescText, rtlText]}>
+                {condition.ipucu_tr}
               </Text>
             </>
           ) : null}

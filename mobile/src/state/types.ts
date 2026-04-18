@@ -41,6 +41,9 @@ export type TopCondition = {
   ne_zaman_tekrar_basvur_tr?: string[];
   self_care_tr?: string[];
   aciliyet_notu_tr?: string;
+  // Short one-liner attached to Kaggle-candidate entries via
+  // kaggle_condition_meta.json (B3). Rendered under description.
+  ipucu_tr?: string;
   disclaimer_tr?: string;
 };
 

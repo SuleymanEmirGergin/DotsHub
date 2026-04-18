@@ -104,10 +104,19 @@ def _annotate_and_enrich_top_conditions(
             entry["disclaimer_tr"] = disclaimer
         else:
             entry["source_type"] = "kaggle_candidate"
-            # Kaggle entries don't get curated prep fields in this initial
-            # release. UI shows the raw disease_description_en (already
-            # present via _lookup_disease_description). Disclaimer is still
-            # attached so UI can render the same footer regardless of source.
+            # B3 — Kaggle candidate enrichment: attach ICD-10 + TR
+            # description + a one-line hint from kaggle_condition_meta
+            # when the label has one. Labels without meta render with
+            # just the English disease_description fallback (pre-B3
+            # behaviour), which _lookup_disease_description already
+            # attaches earlier in the pipeline.
+            kaggle_meta_catalog = (runtime.kaggle_condition_meta or {}).get(
+                "conditions", {}
+            ) or {}
+            meta = kaggle_meta_catalog.get(label) or {}
+            for key in ("icd10", "disease_description_tr", "ipucu_tr"):
+                if key in meta and meta[key]:
+                    entry[key] = meta[key]
             entry["disclaimer_tr"] = disclaimer
         out.append(entry)
     return out

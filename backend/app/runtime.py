@@ -89,6 +89,11 @@ class Runtime:
     # triggers, self-care) and a disclaimer. Used by triage_engine to enrich
     # top_conditions entries that were context-injected (source_type="curated").
     curated_conditions: Dict[str, Any] = field(default_factory=dict)
+    # Kaggle-derived disease-label meta (app/data/kaggle_condition_meta.json).
+    # Lighter than curated_conditions: icd10 + one-paragraph description + one
+    # "ipucu" hint. Keyed by the TR *override target* label (so it joins after
+    # apply_label_overrides). Enriches source_type="kaggle_candidate" entries.
+    kaggle_condition_meta: Dict[str, Any] = field(default_factory=dict)
 
 
 def _build_disease_to_trcanonicals(
@@ -329,5 +334,23 @@ def load_runtime(data_dir: str = "app/data") -> Runtime:
             exc,
         )
     rt.curated_conditions = curated_conditions
+
+    # Kaggle-candidate meta (B3). Loaded from app/data/kaggle_condition_meta.json.
+    # Missing file is non-fatal — kaggle_candidate entries simply render
+    # without ICD-10 / description, matching pre-B3 behaviour.
+    kaggle_meta: Dict[str, Any] = {}
+    try:
+        kaggle_meta_path = d / "kaggle_condition_meta.json"
+        if kaggle_meta_path.exists():
+            raw_kaggle = load_json(str(kaggle_meta_path))
+            if isinstance(raw_kaggle, dict):
+                kaggle_meta = raw_kaggle
+    except Exception as exc:
+        logger.warning(
+            "Failed to load kaggle_condition_meta.json at %s: %s",
+            d / "kaggle_condition_meta.json",
+            exc,
+        )
+    rt.kaggle_condition_meta = kaggle_meta
 
     return rt

@@ -50,6 +50,7 @@ type TopConditionRow = {
   ne_zaman_tekrar_basvur_tr?: string[];
   self_care_tr?: string[];
   aciliyet_notu_tr?: string;
+  ipucu_tr?: string;
   disclaimer_tr?: string;
 };
 
@@ -72,7 +73,8 @@ function TopConditionsPanel({ conditions }: { conditions: unknown }) {
           (c.izlenecek_belirtiler_tr?.length ?? 0) > 0 ||
           (c.ne_zaman_tekrar_basvur_tr?.length ?? 0) > 0 ||
           (c.self_care_tr?.length ?? 0) > 0 ||
-          !!c.aciliyet_notu_tr;
+          !!c.aciliyet_notu_tr ||
+          !!c.ipucu_tr;
         return (
           <div
             key={i}
@@ -105,6 +107,12 @@ function TopConditionsPanel({ conditions }: { conditions: unknown }) {
                   <div>
                     <div className="text-[11px] font-bold text-muted-foreground mb-0.5">Nedir?</div>
                     <div className="text-foreground/90 leading-normal">{description}</div>
+                  </div>
+                )}
+                {c.ipucu_tr && (
+                  <div>
+                    <div className="text-[11px] font-bold text-muted-foreground mb-0.5">İpucu</div>
+                    <div className="text-foreground/90">{c.ipucu_tr}</div>
                   </div>
                 )}
                 {c.doktora_sorulacak_sorular_tr?.length ? (
