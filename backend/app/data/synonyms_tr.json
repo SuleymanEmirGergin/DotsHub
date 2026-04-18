@@ -807,7 +807,6 @@
       "canonical": "anksiyete",
       "type": "symptom",
       "variants_tr": [
-        "anksiyete",
         "kaygılanıyorum",
         "sürekli endişeleniyorum",
         "içim sıkışıyor",
@@ -1015,12 +1014,10 @@
       "type": "symptom",
       "variants_tr": [
         "memem ağrıyor",
-        "göğsüm ağrıyor",
         "meme akıntısı",
         "memeden akıntı geliyor",
         "memede kitle var",
         "memem şişti",
-        "göğsümde ağrı var",
         "meme hassasiyeti"
       ]
     },
@@ -1356,11 +1353,9 @@
       "canonical": "poliüri",
       "type": "symptom",
       "variants_tr": [
-        "çok sık idrara çıkıyorum",
         "çok fazla idrar yapıyorum",
         "geceleri çok kalkıyorum idrara",
         "idrar miktarı arttı",
-        "poliüri",
         "aşırı idrar",
         "çok idrar yapıyorum",
         "bol bol idrara çıkıyorum"
@@ -1383,7 +1378,6 @@
       "canonical": "sağ alt karın ağrısı",
       "type": "symptom",
       "variants_tr": [
-        "sağ alt karın ağrısı",
         "apandis ağrısı gibi",
         "sağ kasık bölgesi ağrıyor",
         "sağ alt bölge ağrısı",
@@ -1462,7 +1456,6 @@
       "canonical": "yüksek tansiyon",
       "type": "symptom",
       "variants_tr": [
-        "yüksek tansiyon",
         "hipertansiyon",
         "tansiyonum yüksek",
         "tansiyonum 170",
