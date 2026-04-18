@@ -70,7 +70,7 @@
     "feedbackThanksMessage": "Ihr Feedback wurde erhalten.",
     "feedbackError": "Feedback konnte nicht gesendet werden.",
     "whySpecialty": "Warum diese Fachrichtung?",
-    "possibleConditions": "Mögliche Beschwerden (geschätzt)",
+    "possibleConditions": "Mögliche Beschwerden (zur Info)",
     "summaryForDoctor": "Zusammenfassung für den Arzt",
     "shareAsText": "Text",
     "pdf": "PDF",
@@ -81,7 +81,18 @@
     "feedbackSubmit": "Senden",
     "feedbackThanksInline": "Ihr Feedback wurde gespeichert. Danke!",
     "alertError": "Fehler",
-    "alertInfo": "Info"
+    "alertInfo": "Info",
+    "possibleConditionsSubtitle": "Keine Diagnose. Für Details auf eine Zeile tippen.",
+    "condCuratedBadge": "Klinische Info",
+    "condIcd10": "ICD-10",
+    "condDescription": "Was ist das?",
+    "condDoctorQuestions": "Fragen an die Ärztin/den Arzt",
+    "condSymptomsToTrack": "Zu beobachtende Symptome",
+    "condWhenToEscalate": "Wann erneut Hilfe holen",
+    "condSelfCare": "Was Sie selbst tun können",
+    "condUrgencyNote": "Dringlichkeitshinweis",
+    "condExpandHint": "Zum Öffnen tippen",
+    "condCollapseHint": "Zum Schließen tippen"
   },
   "emergency": {
     "title": "Notfallbewertung erforderlich",

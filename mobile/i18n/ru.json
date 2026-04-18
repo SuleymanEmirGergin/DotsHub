@@ -70,7 +70,7 @@
     "feedbackThanksMessage": "Ваш отзыв получен.",
     "feedbackError": "Не удалось отправить отзыв.",
     "whySpecialty": "Почему эта специальность?",
-    "possibleConditions": "Возможные состояния (оценка)",
+    "possibleConditions": "Возможные состояния (информационно)",
     "summaryForDoctor": "Краткое для врача",
     "shareAsText": "Текст",
     "pdf": "PDF",
@@ -81,7 +81,18 @@
     "feedbackSubmit": "Отправить",
     "feedbackThanksInline": "Ваш отзыв сохранён. Спасибо!",
     "alertError": "Ошибка",
-    "alertInfo": "Инфо"
+    "alertInfo": "Инфо",
+    "possibleConditionsSubtitle": "Не является диагнозом. Нажмите на строку, чтобы увидеть детали.",
+    "condCuratedBadge": "Клиническая инфо",
+    "condIcd10": "МКБ-10",
+    "condDescription": "Что это?",
+    "condDoctorQuestions": "Вопросы врачу",
+    "condSymptomsToTrack": "Симптомы для отслеживания",
+    "condWhenToEscalate": "Когда снова обратиться за помощью",
+    "condSelfCare": "Что можно сделать самому",
+    "condUrgencyNote": "Примечание о срочности",
+    "condExpandHint": "Нажмите, чтобы раскрыть",
+    "condCollapseHint": "Нажмите, чтобы свернуть"
   },
   "emergency": {
     "title": "Может потребоваться экстренная помощь",
