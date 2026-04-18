@@ -37,7 +37,8 @@
     "history": "📋 Geçmiş",
     "evaluating": "Değerlendiriyorum…",
     "symptomInput": "Belirti girişi",
-    "symptomInputHint": "Belirtinizi yazıp gönderin"
+    "symptomInputHint": "Belirtinizi yazıp gönderin",
+    "emergencyDisclaimer": "Acil durumlarda 112'yi arayın."
   },
   "question": {
     "whyAsking": "Neden soruyoruz?",
@@ -94,7 +95,8 @@
     "feedbackSubmit": "Gönder",
     "feedbackThanksInline": "Geri bildirimin kaydedildi. Teşekkürler!",
     "alertError": "Hata",
-    "alertInfo": "Bilgi"
+    "alertInfo": "Bilgi",
+    "condTip": "İpucu"
   },
   "emergency": {
     "title": "Acil Değerlendirme Gerekebilir",

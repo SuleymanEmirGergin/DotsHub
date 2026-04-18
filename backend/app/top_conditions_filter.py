@@ -24,23 +24,12 @@ Emergency envelope bypass:
   Emergencies carry their own deterministic rule-based reasoning and must
   always surface to the UI regardless of model confidence.
 
-Integration (apply in ``_build_result_payload`` near line 722):
-
-    from backend.app.top_conditions_filter import (
-        apply_top_conditions_gate,
-        apply_label_overrides,
-        load_label_overrides,
-    )
-
-    raw_top = [
-        {"disease_label": d["disease_label"], "score_0_1": round(d["score_0_1"], 2)}
-        for d in state.disease_candidates[:3]
-    ]
-    gated_top = apply_top_conditions_gate(raw_top, state.confidence)
-    overrides = load_label_overrides()
-    top_conditions = apply_label_overrides(gated_top, overrides)
-
-See ``docs/medical/a9_integration.md`` for the full integration diff.
+Live integration (as of RC #1b / C2): wired from
+``triage_engine.run_orchestrator_turn`` via
+``_annotate_and_enrich_top_conditions`` +
+``_apply_gate_curated_aware``. The ``orchestrator_v5`` path noted
+in older comments has been archived to ``app/archive/`` and is no
+longer live — see ``app/archive/README.md``.
 """
 
 from __future__ import annotations

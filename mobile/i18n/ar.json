@@ -35,7 +35,10 @@
     "subtitle": "سأطرح بضعة أسئلة قصيرة لتوجيهك بشكل أفضل.",
     "locationHint": "شارك موقعك لرؤية المرافق الصحية القريبة في شاشة النتائج (اختياري).",
     "history": "📋 السجل",
-    "evaluating": "جاري التقييم…"
+    "evaluating": "جاري التقييم…",
+    "symptomInput": "إدخال الأعراض",
+    "symptomInputHint": "اكتب عرضك وأرسله.",
+    "emergencyDisclaimer": "في حالات الطوارئ اتصل برقم الطوارئ المحلي."
   },
   "question": {
     "whyAsking": "لماذا نسأل؟",
@@ -92,7 +95,8 @@
     "condSelfCare": "أشياء يمكنك القيام بها بنفسك",
     "condUrgencyNote": "ملاحظة عن مدى الإلحاح",
     "condExpandHint": "اضغط للتوسيع",
-    "condCollapseHint": "اضغط للطي"
+    "condCollapseHint": "اضغط للطي",
+    "condTip": "نصيحة"
   },
   "emergency": {
     "title": "قد يلزم تقييم طارئ",

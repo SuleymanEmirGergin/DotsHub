@@ -142,12 +142,12 @@ export default function ChatScreen() {
               accessibilityLabel={t("common.next")}
               accessibilityState={{ disabled: loading || !text.trim() }}
             >
-              <Text style={styles.sendBtnText}>Gönder</Text>
+              <Text style={styles.sendBtnText}>{t("chat.send")}</Text>
             </Pressable>
           </View>
         </Card>
 
-        <MutedText style={styles.disclaimer}>Acil durumlarda 112'yi arayın.</MutedText>
+        <MutedText style={styles.disclaimer}>{t("chat.emergencyDisclaimer")}</MutedText>
       </ScreenContainer>
     </KeyboardAvoidingView>
   );

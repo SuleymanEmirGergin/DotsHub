@@ -272,6 +272,47 @@ def put_tenant_catalog(
     return {"ok": True, "tenant_id": tenant_id, "condition_count": len(payload_dict.get("conditions", {}))}
 
 
+@router.delete("/{tenant_id}", status_code=200)
+def delete_tenant(tenant_id: str, admin=Depends(require_admin)) -> Dict[str, Any]:
+    """Delete a tenant's curated catalog file.
+
+    Reserved `default` cannot be deleted (that would take down the
+    shared baseline). Writes a `delete` audit row with the
+    pre-delete doc as old_doc so ops can still roll back.
+
+    Filesystem delete is atomic relative to the audit write: we
+    snapshot first, unlink second, then log. If the audit write
+    fails the delete still succeeds — audit is best-effort, matching
+    the POST/PUT handlers.
+    """
+    _validate_tenant_id(tenant_id)
+    if tenant_id == "default":
+        raise HTTPException(
+            status_code=400, detail="tenant_id 'default' is reserved and cannot be deleted"
+        )
+    path = _catalog_path_for(tenant_id)
+    if not path.exists():
+        raise HTTPException(status_code=404, detail=f"No catalog for tenant {tenant_id!r}")
+    actor = admin.get("user_id") if isinstance(admin, dict) else None
+    old_doc = _read_catalog_or_none(path)
+    try:
+        path.unlink()
+        logger.info(
+            "Deleted curated catalog for tenant=%r by admin=%r", tenant_id, actor
+        )
+    except Exception as exc:
+        logger.error("Failed to delete catalog for %s: %s", tenant_id, exc)
+        raise HTTPException(status_code=500, detail="tenant delete failed") from exc
+    _write_audit_row(
+        tenant_id=tenant_id,
+        action="delete",
+        actor=actor,
+        old_doc=old_doc,
+        new_doc={"_deleted": True, "tenant_id": tenant_id},
+    )
+    return {"ok": True, "tenant_id": tenant_id, "deleted": True}
+
+
 @router.post("", status_code=201)
 def create_tenant(
     req: CreateTenantRequest,

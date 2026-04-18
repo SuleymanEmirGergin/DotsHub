@@ -70,6 +70,33 @@ class Settings(BaseSettings):
     LLM_NLU_LOG_TO_SUPABASE: bool = True
     LLM_EXPLAIN_ENABLED: bool = False        # optional explanation layer (B9)
 
+    # ── Curated injection score tiers (audit follow-up) ──────────────────
+    # triage_engine.py used to hardcode per-injection score_0_1 values
+    # scattered across 25+ call sites. They collapse into three tiers.
+    # Ops can tune these without a code release; the percentage shown
+    # in the mobile UI and the RESULT envelope derives from these.
+    #
+    #   HIGH   — core curated categories where the canonical pattern
+    #             maps 1:1 to the clinical label (panic attack,
+    #             otitis, bronchiolitis, renal colic, dysmenorrhea,
+    #             PCOS, conjunctivitis).
+    #   MEDIUM — strong signal but multi-label (migraine, diabetes,
+    #             hypertension, hypothyroid, ENT/derm/GI categories).
+    #   LOW    — lifecycle or less-specific (prenatal follow-up,
+    #             menopause, cataract, stye, frozen shoulder,
+    #             lumbar-pain / sciatica, knee injury).
+    CURATED_INJECTION_SCORE_HIGH: float = 0.70
+    CURATED_INJECTION_SCORE_MEDIUM: float = 0.60
+    CURATED_INJECTION_SCORE_LOW: float = 0.55
+
+    # ── HTTP 5xx health alerts (post-C3 observability) ───────────────────
+    # Rolling-window 5xx rate; same design as LLM health monitor.
+    HTTP_5XX_ALERT_ENABLED: bool = True
+    HTTP_5XX_ALERT_WINDOW: int = 50
+    HTTP_5XX_ALERT_MIN_REQS: int = 20
+    HTTP_5XX_ALERT_SUCCESS_THRESHOLD_PCT: float = 95.0  # <95% success → alert
+    HTTP_5XX_ALERT_COOLDOWN_SEC: int = 600  # 10 minutes
+
     # ── LLM health alerts (post-C3 observability) ────────────────────────
     # When the rolling-window LLM success rate drops below
     # LLM_HEALTH_ALERT_THRESHOLD_PCT, notifier.py posts a webhook alert

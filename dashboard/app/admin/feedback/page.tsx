@@ -5,6 +5,7 @@ import { Breadcrumb } from "@/app/components/Breadcrumb";
 import { getText } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
+import { AckButton } from "./AckButton";
 
 export const dynamic = "force-dynamic";
 
@@ -141,7 +142,9 @@ export default async function FeedbackPage({
 
   let fbQuery = sb
     .from("triage_feedback")
-    .select("id,session_id,rating,comment,user_selected_specialty_id,created_at")
+    .select(
+      "id,session_id,rating,comment,user_selected_specialty_id,created_at,acknowledged_at,acknowledged_by,ack_note",
+    )
     .order("created_at", { ascending: false })
     .limit(50);
 
@@ -356,9 +359,17 @@ export default async function FeedbackPage({
                     {row.comment || "-"}
                   </td>
                   <td className="p-3.5">
-                    <a href={`/admin/sessions/${row.session_id}`} className="text-primary font-semibold no-underline text-xs">
-                      {t("feedback.detail")} &rarr;
-                    </a>
+                    <div className="flex flex-col items-start gap-1.5">
+                      <a href={`/admin/sessions/${row.session_id}`} className="text-primary font-semibold no-underline text-xs">
+                        {t("feedback.detail")} &rarr;
+                      </a>
+                      <AckButton
+                        feedbackId={row.id}
+                        acknowledgedAt={row.acknowledged_at ?? null}
+                        acknowledgedBy={row.acknowledged_by ?? null}
+                        ackNote={row.ack_note ?? null}
+                      />
+                    </div>
                   </td>
                 </tr>
               );

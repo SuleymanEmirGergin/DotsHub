@@ -43,6 +43,32 @@ def _result_top_gate() -> float:
         return 0.25
 
 
+# Curated injection score accessors. Hot path reads them through these
+# helpers so an ops override of the settings value applies without a
+# restart loop (settings is mutable at runtime — shadow_eval and some
+# tests flip flags on the shared object). See config.py comment for
+# the tier semantics (HIGH / MEDIUM / LOW).
+def _inj_high() -> float:
+    try:
+        return float(settings.CURATED_INJECTION_SCORE_HIGH)
+    except (AttributeError, TypeError, ValueError):
+        return 0.70
+
+
+def _inj_medium() -> float:
+    try:
+        return float(settings.CURATED_INJECTION_SCORE_MEDIUM)
+    except (AttributeError, TypeError, ValueError):
+        return 0.60
+
+
+def _inj_low() -> float:
+    try:
+        return float(settings.CURATED_INJECTION_SCORE_LOW)
+    except (AttributeError, TypeError, ValueError):
+        return 0.55
+
+
 # Fallback set of curated-injected labels — used ONLY when the runtime's
 # curated_conditions catalog is empty (e.g. a broken tenant config). In
 # normal operation, _curated_injected_labels(runtime) derives the set
@@ -681,7 +707,7 @@ def run_orchestrator_turn(
         )
     ):
         candidates = [
-            {"disease_label": "Alerjik Konjonktivit", "score_0_1": 0.7}
+            {"disease_label": "Alerjik Konjonktivit", "score_0_1": _inj_high()}
         ] + candidates[:2]
 
     # PCOS context injection: obgyn + hirsutism → surface "PCOS". The
@@ -698,7 +724,7 @@ def run_orchestrator_turn(
         )
     ):
         candidates = [
-            {"disease_label": "PCOS (Polikistik Over Sendromu)", "score_0_1": 0.7}
+            {"disease_label": "PCOS (Polikistik Over Sendromu)", "score_0_1": _inj_high()}
         ] + candidates[:2]
 
     # ── Extra Kaggle-label top_condition injections (B1 NLU robustness)
@@ -723,7 +749,7 @@ def run_orchestrator_turn(
         or "kusuyorum" in _text_norm_for_inject
         or "mide bulantısı" in _text_norm_for_inject
     ):
-        _prepend_if_absent("Migren", 0.6, "Migren")
+        _prepend_if_absent("Migren", _inj_medium(), "Migren")
 
     if top_spec.get("id") == "endocrinology" and (
         "tip 2 diyabet" in _text_norm_for_inject
@@ -731,10 +757,10 @@ def run_orchestrator_turn(
         or "şekerim yükseldi" in _text_norm_for_inject
         or "şekerim yüksek" in _text_norm_for_inject
     ):
-        _prepend_if_absent("Tip 2 Diyabet", 0.65, "Diyabet")
+        _prepend_if_absent("Tip 2 Diyabet", _inj_medium(), "Diyabet")
 
     if top_spec.get("id") == "cardiology" and "yüksek tansiyon" in _safety_canonicals:
-        _prepend_if_absent("Hipertansiyon", 0.65, "Hipertansiyon")
+        _prepend_if_absent("Hipertansiyon", _inj_medium(), "Hipertansiyon")
 
     # Hypothyroid: classic 4-of-4 combo signal (fatigue + weight gain +
     # dry skin + cold intolerance). Kaggle labels hypothyroidism but TR
@@ -751,7 +777,7 @@ def run_orchestrator_turn(
             or "üşüyorum" in _text_norm_for_inject
         )
     ):
-        _prepend_if_absent("Hipotiroidi", 0.6, "Hipotiroidi")
+        _prepend_if_absent("Hipotiroidi", _inj_medium(), "Hipotiroidi")
 
     # B2 coverage expansion injections — one liner each so the hot path
     # stays shallow. All specialty-first gated, all idempotent via
@@ -764,52 +790,52 @@ def run_orchestrator_turn(
             or ("balgam" in _safety_canonicals and "göğüs ağrısı" in _safety_canonicals and "ateş" in _safety_canonicals)
         )
     ):
-        _prepend_if_absent("Pnömoni", 0.6, "Pnömoni")
+        _prepend_if_absent("Pnömoni", _inj_medium(), "Pnömoni")
 
     if top_spec.get("id") == "ent" and (
         "sinüs basıncı" in _safety_canonicals or "sinüzit" in _text_norm_for_inject
     ):
-        _prepend_if_absent("Sinüzit", 0.6, "Sinüzit")
+        _prepend_if_absent("Sinüzit", _inj_medium(), "Sinüzit")
     if top_spec.get("id") == "ent" and (
         "bademcik iltihabı" in _safety_canonicals or "tonsillit" in _text_norm_for_inject
     ):
-        _prepend_if_absent("Tonsillit", 0.6, "Tonsillit")
+        _prepend_if_absent("Tonsillit", _inj_medium(), "Tonsillit")
     if top_spec.get("id") == "ent" and "kulak kanalı akıntısı" in _safety_canonicals:
-        _prepend_if_absent("Eksternal Otit", 0.6, "Otit")
+        _prepend_if_absent("Eksternal Otit", _inj_medium(), "Otit")
 
     if top_spec.get("id") == "endocrinology" and "hipertiroidi belirtisi" in _safety_canonicals:
-        _prepend_if_absent("Hipertiroidi", 0.6, "Hipertiroidi")
+        _prepend_if_absent("Hipertiroidi", _inj_medium(), "Hipertiroidi")
 
     if top_spec.get("id") == "dermatology" and "ayak mantarı" in _safety_canonicals:
-        _prepend_if_absent("Fungal enfeksiyon (ayak)", 0.6, "Fungal")
+        _prepend_if_absent("Fungal enfeksiyon (ayak)", _inj_medium(), "Fungal")
     if top_spec.get("id") == "dermatology" and "psoriasis belirtisi" in _safety_canonicals:
-        _prepend_if_absent("Psoriasis", 0.6, "Psoriasis")
+        _prepend_if_absent("Psoriasis", _inj_medium(), "Psoriasis")
 
     if top_spec.get("id") == "orthopedics_rheum" and "bel ağrısı" in _safety_canonicals and (
         "bacağıma vur" in _text_norm_for_inject
         or "siyatik" in _text_norm_for_inject
         or "bacağa yay" in _text_norm_for_inject
     ):
-        _prepend_if_absent("Bel fıtığı / Siyatik", 0.55, "Siyatik")
+        _prepend_if_absent("Bel fıtığı / Siyatik", _inj_low(), "Siyatik")
     if top_spec.get("id") == "orthopedics_rheum" and "omuz ağrısı" in _safety_canonicals and (
         "kaldıramıyorum" in _text_norm_for_inject or "donuk" in _text_norm_for_inject
     ):
-        _prepend_if_absent("Donuk Omuz (Adhesif Kapsülit)", 0.55, "Donuk")
+        _prepend_if_absent("Donuk Omuz (Adhesif Kapsülit)", _inj_low(), "Donuk")
     if top_spec.get("id") == "orthopedics_rheum" and "diz yaralanması" in _safety_canonicals:
-        _prepend_if_absent("Diz yaralanması", 0.55, "Diz yaralanması")
+        _prepend_if_absent("Diz yaralanması", _inj_low(), "Diz yaralanması")
 
     if top_spec.get("id") == "psychiatry" and "obsesif kompülsif belirti" in _safety_canonicals:
-        _prepend_if_absent("OKB (Obsesif Kompülsif Bozukluk)", 0.6, "OKB")
+        _prepend_if_absent("OKB (Obsesif Kompülsif Bozukluk)", _inj_medium(), "OKB")
 
     if top_spec.get("id") == "ophthalmology" and "görme bulanıklığı ilerleyen" in _safety_canonicals:
-        _prepend_if_absent("Katarakt", 0.55, "Katarakt")
+        _prepend_if_absent("Katarakt", _inj_low(), "Katarakt")
     if top_spec.get("id") == "ophthalmology" and "arpacık belirtisi" in _safety_canonicals:
-        _prepend_if_absent("Arpacık (Hordeolum)", 0.55, "Arpacık")
+        _prepend_if_absent("Arpacık (Hordeolum)", _inj_low(), "Arpacık")
 
     if top_spec.get("id") == "obgyn" and "gebelik takibi isteği" in _safety_canonicals:
-        _prepend_if_absent("Gebelik Takibi", 0.55, "Gebelik")
+        _prepend_if_absent("Gebelik Takibi", _inj_low(), "Gebelik")
     if top_spec.get("id") == "obgyn" and "menopoz belirtisi yaşam" in _safety_canonicals:
-        _prepend_if_absent("Menopoz", 0.55, "Menopoz")
+        _prepend_if_absent("Menopoz", _inj_low(), "Menopoz")
 
     # Hemorrhoids: anal pain + bleeding signal. Kaggle has
     # "Dimorphic hemmorhoids(piles)" which we already override to
@@ -819,7 +845,7 @@ def run_orchestrator_turn(
         "kanama" in _text_norm_for_inject
         or "kanıyor" in _text_norm_for_inject
     ):
-        _prepend_if_absent("Hemoroid", 0.6, "Hemoroid")
+        _prepend_if_absent("Hemoroid", _inj_medium(), "Hemoroid")
 
     # Dysmenorrhea context injection: obgyn + dismenore canonical →
     # surface "Dismenore" as the top condition. Kaggle matrix has no
@@ -833,7 +859,7 @@ def run_orchestrator_turn(
         )
     ):
         candidates = [
-            {"disease_label": "Dismenore", "score_0_1": 0.7}
+            {"disease_label": "Dismenore", "score_0_1": _inj_high()}
         ] + candidates[:2]
 
     # Renal colic context injection: nephrology + flank-pain canonical +
@@ -850,7 +876,7 @@ def run_orchestrator_turn(
         )
     ):
         candidates = [
-            {"disease_label": "Renal Kolik", "score_0_1": 0.7}
+            {"disease_label": "Renal Kolik", "score_0_1": _inj_high()}
         ] + candidates[:2]
 
     # Pediatric context overrides — force pediatrics routing + RESULT.
@@ -878,7 +904,7 @@ def run_orchestrator_turn(
             for c in candidates[:3]
         ):
             candidates = [
-                {"disease_label": "Bronşiolit", "score_0_1": 0.7}
+                {"disease_label": "Bronşiolit", "score_0_1": _inj_high()}
             ] + candidates[:2]
         logger.info("Bronchiolitis override: forced pediatrics RESULT")
     elif "kulak çekiştirme" in _safety_canonicals:
@@ -894,7 +920,7 @@ def run_orchestrator_turn(
             for c in candidates[:3]
         ):
             candidates = [
-                {"disease_label": "Akut Otitis Media", "score_0_1": 0.7}
+                {"disease_label": "Akut Otitis Media", "score_0_1": _inj_high()}
             ] + candidates[:2]
         logger.info("Otitis media override: forced pediatrics RESULT")
 
@@ -912,7 +938,7 @@ def run_orchestrator_turn(
         )
     ):
         candidates = [
-            {"disease_label": "Majör Depresyon", "score_0_1": 0.6}
+            {"disease_label": "Majör Depresyon", "score_0_1": _inj_medium()}
         ] + candidates[:2]
 
     # A2 panic softener override: when the panic context was confirmed
@@ -949,7 +975,7 @@ def run_orchestrator_turn(
             for c in _filtered[:3]
         ):
             _filtered = [
-                {"disease_label": "Panik Bozukluk", "score_0_1": 0.75}
+                {"disease_label": "Panik Bozukluk", "score_0_1": _inj_high()}
             ] + _filtered[:2]
         candidates = _filtered
         logger.info("A2 panic softener: forced psychiatry RESULT for panic context")

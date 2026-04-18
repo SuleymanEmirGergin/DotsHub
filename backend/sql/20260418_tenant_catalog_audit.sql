@@ -16,7 +16,7 @@
 CREATE TABLE IF NOT EXISTS tenant_catalog_audit (
     id          bigserial PRIMARY KEY,
     tenant_id   text NOT NULL,
-    action      text NOT NULL CHECK (action IN ('create', 'update')),
+    action      text NOT NULL CHECK (action IN ('create', 'update', 'delete')),
     actor       text,
     old_doc     jsonb,
     new_doc     jsonb NOT NULL,

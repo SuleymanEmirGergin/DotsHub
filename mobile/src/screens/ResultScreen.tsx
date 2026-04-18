@@ -204,6 +204,7 @@ export default function ResultScreen() {
                 whenToEscalate: t("result.condWhenToEscalate"),
                 selfCare: t("result.condSelfCare"),
                 urgencyNote: t("result.condUrgencyNote"),
+                tip: t("result.condTip"),
                 expandHint: t("result.condExpandHint"),
                 collapseHint: t("result.condCollapseHint"),
               }}
@@ -604,6 +605,7 @@ type ConditionItemLabels = {
   whenToEscalate: string;
   selfCare: string;
   urgencyNote: string;
+  tip: string;
   expandHint: string;
   collapseHint: string;
 };
@@ -617,6 +619,7 @@ function ConditionItem({
   rtlText: any;
   labels: ConditionItemLabels;
 }) {
+  const { isRTL } = useI18n();
   const [expanded, setExpanded] = useState(false);
   const curated = condition.source_type === "curated";
   const hasExpandable =
@@ -636,6 +639,12 @@ function ConditionItem({
         accessibilityRole="button"
         accessibilityLabel={condition.disease_label}
         accessibilityHint={expanded ? labels.collapseHint : labels.expandHint}
+        // Screen readers announce the collapsed/expanded state so
+        // users don't have to infer it from the ▲/▼ glyph (which is
+        // invisible to VoiceOver / TalkBack and non-localizable).
+        accessibilityState={
+          hasExpandable ? { expanded, disabled: false } : { disabled: true }
+        }
         onPress={() => hasExpandable && setExpanded((v) => !v)}
         activeOpacity={hasExpandable ? 0.6 : 1}
         style={styles.conditionItemHeader}
@@ -650,9 +659,21 @@ function ConditionItem({
             </Text>
           ) : null}
         </View>
-        <View style={{ flexDirection: "row", alignItems: "center" }}>
+        {/* RTL-aware: row-reverse mirrors the cluster (chevron +
+            score) in Arabic so the disclosure arrow sits next to
+            the percentage the same way it does in LTR. */}
+        <View
+          style={{
+            flexDirection: isRTL ? "row-reverse" : "row",
+            alignItems: "center",
+          }}
+        >
           {hasExpandable ? (
-            <Text style={[styles.conditionExpandHint, rtlText]}>
+            <Text
+              style={[styles.conditionExpandHint, rtlText]}
+              accessibilityElementsHidden
+              importantForAccessibility="no"
+            >
               {expanded ? "▲" : "▼"}
             </Text>
           ) : null}
@@ -684,7 +705,7 @@ function ConditionItem({
           {condition.ipucu_tr ? (
             <>
               <Text style={[styles.conditionSectionLabel, rtlText]}>
-                İpucu
+                {labels.tip}
               </Text>
               <Text style={[styles.conditionDescText, rtlText]}>
                 {condition.ipucu_tr}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 
 type Props = {
@@ -17,6 +18,7 @@ type Props = {
 // much surface for round 1). A textarea forces them through the JSON
 // shape, which is explicit about what the backend will accept.
 export function CatalogEditor({ tenantId, initial }: Props) {
+  const router = useRouter();
   const initialJson = useMemo(
     () => JSON.stringify(initial ?? {}, null, 2),
     [initial],
@@ -78,6 +80,41 @@ export function CatalogEditor({ tenantId, initial }: Props) {
     setNotice(null);
   }
 
+  async function onDelete() {
+    // Two-step confirm — catalog delete is destructive + irreversible
+    // from the UI (the audit log preserves the doc, but re-creating
+    // the tenant via POST with seed_from_default=false would need
+    // that audit row to be replayed by an operator).
+    const ok = window.confirm(
+      `"${tenantId}" kiracısının tüm kataloğu silinecek. Bu işlem geri alınamaz (audit log'da doc saklanır, oradan restore edilebilir). Devam?`,
+    );
+    if (!ok) return;
+    setBusy(true);
+    setNotice(null);
+    try {
+      const r = await fetch(
+        `/api/admin/tenants/${encodeURIComponent(tenantId)}/curated`,
+        { method: "DELETE" },
+      );
+      const data = await r.json();
+      if (!r.ok) {
+        setNotice({
+          type: "error",
+          msg: data?.detail ?? data?.error ?? `HTTP ${r.status}`,
+        });
+        return;
+      }
+      // After delete, bounce back to the list so the removed tenant
+      // doesn't keep rendering in the header breadcrumb.
+      router.refresh();
+      router.push("/admin/tenants");
+    } catch (e: any) {
+      setNotice({ type: "error", msg: e?.message ?? "istek başarısız" });
+    } finally {
+      setBusy(false);
+    }
+  }
+
   const conditionCount = parsed.ok
     ? Object.keys(parsed.data?.conditions ?? {}).length
     : null;
@@ -124,13 +161,25 @@ export function CatalogEditor({ tenantId, initial }: Props) {
         </div>
       )}
 
-      <div className="flex gap-2">
+      <div className="flex gap-2 items-center">
         <Button onClick={onSave} disabled={busy || !parsed.ok || !dirty}>
           {busy ? "Kaydediliyor…" : "Kaydet"}
         </Button>
         <Button onClick={onRevert} variant="secondary" disabled={busy || !dirty}>
           Değişiklikleri iptal et
         </Button>
+        <div className="ml-auto">
+          {tenantId !== "default" && (
+            <Button
+              onClick={onDelete}
+              disabled={busy}
+              variant="destructive"
+              title="Kiracının tüm kataloğunu siler. Audit log'da doc saklanır."
+            >
+              Kiracıyı sil
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );

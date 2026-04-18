@@ -54,6 +54,34 @@ def send_llm_health_alert(
     thread.start()
 
 
+def send_http_5xx_alert(
+    success_rate_pct: float,
+    window_size: int,
+    top_path: Optional[str],
+    top_status: Optional[int],
+    threshold_pct: float,
+) -> None:
+    """Fire webhook alert when HTTP 5xx rate on the backend climbs.
+
+    Called from the HTTP middleware in app.main. Stateless — the
+    middleware owns the rolling window and cool-down. Body surfaces
+    the most-hit path and its top 5xx status code so the on-call
+    knows which route to pull logs for. Same dispatch pattern as
+    the LLM health alert (daemon thread, never raises).
+    """
+    if not settings.WEBHOOK_ENABLED:
+        return
+    if not settings.WEBHOOK_SLACK_URL and not settings.WEBHOOK_DISCORD_URL:
+        return
+
+    thread = threading.Thread(
+        target=_dispatch_http_5xx,
+        args=(success_rate_pct, window_size, top_path, top_status, threshold_pct),
+        daemon=True,
+    )
+    thread.start()
+
+
 def send_alert(
     envelope_type: str,
     session_id: str,
@@ -310,6 +338,73 @@ def _dispatch_llm_health(
                     )
         except Exception as exc:
             logger.warning("Discord LLM health webhook failed: %s", exc)
+
+
+# ── HTTP 5xx dispatcher ────────────────────────────────────
+
+
+def _dispatch_http_5xx(
+    success_rate_pct: float,
+    window_size: int,
+    top_path: Optional[str],
+    top_status: Optional[int],
+    threshold_pct: float,
+) -> None:
+    """Background thread target for send_http_5xx_alert."""
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    title = f"⚠️ Backend 5xx oranı yükseldi: %{(100 - success_rate_pct):.0f}"
+    path_line = (
+        f"En sık yol: `{top_path}` → HTTP {top_status}"
+        if top_path and top_status
+        else "Yol bilgisi yok."
+    )
+    if settings.WEBHOOK_SLACK_URL:
+        try:
+            blocks = [
+                {"type": "header", "text": {"type": "plain_text", "text": title}},
+                {"type": "divider"},
+                {
+                    "type": "section",
+                    "fields": [
+                        {"type": "mrkdwn", "text": f"*Son {window_size} istek*"},
+                        {"type": "mrkdwn", "text": f"*2xx/3xx oranı:* %{success_rate_pct:.1f}"},
+                        {"type": "mrkdwn", "text": f"*Eşik:* %{threshold_pct:.0f}"},
+                        {"type": "mrkdwn", "text": f"*Zaman:* {now}"},
+                    ],
+                },
+                {"type": "section", "text": {"type": "mrkdwn", "text": path_line}},
+            ]
+            with httpx.Client(timeout=10) as client:
+                resp = client.post(
+                    settings.WEBHOOK_SLACK_URL, json={"blocks": blocks, "text": title}
+                )
+                if resp.status_code >= 400:
+                    logger.warning("Slack 5xx webhook: %s", resp.status_code)
+        except Exception as exc:
+            logger.warning("Slack 5xx webhook failed: %s", exc)
+
+    if settings.WEBHOOK_DISCORD_URL:
+        try:
+            embed = {
+                "title": title,
+                "color": 0xC62828,
+                "fields": [
+                    {"name": "Son", "value": f"{window_size} istek", "inline": True},
+                    {"name": "Başarı", "value": f"%{success_rate_pct:.1f}", "inline": True},
+                    {"name": "Eşik", "value": f"%{threshold_pct:.0f}", "inline": True},
+                    {"name": "En sık 5xx yolu", "value": (top_path or "-"), "inline": False},
+                ],
+                "footer": {"text": f"DotsHub 5xx • {now}"},
+            }
+            with httpx.Client(timeout=10) as client:
+                resp = client.post(
+                    settings.WEBHOOK_DISCORD_URL,
+                    json={"embeds": [embed], "content": title},
+                )
+                if resp.status_code >= 400:
+                    logger.warning("Discord 5xx webhook: %s", resp.status_code)
+        except Exception as exc:
+            logger.warning("Discord 5xx webhook failed: %s", exc)
 
 
 # ── Test helper (synchronous) ──────────────────────────────

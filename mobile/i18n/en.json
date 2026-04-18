@@ -37,7 +37,8 @@
     "history": "📋 History",
     "evaluating": "Evaluating…",
     "symptomInput": "Symptom input",
-    "symptomInputHint": "Type your symptom and send"
+    "symptomInputHint": "Type your symptom and send",
+    "emergencyDisclaimer": "In emergencies, call your local emergency number."
   },
   "question": {
     "whyAsking": "Why are we asking?",
@@ -94,7 +95,8 @@
     "feedbackSubmit": "Send",
     "feedbackThanksInline": "Your feedback has been recorded. Thank you!",
     "alertError": "Error",
-    "alertInfo": "Info"
+    "alertInfo": "Info",
+    "condTip": "Tip"
   },
   "emergency": {
     "title": "Emergency Assessment May Be Required",

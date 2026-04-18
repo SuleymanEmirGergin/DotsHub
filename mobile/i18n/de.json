@@ -35,7 +35,10 @@
     "subtitle": "Ich stelle einige kurze Fragen, um Sie besser weiterzuleiten.",
     "locationHint": "Teilen Sie Ihren Standort, um nahegelegene Gesundheitseinrichtungen auf dem Ergebnisbildschirm anzuzeigen (optional).",
     "history": "📋 Verlauf",
-    "evaluating": "Wird ausgewertet…"
+    "evaluating": "Wird ausgewertet…",
+    "symptomInput": "Symptomeingabe",
+    "symptomInputHint": "Geben Sie Ihr Symptom ein und senden Sie es.",
+    "emergencyDisclaimer": "Wählen Sie im Notfall die örtliche Notrufnummer."
   },
   "question": {
     "whyAsking": "Warum fragen wir?",
@@ -92,7 +95,8 @@
     "condSelfCare": "Was Sie selbst tun können",
     "condUrgencyNote": "Dringlichkeitshinweis",
     "condExpandHint": "Zum Öffnen tippen",
-    "condCollapseHint": "Zum Schließen tippen"
+    "condCollapseHint": "Zum Schließen tippen",
+    "condTip": "Tipp"
   },
   "emergency": {
     "title": "Notfallbewertung erforderlich",
