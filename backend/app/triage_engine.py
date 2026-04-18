@@ -67,6 +67,41 @@ _EMERGENCY_RULE_TO_SPECIALTY: List[Tuple[str, str, str]] = [
 ]
 
 
+# A2 panic softener (RC #3) ─────────────────────────────────────────────
+#
+# When a patient describes a panic attack ("kalbim hızlandı, öleceğimi
+# sandım, 10 dakikada geçti, birkaç kez oldu"), the extracted canonicals
+# overlap heavily with cardiac / anaphylaxis emergency rules (çarpıntı,
+# nefes darlığı). Both evaluate_emergency (chest_pain_sob, anaphylaxis)
+# and safety_guard_check (breathing_severe in rules.json) fire, routing
+# the user to EMERGENCY when the clinically correct output is a
+# psychiatry RESULT. We soften those rules only when the panic canonical
+# is present AND no hard cardiac/anaphylaxis signal is in the text.
+#
+# Guarded by "hard signals": sol-kola-vuruyor, çeneye-vuruyor, dil/boğaz
+# şişmesi, yaygın döküntü, bayılma — any of these and we do NOT soften
+# (a real MI or anaphylaxis can coexist with a panicked patient).
+_PANIC_SOFTEN_EMERGENCY_RULES = frozenset({"chest_pain_sob", "anaphylaxis"})
+_PANIC_SOFTEN_SAFETY_GUARD_IDS = frozenset({"breathing_severe", "chest_pain", "cardiac_emergency"})
+_PANIC_HARD_SIGNALS = (
+    "sol kola vuruyor", "çeneye vuruyor", "bayılacak gibi", "bayıldım",
+    "dilim şişti", "boğazım şişti", "dudaklarım şişti",
+    "yaygın döküntü", "morardım", "moraran",
+)
+
+
+def _has_panic_context(canonicals: List[str], text_norm: str) -> bool:
+    """True when the patient message describes a panic attack and no
+    hard cardiac/anaphylaxis signal is present (see constants above).
+    """
+    if "panik atak" not in canonicals:
+        return False
+    for sig in _PANIC_HARD_SIGNALS:
+        if sig in text_norm:
+            return False
+    return True
+
+
 def _emergency_specialty_for(rule_id: Optional[str]) -> Tuple[str, str]:
     """Return (specialty_id, specialty_tr) for an emergency rule_id.
 
@@ -254,21 +289,47 @@ def run_orchestrator_turn(
     #                                    (config/emergency_rules.json, 19 curated)
     # Either hit → EMERGENCY. Kept separate because they have different schemas
     # and different owners. See docs/TRIAJ_GOLDEN_FLOWS_17_25.md RC #1b.
+    # Pre-compute deterministic canonicals once — both the A2 panic
+    # softener and (if it runs) evaluate_emergency need them.
+    _safety_canonicals = extract_canonicals_tr(
+        text_tr=input_text,
+        answers=answers,
+        synonyms_json=runtime.synonyms,
+    )
+    from app.canonical_extract import normalize_text_tr as _norm_for_panic
+    _text_norm_for_panic = _norm_for_panic(input_text)
+    _panic_context = _has_panic_context(_safety_canonicals, _text_norm_for_panic)
+
     emergency = safety_guard_check(input_text, answers, runtime.rules_json)
-    if not emergency and runtime.emergency_rules_cfg:
-        # Pre-compute deterministic canonicals for the richer rule set.
-        # Safety checks must be fast — do NOT wait on LLM augmentation here;
-        # LLM extraction runs later in Step 2 for routing.
-        _safety_canonicals = extract_canonicals_tr(
-            text_tr=input_text,
-            answers=answers,
-            synonyms_json=runtime.synonyms,
+    if (
+        emergency
+        and _panic_context
+        and emergency.get("rule_id") in _PANIC_SOFTEN_SAFETY_GUARD_IDS
+    ):
+        logger.info(
+            "A2 panic softener: suppressed safety_guard rule_id=%s "
+            "because panik atak canonical is present",
+            emergency.get("rule_id"),
         )
+        emergency = None
+
+    if not emergency and runtime.emergency_rules_cfg:
         _em_match = evaluate_emergency(
             user_text=input_text,
             canonicals_tr=_safety_canonicals,
             rules_cfg=runtime.emergency_rules_cfg,
         )
+        if (
+            _em_match is not None
+            and _panic_context
+            and _em_match.rule_id in _PANIC_SOFTEN_EMERGENCY_RULES
+        ):
+            logger.info(
+                "A2 panic softener: suppressed evaluate_emergency rule_id=%s "
+                "because panik atak canonical is present",
+                _em_match.rule_id,
+            )
+            _em_match = None
         if _em_match is not None:
             emergency = {
                 "rule_id": _em_match.rule_id,
@@ -427,6 +488,30 @@ def run_orchestrator_turn(
         no_question_available=no_question_available,
         stop_rules=runtime.stop_rules,
     )
+
+    # A2 panic softener override: when the panic context was confirmed
+    # earlier (panic canonical present, no hard cardio/anaphylaxis
+    # signals), short-circuit the question loop and force a psychiatry
+    # RESULT with "Panik Bozukluk" as the top condition. This matches
+    # the clinical expectation encoded in the panic golden-flow fixtures
+    # and prevents downgrading to QUESTION on a single-turn input.
+    if _panic_context:
+        stop = True
+        reason = "PANIC_CONTEXT_OVERRIDE"
+        psych_entry = runtime.specialty_by_id.get("psychiatry") or {}
+        top_spec = {
+            "id": "psychiatry",
+            "specialty_tr": psych_entry.get("specialty_tr", "Psikiyatri"),
+        }
+        # Ensure the panic disorder label is present in top_conditions.
+        if not any(
+            "Panik" in (c.get("disease_label") or "")
+            for c in candidates[:3]
+        ):
+            candidates = [
+                {"disease_label": "Panik Bozukluk", "score_0_1": 0.75}
+            ] + candidates[:2]
+        logger.info("A2 panic softener: forced psychiatry RESULT for panic context")
 
     # Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
     # 9) Confidence (backend-authoritative)

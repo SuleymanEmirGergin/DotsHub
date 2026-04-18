@@ -12,7 +12,6 @@
     "recommended_specialty": "psychiatry",
     "top_condition_contains": "Panik",
     "top_condition_not_contains": "Akut koroner",
-    "urgency": "ROUTINE",
-    "xfail_reason": "A2 kardiyoloji false-positive: panik bağlamı (tekrarlayan, stresle tetiklenen, ~15dk'da geçen) dikkate alınmadan göğüs sıkışması + nefes darlığı + çarpıntı kombinasyonu emergency_router'ı tetikliyor. Fix: emergency_router'a panik-bağlam softener ekle veya psikiyatri skorunu emergency override'dan önce değerlendir. Bu fixture fix'i ölçer — fix geldiğinde xfail_reason alanı kaldırılacak."
+    "urgency": "ROUTINE"
   }
 }

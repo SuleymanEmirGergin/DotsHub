@@ -11,7 +11,6 @@
     "final_type": "RESULT",
     "recommended_specialty": "psychiatry",
     "top_condition_contains": "Panik Bozukluk",
-    "urgency": "ROUTINE",
-    "xfail_reason": "A2 kardiyoloji false-positive (aynı kök neden psychiatry_panic_vs_cardio_edge ile): 'kalbim hızlandı' + 'nefes alamadım' kombinasyonu chest_pain_sob emergency rule'unu tetikliyor, panik bağlamı (tekrarlayan, kendiliğinden geçen) dikkate alınmıyor. Synonym audit sonrası artık canonical çıkarılıyor (öncesi canonical=[] idi) ama yanlış acil. Fix: emergency_router'a panik-bağlam softener veya psikiyatri skorunu cardio emergency override'dan önce kontrol. Bu fixture fix'i ölçer — fix geldiğinde xfail_reason alanı kaldırılacak."
+    "urgency": "ROUTINE"
   }
 }
