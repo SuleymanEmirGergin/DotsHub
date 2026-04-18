@@ -36,7 +36,14 @@ jobs:
         run: |
           curl -fsSL "https://get.maestro.mobile.dev" | bash
           echo "$HOME/.maestro/bin" >> $GITHUB_PATH
-          echo "MAESTRO_VERSION=$($HOME/.maestro/bin/maestro --version 2>/dev/null || true)" >> $GITHUB_ENV
+          # Maestro 2.x prints a multi-line banner on --version; piping
+          # that straight into $GITHUB_ENV fails with "Invalid format"
+          # because the file-command parser rejects multi-line values
+          # without a delimiter. Normalize to a single line + empty
+          # fallback so the env assignment stays valid regardless of
+          # what upstream Maestro decides to print next.
+          VER="$("$HOME/.maestro/bin/maestro" --version 2>/dev/null | head -n1 | tr -d '\r' || true)"
+          echo "MAESTRO_VERSION=${VER:-unknown}" >> $GITHUB_ENV
 
       - name: "Run Maestro smoke (no device: will skip/fail; use Maestro Cloud or local for real E2E)"
         run: |
