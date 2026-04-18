@@ -44,20 +44,13 @@ _WIRO_SUCCESS = {"task_postprocess_end", "task_end"}
 _WIRO_ERROR = {"task_error", "task_error_full", "task_cancel", "task_kill"}
 
 # ---------------------------------------------------------------------------
-# PII redaction
+# PII redaction — delegate to the canonical app.pii module so regexes
+# can't drift between this client and the database / email / PDF paths.
+# Retained as a local name so existing call sites (redact_pii(user))
+# don't need to change.
 # ---------------------------------------------------------------------------
 
-_TC_ID_RE = re.compile(r"\b[1-9]\d{10}\b")                              # TR TC kimlik
-_PHONE_RE = re.compile(r"(\+90\s?\d{3}\s?\d{3}\s?\d{2}\s?\d{2}|05\d{9})\b")
-_EMAIL_RE = re.compile(r"[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}")
-
-
-def redact_pii(text: str) -> str:
-    """Replace known PII patterns with [REDACTED] before sending to LLM."""
-    text = _TC_ID_RE.sub("[REDACTED]", text)
-    text = _PHONE_RE.sub("[REDACTED]", text)
-    text = _EMAIL_RE.sub("[REDACTED]", text)
-    return text
+from app.pii import redact_pii  # noqa: F401  (re-exported for module users)
 
 
 # ---------------------------------------------------------------------------
