@@ -18,9 +18,40 @@ handle rather than on wall-clock side-effects.
 from __future__ import annotations
 
 import unittest
+from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 import httpx
+
+
+def _patch_monitor_settings(
+    *,
+    enabled: bool = True,
+    window: int = 20,
+    min_calls: int = 3,
+    threshold_pct: float = 80.0,
+    cooldown_sec: float = 900,
+):
+    """Replace llm_nlu.settings with a SimpleNamespace carrying only
+    the fields the monitor reads.
+
+    Patching settings attributes individually via patch.object works on
+    Python 3.14 but has been flaky against Pydantic v2 BaseSettings on
+    Python 3.11 — the `setattr` doesn't always round-trip through the
+    Pydantic field machinery, so the monitor still reads the original
+    default. Swapping the whole reference dodges that entirely.
+    """
+    from app.services import llm_nlu
+
+    ns = SimpleNamespace(
+        LLM_HEALTH_ALERT_ENABLED=enabled,
+        LLM_HEALTH_ALERT_WINDOW=window,
+        LLM_HEALTH_ALERT_MIN_CALLS=min_calls,
+        LLM_HEALTH_ALERT_THRESHOLD_PCT=threshold_pct,
+        LLM_HEALTH_ALERT_COOLDOWN_SEC=cooldown_sec,
+        LLM_NLU_LOG_TO_SUPABASE=False,
+    )
+    return patch.object(llm_nlu, "settings", ns)
 
 
 class LogLlmCallTests(unittest.TestCase):
@@ -135,8 +166,7 @@ class HealthMonitorObserveTests(unittest.TestCase):
     def test_disabled_short_circuits(self):
         from app.services import llm_nlu
 
-        self._reset_state()
-        with patch.object(llm_nlu.settings, "LLM_HEALTH_ALERT_ENABLED", False):
+        with _patch_monitor_settings(enabled=False):
             with patch("app.notifier.send_llm_health_alert") as mocked_send:
                 llm_nlu._health_monitor_observe(success=False, error_type="timeout")
         mocked_send.assert_not_called()
@@ -145,57 +175,36 @@ class HealthMonitorObserveTests(unittest.TestCase):
         """Fewer than MIN_CALLS samples → silent, no alert."""
         from app.services import llm_nlu
 
-        self._reset_state()
-        with patch.object(llm_nlu.settings, "LLM_HEALTH_ALERT_ENABLED", True):
-            with patch.object(llm_nlu.settings, "LLM_HEALTH_ALERT_MIN_CALLS", 10):
-                with patch("app.notifier.send_llm_health_alert") as mocked_send:
-                    for _ in range(3):
-                        llm_nlu._health_monitor_observe(
-                            success=False, error_type="timeout"
-                        )
+        with _patch_monitor_settings(min_calls=10):
+            with patch("app.notifier.send_llm_health_alert") as mocked_send:
+                for _ in range(3):
+                    llm_nlu._health_monitor_observe(success=False, error_type="timeout")
         mocked_send.assert_not_called()
 
     def test_success_rate_above_threshold_no_alert(self):
         """Healthy sliding window → no alert, no cooldown touched."""
         from app.services import llm_nlu
 
-        self._reset_state()
-        with patch.object(llm_nlu.settings, "LLM_HEALTH_ALERT_ENABLED", True):
-            with patch.object(llm_nlu.settings, "LLM_HEALTH_ALERT_MIN_CALLS", 3):
-                with patch.object(
-                    llm_nlu.settings, "LLM_HEALTH_ALERT_THRESHOLD_PCT", 80.0
-                ):
-                    with patch(
-                        "app.notifier.send_llm_health_alert"
-                    ) as mocked_send:
-                        for _ in range(5):
-                            llm_nlu._health_monitor_observe(
-                                success=True, error_type=None
-                            )
+        with _patch_monitor_settings(min_calls=3, threshold_pct=80.0):
+            with patch("app.notifier.send_llm_health_alert") as mocked_send:
+                for _ in range(5):
+                    llm_nlu._health_monitor_observe(success=True, error_type=None)
         mocked_send.assert_not_called()
 
     def test_failure_burst_fires_alert(self):
         """Below-threshold success rate after min_calls → webhook fires."""
         from app.services import llm_nlu
 
-        self._reset_state()
-        with patch.object(llm_nlu.settings, "LLM_HEALTH_ALERT_ENABLED", True):
-            with patch.object(llm_nlu.settings, "LLM_HEALTH_ALERT_MIN_CALLS", 3):
-                with patch.object(
-                    llm_nlu.settings, "LLM_HEALTH_ALERT_THRESHOLD_PCT", 80.0
-                ):
-                    with patch.object(
-                        llm_nlu.settings, "LLM_HEALTH_ALERT_COOLDOWN_SEC", 900
-                    ):
-                        with patch(
-                            "app.notifier.send_llm_health_alert"
-                        ) as mocked_send:
-                            # 5 failures in a row → 0% success rate, way below
-                            # 80% threshold → should fire once.
-                            for _ in range(5):
-                                llm_nlu._health_monitor_observe(
-                                    success=False, error_type="timeout"
-                                )
+        with _patch_monitor_settings(
+            min_calls=3, threshold_pct=80.0, cooldown_sec=900
+        ):
+            with patch("app.notifier.send_llm_health_alert") as mocked_send:
+                # 5 failures in a row → 0% success rate, way below 80%
+                # threshold → should fire once.
+                for _ in range(5):
+                    llm_nlu._health_monitor_observe(
+                        success=False, error_type="timeout"
+                    )
         mocked_send.assert_called_once()
         kwargs = mocked_send.call_args.kwargs
         self.assertEqual(kwargs["top_error"], "timeout")
@@ -205,43 +214,30 @@ class HealthMonitorObserveTests(unittest.TestCase):
         """Within cooldown window, a second failure burst does not repage."""
         from app.services import llm_nlu
 
-        self._reset_state()
-        with patch.object(llm_nlu.settings, "LLM_HEALTH_ALERT_ENABLED", True):
-            with patch.object(llm_nlu.settings, "LLM_HEALTH_ALERT_MIN_CALLS", 3):
-                with patch.object(
-                    llm_nlu.settings, "LLM_HEALTH_ALERT_THRESHOLD_PCT", 80.0
-                ):
-                    with patch.object(
-                        llm_nlu.settings, "LLM_HEALTH_ALERT_COOLDOWN_SEC", 9999
-                    ):
-                        with patch(
-                            "app.notifier.send_llm_health_alert"
-                        ) as mocked_send:
-                            for _ in range(10):
-                                llm_nlu._health_monitor_observe(
-                                    success=False, error_type="timeout"
-                                )
+        with _patch_monitor_settings(
+            min_calls=3, threshold_pct=80.0, cooldown_sec=9999
+        ):
+            with patch("app.notifier.send_llm_health_alert") as mocked_send:
+                for _ in range(10):
+                    llm_nlu._health_monitor_observe(
+                        success=False, error_type="timeout"
+                    )
         # Only first crossing of the threshold pages
         mocked_send.assert_called_once()
 
     def test_notifier_exception_does_not_propagate(self):
         from app.services import llm_nlu
 
-        self._reset_state()
-        with patch.object(llm_nlu.settings, "LLM_HEALTH_ALERT_ENABLED", True):
-            with patch.object(llm_nlu.settings, "LLM_HEALTH_ALERT_MIN_CALLS", 3):
-                with patch.object(
-                    llm_nlu.settings, "LLM_HEALTH_ALERT_THRESHOLD_PCT", 80.0
-                ):
-                    with patch(
-                        "app.notifier.send_llm_health_alert",
-                        side_effect=RuntimeError("webhook down"),
-                    ):
-                        # Must not raise
-                        for _ in range(5):
-                            llm_nlu._health_monitor_observe(
-                                success=False, error_type="timeout"
-                            )
+        with _patch_monitor_settings(min_calls=3, threshold_pct=80.0):
+            with patch(
+                "app.notifier.send_llm_health_alert",
+                side_effect=RuntimeError("webhook down"),
+            ):
+                # Must not raise
+                for _ in range(5):
+                    llm_nlu._health_monitor_observe(
+                        success=False, error_type="timeout"
+                    )
 
 
 class LogSynonymSuggestionsTests(unittest.TestCase):
