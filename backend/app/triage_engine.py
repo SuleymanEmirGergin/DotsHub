@@ -207,7 +207,14 @@ _EMERGENCY_RULE_TO_SPECIALTY: List[Tuple[str, str, str]] = [
     ("self_harm", "psychiatry", "Psikiyatri"),
     ("chest_pain_plus_breathlessness", "cardiology", "Kardiyoloji"),
     ("chest_pain_breathlessness_soft", "cardiology", "Kardiyoloji"),
-    ("breathing_severe", "pulmonology", "Göğüs Hastalıkları"),
+    # breathing_severe deliberately NOT mapped to pulmonology — that
+    # hard-trigger fires on "nefes alamıyorum / boğuluyorum / morardım"
+    # which are ER-grade regardless of the underlying pulmonary cause.
+    # Earlier we mapped it to pulmonology, which softened the mobile
+    # message from "112'yi ara" to "Göğüs Hastalıkları'na başvur" on
+    # chronic-cough / pneumonia turns where "nefes darlığı" tripped
+    # the rule as a side-effect. Keep it in the default "emergency"
+    # bucket so the UI and the webhook alert both treat it as ER.
     ("stroke_redflags", "neurology", "Nöroloji"),
     ("severe_headache_neuro", "neurology", "Nöroloji"),
     ("chest_pain_sob", "cardiology", "Kardiyoloji"),

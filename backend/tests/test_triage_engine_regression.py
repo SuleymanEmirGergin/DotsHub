@@ -81,7 +81,11 @@ class TriageEngineRegressionTests(unittest.TestCase):
         )
 
         self.assertEqual(envelope_type, "EMERGENCY")
-        self.assertEqual(payload.get("urgency"), "EMERGENCY")
+        # RC #1b (6528065) split the envelope shape: final_type stays
+        # "EMERGENCY" but the payload.urgency marker now follows the
+        # action value in rules.json hard_triggers ("ER_NOW") which
+        # the mobile UI renders as "Acil — 112'yi ara".
+        self.assertEqual(payload.get("urgency"), "ER_NOW")
 
     def test_null_map_does_not_crash_in_candidate_generation(self):
         fake_runtime = SimpleNamespace(

@@ -50,7 +50,12 @@ from typing import Any, Dict
 
 from fastapi import APIRouter, HTTPException
 
-from app.db import supabase
+# NOTE: `from app.db import supabase` is intentionally NOT at module
+# level. app.db raises RuntimeError at import time if SUPABASE_URL /
+# SUPABASE_SERVICE_ROLE_KEY are missing, which would break every CI
+# test that imports app.main (even ones that don't touch this route).
+# Each handler below imports supabase lazily, the same pattern
+# admin_tenants_api._write_audit_row uses.
 
 logger = logging.getLogger(__name__)
 
@@ -60,6 +65,8 @@ router = APIRouter(prefix="/me", tags=["Data Rights"])
 @router.delete("/sessions/{session_id}")
 def delete_my_session(session_id: str) -> Dict[str, Any]:
     """Tombstone one triage session + wipe its derived rows."""
+    from app.db import supabase
+
     # Quick shape check — UUID-ish. supabase would 400 on malformed
     # anyway but we catch early for a nicer error.
     if len(session_id) < 32 or len(session_id) > 40:

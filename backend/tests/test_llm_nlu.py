@@ -168,7 +168,10 @@ class TestRedactPII(unittest.TestCase):
 
         result = redact_pii("TC kimliğim 12345678901 ateşim var")
         self.assertNotIn("12345678901", result)
-        self.assertIn("[REDACTED]", result)
+        # audit2 (c6a55b2) split the single [REDACTED] token into
+        # type-specific markers so downstream debugging can tell what
+        # kind of PII was removed.
+        self.assertIn("[REDACTED_ID]", result)
         self.assertIn("ateşim var", result)
 
     def test_phone_05_format_redacted(self):
@@ -176,14 +179,14 @@ class TestRedactPII(unittest.TestCase):
 
         result = redact_pii("05321234567 numaralı hastayım")
         self.assertNotIn("05321234567", result)
-        self.assertIn("[REDACTED]", result)
+        self.assertIn("[REDACTED_PHONE]", result)
 
     def test_email_redacted(self):
         from app.services.llm_nlu_client import redact_pii
 
         result = redact_pii("bana user@example.com adresine yaz")
         self.assertNotIn("user@example.com", result)
-        self.assertIn("[REDACTED]", result)
+        self.assertIn("[REDACTED_EMAIL]", result)
 
     def test_clean_text_unchanged(self):
         from app.services.llm_nlu_client import redact_pii
