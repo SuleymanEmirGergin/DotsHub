@@ -21,6 +21,7 @@ from app.api.routes.facilities import router as facilities_router
 from app.api.routes.summary_email import router as summary_email_router
 from app.api.routes.push_token import router as push_token_router
 from app.admin_api import router as admin_router
+from app.admin_tenants_api import router as admin_tenants_router
 from app.admin_v5 import router as admin_v5_router
 from app.middleware.security_headers import SecurityHeadersMiddleware
 from app.rate_limit import (
@@ -180,6 +181,7 @@ app.include_router(push_token_router, prefix="/v1", tags=["Push Token"])
 app.include_router(session_router, prefix="/v1", tags=["Session (legacy)"])
 app.include_router(message_router, prefix="/v1", tags=["Message (legacy)"])
 app.include_router(admin_router, prefix="/v1", tags=["Admin"])
+app.include_router(admin_tenants_router, prefix="/v1", tags=["Admin Tenants"])
 app.include_router(admin_v5_router, tags=["Admin V5"])
 
 
