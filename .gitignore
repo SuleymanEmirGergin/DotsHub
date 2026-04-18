@@ -64,6 +64,8 @@ DotsHub Wiro.txt
 # Test / generated reports
 .pytest_cache/
 .mypy_cache/
+.coverage
+htmlcov/
 backend/reports/.tmp_guardrails/
 backend/tests/.tmp_guardrails/
 backend/reports/kaggle_mapping_validation_*.json
