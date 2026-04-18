@@ -1075,6 +1075,22 @@ def run_orchestrator_turn(
         }
 
         debug_patch["why_specialty_tr"] = why
+        # Persist the enriched (curated-tagged + label-overridden) list
+        # into the session row so the admin dashboard's session-detail
+        # TopConditionsPanel renders patient-prep meta instead of raw
+        # Kaggle candidates. Also persist confidence / risk / urgency
+        # so the session row is a complete audit of what the patient
+        # saw — previously these lived only in the RESULT payload and
+        # vanished after the request returned.
+        debug_patch["top_conditions"] = _filtered_top
+        debug_patch["confidence_0_1"] = round(conf, 4)
+        debug_patch["confidence_label_tr"] = conf_label
+        debug_patch["confidence_explain_tr"] = conf_explain
+        debug_patch["urgency"] = _result_urgency
+        # risk is persisted by triage.py into patch["meta"]["risk"]
+        # (JSONB meta column); do NOT duplicate it at the top level —
+        # the sessions table has no "risk" column and the insert would
+        # be rejected by postgrest.
         return "RESULT", payload, debug_patch
 
     # Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬

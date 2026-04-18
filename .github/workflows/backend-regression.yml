@@ -5,7 +5,8 @@ on:
     paths:
       - "backend/**"
       - "tests/golden_flows/**"
-      - "config/kaggle_mapping_guardrails.json"
+      - "tests/real_corpus/**"
+      - "config/**"
       - ".github/workflows/backend-regression.yml"
   push:
     branches:
@@ -13,7 +14,8 @@ on:
     paths:
       - "backend/**"
       - "tests/golden_flows/**"
-      - "config/kaggle_mapping_guardrails.json"
+      - "tests/real_corpus/**"
+      - "config/**"
       - ".github/workflows/backend-regression.yml"
   workflow_dispatch: {}
 

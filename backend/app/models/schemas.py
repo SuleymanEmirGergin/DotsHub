@@ -162,11 +162,43 @@ class RecommendedSpecialty(BaseModel):
     name_tr: str
 
 
-# V3 disease condition entry
+# V3 disease condition entry.
+#
+# Schema covers both Kaggle candidates and curated injections:
+#   source_type="curated"         → carries the full patient-prep
+#                                    metadata (description, 4 prep
+#                                    arrays, aciliyet_notu, icd10).
+#   source_type="kaggle_candidate" → carries the lighter B3 meta
+#                                    (icd10 + disease_description_tr
+#                                    + ipucu_tr) when the label has
+#                                    an entry in kaggle_condition_meta.
+# All metadata fields are Optional because pre-C2 sessions and
+# labels without curated/kaggle meta will omit them.
 class TopConditionEntry(BaseModel):
     disease_label: str
     score_0_1: float
+    # Kaggle-origin English description (fallback when no TR is attached).
     disease_description: Optional[str] = None
+    # C2 — source tagging so the UI can badge / gate differently.
+    source_type: Optional[str] = None
+    # Curated + Kaggle both: ICD-10 code (when catalog has one).
+    icd10: Optional[str] = None
+    # Curated + Kaggle both: short TR description paragraph.
+    disease_description_tr: Optional[str] = None
+    # Curated only: patient prep blocks.
+    doktora_sorulacak_sorular_tr: Optional[List[str]] = None
+    izlenecek_belirtiler_tr: Optional[List[str]] = None
+    ne_zaman_tekrar_basvur_tr: Optional[List[str]] = None
+    self_care_tr: Optional[List[str]] = None
+    aciliyet_notu_tr: Optional[str] = None
+    # B3 only: single-sentence prep hint attached to Kaggle candidates.
+    ipucu_tr: Optional[str] = None
+    # Always attached at render time so UI can footer-disclaim per row.
+    disclaimer_tr: Optional[str] = None
+
+    # Preserve internal debug fields (like the A1 _source_label added
+    # by apply_label_overrides) without rejecting them at validation.
+    model_config = {"extra": "allow"}
 
 
 # V3 result payload (clinical quality)

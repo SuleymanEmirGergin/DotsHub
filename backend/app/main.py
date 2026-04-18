@@ -182,7 +182,11 @@ app.include_router(session_router, prefix="/v1", tags=["Session (legacy)"])
 app.include_router(message_router, prefix="/v1", tags=["Message (legacy)"])
 app.include_router(admin_router, prefix="/v1", tags=["Admin"])
 app.include_router(admin_tenants_router, prefix="/v1", tags=["Admin Tenants"])
-app.include_router(admin_v5_router, tags=["Admin V5"])
+# admin_v5_router carries its own prefix="/admin"; mounting under /v1
+# places it at /v1/admin/* so the admin_rate_limit_middleware (which
+# gates /v1/admin/*) actually protects these endpoints. Without the
+# /v1 prefix the routes came out at /admin/* and bypassed rate limits.
+app.include_router(admin_v5_router, prefix="/v1", tags=["Admin V5"])
 
 
 @app.get("/v1/config/features")
