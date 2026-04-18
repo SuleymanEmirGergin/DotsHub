@@ -535,6 +535,21 @@ def run_orchestrator_turn(
         stop_rules=runtime.stop_rules,
     )
 
+    # Dysmenorrhea context injection: obgyn + dismenore canonical →
+    # surface "Dismenore" as the top condition. Kaggle matrix has no
+    # dysmenorrhea entry.
+    if (
+        top_spec.get("id") == "obgyn"
+        and "dismenore" in _safety_canonicals
+        and not any(
+            "Dismenore" in (c.get("disease_label") or "")
+            for c in candidates[:3]
+        )
+    ):
+        candidates = [
+            {"disease_label": "Dismenore", "score_0_1": 0.7}
+        ] + candidates[:2]
+
     # Renal colic context injection: nephrology + flank-pain canonical +
     # hematuria → surface "Renal Kolik" as the top condition. Kaggle
     # matrix maps flank pain to generic urinary conditions, which aren't
