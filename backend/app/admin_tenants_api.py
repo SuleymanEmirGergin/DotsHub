@@ -71,6 +71,58 @@ def _catalog_path_for(tenant_id: str) -> Path:
     return _DATA_DIR / f"curated_conditions.{tenant_id}.json"
 
 
+def _read_catalog_or_none(path: Path) -> Optional[Dict[str, Any]]:
+    """Best-effort read of an existing catalog for audit purposes.
+    Never raises; a missing or malformed file returns None so the
+    caller can record a null old_doc on the audit row.
+    """
+    if not path.exists():
+        return None
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except Exception as exc:
+        logger.warning("audit: could not read prior catalog at %s: %s", path, exc)
+        return None
+
+
+def _write_audit_row(
+    tenant_id: str,
+    action: str,
+    actor: Optional[str],
+    old_doc: Optional[Dict[str, Any]],
+    new_doc: Dict[str, Any],
+) -> None:
+    """Insert one row into tenant_catalog_audit.
+
+    Fire-and-forget from the API thread: failures are logged but
+    never propagate to the client. Audit log availability must not
+    block legitimate catalog writes.
+    """
+    try:
+        # Local import to avoid pulling Supabase into test environments
+        # that don't configure it (admin_tenants_api can be imported
+        # without writing audit rows).
+        from app.db import supabase
+
+        supabase.table("tenant_catalog_audit").insert(
+            {
+                "tenant_id": tenant_id,
+                "action": action,
+                "actor": actor,
+                "old_doc": old_doc,
+                "new_doc": new_doc,
+            }
+        ).execute()
+    except Exception as exc:
+        # Not raising: audit is defense-in-depth, not an availability gate.
+        logger.warning(
+            "audit insert failed (tenant=%r action=%r): %s",
+            tenant_id,
+            action,
+            exc,
+        )
+
+
 # ── Schemas ────────────────────────────────────────────────────────────
 
 class TenantEntry(BaseModel):
@@ -188,9 +240,14 @@ def put_tenant_catalog(
     """Replace a tenant catalog wholesale. The old file is overwritten."""
     _validate_tenant_id(tenant_id)
     path = _catalog_path_for(tenant_id)
+    # Snapshot the pre-write state so the audit row can carry it as
+    # old_doc. Read BEFORE the write — if the write fails the audit
+    # is skipped by the exception path below.
+    old_doc = _read_catalog_or_none(path)
     payload_dict = payload.model_dump(exclude_none=False)
     # Normalize tenant_scope so the file matches the URL tenant id.
     payload_dict["tenant_scope"] = tenant_id
+    actor = admin.get("user_id") if isinstance(admin, dict) else None
     try:
         path.write_text(
             json.dumps(payload_dict, ensure_ascii=False, indent=2) + "\n",
@@ -199,12 +256,19 @@ def put_tenant_catalog(
         logger.info(
             "Updated curated catalog for tenant=%r by admin=%r — %d conditions",
             tenant_id,
-            admin.get("user_id") if isinstance(admin, dict) else None,
+            actor,
             len(payload_dict.get("conditions", {})),
         )
     except Exception as exc:
         logger.error("Failed to write catalog for %s: %s", tenant_id, exc)
         raise HTTPException(status_code=500, detail="catalog write failed") from exc
+    _write_audit_row(
+        tenant_id=tenant_id,
+        action="update",
+        actor=actor,
+        old_doc=old_doc,
+        new_doc=payload_dict,
+    )
     return {"ok": True, "tenant_id": tenant_id, "condition_count": len(payload_dict.get("conditions", {}))}
 
 
@@ -214,7 +278,7 @@ def create_tenant(
     admin=Depends(require_admin),
 ) -> Dict[str, Any]:
     """Create a new tenant with an empty or default-seeded catalog."""
-    del admin
+    # Keep `admin` in scope — the audit insert below reads actor from it.
     _validate_tenant_id(req.tenant_id)
     if req.tenant_id == "default":
         raise HTTPException(status_code=400, detail="tenant_id 'default' is reserved")
@@ -242,6 +306,7 @@ def create_tenant(
     if req.disclaimer_tr:
         base["disclaimer_tr"] = req.disclaimer_tr
 
+    actor = admin.get("user_id") if isinstance(admin, dict) else None
     try:
         path.write_text(
             json.dumps(base, ensure_ascii=False, indent=2) + "\n",
@@ -251,4 +316,11 @@ def create_tenant(
     except Exception as exc:
         logger.error("Failed to create tenant %s: %s", req.tenant_id, exc)
         raise HTTPException(status_code=500, detail="tenant create failed") from exc
+    _write_audit_row(
+        tenant_id=req.tenant_id,
+        action="create",
+        actor=actor,
+        old_doc=None,  # create: no prior state
+        new_doc=base,
+    )
     return {"ok": True, "tenant_id": req.tenant_id, "path": path.name}
