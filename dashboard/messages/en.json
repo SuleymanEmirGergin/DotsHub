@@ -182,7 +182,16 @@
     "lowConfRateSub": "RESULT with conf < 0.35",
     "feedbackOverrideRate": "User Override Rate",
     "feedbackOverrideRateSub": "feedback with specialty correction",
-    "accuracyNoData": "Not enough data in last 7 days"
+    "accuracyNoData": "Not enough data in last 7 days",
+    "llmHealthTitle": "LLM NLU Health (Last 7 Days)",
+    "llmHealthAlert": "Alert",
+    "llmCalls": "LLM Call Count",
+    "llmCallsSub": "last 7 days total",
+    "llmSuccessRate": "Success Rate",
+    "llmSuccessRateSub": "threshold 80%",
+    "llmAvgLatency": "Avg Latency",
+    "llmAvgLatencySub": "milliseconds",
+    "llmErrorTypes": "Error types (count):"
   },
   "live": {
     "title": "Live Session Monitor",

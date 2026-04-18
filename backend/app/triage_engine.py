@@ -705,37 +705,50 @@ def run_orchestrator_turn(
             {"disease_label": "Renal Kolik", "score_0_1": 0.7}
         ] + candidates[:2]
 
-    # Bronchiolitis context injection: pediatrics + infant noisy-breathing
-    # canonical → surface "Bronşiolit" as the top condition. Kaggle
-    # matrix's respiratory labels aren't pediatric-specific enough.
-    if (
-        top_spec.get("id") == "pediatrics"
-        and "bebek nefes hırıltısı" in _safety_canonicals
-        and not any(
+    # Pediatric context overrides — force pediatrics routing + RESULT.
+    #
+    # Why override top_spec + stop (and not just prepend a candidate):
+    # deterministic NLU usually extracts a single strong canonical
+    # (bebek nefes hırıltısı / kulak çekiştirme) and pediatrics ranks
+    # top naturally. But LLM NLU returns a richer canonical set (adds
+    # ateş, iştah kaybı, bebek huzursuzluğu) which shifts the scoring
+    # ranking AND makes should_stop return False — the run falls
+    # through to QUESTION even though the clinical route is clear.
+    # Forcing top_spec + stop makes routing stable across DET and LLM
+    # modes. Deterministic already stops; this is a no-op for it.
+    _pedi_specialty = runtime.specialty_by_id.get("pediatrics") or {}
+
+    if "bebek nefes hırıltısı" in _safety_canonicals:
+        top_spec = {
+            "id": "pediatrics",
+            "specialty_tr": _pedi_specialty.get("specialty_tr", "Pediatri"),
+        }
+        stop = True
+        reason = "PEDI_BRONCHIOLITIS_OVERRIDE"
+        if not any(
             "Bronşiolit" in (c.get("disease_label") or "")
             for c in candidates[:3]
-        )
-    ):
-        candidates = [
-            {"disease_label": "Bronşiolit", "score_0_1": 0.7}
-        ] + candidates[:2]
-
-    # Otitis media context injection: pediatrics + ear-pulling canonical →
-    # surface "Akut otitis media" as the top condition. The Kaggle disease
-    # matrix has no otitis entry, so without this the RESULT envelope
-    # lacks the expected condition label. Same pattern as Majör Depresyon.
-    if (
-        top_spec.get("id") == "pediatrics"
-        and "kulak çekiştirme" in _safety_canonicals
-        and not any(
+        ):
+            candidates = [
+                {"disease_label": "Bronşiolit", "score_0_1": 0.7}
+            ] + candidates[:2]
+        logger.info("Bronchiolitis override: forced pediatrics RESULT")
+    elif "kulak çekiştirme" in _safety_canonicals:
+        top_spec = {
+            "id": "pediatrics",
+            "specialty_tr": _pedi_specialty.get("specialty_tr", "Pediatri"),
+        }
+        stop = True
+        reason = "PEDI_OTITIS_OVERRIDE"
+        if not any(
             "Otitis" in (c.get("disease_label") or "")
             or "Otit" in (c.get("disease_label") or "")
             for c in candidates[:3]
-        )
-    ):
-        candidates = [
-            {"disease_label": "Akut Otitis Media", "score_0_1": 0.7}
-        ] + candidates[:2]
+        ):
+            candidates = [
+                {"disease_label": "Akut Otitis Media", "score_0_1": 0.7}
+            ] + candidates[:2]
+        logger.info("Otitis media override: forced pediatrics RESULT")
 
     # Depression context injection: when psychiatry is the top specialty
     # and the patient described low mood ("düşük ruh hali"), ensure the

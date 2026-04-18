@@ -182,7 +182,16 @@
     "lowConfRateSub": "conf < 0.35 olan RESULT",
     "feedbackOverrideRate": "Kullanıcı Düzeltme Oranı",
     "feedbackOverrideRateSub": "feedback içinde branş düzeltildi",
-    "accuracyNoData": "Son 7 günde yeterli veri yok"
+    "accuracyNoData": "Son 7 günde yeterli veri yok",
+    "llmHealthTitle": "LLM NLU Sağlığı (Son 7 Gün)",
+    "llmHealthAlert": "Dikkat",
+    "llmCalls": "LLM Çağrı Sayısı",
+    "llmCallsSub": "Son 7 gün toplam",
+    "llmSuccessRate": "Başarı Oranı",
+    "llmSuccessRateSub": "eşik %80",
+    "llmAvgLatency": "Ortalama Gecikme",
+    "llmAvgLatencySub": "ms cinsinden",
+    "llmErrorTypes": "Hata türleri (sayı):"
   },
   "live": {
     "title": "Canli Oturum Izleme",

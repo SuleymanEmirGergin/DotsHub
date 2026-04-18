@@ -77,6 +77,12 @@ class ModeResult:
     top_conditions: List[str]
     nlu_source: str
     elapsed_ms: int
+    # Canonicals the orchestrator actually used after NLU merge.
+    # In LLM mode this is deterministic ∪ LLM; in DET mode it's
+    # deterministic only. The per-scenario diff (set difference
+    # against the other mode) is the main lever for explaining
+    # routing changes.
+    canonicals: List[str] = field(default_factory=list)
     error: Optional[str] = None
 
 
@@ -93,6 +99,13 @@ class ScenarioComparison:
     det_matches_expected_specialty: bool = False
     llm_matches_expected_specialty: bool = False
     confidence_delta: float = 0.0  # llm - det
+    # Canonical-set diff (LLM NLU impact visibility):
+    #   llm_only  = what LLM added on top of deterministic
+    #   det_only  = what LLM dropped / failed to re-extract
+    #   common    = overlap (usually deterministic core)
+    llm_only_canonicals: List[str] = field(default_factory=list)
+    det_only_canonicals: List[str] = field(default_factory=list)
+    common_canonicals: List[str] = field(default_factory=list)
     xfail_reason: Optional[str] = None
 
 
@@ -127,6 +140,7 @@ def _run_scenario(runtime: Any, scenario: Dict[str, Any]) -> Tuple[str, Dict[str
     asked_canonicals: List[str] = []
     final_type = "ERROR"
     final_payload: Dict[str, Any] = {}
+    debug_patch: Dict[str, Any] = {}
 
     for turn_index, step in enumerate(scenario.get("input", []), start=1):
         user_message = str(step.get("user_message") or "").strip()
@@ -141,7 +155,7 @@ def _run_scenario(runtime: Any, scenario: Dict[str, Any]) -> Tuple[str, Dict[str
                 if canonical not in asked_canonicals:
                     asked_canonicals.append(canonical)
 
-        final_type, final_payload, _ = run_orchestrator_turn(
+        final_type, final_payload, debug_patch = run_orchestrator_turn(
             runtime=runtime,
             input_text=input_text,
             answers=answers,
@@ -151,6 +165,13 @@ def _run_scenario(runtime: Any, scenario: Dict[str, Any]) -> Tuple[str, Dict[str
         if final_type in {"EMERGENCY", "ERROR"}:
             break
 
+    # Surface debug canonicals under a private payload key so the
+    # caller can populate ModeResult.canonicals without re-running NLU.
+    if isinstance(debug_patch, dict):
+        final_payload = dict(final_payload)
+        final_payload["_debug_user_canonicals_tr"] = debug_patch.get(
+            "user_canonicals_tr", []
+        )
     return final_type, final_payload
 
 
@@ -167,6 +188,7 @@ def _to_mode_result(
         if isinstance(c, dict) and c.get("disease_label")
     ]
     nlu_source = (payload.get("_meta") or {}).get("nlu_source", "?")
+    canonicals = list(payload.get("_debug_user_canonicals_tr") or [])
     return ModeResult(
         final_type=final_type,
         specialty_id=specialty_id,
@@ -174,6 +196,7 @@ def _to_mode_result(
         top_conditions=top,
         nlu_source=nlu_source,
         elapsed_ms=elapsed_ms,
+        canonicals=canonicals,
         error=error,
     )
 
@@ -236,6 +259,12 @@ def _compare(
     det_match = bool(expected_specialty) and det.specialty_id == expected_specialty
     llm_match = bool(expected_specialty) and llm.specialty_id == expected_specialty
 
+    det_set = set(det.canonicals)
+    llm_set = set(llm.canonicals)
+    llm_only = sorted(llm_set - det_set)
+    det_only = sorted(det_set - llm_set)
+    common = sorted(det_set & llm_set)
+
     return ScenarioComparison(
         scenario=scenario_name,
         expected_type=expected_type,
@@ -247,6 +276,9 @@ def _compare(
         det_matches_expected_specialty=det_match,
         llm_matches_expected_specialty=llm_match,
         confidence_delta=round(llm.confidence - det.confidence, 4),
+        llm_only_canonicals=llm_only,
+        det_only_canonicals=det_only,
+        common_canonicals=common,
         xfail_reason=expected.get("xfail_reason"),
     )
 
@@ -330,6 +362,35 @@ def _summarize(comparisons: List[ScenarioComparison]) -> Report:
         llm_worse_on=llm_worse,
         comparisons=comparisons,
     )
+
+
+def _print_canonical_diff(comparisons: List[ScenarioComparison]) -> None:
+    """Print per-scenario canonical set difference between modes.
+
+    This is the most actionable output of shadow_eval: it shows what the
+    LLM actually adds or drops on top of deterministic extraction. When
+    the routing differs, the diff here usually explains why.
+    """
+    rows_with_diff = [
+        c for c in comparisons
+        if c.llm_only_canonicals or c.det_only_canonicals
+    ]
+    if not rows_with_diff:
+        print("\n--- Canonical diff: none (LLM matched DET on all scenarios) ---")
+        return
+    print("\n--- Canonical diff (LLM vs DET) ---")
+    header = f"{'Scenario':<42} {'LLM added':<45} {'LLM dropped':<45}"
+    print(header)
+    print("-" * len(header))
+    for c in rows_with_diff:
+        added = ", ".join(c.llm_only_canonicals) if c.llm_only_canonicals else "—"
+        dropped = ", ".join(c.det_only_canonicals) if c.det_only_canonicals else "—"
+        # Truncate long lists so the table stays readable.
+        if len(added) > 43:
+            added = added[:40] + "..."
+        if len(dropped) > 43:
+            dropped = dropped[:40] + "..."
+        print(f"{c.scenario:<42} {added:<45} {dropped:<45}")
 
 
 def _print_summary(report: Report) -> None:
@@ -426,6 +487,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         print(f"{verdict} (det={det.elapsed_ms}ms, llm={llm.elapsed_ms}ms)")
 
     _print_table(comparisons)
+    _print_canonical_diff(comparisons)
     report = _summarize(comparisons)
     _print_summary(report)
 

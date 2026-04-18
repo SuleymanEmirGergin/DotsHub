@@ -176,6 +176,48 @@ export default async function AnalyticsPage() {
     ? (100 * (feedback7dOverrides ?? 0)) / (feedback7dTotal ?? 1)
     : null;
 
+  // ── 7-day LLM health KPIs (A1 telemetri) ────────────────────────────
+  // Source: llm_calls table (populated by services/llm_nlu.py _log_llm_call).
+  // Alert signal: success_rate < 80% warrants investigation (usually an
+  // auth regression or upstream provider outage).
+  const { data: llmCallsRows } = await sb
+    .from("llm_calls")
+    .select("success,latency_ms,error_type")
+    .gte("created_at", sevenDaysAgoIso);
+
+  const llmCallsArr = (llmCallsRows ?? []) as {
+    success: boolean | null;
+    latency_ms: number | null;
+    error_type: string | null;
+  }[];
+  const llmCallTotal = llmCallsArr.length;
+  const llmSuccessCount = llmCallsArr.filter((r) => r.success === true).length;
+  const llmSuccessPct = llmCallTotal > 0
+    ? (100 * llmSuccessCount) / llmCallTotal
+    : null;
+  const llmAvgLatencyMs = llmCallTotal > 0
+    ? Math.round(
+        llmCallsArr.reduce((acc, r) => acc + (r.latency_ms ?? 0), 0) /
+          llmCallTotal
+      )
+    : null;
+  const llmErrorTypeCounts: Record<string, number> = {};
+  for (const r of llmCallsArr) {
+    if (r.success === true) continue;
+    const et = r.error_type || "unknown";
+    llmErrorTypeCounts[et] = (llmErrorTypeCounts[et] || 0) + 1;
+  }
+  const llmErrorTypeRanked = Object.entries(llmErrorTypeCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5);
+  const LLM_SUCCESS_ALERT_THRESHOLD = 80;
+  const llmHealthStatus: "ok" | "warn" | "no-data" =
+    llmSuccessPct === null
+      ? "no-data"
+      : llmSuccessPct >= LLM_SUCCESS_ALERT_THRESHOLD
+        ? "ok"
+        : "warn";
+
   const dailyCounts: Record<string, number> = {};
   (dailySessions ?? []).forEach((s: any) => {
     const day = new Date(s.created_at).toISOString().slice(0, 10);
@@ -280,6 +322,69 @@ export default async function AnalyticsPage() {
                 sub={overridePct === null ? t("analytics.accuracyNoData") : t("analytics.feedbackOverrideRateSub")}
               />
             </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="mt-5">
+        <Card>
+          <CardHeader>
+            <CardTitle
+              className={cn(
+                "text-base flex items-center gap-2",
+                llmHealthStatus === "warn" && "text-red-700 dark:text-red-400",
+              )}
+            >
+              {t("analytics.llmHealthTitle")}
+              {llmHealthStatus === "warn" && (
+                <span className="text-xs bg-red-100 dark:bg-red-950 text-red-800 dark:text-red-200 px-2 py-0.5 rounded">
+                  {t("analytics.llmHealthAlert")}
+                </span>
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-3 gap-3">
+              <Stat
+                label={t("analytics.llmCalls")}
+                value={llmCallTotal}
+                sub={t("analytics.llmCallsSub")}
+              />
+              <Stat
+                label={t("analytics.llmSuccessRate")}
+                value={llmSuccessPct === null ? "—" : `${llmSuccessPct.toFixed(1)}%`}
+                sub={
+                  llmSuccessPct === null
+                    ? t("analytics.accuracyNoData")
+                    : llmHealthStatus === "warn"
+                      ? `${t("analytics.llmSuccessRateSub")} (<${LLM_SUCCESS_ALERT_THRESHOLD}%)`
+                      : t("analytics.llmSuccessRateSub")
+                }
+              />
+              <Stat
+                label={t("analytics.llmAvgLatency")}
+                value={llmAvgLatencyMs === null ? "—" : `${llmAvgLatencyMs} ms`}
+                sub={t("analytics.llmAvgLatencySub")}
+              />
+            </div>
+            {llmErrorTypeRanked.length > 0 && (
+              <div className="mt-4">
+                <div className="text-xs text-muted-foreground mb-2">
+                  {t("analytics.llmErrorTypes")}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {llmErrorTypeRanked.map(([et, cnt]) => (
+                    <div
+                      key={et}
+                      className="text-xs px-2 py-1 rounded border border-border bg-muted"
+                    >
+                      <span className="font-mono">{et}</span>{" "}
+                      <span className="font-bold">{cnt}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
