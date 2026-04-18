@@ -535,6 +535,23 @@ def run_orchestrator_turn(
         stop_rules=runtime.stop_rules,
     )
 
+    # Conjunctivitis context injection: ophthalmology + göz kaşıntısı →
+    # surface "Alerjik Konjonktivit" as the top condition. Kaggle matrix
+    # has no conjunctivitis entry. Seasonal/allergic is the most common
+    # pre-triage pattern; caller can differentiate in-clinic.
+    if (
+        top_spec.get("id") == "ophthalmology"
+        and "göz kaşıntısı" in _safety_canonicals
+        and not any(
+            "Konjonktivit" in (c.get("disease_label") or "")
+            or "Konjunktivit" in (c.get("disease_label") or "")
+            for c in candidates[:3]
+        )
+    ):
+        candidates = [
+            {"disease_label": "Alerjik Konjonktivit", "score_0_1": 0.7}
+        ] + candidates[:2]
+
     # PCOS context injection: obgyn + hirsutism → surface "PCOS". The
     # hirsutism canonical alone is a strong PCOS fingerprint in the
     # pre-triage context (it's rarely standalone without menstrual or
