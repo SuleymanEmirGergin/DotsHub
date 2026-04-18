@@ -2,6 +2,8 @@
 
 import asyncio
 import ast
+import hashlib
+import hmac
 import json
 import logging
 import time
@@ -37,13 +39,31 @@ class LLMClient:
         )
 
     def _auth_headers(self) -> dict[str, str]:
+        """Build Wiro HMAC-signed auth headers.
+
+        signature = HMAC-SHA256(key=API_KEY, msg=API_SECRET+NONCE).hexdigest()
+        Headers: x-api-key, x-nonce (unix timestamp), x-signature (hex).
+        See https://wiro.ai/docs/introduction. Matches the sync client in
+        app/services/llm_nlu_client.py — both clients MUST stay in sync.
+        """
         api_key = self.api_key or settings.WIRO_API_KEY
         if not api_key:
             raise ValueError("Missing WIRO_API_KEY. Set it in backend/.env.")
-        headers = {"x-api-key": api_key}
-        if settings.WIRO_API_SECRET:
-            headers["x-api-secret"] = settings.WIRO_API_SECRET
-        return headers
+        secret = settings.WIRO_API_SECRET or ""
+        if not secret:
+            # Legacy / single-credential mode — 401 if project requires HMAC.
+            return {"x-api-key": api_key}
+        nonce = str(int(time.time()))
+        signature = hmac.new(
+            api_key.encode("utf-8"),
+            (secret + nonce).encode("utf-8"),
+            hashlib.sha256,
+        ).hexdigest()
+        return {
+            "x-api-key": api_key,
+            "x-nonce": nonce,
+            "x-signature": signature,
+        }
 
     def _build_prompt(self, system: str, user: str, response_format: str) -> str:
         prompt = f"System instructions:\n{system}\n\nUser input:\n{user}"

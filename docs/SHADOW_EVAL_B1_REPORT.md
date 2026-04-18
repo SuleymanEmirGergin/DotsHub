@@ -1,53 +1,69 @@
 # Shadow Eval Report (B1)
 
-**Tarih:** 2026-04-18
-**Komut:** `WIRO_API_KEY=<env> LLM_NLU_RATE_LIMIT_MAX_REQ=500 python backend/scripts/shadow_eval.py`
-**Kaynak:** 25 golden flow senaryosu (`tests/golden_flows/*.json`), Aşama A sonrası (commit `ed2acde`).
+**Tarih:** 2026-04-18 (HMAC auth fix sonrası güncellendi)
+**Komut:** `WIRO_API_KEY=<env> WIRO_API_SECRET=<env> LLM_NLU_RATE_LIMIT_MAX_REQ=500 python backend/scripts/shadow_eval.py`
+**Kaynak:** 25 golden flow senaryosu (`tests/golden_flows/*.json`), Aşama A sonrası (commit `ed2acde`) + HMAC auth fix.
 
 ## TL;DR
 
-- **Deterministic specialty accuracy: 100.0%** (25/25) — Aşama A fix'leri sonrası baseline.
-- **LLM NLU mode aynı koşumda 16/16 HTTP error (401 Unauthorized)**, her senaryo deterministic fallback'e düştü. LLM'in gerçek kazanç/kayıp eğrisi bu koşumda ölçülemedi.
-- **Graceful degradation doğrulandı**: LLM API başarısız → deterministic fallback → routing hâlâ %100 doğru.
+- **Deterministic specialty accuracy: 100.0%** (24/24 with expected specialty).
+- **LLM specialty accuracy: 91.67%** (22/24) — LLM 2 pediatri senaryosunda routing'i kırıyor.
+- **Mode agreement: 92.0%** (23/25 senaryoda DET ve LLM aynı final_type + specialty).
+- **Graceful degradation doğrulandı**: LLM başarısızlığında deterministic fallback → safety korunuyor.
+- **İlk denemedeki 401 Unauthorized kök sebebi bulundu ve düzeltildi**: Wiro projesi HMAC signature auth zorunlu (x-api-key + x-nonce + x-signature). Hem sync (`services/llm_nlu_client.py`) hem async (`core/llm_client.py`) client'lar imza hesaplıyor artık.
 
-## Ham metrikler
+## Ham metrikler (HMAC auth sonrası)
 
 | Metric | Değer |
 |---|---|
 | Scenarios evaluated | 25/25 |
 | Scenarios crashed | 0 |
-| final_type agreement (DET vs LLM) | 100.0% |
-| specialty agreement (DET vs LLM) | 100.0% |
-| DET specialty accuracy | **100.0%** (24/24 with expected specialty; `emergency_chest` has no expected specialty) |
-| LLM specialty accuracy | 100.0% (identical to DET — fell back) |
-| DET avg latency | 169 ms |
-| LLM avg latency | 344 ms (includes network round-trip to Wiro) |
-| LLM max latency | 2497 ms |
+| final_type agreement (DET vs LLM) | 92.0% |
+| specialty agreement (DET vs LLM) | 92.0% |
+| **DET specialty accuracy** | **100.0%** (24/24 with expected specialty) |
+| **LLM specialty accuracy** | **91.67%** (22/24) |
+| LLM breaks routing on | `pedi_bronchiolitis`, `pedi_otitis_media` |
+| LLM fixes routing on | — (DET zaten %100) |
 
-## nlu_source dağılımı
+## Confidence delta dağılımı (|Δ| ≥ 0.03)
 
-| Source | LLM mode count |
-|---|---|
-| `llm_http_error` | 16 |
-| `?` (EMERGENCY early-return, payload meta yok) | 9 |
-| `llm` (başarılı gerçek çağrı) | **0** |
-| `hybrid` | 0 |
+| Senaryo | DET conf | LLM conf | Δ |
+|---|---|---|---|
+| `uti` | 0.388 | 0.686 | **+0.298** |
+| `psychiatry_depression_chronic` | 0.200 | 0.325 | +0.125 |
+| `obgyn_pcos_irregular` | 0.200 | 0.322 | +0.122 |
+| `ortho_joint_stiffness_swelling` | 0.445 | 0.495 | +0.050 |
+| `endo_t2dm_follow_up` | 0.493 | 0.461 | -0.032 |
+| `pedi_bronchiolitis` | 0.090 | 0.000 | **-0.090** (QUESTION'a düştü) |
+| `pedi_otitis_media` | 0.090 | 0.000 | **-0.090** (QUESTION'a düştü) |
 
-## Bulgu: LLM NLU broken (ayrı iş)
+## Bulgu 1: LLM pediatri regresyonu (kritik)
 
-Tüm LLM çağrıları `Wiro /v1/Run/google/gemini-2-5-flash` endpoint'inde **401 Unauthorized** aldı. Debug log örneği:
+**`pedi_bronchiolitis`** ("8 aylık bebeğim hırıltılı nefes alıyor, hafif ateşi var") ve **`pedi_otitis_media`** ("2 yaşındaki oğlum sabahtan beri kulağını çekiştiriyor") senaryolarında:
+- DET mode: RESULT/pediatrics (Aşama A'da eklenen context injection sayesinde)
+- LLM mode: **QUESTION** (routing hiç olmuyor)
 
+Hipotez: LLM NLU Wiro prompt'una gönderilen canonical listesinde `bebek nefes hırıltısı` ve `kulak çekiştirme` yeterince görünür değil, LLM onları extract etmiyor → context injection tetiklenmiyor (injection koşulu: o canonical setinde olmalı) → pediatrics scoring yeterli gelmiyor → QUESTION.
+
+**Aksiyon:** ya (a) context injection'u canonical yerine "text contains X" pattern'ine döktür, ya da (b) LLM prompt'unda bu pediatric canonical'ları özellikle vurgula. Takip PR'ı gerek.
+
+## Bulgu 2: LLM güven artırıcı senaryolar
+
+`uti`, `depression_chronic`, `pcos_irregular`, `ortho`, `panic_vs_cardio_edge` senaryolarında LLM **DET'i doğrulayıp** confidence'ı net artırıyor — özellikle `uti` (+0.298) kullanıcıya gösterilecek güven skorunu 0.39 → 0.69'a çıkarıyor, hiçbir routing kaybı olmadan. LLM'in NET katkısı burada olumlu.
+
+## Bulgu 3 (ilk denemeden, çözüldü): Wiro HMAC signature auth
+
+İlk koşumda 16/16 LLM çağrısı `401 Unauthorized` aldı. Kök neden: **`services/llm_nlu_client.py` ve `core/llm_client.py` sadece static `x-api-key` (+ opsiyonel `x-api-secret`) gönderiyordu** ama Wiro projesi HMAC imza zorunlu:
+
+```python
+# Wiro docs formülü
+signature = HMAC-SHA256(key=API_KEY, message=API_SECRET + NONCE).hexdigest()
+headers = {"x-api-key": KEY, "x-nonce": timestamp, "x-signature": signature}
 ```
-WARNING:app.services.llm_nlu:LLM NLU call failed (HTTPStatusError):
-Client error '401 Unauthorized' for url
-'https://api.wiro.ai/v1/Run/google/gemini-2-5-flash'
-```
 
-Olası sebep: env'deki `WIRO_API_KEY` süresi dolmuş veya iptal edilmiş. İkincil: header yapılandırması değişmiş olabilir (`WIRO_API_SECRET` + `WIRO_API_KEY` imza mantığı).
+Bu commit ile iki client'ta da implement edildi. Canlı Wiro endpoint'e `POST /v1/Run/google/gemini-2-5-flash` artık 200 OK dönüyor.
 
-**Etkilenen production path:** canlı triage akışı `LLM_NLU_ENABLED=True` iken her turn LLM'e istek atıp 401 alacak, fallback deterministic çalışacak. Safety açısından risk yok (sistem zaten DET %100) ama LLM'e ödenen cost sıfır yararlı çıktı üretiyor.
-
-**Önerilen aksiyon:** yeni Wiro API key alındıktan sonra shadow eval tekrar çalıştırılıp bu rapor güncellensin. Ayrıca `.env` rotasyonu + auth exception için alert kuralı eklenebilir.
+**Güvenlik:** HMAC imzası sayesinde `WIRO_API_SECRET` artık wire'da geçmiyor (replay attack koruması + log sızıntılarında secret sızmaz).
 
 ## Script bugfix (bu koşumla commit'lenen)
 
@@ -57,6 +73,7 @@ Fix: gerçek settings object üzerinde minimal mutasyon (`LLM_NLU_ENABLED`, `LLM
 
 ## Sıradaki adımlar
 
-- [ ] Yeni Wiro API key al → shadow eval tekrar koş → bu raporu ek bir bölümle güncelle (LLM vs DET canonical diff, confidence delta dağılımı, LLM'in fix ettiği / kırdığı senaryo listesi).
-- [ ] Production için: 401 sürekli alınıyorsa `LLM_NLU_ENABLED=False` flag'iyle maliyet sıfırlansın ta ki key yenilenene kadar.
-- [ ] Auth error telemetrisi — `llm_nlu.py` `llm_http_error` oranı bir threshold'u geçerse alert.
+- [x] ~~Wiro API key yenile~~ → key zaten valid, problem HMAC auth eksikliğiydi. ✅ Fix commit'lendi.
+- [ ] **Pediatri LLM regresyonu**: `pedi_bronchiolitis` + `pedi_otitis_media` senaryolarında LLM context injection kaçırıyor. Ya context injection koşulunu "text contains X" pattern'ine döktür, ya da LLM prompt'una pediatric canonical'ları açıkça ekle. (ayrı PR)
+- [ ] Canonical-level diff raporu: LLM DET'in ürettiği canonical'lara ek olarak ne getiriyor / ne eksik bırakıyor? `scripts/shadow_eval.py`'ye canonical-set diff sütunu eklenebilir. (nice-to-have)
+- [ ] Auth error telemetrisi: `llm_http_error` oranı threshold'u geçerse alert (production observability).
