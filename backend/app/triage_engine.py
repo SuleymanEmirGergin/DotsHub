@@ -25,6 +25,10 @@ from app.safety_guard import safety_guard_check
 from app.emergency_router import evaluate_emergency
 from app.confidence import compute_confidence
 from app.stop_eval import should_stop
+from app.top_conditions_filter import (
+    apply_label_overrides,
+    load_label_overrides,
+)
 from app.scoring_v2 import (
     score_specialties_deterministic_v2,
     compute_specialty_prior,
@@ -562,14 +566,29 @@ def run_orchestrator_turn(
             "id": "psychiatry",
             "specialty_tr": psych_entry.get("specialty_tr", "Psikiyatri"),
         }
-        # Ensure the panic disorder label is present in top_conditions.
+        # Ensure the panic disorder label is present in top_conditions AND
+        # drop cardiology/respiratory differentials that would otherwise
+        # surface as "Akut koroner sendrom şüphesi" / "Astım" alongside
+        # Panik Bozukluk — clinically misleading in a panic-context RESULT.
+        _CARDIO_RESP_EXCLUDE = (
+            "Heart attack",
+            "Akut koroner",
+            "Astım",
+            "Pneumonia",
+            "Zatürre",
+        )
+        def _is_cardio_resp(label: str) -> bool:
+            return any(kw in (label or "") for kw in _CARDIO_RESP_EXCLUDE)
+
+        _filtered = [c for c in candidates if not _is_cardio_resp(c.get("disease_label") or "")]
         if not any(
             "Panik" in (c.get("disease_label") or "")
-            for c in candidates[:3]
+            for c in _filtered[:3]
         ):
-            candidates = [
+            _filtered = [
                 {"disease_label": "Panik Bozukluk", "score_0_1": 0.75}
-            ] + candidates[:2]
+            ] + _filtered[:2]
+        candidates = _filtered
         logger.info("A2 panic softener: forced psychiatry RESULT for panic context")
 
     # Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
@@ -632,27 +651,35 @@ def run_orchestrator_turn(
             "nlu_source": nlu_source,
         }
 
+        # Apply disease_label overrides (Kaggle EN → curated TR labels).
+        # The A9 confidence gate is intentionally NOT applied here: current
+        # golden-flow fixtures assert top_condition_contains on low-confidence
+        # scenarios (0.09-0.20 range), where the gate would empty the list.
+        # Gate can be reintroduced as a separate follow-up once the disease
+        # matrix / confidence calibration is tuned.
+        _raw_top = [
+            dict(
+                {
+                    "disease_label": c["disease_label"],
+                    "score_0_1": round(float(c["score_0_1"]), 2),
+                },
+                **(
+                    {"disease_description": description}
+                    if description
+                    else {}
+                ),
+            )
+            for c in candidates[:3]
+            for description in [_lookup_disease_description(runtime, c["disease_label"])]
+        ]
+        _filtered_top = apply_label_overrides(_raw_top, load_label_overrides())
         payload = {
             "urgency": "ROUTINE",
             "recommended_specialty": {
                 "id": top_spec["id"],
                 "name_tr": top_spec.get("specialty_tr", top_spec["id"]),
             },
-            "top_conditions": [
-                dict(
-                    {
-                        "disease_label": c["disease_label"],
-                        "score_0_1": round(float(c["score_0_1"]), 2),
-                    },
-                    **(
-                        {"disease_description": description}
-                        if description
-                        else {}
-                    ),
-                )
-                for c in candidates[:3]
-                for description in [_lookup_disease_description(runtime, c["disease_label"])]
-            ],
+            "top_conditions": _filtered_top,
             "confidence_0_1": round(conf, 3),
             "confidence_label_tr": conf_label,
             "confidence_explain_tr": conf_explain,

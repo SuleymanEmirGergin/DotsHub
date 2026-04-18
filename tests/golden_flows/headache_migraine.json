@@ -9,7 +9,7 @@
   "expected": {
     "final_type": "RESULT",
     "recommended_specialty": "neurology",
-    "top_condition_contains": "Migraine",
+    "top_condition_contains": "Migren",
     "urgency": "ROUTINE"
   }
 }

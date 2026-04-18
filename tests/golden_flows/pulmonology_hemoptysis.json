@@ -10,7 +10,7 @@
   "expected": {
     "final_type": "RESULT",
     "recommended_specialty": "pulmonology",
-    "top_condition_contains": "Tuberculosis",
+    "top_condition_contains": "Tüberküloz",
     "urgency": "ROUTINE"
   }
 }

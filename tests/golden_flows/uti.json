@@ -8,7 +8,7 @@
   "expected": {
     "final_type": "RESULT",
     "recommended_specialty": "urology_internal",
-    "top_condition_contains": "Urinary tract infection",
+    "top_condition_contains": "İdrar yolu enfeksiyonu",
     "urgency": "ROUTINE"
   }
 }

@@ -10,7 +10,7 @@
   "expected": {
     "final_type": "RESULT",
     "recommended_specialty": "dermatology",
-    "top_condition_contains": "Acne",
+    "top_condition_contains": "Akne",
     "urgency": "ROUTINE"
   }
 }
