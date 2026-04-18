@@ -283,6 +283,205 @@
       "source": "synthetic_new",
       "user_message": "Badem yedikten sonra dudaklarım ve boğazım şişti, nefes alamıyorum, kurdeşen çıktı.",
       "expected": {"final_type": "EMERGENCY"}
+    },
+
+    {
+      "id": "cardio_hypertension_new_01",
+      "source": "synthetic_new",
+      "user_message": "Tansiyonumu evde ölçtüm, 170/100 çıktı. Son günlerde başım ağrıyor ve halsizlik var.",
+      "expected": {"final_type": "RESULT", "recommended_specialty": "cardiology"}
+    },
+    {
+      "id": "neuro_tia_new_01",
+      "source": "synthetic_new",
+      "user_message": "Dün yarım saat boyunca sol elim uyuştu ve konuşmam bozuldu, sonra düzeldi. Şu an iyiyim.",
+      "expected": {"final_type": "EMERGENCY"}
+    },
+    {
+      "id": "psych_insomnia_new_01",
+      "source": "synthetic_new",
+      "user_message": "2 aydır gece 3-4 saat uyuyabiliyorum, uykuya dalmakta zorlanıyorum ve sabah yorgun kalkıyorum.",
+      "expected": {"final_type": "RESULT", "recommended_specialty": "psychiatry"}
+    },
+    {
+      "id": "derm_fungal_new_01",
+      "source": "synthetic_new",
+      "user_message": "Ayak parmaklarımın arasında kaşıntılı, soyulan bir döküntü var. Havuza gittikten sonra başladı.",
+      "expected": {"final_type": "RESULT", "recommended_specialty": "dermatology", "top_condition_contains": "Fungal"}
+    },
+    {
+      "id": "derm_psoriasis_new_01",
+      "source": "synthetic_new",
+      "user_message": "Dirseklerim ve saçlı derimde gümüş-beyaz kepekli, kırmızı plaklar var. Aileden benzer hastalık var.",
+      "expected": {"final_type": "RESULT", "recommended_specialty": "dermatology", "top_condition_contains": "Psoriasis"}
+    },
+    {
+      "id": "ent_otitis_externa_new_01",
+      "source": "synthetic_new",
+      "user_message": "Kulak kanalım ağrıyor, kaşınıyor ve hafif akıntı var. Yüzerken kulağıma su kaçtı geçen hafta.",
+      "expected": {"final_type": "RESULT", "recommended_specialty": "ent"}
+    },
+    {
+      "id": "ent_tonsillitis_new_01",
+      "source": "synthetic_new",
+      "user_message": "Bademciklerim çok şiş ve beyaz lekeli, yutkunamıyorum, ateşim 39.",
+      "expected": {"final_type": "RESULT", "recommended_specialty": "ent"}
+    },
+    {
+      "id": "pulm_pneumonia_new_01",
+      "source": "synthetic_new",
+      "user_message": "5 gündür sürekli öksürük, balgam, göğüs ağrısı ve 38.5 ateşim var. Nefes darlığı da başladı.",
+      "expected": {"final_type": "RESULT", "recommended_specialty": "pulmonology", "top_condition_contains": "Pnömoni"}
+    },
+    {
+      "id": "cardio_hypertension_paraphrase_01",
+      "source": "paraphrase",
+      "user_message": "Doktorum yüksek tansiyon demişti, son zamanlarda başım dönüyor ve ensem ağrıyor.",
+      "expected": {"final_type": "RESULT", "recommended_specialty": "cardiology", "top_condition_contains": "Hipertansiyon"}
+    },
+    {
+      "id": "gi_gastritis_new_01",
+      "source": "synthetic_new",
+      "user_message": "Mide ağrım 1 haftadır geçmiyor, aç karnına daha kötü. Yemek yiyince geçici rahatlıyorum.",
+      "expected": {"final_type": "RESULT", "recommended_specialty": "internal_gi"}
+    },
+    {
+      "id": "gi_ibs_new_01",
+      "source": "synthetic_new",
+      "user_message": "Aylardır karnım şişiyor, bazen ishalim oluyor bazen kabızlık. Tuvaletten sonra rahatlıyorum.",
+      "expected": {"final_type": "RESULT", "recommended_specialty": "internal_gi"}
+    },
+    {
+      "id": "endo_hypothyroid_paraphrase_01",
+      "source": "paraphrase",
+      "user_message": "Çok yorgunum, kilo aldım, cildim kuru ve saçlarım dökülüyor. Üşüyorum sürekli.",
+      "expected": {"final_type": "RESULT", "recommended_specialty": "endocrinology", "top_condition_contains": "Hipotiroidi"}
+    },
+    {
+      "id": "endo_hyperthyroid_new_01",
+      "source": "synthetic_new",
+      "user_message": "Kilo verdim, çarpıntım var, ellerim titriyor ve çok terliyorum. İştahım iyi ama zayıflıyorum.",
+      "expected": {"final_type": "RESULT", "recommended_specialty": "endocrinology"}
+    },
+    {
+      "id": "uro_uti_paraphrase_02",
+      "source": "paraphrase",
+      "user_message": "Tuvalete çok sık gidiyorum, yanma oluyor ve idrarım bulanık kokulu.",
+      "expected": {"final_type": "RESULT", "recommended_specialty": "urology_internal"}
+    },
+    {
+      "id": "obgyn_pregnancy_routine_new_01",
+      "source": "synthetic_new",
+      "user_message": "Adetim 2 hafta gecikti, test pozitif çıktı. İlk kontrolümü yaptırmak istiyorum.",
+      "expected": {"final_type": "RESULT", "recommended_specialty": "obgyn"}
+    },
+    {
+      "id": "obgyn_menopause_new_01",
+      "source": "synthetic_new",
+      "user_message": "50 yaşındayım, 6 aydır adet görmedim. Sıcak basması ve gece terlemesi var.",
+      "expected": {"final_type": "RESULT", "recommended_specialty": "obgyn"}
+    },
+    {
+      "id": "pedi_diarrhea_new_01",
+      "source": "synthetic_new",
+      "user_message": "3 yaşındaki kızım 2 gündür ishalde, ateşi de var. Oyun oynamak istemiyor.",
+      "expected": {"final_type": "RESULT", "recommended_specialty": "pediatrics"}
+    },
+    {
+      "id": "pedi_rash_new_01",
+      "source": "synthetic_new",
+      "user_message": "4 yaşındaki oğlumun vücudunda kırmızı noktalar çıktı, ateşi 38.5 ve boynunda bez var.",
+      "expected": {"final_type": "RESULT", "recommended_specialty": "pediatrics"}
+    },
+    {
+      "id": "psych_suicidal_paraphrase_01",
+      "source": "paraphrase",
+      "user_message": "Kendime zarar vermeyi planlıyorum, ilaçları biriktirdim. Bu akşam yapmayı düşünüyorum.",
+      "expected": {"final_type": "EMERGENCY", "recommended_specialty": "psychiatry"}
+    },
+    {
+      "id": "ophth_cataract_new_01",
+      "source": "synthetic_new",
+      "user_message": "Görüşüm son bir yılda yavaş yavaş bulanıklaştı, geceleri farlar etrafında kamaşma oluyor.",
+      "expected": {"final_type": "RESULT", "recommended_specialty": "ophthalmology"}
+    },
+    {
+      "id": "ophth_stye_new_01",
+      "source": "synthetic_new",
+      "user_message": "Göz kapağımda küçük, ağrılı, kırmızı bir şişlik var. Arpacık gibi görünüyor.",
+      "expected": {"final_type": "RESULT", "recommended_specialty": "ophthalmology"}
+    },
+    {
+      "id": "ortho_frozen_shoulder_new_01",
+      "source": "synthetic_new",
+      "user_message": "Sağ omzum 2 aydır ağrıyor ve yukarı kaldıramıyorum. Geceleri daha kötü oluyor.",
+      "expected": {"final_type": "RESULT", "recommended_specialty": "orthopedics_rheum"}
+    },
+    {
+      "id": "neuro_migraine_paraphrase_03",
+      "source": "paraphrase",
+      "user_message": "Ayda birkaç kez çok şiddetli baş ağrısı atağım oluyor, ışık rahatsız ediyor, kusuyorum.",
+      "expected": {"final_type": "RESULT", "recommended_specialty": "neurology", "top_condition_contains": "Migren"}
+    },
+    {
+      "id": "psych_depression_paraphrase_02",
+      "source": "paraphrase",
+      "user_message": "Hiçbir şeye ilgi duymuyorum, kendimi çok kötü hissediyorum. Yemek yiyemiyorum, uyuyamıyorum.",
+      "expected": {"final_type": "RESULT", "recommended_specialty": "psychiatry", "top_condition_contains": "Depresyon"}
+    },
+    {
+      "id": "cardio_chest_ambiguous",
+      "source": "ambiguous",
+      "user_message": "Göğsümün sol tarafında arada bir saplanma gibi ağrı oluyor, birkaç saniye sürüyor.",
+      "expected": {"final_type": "RESULT"}
+    },
+    {
+      "id": "pulm_asthma_chronic_new_01",
+      "source": "synthetic_new",
+      "user_message": "Çocukluktan beri astımım var. Son haftalarda inhaleri daha sık kullanıyorum, egzersizde zorlanıyorum.",
+      "expected": {"final_type": "RESULT", "recommended_specialty": "pulmonology"}
+    },
+    {
+      "id": "psych_ocd_new_01",
+      "source": "synthetic_new",
+      "user_message": "Günde 20 kez ellerimi yıkıyorum, kontrol etme takıntım var, evden çıkamıyorum neredeyse.",
+      "expected": {"final_type": "RESULT", "recommended_specialty": "psychiatry"}
+    },
+    {
+      "id": "derm_acne_paraphrase_02",
+      "source": "paraphrase",
+      "user_message": "Yüzümde derin, iltihaplı sivilceler var. 6 aydır krem kullandım ama geçmedi.",
+      "expected": {"final_type": "RESULT", "recommended_specialty": "dermatology", "top_condition_contains": "Akne"}
+    },
+    {
+      "id": "pedi_otitis_paraphrase_02",
+      "source": "paraphrase",
+      "user_message": "18 aylık bebeğim geceleri uyuyamıyor, kulağını çekiyor ve ateşi var.",
+      "expected": {"final_type": "RESULT", "recommended_specialty": "pediatrics", "top_condition_contains": "Otitis"}
+    },
+    {
+      "id": "obgyn_dysmenorrhea_paraphrase_02",
+      "source": "paraphrase",
+      "user_message": "Adet dönemlerimde karnıma bıçak saplanıyormuş gibi ağrı oluyor, bel ağrısı da eşlik ediyor.",
+      "expected": {"final_type": "RESULT", "recommended_specialty": "obgyn", "top_condition_contains": "Dismenore"}
+    },
+    {
+      "id": "obgyn_pcos_paraphrase_02",
+      "source": "paraphrase",
+      "user_message": "Adetlerim seyrek ve düzensiz geliyor, yüzümde ve göğsümde koyu tüyler çıktı, kilo aldım.",
+      "expected": {"final_type": "RESULT", "recommended_specialty": "obgyn", "top_condition_contains": "PCOS"}
+    },
+    {
+      "id": "psych_panic_paraphrase_02",
+      "source": "paraphrase",
+      "user_message": "Birden kalbim çarpmaya başlıyor, nefes alamıyormuş gibi oluyorum ve öleceğim hissine kapılıyorum. Tekrarlıyor.",
+      "expected": {"final_type": "RESULT", "recommended_specialty": "psychiatry", "top_condition_contains": "Panik"}
+    },
+    {
+      "id": "neuro_stroke_paraphrase_02",
+      "source": "paraphrase",
+      "user_message": "Eşimin ağzı yan tarafa kaydı, konuşurken kelimeler karışıyor, bir kolu güçsüzleşti.",
+      "expected": {"final_type": "EMERGENCY"}
     }
   ]
 }

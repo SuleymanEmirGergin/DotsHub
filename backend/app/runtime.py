@@ -83,6 +83,12 @@ class Runtime:
     emergency_rules_cfg: Dict[str, Any] = field(default_factory=dict)
     # Risk stratification rules (config/risk_rules.json)
     risk_rules_cfg: Dict[str, Any] = field(default_factory=dict)
+    # Curated "possible conditions" catalog (app/data/curated_conditions.json).
+    # Keyed by canonical TR disease label; each entry has icd10, description,
+    # patient-facing prep fields (questions, symptoms to monitor, escalation
+    # triggers, self-care) and a disclaimer. Used by triage_engine to enrich
+    # top_conditions entries that were context-injected (source_type="curated").
+    curated_conditions: Dict[str, Any] = field(default_factory=dict)
 
 
 def _build_disease_to_trcanonicals(
@@ -301,5 +307,27 @@ def load_runtime(data_dir: str = "app/data") -> Runtime:
 
     rt.emergency_rules_cfg = emergency_cfg
     rt.risk_rules_cfg = risk_cfg
+
+    # Curated "possible conditions" catalog (C2). This is data-dir scoped
+    # (not config/), because the initial single-tenant release ships one
+    # default set. Multi-tenant (A-hastanesi / B-hastanesi farklı dataset)
+    # wiring is tracked as a follow-up — the file already carries a
+    # tenant_scope field to make that migration safe.
+    curated_conditions: Dict[str, Any] = {}
+    try:
+        curated_path = d / "curated_conditions.json"
+        if curated_path.exists():
+            raw_curated = load_json(str(curated_path))
+            if isinstance(raw_curated, dict):
+                # We cache the top-level payload; callers read
+                # raw_curated["conditions"] for the label lookup.
+                curated_conditions = raw_curated
+    except Exception as exc:
+        logger.warning(
+            "Failed to load curated_conditions.json at %s: %s",
+            d / "curated_conditions.json",
+            exc,
+        )
+    rt.curated_conditions = curated_conditions
 
     return rt

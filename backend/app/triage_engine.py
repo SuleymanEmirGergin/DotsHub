@@ -27,8 +27,112 @@ from app.confidence import compute_confidence
 from app.stop_eval import should_stop
 from app.top_conditions_filter import (
     apply_label_overrides,
+    apply_top_conditions_gate,
     load_label_overrides,
 )
+
+# Confidence gate threshold specifically for RESULT top_conditions.
+# Set below top_conditions_filter.MIN_CONFIDENCE_FOR_CONDITIONS (0.35)
+# because the default is calibrated for the A9 "hide fragile
+# differentials" use case. In live measurement (2026-04-18) typical
+# RESULT confidences sit in 0.09-0.50; 0.35 empties too many routine
+# scenarios (migraine at 0.33, pain patterns at 0.20). The curated-
+# aware gate below lets curated entries through at any confidence, so
+# this threshold only guards Kaggle-derived candidates.
+_RESULT_TOP_CONDITIONS_GATE = 0.25
+
+
+# Canonical-injected disease labels (Panik Bozukluk, Majör Depresyon,
+# Akut Otitis Media, Bronşiolit, Renal Kolik, Dismenore, PCOS,
+# Alerjik Konjonktivit) are tagged as "curated" so the UI can:
+#  - badge them differently from raw Kaggle candidates
+#  - bypass the low-confidence gate (these were synthesized from a
+#    deterministic canonical pattern, not a fragile overlap score)
+#  - attach patient-facing prep fields (doktora sorular, self-care, …)
+#    from backend/app/data/curated_conditions.json.
+#
+# Anything not in this set falls through as source_type="kaggle_candidate".
+_CURATED_INJECTED_LABELS = frozenset({
+    "Panik Bozukluk",
+    "Majör Depresyon",
+    "Akut Otitis Media",
+    "Bronşiolit",
+    "Renal Kolik",
+    "Dismenore",
+    "PCOS (Polikistik Over Sendromu)",
+    "Alerjik Konjonktivit",
+})
+
+
+def _annotate_and_enrich_top_conditions(
+    top_conditions: List[Dict[str, Any]],
+    runtime: Runtime,
+) -> List[Dict[str, Any]]:
+    """Tag each entry with source_type and enrich curated entries with
+    patient-facing metadata from curated_conditions.json.
+
+    Non-mutating: returns a fresh list with fresh dict copies.
+    """
+    catalog = (runtime.curated_conditions or {}).get("conditions", {}) or {}
+    disclaimer = (runtime.curated_conditions or {}).get(
+        "disclaimer_tr",
+        "Bu liste tanı değildir, yalnızca hazırlık amaçlıdır. Kesin "
+        "değerlendirme için lütfen hekiminize başvurun.",
+    )
+    out: List[Dict[str, Any]] = []
+    for c in top_conditions or []:
+        if not isinstance(c, dict):
+            continue
+        label = c.get("disease_label") or ""
+        entry = dict(c)
+        if label in _CURATED_INJECTED_LABELS:
+            entry["source_type"] = "curated"
+            meta = catalog.get(label) or {}
+            # Copy only the UI-facing fields; keep the envelope lean.
+            for key in (
+                "icd10",
+                "disease_description_tr",
+                "doktora_sorulacak_sorular_tr",
+                "izlenecek_belirtiler_tr",
+                "ne_zaman_tekrar_basvur_tr",
+                "self_care_tr",
+                "aciliyet_notu_tr",
+            ):
+                if key in meta and meta[key]:
+                    entry[key] = meta[key]
+            entry["disclaimer_tr"] = disclaimer
+        else:
+            entry["source_type"] = "kaggle_candidate"
+            # Kaggle entries don't get curated prep fields in this initial
+            # release. UI shows the raw disease_description_en (already
+            # present via _lookup_disease_description). Disclaimer is still
+            # attached so UI can render the same footer regardless of source.
+            entry["disclaimer_tr"] = disclaimer
+        out.append(entry)
+    return out
+
+
+def _apply_gate_curated_aware(
+    top_conditions: List[Dict[str, Any]],
+    confidence: Optional[float],
+) -> List[Dict[str, Any]]:
+    """A9 confidence gate that preserves curated entries.
+
+    Curated labels are injected from deterministic canonical patterns
+    and carry known clinical meaning, so the "fragile differential at
+    low confidence" concern that motivates the gate doesn't apply to
+    them. Kaggle candidates ARE gated: below threshold they're dropped.
+    """
+    if not top_conditions:
+        return top_conditions
+    curated = [c for c in top_conditions if c.get("source_type") == "curated"]
+    non_curated = [c for c in top_conditions if c.get("source_type") != "curated"]
+    gated_non_curated = apply_top_conditions_gate(
+        non_curated, confidence, threshold=_RESULT_TOP_CONDITIONS_GATE
+    )
+    # Preserve original ordering: curated first (injections already prepend),
+    # then surviving Kaggle candidates.
+    return curated + gated_non_curated
 from app.scoring_v2 import (
     score_specialties_deterministic_v2,
     compute_specialty_prior,
@@ -770,7 +874,12 @@ def run_orchestrator_turn(
             for c in candidates[:3]
             for description in [_lookup_disease_description(runtime, c["disease_label"])]
         ]
-        _filtered_top = apply_label_overrides(_raw_top, load_label_overrides())
+        _overridden_top = apply_label_overrides(_raw_top, load_label_overrides())
+        # Annotate each entry with source_type + enrich curated entries with
+        # patient-facing prep fields; then apply the A9 confidence gate in
+        # a curated-aware way (curated entries survive below threshold).
+        _annotated_top = _annotate_and_enrich_top_conditions(_overridden_top, runtime)
+        _filtered_top = _apply_gate_curated_aware(_annotated_top, conf)
 
         # Urgency tagging for non-emergency RESULT envelopes. Default is
         # ROUTINE; certain canonical contexts elevate to WITHIN_3_DAYS or

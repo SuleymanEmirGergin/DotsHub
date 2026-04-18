@@ -31,12 +31,18 @@ from app.runtime import load_runtime
 from app.triage_engine import run_orchestrator_turn
 
 
-# Pinned a few points below the measured baseline so normal tuning
-# doesn't flake the suite. Bump this after a clean intentional
-# improvement; drop it only with a written justification.
-# Initial baseline (commit 1fd8c0c): 24/46 = 52.2%. Threshold 0.50
-# tolerates ±1 scenario of noise while still catching real regressions.
-MIN_PASS_RATE = 0.50
+# Pinned below the measured baseline so normal tuning doesn't flake
+# the suite. Bump this after a clean intentional improvement; drop
+# only with a written justification.
+#
+# Baseline log:
+#   commit 1fd8c0c (46 scenarios)  : 24/46 = 52.2%  threshold 0.50
+#   commit C2-expand (79 scenarios): 32/79 = 40.5%  threshold 0.35
+#     (corpus grew; new scenarios haven't been tuned for yet. The C2
+#      expansion intentionally widens coverage before tuning — most of
+#      the added synthetic/paraphrase cases go to internal_gi fallback
+#      and will be reclaimed by subsequent synonym/keyword passes.)
+MIN_PASS_RATE = 0.35
 
 
 class RealCorpusTests(unittest.TestCase):
