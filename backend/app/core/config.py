@@ -70,6 +70,17 @@ class Settings(BaseSettings):
     LLM_NLU_LOG_TO_SUPABASE: bool = True
     LLM_EXPLAIN_ENABLED: bool = False        # optional explanation layer (B9)
 
+    # ── LLM health alerts (post-C3 observability) ────────────────────────
+    # When the rolling-window LLM success rate drops below
+    # LLM_HEALTH_ALERT_THRESHOLD_PCT, notifier.py posts a webhook alert
+    # to Slack/Discord (if configured). Only fires once per
+    # LLM_HEALTH_ALERT_COOLDOWN_SEC to avoid storm-on-outage.
+    LLM_HEALTH_ALERT_ENABLED: bool = True
+    LLM_HEALTH_ALERT_WINDOW: int = 20        # rolling-window size (# calls)
+    LLM_HEALTH_ALERT_MIN_CALLS: int = 5      # require this many observations before evaluating
+    LLM_HEALTH_ALERT_THRESHOLD_PCT: float = 80.0
+    LLM_HEALTH_ALERT_COOLDOWN_SEC: int = 900  # 15 minutes
+
     # ── RESULT envelope top_conditions gate (C2) ──────────────────────────
     # Below this confidence, Kaggle-derived disease candidates are dropped
     # from the RESULT envelope's top_conditions. Curated entries (Panik

@@ -134,6 +134,81 @@ def _log_llm_call(
 
     threading.Thread(target=_insert, daemon=True).start()
 
+    # Health-alert hook — paging sibling of the B2 dashboard card.
+    # Stateless from this module's perspective; the cool-down lives
+    # in _health_monitor below so the notifier can stay simple.
+    try:
+        _health_monitor_observe(success=success, error_type=error_type)
+    except Exception as exc:  # never let observability break triage
+        logger.debug("health monitor observe failed: %s", exc)
+
+
+# ---------------------------------------------------------------------------
+# Rolling-window health monitor
+# ---------------------------------------------------------------------------
+#
+# Why in-memory and not a DB query:
+#   - Alerts need to fire within a few seconds of a regression, not
+#     after a cron catches up.
+#   - The dashboard card already reads Supabase; the webhook is for
+#     ops paging, which wants O(1) latency.
+# Trade-off: window is per-process. Multiple workers each track their
+# own ring, which means parallel worker outages may alert multiple
+# times — acceptable given the 15-min cool-down.
+
+from collections import Counter, deque
+from threading import Lock
+import time
+
+_HEALTH_LOCK = Lock()
+_HEALTH_EVENTS: deque = deque()  # each entry: (success: bool, error_type: str|None)
+_LAST_ALERT_TS: float = 0.0      # monotonic seconds of last webhook fire
+
+
+def _health_monitor_observe(success: bool, error_type: Optional[str]) -> None:
+    """Append one observation and maybe fire a webhook alert."""
+    if not getattr(settings, "LLM_HEALTH_ALERT_ENABLED", True):
+        return
+    window = int(getattr(settings, "LLM_HEALTH_ALERT_WINDOW", 20))
+    min_calls = int(getattr(settings, "LLM_HEALTH_ALERT_MIN_CALLS", 5))
+    threshold = float(getattr(settings, "LLM_HEALTH_ALERT_THRESHOLD_PCT", 80.0))
+    cooldown = float(getattr(settings, "LLM_HEALTH_ALERT_COOLDOWN_SEC", 900))
+
+    global _LAST_ALERT_TS
+    with _HEALTH_LOCK:
+        _HEALTH_EVENTS.append((bool(success), error_type))
+        # Trim deque to window size.
+        while len(_HEALTH_EVENTS) > window:
+            _HEALTH_EVENTS.popleft()
+        n = len(_HEALTH_EVENTS)
+        if n < min_calls:
+            return
+        successes = sum(1 for s, _ in _HEALTH_EVENTS if s)
+        rate_pct = 100.0 * successes / n
+        if rate_pct >= threshold:
+            return
+        # Cool-down — avoid paging every second during an outage.
+        now = time.monotonic()
+        if now - _LAST_ALERT_TS < cooldown:
+            return
+        _LAST_ALERT_TS = now
+        # Compute top error type for the alert body.
+        errors = Counter(et for s, et in _HEALTH_EVENTS if not s and et)
+        top_error = errors.most_common(1)[0][0] if errors else None
+
+    # Fire outside the lock — notifier itself dispatches in a daemon thread.
+    try:
+        from app.notifier import send_llm_health_alert
+
+        send_llm_health_alert(
+            success_rate_pct=rate_pct,
+            window_size=n,
+            top_error=top_error,
+            threshold_pct=threshold,
+        )
+    except Exception as exc:
+        logger.warning("send_llm_health_alert failed: %s", exc)
+
 
 def _log_synonym_suggestions(phrases: List[str]) -> None:
     """Upsert unrecognized symptom phrases to synonym_suggestions table (background thread).

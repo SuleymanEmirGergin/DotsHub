@@ -22,6 +22,38 @@ logger = logging.getLogger(__name__)
 # ── Public API ──────────────────────────────────────────────
 
 
+def send_llm_health_alert(
+    success_rate_pct: float,
+    window_size: int,
+    top_error: Optional[str],
+    threshold_pct: float,
+) -> None:
+    """Fire a Slack/Discord alert when LLM NLU success rate drops.
+
+    Called from llm_nlu._check_health_and_maybe_alert() after a
+    rolling window reports success_rate below
+    settings.LLM_HEALTH_ALERT_THRESHOLD_PCT. This surface is the
+    paging sibling of the B2 dashboard LLM Health card — the
+    dashboard is passive (requires someone to look), the webhook is
+    active (pushes). Same data source (llm_calls via the in-memory
+    ring buffer in llm_nlu.py).
+
+    Cool-down is owned by the caller to keep this function stateless.
+    Never raises.
+    """
+    if not settings.WEBHOOK_ENABLED:
+        return
+    if not settings.WEBHOOK_SLACK_URL and not settings.WEBHOOK_DISCORD_URL:
+        return
+
+    thread = threading.Thread(
+        target=_dispatch_llm_health,
+        args=(success_rate_pct, window_size, top_error, threshold_pct),
+        daemon=True,
+    )
+    thread.start()
+
+
 def send_alert(
     envelope_type: str,
     session_id: str,
@@ -198,6 +230,86 @@ def _send_discord(
         resp = client.post(settings.WEBHOOK_DISCORD_URL, json=body)
         if resp.status_code >= 400:
             logger.warning("Discord returned %s: %s", resp.status_code, resp.text[:200])
+
+
+# ── LLM health dispatcher ──────────────────────────────────
+
+
+def _dispatch_llm_health(
+    success_rate_pct: float,
+    window_size: int,
+    top_error: Optional[str],
+    threshold_pct: float,
+) -> None:
+    """Background thread target for send_llm_health_alert."""
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    title = f"⚠️ LLM NLU başarı oranı düştü: %{success_rate_pct:.0f}"
+    error_line = f"En sık hata: `{top_error}`" if top_error else "Hata türü: (N/A)"
+
+    if settings.WEBHOOK_SLACK_URL:
+        try:
+            blocks = [
+                {"type": "header", "text": {"type": "plain_text", "text": title}},
+                {"type": "divider"},
+                {
+                    "type": "section",
+                    "fields": [
+                        {"type": "mrkdwn", "text": f"*Son {window_size} çağrı*"},
+                        {"type": "mrkdwn", "text": f"*Eşik:* %{threshold_pct:.0f}"},
+                        {"type": "mrkdwn", "text": f"*Gerçekleşen:* %{success_rate_pct:.1f}"},
+                        {"type": "mrkdwn", "text": f"*Zaman:* {now}"},
+                    ],
+                },
+                {"type": "section", "text": {"type": "mrkdwn", "text": error_line}},
+                {
+                    "type": "context",
+                    "elements": [
+                        {
+                            "type": "mrkdwn",
+                            "text": "💡 Admin → Analytics → LLM NLU Health kartında detay.",
+                        }
+                    ],
+                },
+            ]
+            with httpx.Client(timeout=10) as client:
+                resp = client.post(
+                    settings.WEBHOOK_SLACK_URL, json={"blocks": blocks, "text": title}
+                )
+                if resp.status_code >= 400:
+                    logger.warning(
+                        "Slack LLM health webhook: %s — %s",
+                        resp.status_code,
+                        resp.text[:200],
+                    )
+        except Exception as exc:
+            logger.warning("Slack LLM health webhook failed: %s", exc)
+
+    if settings.WEBHOOK_DISCORD_URL:
+        try:
+            embed = {
+                "title": title,
+                "color": 0xF57F17,
+                "fields": [
+                    {"name": "Son", "value": f"{window_size} çağrı", "inline": True},
+                    {"name": "Eşik", "value": f"%{threshold_pct:.0f}", "inline": True},
+                    {"name": "Gerçekleşen", "value": f"%{success_rate_pct:.1f}", "inline": True},
+                    {"name": "En sık hata", "value": (top_error or "-"), "inline": False},
+                ],
+                "footer": {"text": f"DotsHub LLM Health • {now}"},
+            }
+            with httpx.Client(timeout=10) as client:
+                resp = client.post(
+                    settings.WEBHOOK_DISCORD_URL,
+                    json={"embeds": [embed], "content": title},
+                )
+                if resp.status_code >= 400:
+                    logger.warning(
+                        "Discord LLM health webhook: %s — %s",
+                        resp.status_code,
+                        resp.text[:200],
+                    )
+        except Exception as exc:
+            logger.warning("Discord LLM health webhook failed: %s", exc)
 
 
 # ── Test helper (synchronous) ──────────────────────────────
