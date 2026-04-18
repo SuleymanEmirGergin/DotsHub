@@ -102,6 +102,34 @@ def _has_panic_context(canonicals: List[str], text_norm: str) -> bool:
     return True
 
 
+# Pediatric bronchiolitis / RSV softener ─────────────────────────────────
+#
+# When a parent describes an infant with noisy breathing ("hırıltılı nefes")
+# plus mild fever, rules.json's anaphylaxis hard_trigger can fire on the
+# "nefes" / "hırıltı" keywords even though there's no allergy context. The
+# clinically correct output is RESULT/pediatrics with SAME_DAY urgency.
+# We soften the anaphylaxis rule only when the bronchiolitis canonical is
+# present AND no true anaphylaxis signal (swelling, hives) is in the text.
+_BRONCHIOLITIS_SOFTEN_SAFETY_GUARD_IDS = frozenset({"anaphylaxis"})
+_ANAPHYLAXIS_HARD_SIGNALS = (
+    "dilim şişti", "boğazım şişti", "dudaklarım şişti", "yüzüm şişti",
+    "yaygın döküntü", "kurdeşen", "morardı", "morardım",
+    "her yerim kaşınıyor", "tüm vücut",
+)
+
+
+def _has_bronchiolitis_context(canonicals: List[str], text_norm: str) -> bool:
+    """True when the patient message describes infant noisy breathing and
+    no anaphylaxis hard signal is in the text.
+    """
+    if "bebek nefes hırıltısı" not in canonicals:
+        return False
+    for sig in _ANAPHYLAXIS_HARD_SIGNALS:
+        if sig in text_norm:
+            return False
+    return True
+
+
 def _emergency_specialty_for(rule_id: Optional[str]) -> Tuple[str, str]:
     """Return (specialty_id, specialty_tr) for an emergency rule_id.
 
@@ -299,6 +327,9 @@ def run_orchestrator_turn(
     from app.canonical_extract import normalize_text_tr as _norm_for_panic
     _text_norm_for_panic = _norm_for_panic(input_text)
     _panic_context = _has_panic_context(_safety_canonicals, _text_norm_for_panic)
+    _bronchiolitis_context = _has_bronchiolitis_context(
+        _safety_canonicals, _text_norm_for_panic
+    )
 
     emergency = safety_guard_check(input_text, answers, runtime.rules_json)
     if (
@@ -309,6 +340,17 @@ def run_orchestrator_turn(
         logger.info(
             "A2 panic softener: suppressed safety_guard rule_id=%s "
             "because panik atak canonical is present",
+            emergency.get("rule_id"),
+        )
+        emergency = None
+    if (
+        emergency
+        and _bronchiolitis_context
+        and emergency.get("rule_id") in _BRONCHIOLITIS_SOFTEN_SAFETY_GUARD_IDS
+    ):
+        logger.info(
+            "Bronchiolitis softener: suppressed safety_guard rule_id=%s "
+            "because bebek nefes hırıltısı canonical is present",
             emergency.get("rule_id"),
         )
         emergency = None
