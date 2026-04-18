@@ -21,7 +21,18 @@ test.describe("/admin/status", () => {
       `${state.baseURL}/auth/callback`,
     );
     await page.goto(link);
-    await page.waitForURL(/\/admin/, { timeout: 15_000 });
+    await page.waitForLoadState("networkidle", { timeout: 15_000 });
+
+    const finalUrl = page.url();
+    if (!/\/admin(\/|$)/.test(finalUrl) || /\/login/.test(finalUrl)) {
+      const cookies = await page.context().cookies();
+      const sbCookies = cookies
+        .filter((c) => c.name.includes("sb-") || c.name.includes("supabase"))
+        .map((c) => c.name);
+      throw new Error(
+        `Admin sign-in landed on ${finalUrl}. sb-* cookies: [${sbCookies.join(", ") || "NONE"}].`,
+      );
+    }
 
     await page.goto("/admin/status");
 

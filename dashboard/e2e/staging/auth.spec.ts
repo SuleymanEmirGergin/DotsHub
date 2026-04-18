@@ -29,7 +29,18 @@ test.describe("magic link auth", () => {
     const link = await generateMagicLink(sb, state.adminEmail, redirectTo);
 
     await page.goto(link);
-    await page.waitForURL(/\/admin\/sessions(\?|$)/, { timeout: 15_000 });
+    await page.waitForLoadState("networkidle", { timeout: 15_000 });
+
+    const finalUrl = page.url();
+    if (!/\/admin\/sessions/.test(finalUrl) || /\/login/.test(finalUrl)) {
+      const cookies = await page.context().cookies();
+      const sbCookies = cookies
+        .filter((c) => c.name.includes("sb-") || c.name.includes("supabase"))
+        .map((c) => c.name);
+      throw new Error(
+        `Magic link sign-in landed on ${finalUrl}. sb-* cookies: [${sbCookies.join(", ") || "NONE"}].`,
+      );
+    }
 
     // Sessions heading (TR or EN) — requireAdmin must have passed.
     await expect(

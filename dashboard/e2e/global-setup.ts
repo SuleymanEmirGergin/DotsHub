@@ -60,11 +60,17 @@ async function globalSetup(_config: FullConfig): Promise<void> {
   await ensureTestAdmin(sb, adminEmail, "admin");
 
   // Seed a deterministic set of sessions for list/filter tests.
+  //
+  // `recommended_specialty_tr` carries a `E2E-<runId>-...` tag so assertions
+  // on the list page can find OUR rows without colliding with pre-existing
+  // staging data — the list page renders specialty but not input_text, so
+  // uniqueness has to live in a rendered column.
+  const tag = (label: string) => `E2E-${runId}-${label}`;
   const seeded = await seedSessions(sb, runId, [
-    { label: "list-first", confidence_0_1: 0.82, recommended_specialty_tr: "Kardiyoloji" },
-    { label: "list-second", confidence_0_1: 0.41, recommended_specialty_tr: "Dahiliye" },
-    { label: "feedback-up", confidence_0_1: 0.7, feedback: "up" },
-    { label: "feedback-down", confidence_0_1: 0.3, feedback: "down" },
+    { label: "list-first", confidence_0_1: 0.82, recommended_specialty_tr: tag("Kardiyoloji") },
+    { label: "list-second", confidence_0_1: 0.41, recommended_specialty_tr: tag("Dahiliye") },
+    { label: "feedback-up", confidence_0_1: 0.7, feedback: "up", recommended_specialty_tr: tag("FeedbackUp") },
+    { label: "feedback-down", confidence_0_1: 0.3, feedback: "down", recommended_specialty_tr: tag("FeedbackDown") },
     {
       label: "emergency-case",
       envelope_type: "EMERGENCY",
