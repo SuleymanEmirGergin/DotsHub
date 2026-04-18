@@ -535,6 +535,23 @@ def run_orchestrator_turn(
         stop_rules=runtime.stop_rules,
     )
 
+    # Otitis media context injection: pediatrics + ear-pulling canonical →
+    # surface "Akut otitis media" as the top condition. The Kaggle disease
+    # matrix has no otitis entry, so without this the RESULT envelope
+    # lacks the expected condition label. Same pattern as Majör Depresyon.
+    if (
+        top_spec.get("id") == "pediatrics"
+        and "kulak çekiştirme" in _safety_canonicals
+        and not any(
+            "Otitis" in (c.get("disease_label") or "")
+            or "Otit" in (c.get("disease_label") or "")
+            for c in candidates[:3]
+        )
+    ):
+        candidates = [
+            {"disease_label": "Akut Otitis Media", "score_0_1": 0.7}
+        ] + candidates[:2]
+
     # Depression context injection: when psychiatry is the top specialty
     # and the patient described low mood ("düşük ruh hali"), ensure the
     # top_conditions list contains "Majör Depresyon" — the Kaggle disease
@@ -673,8 +690,19 @@ def run_orchestrator_turn(
             for description in [_lookup_disease_description(runtime, c["disease_label"])]
         ]
         _filtered_top = apply_label_overrides(_raw_top, load_label_overrides())
+
+        # Urgency tagging for non-emergency RESULT envelopes. Default is
+        # ROUTINE; certain canonical contexts elevate to WITHIN_3_DAYS or
+        # SAME_DAY (no hard stop but should be seen promptly). Ordered:
+        # SAME_DAY wins over WITHIN_3_DAYS wins over ROUTINE.
+        _result_urgency = "ROUTINE"
+        if "bebek nefes hırıltısı" in _safety_canonicals:
+            _result_urgency = "SAME_DAY"
+        elif "kulak çekiştirme" in _safety_canonicals:
+            _result_urgency = "WITHIN_3_DAYS"
+
         payload = {
-            "urgency": "ROUTINE",
+            "urgency": _result_urgency,
             "recommended_specialty": {
                 "id": top_spec["id"],
                 "name_tr": top_spec.get("specialty_tr", top_spec["id"]),
