@@ -8,7 +8,20 @@ from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Header, Query
 
-from app.db import supabase
+# NOTE: `from app.db import supabase` at module level would break every
+# CI test that imports app.main — app.db raises RuntimeError at import
+# time if SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY are missing. A lazy
+# proxy preserves all `supabase.table(...)` call sites below without
+# rewrites; the real client is only resolved on first attribute access
+# at request time.
+class _LazySupabase:
+    def __getattr__(self, item):
+        from app.db import supabase as _sb
+        return getattr(_sb, item)
+
+
+supabase = _LazySupabase()
+
 from app.admin_auth import require_admin_key
 
 router = APIRouter(prefix="/admin", tags=["admin"])

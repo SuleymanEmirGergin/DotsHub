@@ -119,17 +119,22 @@ class _FakeSupabase:
 
 
 class AdminV5AuthTests(unittest.TestCase):
+    # admin_v5_router is mounted at /v1 (main.py) so the admin_v5
+    # endpoints (which carry their own prefix="/admin") land at
+    # /v1/admin/*. The /v1 prefix was added so the admin rate-limit
+    # middleware (which gates /v1/admin/*) actually covers these
+    # routes — before, they were at /admin/* and bypassed the limit.
     def _get_sessions(self, headers: dict[str, str] | None = None):
         with TestClient(app) as client:
-            return client.get("/admin/sessions?limit=1", headers=headers or {})
+            return client.get("/v1/admin/sessions?limit=1", headers=headers or {})
 
     def _get_feedback_stats(self, headers: dict[str, str] | None = None):
         with TestClient(app) as client:
-            return client.get("/admin/feedback/stats?days=30", headers=headers or {})
+            return client.get("/v1/admin/feedback/stats?days=30", headers=headers or {})
 
     def _get_feedback_list(self, headers: dict[str, str] | None = None):
         with TestClient(app) as client:
-            return client.get("/admin/feedback/list?limit=20", headers=headers or {})
+            return client.get("/v1/admin/feedback/list?limit=20", headers=headers or {})
 
     def test_returns_503_when_admin_key_missing(self):
         with patch("app.admin_auth.settings.ADMIN_API_KEY", ""):
