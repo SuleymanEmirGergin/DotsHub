@@ -15,6 +15,10 @@ build/
 # Environment
 .env
 .env.local
+.env.staging
+dashboard/.env.staging
+dashboard/e2e/.run-state.json
+dashboard/e2e/.auth/
 
 # IDE
 .vscode/
