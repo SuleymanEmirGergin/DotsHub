@@ -55,9 +55,17 @@
           "ağzım kaydı",
           "tek tarafım uyuştu",
           "kolum tutmuyor",
-          "bacağım tutmuyor"
+          "bacağım tutmuyor",
+          "ağzı yan tarafa kaydı",
+          "yüzü kaydı",
+          "yüzü yan tarafa kaydı",
+          "ağzı kaydı",
+          "kelimeleri bulamıyor",
+          "kelimeler karışıyor",
+          "kolu güçsüzleşti",
+          "kolunu kaldıramıyor"
         ],
-        "regex": "\\b(konuş(ama|amı)yorum|konuşmam\\s*bozuldu|ağz(ım|ı)\\s*kayd(ı|ı)|tek\\s*taraf(ım|ımda)\\s*(uyuş|güçsüz)|kolum\\s*tutmuyor|bacağım\\s*tutmuyor)\\b",
+        "regex": "\\b(konuş(ama|amı)yorum|konuşmam\\s*bozuldu|ağz(ım|ı)\\s*kayd(ı|ı)|tek\\s*taraf(ım|ımda)\\s*(uyuş|güçsüz)|kolum\\s*tutmuyor|bacağım\\s*tutmuyor|(eşi(m|n|nin)|anne(m|sinin)?|baba(m|sının)?|kardeşi(m|nin)?)\\s+(ağz|yüz).*kayd(ı|i)|ağz(ı|ın)\\s*yan\\s*tarafa\\s*kayd|yüz(ü|ün)\\s*kayd|kelimeler\\s*kar(ış|is)|kelimeleri\\s*bulam|kol(u|unu)\\s*(kaldıramıyor|güçsüzleşti))\\b",
         "action": "ER_NOW"
       },
       {

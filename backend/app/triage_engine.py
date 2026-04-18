@@ -155,6 +155,13 @@ _EMERGENCY_RULE_TO_SPECIALTY: List[Tuple[str, str, str]] = [
     # (rule_id prefix, specialty_id, specialty_tr)
     ("psychiatric_emergency", "psychiatry", "Psikiyatri"),
     ("suicidal_selfharm", "psychiatry", "Psikiyatri"),
+    # safety_guard (rules.json) rule ids — prefixed versions of the
+    # config/emergency_rules.json labels. Kept in the same map so ops
+    # don't need to think about which source an emergency came from.
+    ("self_harm", "psychiatry", "Psikiyatri"),
+    ("chest_pain_plus_breathlessness", "cardiology", "Kardiyoloji"),
+    ("chest_pain_breathlessness_soft", "cardiology", "Kardiyoloji"),
+    ("breathing_severe", "pulmonology", "Göğüs Hastalıkları"),
     ("stroke_redflags", "neurology", "Nöroloji"),
     ("severe_headache_neuro", "neurology", "Nöroloji"),
     ("chest_pain_sob", "cardiology", "Kardiyoloji"),
@@ -673,6 +680,68 @@ def run_orchestrator_turn(
         candidates = [
             {"disease_label": "PCOS (Polikistik Over Sendromu)", "score_0_1": 0.7}
         ] + candidates[:2]
+
+    # ── Extra Kaggle-label top_condition injections (B1 NLU robustness)
+    #
+    # These surface the clinically expected label even when the Kaggle
+    # disease matrix does not reach it via canonical overlap. Each gate
+    # is specialty-first (so we don't cross-contaminate unrelated
+    # presentations) + a canonical or text signal. All injections preserve
+    # the existing top condition list as tail; they don't force routing
+    # the way panic/pediatri overrides do.
+    _text_norm_for_inject = _text_norm_for_panic  # cheap, already computed
+
+    def _prepend_if_absent(label: str, score: float, matcher: str) -> None:
+        nonlocal candidates
+        if not any(matcher in (c.get("disease_label") or "") for c in candidates[:3]):
+            candidates = [{"disease_label": label, "score_0_1": score}] + candidates[:2]
+
+    if top_spec.get("id") == "neurology" and "baş ağrısı" in _safety_canonicals and (
+        "ışık rahatsız" in _text_norm_for_inject
+        or "zonklayıcı" in _text_norm_for_inject
+        or "tek taraflı" in _text_norm_for_inject
+        or "kusuyorum" in _text_norm_for_inject
+        or "mide bulantısı" in _text_norm_for_inject
+    ):
+        _prepend_if_absent("Migren", 0.6, "Migren")
+
+    if top_spec.get("id") == "endocrinology" and (
+        "tip 2 diyabet" in _text_norm_for_inject
+        or "tip 2 diyabetliyim" in _text_norm_for_inject
+        or "şekerim yükseldi" in _text_norm_for_inject
+        or "şekerim yüksek" in _text_norm_for_inject
+    ):
+        _prepend_if_absent("Tip 2 Diyabet", 0.65, "Diyabet")
+
+    if top_spec.get("id") == "cardiology" and "yüksek tansiyon" in _safety_canonicals:
+        _prepend_if_absent("Hipertansiyon", 0.65, "Hipertansiyon")
+
+    # Hypothyroid: classic 4-of-4 combo signal (fatigue + weight gain +
+    # dry skin + cold intolerance). Kaggle labels hypothyroidism but TR
+    # form is better; surface "Hipotiroidi" explicitly.
+    if top_spec.get("id") == "endocrinology" and (
+        "halsizlik" in _safety_canonicals
+        and (
+            "kilo aldım" in _text_norm_for_inject
+            or "kilo ald" in _text_norm_for_inject
+        )
+        and (
+            "cildim kuru" in _text_norm_for_inject
+            or "saçlarım dökül" in _text_norm_for_inject
+            or "üşüyorum" in _text_norm_for_inject
+        )
+    ):
+        _prepend_if_absent("Hipotiroidi", 0.6, "Hipotiroidi")
+
+    # Hemorrhoids: anal pain + bleeding signal. Kaggle has
+    # "Dimorphic hemmorhoids(piles)" which we already override to
+    # "Hemoroid" — so the injection is only a safety net when scoring
+    # doesn't reach the disease matrix at all.
+    if top_spec.get("id") == "internal_gi" and "anal ağrı" in _safety_canonicals and (
+        "kanama" in _text_norm_for_inject
+        or "kanıyor" in _text_norm_for_inject
+    ):
+        _prepend_if_absent("Hemoroid", 0.6, "Hemoroid")
 
     # Dysmenorrhea context injection: obgyn + dismenore canonical →
     # surface "Dismenore" as the top condition. Kaggle matrix has no

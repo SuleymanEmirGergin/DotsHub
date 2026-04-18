@@ -38,11 +38,12 @@ from app.triage_engine import run_orchestrator_turn
 # Baseline log:
 #   commit 1fd8c0c (46 scenarios)  : 24/46 = 52.2%  threshold 0.50
 #   commit C2-expand (79 scenarios): 32/79 = 40.5%  threshold 0.35
-#     (corpus grew; new scenarios haven't been tuned for yet. The C2
-#      expansion intentionally widens coverage before tuning — most of
-#      the added synthetic/paraphrase cases go to internal_gi fallback
-#      and will be reclaimed by subsequent synonym/keyword passes.)
-MIN_PASS_RATE = 0.35
+#   commit B1-tune   (79 scenarios): 48/79 = 60.8%  threshold 0.55
+#     (paraphrase jumped 33% → 78% after applying the round-2
+#      specialty-keyword audit + Migren/Diyabet/Hipertansiyon/
+#      Hipotiroidi/Hemoroid context injections + stroke 3rd-person
+#      regex. synthetic_new still at 39.5% — next tuning target.)
+MIN_PASS_RATE = 0.55
 
 
 class RealCorpusTests(unittest.TestCase):

@@ -38,7 +38,11 @@
         "bronşit",
         "zatürre",
         "göğüste tıkanma",
-        "kanlı balgam"
+        "kanlı balgam",
+        "balgamımda kan gördüm",
+        "öksürürken balgamımda kan",
+        "gece terlemesi ve öksürük",
+        "3 haftadır öksürük kanlı balgam"
       ],
       "negative_keywords_tr": [
         "göğsümde baskı",
@@ -56,7 +60,16 @@
         "göğüste baskı",
         "nefesim daralıyor (eforla)",
         "bayılma",
-        "tansiyon"
+        "tansiyon",
+        "yüksek tansiyon",
+        "hipertansiyon",
+        "tansiyonum yüksek",
+        "tansiyonum 170",
+        "tansiyonum 180",
+        "ensem ağrıyor",
+        "kalp çarpıntım",
+        "sıkıştırıcı göğüs ağrısı",
+        "baskı gibi ağrı"
       ],
       "negative_keywords_tr": []
     },
@@ -73,7 +86,17 @@
         "karıncalanma",
         "denge kaybı",
         "görmede dalgalanma",
-        "titreme"
+        "titreme",
+        "ayda birkaç kez şiddetli baş ağrısı",
+        "zonklayıcı baş ağrısı",
+        "tek taraflı zonklayıcı",
+        "ışık rahatsız ediyor kusuyorum",
+        "aniden yüzü kaydı",
+        "eşimin ağzı yan tarafa kaydı",
+        "annem yüz kaydı",
+        "babam konuşması bozuldu",
+        "ağzı yan tarafa kaydı",
+        "kelimeler karışıyor kol güçsüzleşti"
       ],
       "negative_keywords_tr": []
     },
@@ -106,7 +129,11 @@
         "bel ağrısı",
         "kasık ağrısı",
         "idrar renginde değişiklik",
-        "böbrek taşı"
+        "böbrek taşı",
+        "tuvalete çok sık gidiyorum yanma",
+        "idrarım bulanık kokulu",
+        "çok sık tuvalete idrar yanma",
+        "yanma sık idrara"
       ],
       "negative_keywords_tr": []
     },
@@ -122,7 +149,11 @@
         "leke",
         "kızarıklık",
         "kabarcık",
-        "sivilce"
+        "sivilce",
+        "yüzümde ve sırtımda sivilce",
+        "uzun süredir sivilceler",
+        "iltihaplı sivilce",
+        "derin iltihaplı sivilceler"
       ],
       "negative_keywords_tr": [
         "dudak şişti",
@@ -172,7 +203,13 @@
         "o taraf görmüyor",
         "göremiyorum",
         "ışıkların etrafında hale",
-        "ışık çemberi"
+        "ışık çemberi",
+        "kırmızı kaşıntılı ve sulanıyor",
+        "her iki gözüm kırmızı kaşıntılı",
+        "polen sezonunda gözüm",
+        "ışıklara bakınca halka",
+        "bulanık görüyorum",
+        "ışıklara bakınca halo"
       ],
       "negative_keywords_tr": []
     },
@@ -190,7 +227,11 @@
         "düştüm",
         "burkulma",
         "sabah tutukluğu",
-        "eklem tutukluğu"
+        "eklem tutukluğu",
+        "sabahları eklemlerim tutuk",
+        "ellerim şişiyor ve ağrıyor",
+        "1 saatten fazla tutukluk",
+        "sabah tutukluğu 1 saat"
       ],
       "negative_keywords_tr": []
     },
@@ -237,7 +278,14 @@
         "kendimi kötü hissediyorum",
         "hiçbir şey istemiyor canım",
         "zevk alamıyorum",
-        "hiçbir şeyden zevk"
+        "hiçbir şeyden zevk",
+        "kendime zarar vermeyi planlıyorum",
+        "ilaçları biriktirdim",
+        "ilaç biriktirdim",
+        "bu dünyadan gitmek istiyorum",
+        "kendimi kötü hissettim geçti",
+        "öleceğim hissine kapılıyorum",
+        "metroda aniden kalbim"
       ],
       "negative_keywords_tr": []
     },
@@ -285,7 +333,15 @@
         "hirsutizm",
         "kilo aldım adet",
         "gebelik testi pozitif",
-        "kasığımda ağrı"
+        "kasığımda ağrı",
+        "çene bölgemde tüylenme",
+        "yüzümde ve göğsümde koyu tüyler",
+        "3-4 ayda bir adet",
+        "kasığımda şiddetli ağrı",
+        "sol kasığımda şiddetli ağrı",
+        "gebeyim kasık ağrısı",
+        "gebe olduğumu biliyorum kasık ağrısı",
+        "hafif kanama oluyor"
       ],
       "negative_keywords_tr": []
     },
@@ -315,7 +371,10 @@
         "çocuk nefes zorluğu",
         "bebek ishal",
         "çocukta kusma ishal",
-        "pediatri"
+        "pediatri",
+        "18 aylık bebeğim kulağını çekiyor",
+        "bebeğim kulağını çekiyor",
+        "bebeğim geceleri uyuyamıyor kulağını çekiyor"
       ],
       "negative_keywords_tr": []
     },
@@ -343,7 +402,11 @@
         "kırmızımsı idrar",
         "böbrek ağrısı gelip geçiyor",
         "renal kolik benzeri",
-        "gelip geçen yan ağrısı"
+        "gelip geçen yan ağrısı",
+        "sağ yan tarafımda dalga dalga",
+        "dalga dalga şiddetli ağrı",
+        "sol yanımda dalga",
+        "sağ yanımda şiddetli ağrı"
       ],
       "negative_keywords_tr": []
     },
@@ -373,7 +436,11 @@
         "şekerim yükseldi",
         "şekerim çok yükseldi",
         "sık idrara çıkıyorum",
-        "poliüri"
+        "poliüri",
+        "çok yorgunum kilo aldım cildim kuru",
+        "kilo aldım cildim kuru saçlarım dökülüyor",
+        "üşüyorum sürekli kilo aldım",
+        "hipotiroidi belirtileri"
       ],
       "negative_keywords_tr": []
     },

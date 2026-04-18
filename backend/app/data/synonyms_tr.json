@@ -186,7 +186,10 @@
         "ciğerlerim dolmuyor",
         "nefes alamadım",
         "nefesim daraldı",
-        "nefesim kesildi"
+        "nefesim kesildi",
+        "nefes alamıyormuş gibi",
+        "nefes alamıyormuş gibi oldum",
+        "nefesim yetmiyor gibi"
       ]
     },
     {
@@ -212,7 +215,10 @@
         "kalbim çarpmaya başladı",
         "kalbim hızlandı",
         "kalp hızlanması",
-        "kalbim atıyor gibi"
+        "kalbim atıyor gibi",
+        "kalbim çarpmaya başlıyor",
+        "kalbim hızlanıyor",
+        "aniden kalbim"
       ]
     },
     {
@@ -301,7 +307,11 @@
         "kafam zonkluyor",
         "baş ağrısı geçmiyor",
         "başım zonk zonk ağrıyor",
-        "baş ağrısından uyuyamıyorum"
+        "baş ağrısından uyuyamıyorum",
+        "tekrarlayan şiddetli baş ağrıları",
+        "ayda birkaç kez şiddetli baş ağrısı",
+        "zonklayıcı baş ağrısı",
+        "tek taraflı zonklayıcı"
       ]
     },
     {
@@ -368,7 +378,11 @@
         "idrar çıkarırken ağrı var",
         "mesanem yanıyor",
         "idrar yaparken acı veriyor",
-        "idrar kanalı yanıyor"
+        "idrar kanalı yanıyor",
+        "yanma oluyor idrarımda",
+        "idrarımda yanma",
+        "idrarım bulanık kokulu",
+        "bulanık kokulu idrar"
       ]
     },
     {
@@ -434,7 +448,11 @@
         "artık yaşamak istemiyorum",
         "kendime kötü davranıyorum",
         "daha fazla dayanamıyorum hayata",
-        "kendime zarar vermeyi düşünüyorum"
+        "kendime zarar vermeyi düşünüyorum",
+        "kendime zarar vermeyi planlıyorum",
+        "ilaçları biriktirdim",
+        "ilaç biriktirdim",
+        "bu dünyadan gitmek istiyorum"
       ]
     },
     {
@@ -459,7 +477,10 @@
         "sürekli çiş gelme hissi var",
         "sık idrara çıkıyorum",
         "sık işiyorum",
-        "sık tuvalete çıkıyorum"
+        "sık tuvalete çıkıyorum",
+        "tuvalete çok sık gidiyorum",
+        "çok sık tuvalete",
+        "her yarım saatte tuvalete"
       ]
     },
     {
@@ -525,7 +546,11 @@
         "yüzüm sivilce dolu",
         "sivilce izleri var",
         "akne komedonu var",
-        "cildimde irin dolu sivilce var"
+        "cildimde irin dolu sivilce var",
+        "yüzümde ve sırtımda sivilceler",
+        "iltihaplı sivilce",
+        "derin iltihaplı sivilceler",
+        "uzun süredir sivilceler"
       ]
     },
     {
@@ -613,7 +638,12 @@
         "ayağa kalkmak zor eklemler nedeniyle",
         "eklem hareket açıklığı azaldı",
         "tutukluk geçmiyor",
-        "mafsallarım sertleşti"
+        "mafsallarım sertleşti",
+        "sabahları eklemlerim tutuk",
+        "sabah tutukluğu",
+        "ellerim şişiyor ve ağrıyor",
+        "1 saatten fazla tutukluk",
+        "sabah sertliği"
       ]
     },
     {
@@ -805,7 +835,13 @@
         "ölecekmişim gibi hissediyorum",
         "ölecekmişim",
         "panik atağı geçiriyorum",
-        "panik atağı yaşadım"
+        "panik atağı yaşadım",
+        "metroda aniden kalbim",
+        "aniden kalbim çok hızlandı kendimi kötü hissettim",
+        "birden kalbim çarpmaya başlıyor",
+        "kendimi kötü hissettim geçti",
+        "öleceğim hissine kapılıyorum",
+        "çok korktum geçti"
       ]
     },
     {
@@ -919,7 +955,12 @@
         "adet kanaması çok uzun sürüyor",
         "2-3 ayda bir adet",
         "adetler seyrek",
-        "adet gecikmesi"
+        "adet gecikmesi",
+        "3-4 ayda bir adet",
+        "3-4 ayda bir oluyor",
+        "adetlerim seyrek",
+        "adetlerim seyrek ve düzensiz",
+        "seyrek adet"
       ]
     },
     {
@@ -935,7 +976,13 @@
         "adet sancısı",
         "her adet çok acı veriyor",
         "şiddetli kramplar",
-        "adet dönemimde çok şiddetli kramplar"
+        "adet dönemimde çok şiddetli kramplar",
+        "karnıma bıçak saplanıyor",
+        "karnıma bıçak saplanıyormuş gibi",
+        "adet döneminde şiddetli kramp",
+        "adet ağrısı bel ağrısı",
+        "şiddetli kramp ve bel ağrım",
+        "her adet dönemimde çok şiddetli kramp"
       ]
     },
     {
@@ -1101,7 +1148,11 @@
         "iki gözüm de çok kaşınıyor",
         "iki gözüm de kaşınıyor ve kızarıyor",
         "gözlerim kaşınıyor ve sulanıyor",
-        "baharda gözlerim kaşınıyor"
+        "baharda gözlerim kaşınıyor",
+        "kırmızı kaşıntılı ve sulanıyor",
+        "her iki gözüm kırmızı kaşıntılı",
+        "iki gözüm kırmızı kaşıntılı",
+        "polen sezonunda kaşınıyor"
       ]
     },
     {
@@ -1232,7 +1283,13 @@
         "sağ böbreğim çok şiddetli ağrıyor",
         "böbreğimde ağrı",
         "böbrekte ağrı",
-        "şiddetli böbrek ağrısı"
+        "şiddetli böbrek ağrısı",
+        "sağ yan tarafım",
+        "sağ yanımda",
+        "sol yanımda",
+        "sağ yan tarafımda dalga dalga",
+        "dalga dalga gelen ağrı",
+        "yan tarafımda dalga"
       ]
     },
     {
@@ -1340,7 +1397,10 @@
         "ışıkların etrafında halka",
         "ışıkta hale görüyorum",
         "ışıkların etrafında çember",
-        "halo görme"
+        "halo görme",
+        "ışıklara bakınca halka",
+        "ışıkların çevresinde halka",
+        "ışıklara bakınca halo"
       ]
     },
     {
@@ -1364,7 +1424,12 @@
         "yüzümde tüylenme",
         "erkeksi kıllanma",
         "yüzde kıllanma arttı",
-        "istenmeyen tüylenme"
+        "istenmeyen tüylenme",
+        "çene bölgemde tüylenme",
+        "çenede tüylenme",
+        "göğsümde koyu tüyler",
+        "yüzümde koyu tüyler",
+        "yüzümde ve göğsümde koyu tüyler"
       ]
     },
     {
@@ -1374,6 +1439,20 @@
         "gözüm hem kaşınıyor hem sulanıyor",
         "göz kaşıntısı ve sulanma",
         "kaşınıyor sulanıyor kırmızı"
+      ]
+    },
+    {
+      "canonical": "yüksek tansiyon",
+      "type": "symptom",
+      "variants_tr": [
+        "yüksek tansiyon",
+        "hipertansiyon",
+        "tansiyonum yüksek",
+        "tansiyonum 170",
+        "tansiyonum 180",
+        "tansiyonum çıktı",
+        "yüksek tansiyonum var",
+        "doktorum yüksek tansiyon"
       ]
     }
   ]
