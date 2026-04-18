@@ -70,6 +70,18 @@ class Settings(BaseSettings):
     LLM_NLU_LOG_TO_SUPABASE: bool = True
     LLM_EXPLAIN_ENABLED: bool = False        # optional explanation layer (B9)
 
+    # ── RESULT envelope top_conditions gate (C2) ──────────────────────────
+    # Below this confidence, Kaggle-derived disease candidates are dropped
+    # from the RESULT envelope's top_conditions. Curated entries (Panik
+    # Bozukluk, Majör Depresyon, Bronşiolit, Akut Otitis Media, Renal
+    # Kolik, Dismenore, PCOS, Alerjik Konjonktivit) are exempt — they
+    # come from deterministic canonical patterns, not fragile score
+    # overlaps. Tune this against user feedback on the confidence-
+    # indicator quality. 0.00 disables the gate entirely (all Kaggle
+    # candidates surface); 1.00 drops all Kaggle candidates regardless
+    # of confidence. Typical live scenarios sit in 0.09–0.50.
+    RESULT_TOP_CONDITIONS_GATE: float = 0.25
+
     model_config = {
         "env_file": ".env",
         "env_file_encoding": "utf-8",

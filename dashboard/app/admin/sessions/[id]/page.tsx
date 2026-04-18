@@ -34,6 +34,131 @@ function Bullets({ arr }: { arr: unknown }) {
   );
 }
 
+// Type-narrowed top_conditions entry. Matches ResultPayload.top_conditions
+// in the mobile client and the envelope shape in triage_engine.py.
+// Every field except disease_label is optional — pre-C2 sessions and
+// Kaggle candidates will be missing most of these.
+type TopConditionRow = {
+  disease_label?: string;
+  score_0_1?: number;
+  source_type?: "curated" | "kaggle_candidate";
+  icd10?: string;
+  disease_description?: string;
+  disease_description_tr?: string;
+  doktora_sorulacak_sorular_tr?: string[];
+  izlenecek_belirtiler_tr?: string[];
+  ne_zaman_tekrar_basvur_tr?: string[];
+  self_care_tr?: string[];
+  aciliyet_notu_tr?: string;
+  disclaimer_tr?: string;
+};
+
+function TopConditionsPanel({ conditions }: { conditions: unknown }) {
+  if (!Array.isArray(conditions) || conditions.length === 0) {
+    return <div className="text-muted-foreground p-2">-</div>;
+  }
+  const rows = conditions as TopConditionRow[];
+  const disclaimer = rows.find((c) => c?.disclaimer_tr)?.disclaimer_tr;
+  return (
+    <div className="space-y-3">
+      {rows.map((c, i) => {
+        const curated = c.source_type === "curated";
+        const pct = typeof c.score_0_1 === "number" ? Math.round(c.score_0_1 * 100) : null;
+        const description = c.disease_description_tr ?? c.disease_description;
+        const hasPrep =
+          !!description ||
+          !!c.icd10 ||
+          (c.doktora_sorulacak_sorular_tr?.length ?? 0) > 0 ||
+          (c.izlenecek_belirtiler_tr?.length ?? 0) > 0 ||
+          (c.ne_zaman_tekrar_basvur_tr?.length ?? 0) > 0 ||
+          (c.self_care_tr?.length ?? 0) > 0 ||
+          !!c.aciliyet_notu_tr;
+        return (
+          <div
+            key={i}
+            className={cn(
+              "p-3.5 rounded-xl border bg-card",
+              curated ? "border-blue-200 dark:border-blue-900/50" : "border-border",
+            )}
+          >
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="font-semibold text-sm truncate">{c.disease_label ?? "-"}</span>
+                {curated && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded border border-blue-200 dark:border-blue-900/50 bg-blue-50 dark:bg-blue-950/30 text-blue-800 dark:text-blue-200 shrink-0">
+                    Klinik bilgi
+                  </span>
+                )}
+                {c.icd10 && (
+                  <span className="text-[10px] font-mono text-muted-foreground shrink-0">
+                    {c.icd10}
+                  </span>
+                )}
+              </div>
+              {pct !== null && (
+                <span className="text-sm font-bold text-muted-foreground shrink-0">%{pct}</span>
+              )}
+            </div>
+            {hasPrep && (
+              <div className="mt-3 space-y-2 text-[13px]">
+                {description && (
+                  <div>
+                    <div className="text-[11px] font-bold text-muted-foreground mb-0.5">Nedir?</div>
+                    <div className="text-foreground/90 leading-normal">{description}</div>
+                  </div>
+                )}
+                {c.doktora_sorulacak_sorular_tr?.length ? (
+                  <div>
+                    <div className="text-[11px] font-bold text-muted-foreground mb-0.5">
+                      Doktora sorulacak sorular
+                    </div>
+                    <Bullets arr={c.doktora_sorulacak_sorular_tr} />
+                  </div>
+                ) : null}
+                {c.izlenecek_belirtiler_tr?.length ? (
+                  <div>
+                    <div className="text-[11px] font-bold text-muted-foreground mb-0.5">
+                      Takip edilecek belirtiler
+                    </div>
+                    <Bullets arr={c.izlenecek_belirtiler_tr} />
+                  </div>
+                ) : null}
+                {c.ne_zaman_tekrar_basvur_tr?.length ? (
+                  <div>
+                    <div className="text-[11px] font-bold text-muted-foreground mb-0.5">
+                      Ne zaman tekrar başvur
+                    </div>
+                    <Bullets arr={c.ne_zaman_tekrar_basvur_tr} />
+                  </div>
+                ) : null}
+                {c.self_care_tr?.length ? (
+                  <div>
+                    <div className="text-[11px] font-bold text-muted-foreground mb-0.5">
+                      Kendi kendine yapılabilecekler
+                    </div>
+                    <Bullets arr={c.self_care_tr} />
+                  </div>
+                ) : null}
+                {c.aciliyet_notu_tr && (
+                  <div>
+                    <div className="text-[11px] font-bold text-muted-foreground mb-0.5">
+                      Aciliyet notu
+                    </div>
+                    <div className="text-foreground/90">{c.aciliyet_notu_tr}</div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })}
+      {disclaimer && (
+        <div className="text-[12px] italic text-muted-foreground pt-2">{disclaimer}</div>
+      )}
+    </div>
+  );
+}
+
 export default async function SessionDetail({
   params,
 }: {
@@ -123,7 +248,7 @@ export default async function SessionDetail({
       </div>
 
       <h2 className="text-lg font-bold mt-6">Top Conditions</h2>
-      <Pretty data={session.top_conditions} />
+      <TopConditionsPanel conditions={session.top_conditions} />
 
       <h2 className="text-lg font-bold mt-6">Scoring Debug (rules)</h2>
       <Pretty data={session.specialty_scoring_debug} />

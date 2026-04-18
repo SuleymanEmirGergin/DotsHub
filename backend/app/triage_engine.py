@@ -31,15 +31,16 @@ from app.top_conditions_filter import (
     load_label_overrides,
 )
 
-# Confidence gate threshold specifically for RESULT top_conditions.
-# Set below top_conditions_filter.MIN_CONFIDENCE_FOR_CONDITIONS (0.35)
-# because the default is calibrated for the A9 "hide fragile
-# differentials" use case. In live measurement (2026-04-18) typical
-# RESULT confidences sit in 0.09-0.50; 0.35 empties too many routine
-# scenarios (migraine at 0.33, pain patterns at 0.20). The curated-
-# aware gate below lets curated entries through at any confidence, so
-# this threshold only guards Kaggle-derived candidates.
-_RESULT_TOP_CONDITIONS_GATE = 0.25
+# Confidence gate threshold for RESULT top_conditions — read from
+# settings.RESULT_TOP_CONDITIONS_GATE so ops can tune without a code
+# change. Default 0.25. See config.py for the full rationale (short
+# version: top_conditions_filter's 0.35 default is too strict for live
+# traffic; curated entries bypass this gate regardless).
+def _result_top_gate() -> float:
+    try:
+        return float(settings.RESULT_TOP_CONDITIONS_GATE)
+    except (AttributeError, TypeError, ValueError):
+        return 0.25
 
 
 # Canonical-injected disease labels (Panik Bozukluk, Majör Depresyon,
@@ -128,7 +129,7 @@ def _apply_gate_curated_aware(
     curated = [c for c in top_conditions if c.get("source_type") == "curated"]
     non_curated = [c for c in top_conditions if c.get("source_type") != "curated"]
     gated_non_curated = apply_top_conditions_gate(
-        non_curated, confidence, threshold=_RESULT_TOP_CONDITIONS_GATE
+        non_curated, confidence, threshold=_result_top_gate()
     )
     # Preserve original ordering: curated first (injections already prepend),
     # then surviving Kaggle candidates.
