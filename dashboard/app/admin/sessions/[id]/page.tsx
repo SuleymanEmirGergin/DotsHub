@@ -195,6 +195,19 @@ export default async function SessionDetail({
     .eq("session_id", id)
     .order("created_at", { ascending: true });
 
+  // LLM calls scoped to this session. Joined by session_id on the
+  // llm_calls table (populated by services/llm_nlu._log_llm_call).
+  // Read-only; null/empty on pre-LLM-NLU sessions and on sessions
+  // where LLM_NLU_ENABLED was false. Ordering matches triage_events
+  // so the two timelines line up visually.
+  const { data: llmCalls } = await sb
+    .from("llm_calls")
+    .select(
+      "created_at,provider,model,success,error_type,nlu_source,latency_ms,input_tokens,output_tokens",
+    )
+    .eq("session_id", id)
+    .order("created_at", { ascending: true });
+
   if (error) {
     return <div className="p-6">Error: {error.message}</div>;
   }
@@ -263,6 +276,76 @@ export default async function SessionDetail({
 
       <h2 className="text-lg font-bold mt-6">Confidence Debug</h2>
       <Pretty data={session.confidence_debug} />
+
+      <h2 className="text-lg font-bold mt-6">LLM Çağrıları</h2>
+      {llmCalls && llmCalls.length > 0 ? (
+        <div className="bg-card rounded-xl border border-border overflow-hidden">
+          <table className="w-full text-[12px]">
+            <thead className="text-left bg-muted">
+              <tr>
+                <th className="p-2.5">Zaman</th>
+                <th className="p-2.5">Sağlayıcı / Model</th>
+                <th className="p-2.5">Durum</th>
+                <th className="p-2.5">NLU kaynağı</th>
+                <th className="p-2.5 text-right">Gecikme</th>
+                <th className="p-2.5 text-right">Giriş / Çıkış</th>
+              </tr>
+            </thead>
+            <tbody>
+              {llmCalls.map((c: any, i: number) => {
+                const ok = c.success === true;
+                const ts = c.created_at
+                  ? new Date(c.created_at).toLocaleTimeString("tr-TR")
+                  : "-";
+                return (
+                  <tr
+                    key={i}
+                    className={cn(
+                      "border-t border-border",
+                      !ok && "bg-red-50 dark:bg-red-950/20",
+                    )}
+                  >
+                    <td className="p-2.5 whitespace-nowrap text-muted-foreground">
+                      {ts}
+                    </td>
+                    <td className="p-2.5">
+                      <div className="font-medium">{c.provider ?? "-"}</div>
+                      <div className="text-muted-foreground text-[11px] font-mono">
+                        {c.model ?? "-"}
+                      </div>
+                    </td>
+                    <td className="p-2.5">
+                      {ok ? (
+                        <span className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-400 font-semibold">
+                          ✓ OK
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-red-700 dark:text-red-400 font-semibold">
+                          ✗ {c.error_type ?? "err"}
+                        </span>
+                      )}
+                    </td>
+                    <td className="p-2.5 font-mono">{c.nlu_source ?? "-"}</td>
+                    <td className="p-2.5 text-right whitespace-nowrap">
+                      {typeof c.latency_ms === "number" ? `${c.latency_ms} ms` : "-"}
+                    </td>
+                    <td className="p-2.5 text-right whitespace-nowrap text-muted-foreground">
+                      {typeof c.input_tokens === "number" || typeof c.output_tokens === "number"
+                        ? `${c.input_tokens ?? "?"} / ${c.output_tokens ?? "?"}`
+                        : "-"}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div className="text-muted-foreground p-4 text-sm">
+          Bu oturumda LLM NLU çağrısı yok (LLM_NLU_ENABLED kapalıydı veya
+          sadece deterministic extraction çalıştı).
+        </div>
+      )}
 
       <h2 className="text-lg font-bold mt-6">Event Log</h2>
       {events && events.length > 0 ? (
