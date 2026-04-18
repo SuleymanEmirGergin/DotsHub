@@ -112,9 +112,19 @@ class HealthMonitorObserveTests(unittest.TestCase):
     def _reset_state(self):
         from app.services import llm_nlu
 
+        # _LAST_ALERT_TS = 0.0 would LOOK like "never alerted", but the
+        # cooldown check is `time.monotonic() - _LAST_ALERT_TS < cooldown`.
+        # On a fresh CI worker, time.monotonic() is small (seconds since
+        # process start), so 0.0 can sit INSIDE the cooldown window — the
+        # first alert gets suppressed and `assert_called_once` fails with
+        # "called 0 times". Use a large negative sentinel so the first
+        # alert always clears the cooldown no matter how fresh the
+        # process is. Locally this didn't bite because time.monotonic()
+        # was already deep into the full test suite by the time these
+        # tests ran.
         with llm_nlu._HEALTH_LOCK:
             llm_nlu._HEALTH_EVENTS.clear()
-            llm_nlu._LAST_ALERT_TS = 0.0
+            llm_nlu._LAST_ALERT_TS = -1e12
 
     def setUp(self):
         self._reset_state()
