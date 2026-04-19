@@ -76,4 +76,19 @@ export const handlers = [
         derived_deleted: { triage_events: 3, llm_calls: 2, triage_feedback: 1 },
       }),
   ),
+
+  // ── Feature flags / version gate (M4) ────────────────────────────
+  http.get(`${API_BASE}/v1/config/features`, () =>
+    ok({
+      llm_nlu_enabled: false,
+      llm_explain_enabled: false,
+      client_version: {
+        min: "0.0.0",
+        latest: "0.0.0",
+        mode: "off",
+        update_url_ios: null,
+        update_url_android: null,
+      },
+    }),
+  ),
 ];

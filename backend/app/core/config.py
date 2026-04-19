@@ -120,6 +120,26 @@ class Settings(BaseSettings):
     # of confidence. Typical live scenarios sit in 0.09–0.50.
     RESULT_TOP_CONDITIONS_GATE: float = 0.25
 
+    # ── Mobile client version enforcement (M4) ────────────────────────────
+    # Surfaced via /v1/config/features. The mobile app reads this on
+    # startup and compares against its own app.version (expo-constants).
+    #
+    # enforcement_mode semantics:
+    #   "off"   — ignore version mismatches (default for dev)
+    #   "warn"  — show a non-blocking banner asking user to update
+    #   "block" — refuse to proceed, send user to the app-store link
+    #
+    # Rolled as a feature flag rather than a hard-fail semantic so ops
+    # can flip "block" on only after a bake period on "warn". Also
+    # lets a single field-fix release ship with enforcement off while
+    # a separate release ships "block" for anyone still on the prior
+    # broken version.
+    MIN_CLIENT_VERSION: str = "0.0.0"         # below this → treated as out-of-date
+    LATEST_CLIENT_VERSION: str = "0.0.0"      # informational, surfaced to the UI
+    CLIENT_VERSION_ENFORCEMENT: str = "off"   # "off" | "warn" | "block"
+    CLIENT_VERSION_UPDATE_URL_IOS: str = ""   # optional app-store deep link
+    CLIENT_VERSION_UPDATE_URL_ANDROID: str = ""
+
     model_config = {
         "env_file": ".env",
         "env_file_encoding": "utf-8",

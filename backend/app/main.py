@@ -271,12 +271,29 @@ app.include_router(admin_v5_router, prefix="/v1", tags=["Admin V5"])
 async def features():
     """Return current feature-flag state for client-side consent and UI gating.
 
-    Mobile app reads LLM_NLU_ENABLED to decide whether to show the KVKK/AI consent
-    banner before the first triage turn.
+    Consumed by the mobile app on startup:
+    - `llm_nlu_enabled` — whether to show the KVKK/AI consent banner
+      before the first triage turn.
+    - `llm_explain_enabled` — whether the explain-my-recommendation UI
+      should surface.
+    - `client_version` — min/latest/mode trio for the version-gate
+      banner. The mobile app compares its own
+      `Constants.expoConfig.version` against `min` and decides (based
+      on `mode`) whether to warn, block, or stay silent. Rolled as a
+      feature flag rather than a hard-fail semantic so ops can bake
+      "warn" before flipping "block" — see CLIENT_VERSION_ENFORCEMENT
+      in core/config.py.
     """
     return {
         "llm_nlu_enabled": settings.LLM_NLU_ENABLED,
         "llm_explain_enabled": settings.LLM_EXPLAIN_ENABLED,
+        "client_version": {
+            "min": settings.MIN_CLIENT_VERSION,
+            "latest": settings.LATEST_CLIENT_VERSION,
+            "mode": settings.CLIENT_VERSION_ENFORCEMENT,
+            "update_url_ios": settings.CLIENT_VERSION_UPDATE_URL_IOS or None,
+            "update_url_android": settings.CLIENT_VERSION_UPDATE_URL_ANDROID or None,
+        },
     }
 
 
