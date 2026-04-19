@@ -19,9 +19,9 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import Any, FrozenSet, Iterable, Mapping, MutableMapping
+from typing import Any, AsyncIterable, FrozenSet, Mapping, MutableMapping
 
-from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import Response
 
@@ -135,7 +135,9 @@ class CapabilityGateMiddleware(BaseHTTPMiddleware):
     stays correct even when the response isn't a triage envelope.
     """
 
-    async def dispatch(self, request: Request, call_next):  # type: ignore[override]
+    async def dispatch(
+        self, request: Request, call_next: RequestResponseEndpoint
+    ) -> Response:
         response = await call_next(request)
         if not self._should_filter(request, response):
             return response
@@ -196,9 +198,9 @@ class CapabilityGateMiddleware(BaseHTTPMiddleware):
         return content_type.startswith("application/json")
 
 
-async def _read_body(iterator: Iterable[bytes]) -> bytes:
+async def _read_body(iterator: AsyncIterable[bytes]) -> bytes:
     chunks: list[bytes] = []
-    async for chunk in iterator:  # type: ignore[misc]
+    async for chunk in iterator:
         chunks.append(chunk)
     return b"".join(chunks)
 

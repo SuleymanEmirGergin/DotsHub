@@ -11,3 +11,7 @@ httpx>=0.28
 tenacity>=9.0
 supabase
 psycopg[binary]
+# Sentry — error aggregation + perf tracing. Optional at runtime:
+# if SENTRY_DSN is unset, the SDK init is a no-op (see app/main.py).
+# Pinned to 2.x for the post-1.0 stable FastAPI integration API.
+sentry-sdk[fastapi]>=2.0

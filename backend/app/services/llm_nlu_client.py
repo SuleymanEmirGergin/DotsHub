@@ -310,7 +310,13 @@ class NLUDirectClient:
         Retries once on transient network errors (timeout / connect).
         """
         user_safe = redact_pii(user)
-        last_exc: Optional[Exception] = None
+        # Narrowed type so the post-loop `raise` doesn't trip mypy —
+        # the loop only sets last_exc under the transient-error branch
+        # (and we unconditionally raise in the other branches), so by
+        # the time we fall out of the loop there IS a captured exc.
+        last_exc: Exception = RuntimeError(
+            "unreachable: NLU retry loop fell through without raising"
+        )
 
         for attempt in range(2):
             try:
@@ -328,7 +334,7 @@ class NLUDirectClient:
             except Exception:
                 raise
 
-        raise last_exc  # type: ignore[misc]
+        raise last_exc
 
     def _call_once(self, system: str, user: str) -> tuple[str, int, int]:
         deadline = time.monotonic() + self.timeout

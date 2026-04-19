@@ -39,7 +39,7 @@ def normalize_text_tr(text: str) -> str:
 
 def build_synonym_patterns(
     synonyms_json: Dict[str, Any],
-) -> List[Tuple[str, re.Pattern]]:  # type: ignore[type-arg]
+) -> List[Tuple[str, "re.Pattern[str]"]]:
     """Build (canonical, compiled_pattern) list sorted by longest phrase first."""
     items: List[Tuple[str, str]] = []
 
@@ -59,7 +59,7 @@ def build_synonym_patterns(
 
     # De-duplicate
     seen: Set[str] = set()
-    patterns: List[Tuple[str, re.Pattern]] = []  # type: ignore[type-arg]
+    patterns: List[Tuple[str, "re.Pattern[str]"]] = []
     for canonical, phrase in items:
         key = f"{canonical}|{phrase}"
         if key in seen:

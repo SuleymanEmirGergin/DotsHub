@@ -10,9 +10,16 @@ from app.core.config import settings
 from app.core.logging_config import setup_logging
 from app.core.request_id import generate_request_id, set_request_id
 from app.models.database import init_db
+from app.observability import init_sentry
 
 setup_logging()
 logger = logging.getLogger(__name__)
+
+# Sentry init BEFORE FastAPI() so the SDK can hook into the ASGI
+# lifecycle via the Starlette integration. No-op when SENTRY_DSN is
+# unset, so dev/CI run unchanged. See app/observability/sentry_init.py
+# for the before_send PII scrubber.
+init_sentry()
 from app.api.routes.session import router as session_router
 from app.api.routes.message import router as message_router
 from app.api.routes.triage import router as triage_router
