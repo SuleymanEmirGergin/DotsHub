@@ -16,13 +16,67 @@ async function getLocale(): Promise<Locale> {
   return store.get("NEXT_LOCALE")?.value === "en" ? "en" : "tr";
 }
 
-function Stat({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
+function Stat({
+  label,
+  value,
+  sub,
+  spark,
+}: {
+  label: string;
+  value: string | number;
+  sub?: string;
+  spark?: number[];
+}) {
   return (
     <div className="p-4 rounded-xl border border-border bg-card text-card-foreground">
-      <div className="text-xs text-muted-foreground">{label}</div>
+      <div className="flex justify-between items-start gap-2">
+        <div className="text-xs text-muted-foreground">{label}</div>
+        {spark && spark.length > 1 && <Sparkline values={spark} />}
+      </div>
       <div className="text-[28px] font-extrabold mt-1">{value}</div>
       {sub && <div className="text-xs text-muted-foreground mt-0.5">{sub}</div>}
     </div>
+  );
+}
+
+// Tiny inline SVG sparkline — C3 trend visualization for the B2
+// accuracy cards. Renders 7 days of daily values as a normalized
+// polyline + dotted endpoint. No external dep.
+function Sparkline({
+  values,
+  width = 80,
+  height = 22,
+}: {
+  values: number[];
+  width?: number;
+  height?: number;
+}) {
+  const safe = values.filter((v) => Number.isFinite(v));
+  if (safe.length < 2) return null;
+  const min = Math.min(...safe);
+  const max = Math.max(...safe);
+  const range = max - min || 1;
+  const step = width / (safe.length - 1);
+  const pts = safe
+    .map((v, i) => {
+      const x = i * step;
+      // Flip Y: higher value → lower y (svg coord).
+      const y = height - ((v - min) / range) * height;
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    })
+    .join(" ");
+  const [lastX, lastY] = pts.split(" ").slice(-1)[0].split(",");
+  return (
+    <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} className="shrink-0">
+      <polyline
+        points={pts}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={1.5}
+        className="text-muted-foreground"
+      />
+      <circle cx={lastX} cy={lastY} r={2} className="fill-foreground" />
+    </svg>
   );
 }
 
@@ -121,10 +175,169 @@ export default async function AnalyticsPage() {
 
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  const sevenDaysAgoIso = sevenDaysAgo.toISOString();
   const { data: dailySessions } = await sb
     .from("triage_sessions")
     .select("created_at")
-    .gte("created_at", sevenDaysAgo.toISOString());
+    .gte("created_at", sevenDaysAgoIso);
+
+  // ── 7-day accuracy KPIs (B2) ─────────────────────────────────────────
+  // 1) Top-1 specialty accuracy (proxy): 1 - (down feedback with
+  //    user_selected_specialty_id / RESULT sessions in last 7d).
+  // 2) Low-confidence rate: RESULT sessions with confidence_0_1 < 0.35.
+  // 3) Feedback override rate: feedback entries with user_selected_
+  //    specialty_id / total feedback in last 7d.
+  const LOW_CONF_THRESHOLD = 0.35;
+
+  const { count: result7dTotal } = await sb
+    .from("triage_sessions")
+    .select("id", { count: "exact", head: true })
+    .eq("envelope_type", "RESULT")
+    .gte("created_at", sevenDaysAgoIso);
+
+  const { count: result7dLowConf } = await sb
+    .from("triage_sessions")
+    .select("id", { count: "exact", head: true })
+    .eq("envelope_type", "RESULT")
+    .gte("created_at", sevenDaysAgoIso)
+    .lt("confidence_0_1", LOW_CONF_THRESHOLD);
+
+  const { count: feedback7dTotal } = await sb
+    .from("triage_feedback")
+    .select("id", { count: "exact", head: true })
+    .gte("created_at", sevenDaysAgoIso);
+
+  const { count: feedback7dOverrides } = await sb
+    .from("triage_feedback")
+    .select("id", { count: "exact", head: true })
+    .gte("created_at", sevenDaysAgoIso)
+    .not("user_selected_specialty_id", "is", null);
+
+  const { count: feedback7dDown } = await sb
+    .from("triage_feedback")
+    .select("id", { count: "exact", head: true })
+    .gte("created_at", sevenDaysAgoIso)
+    .eq("rating", "down")
+    .not("user_selected_specialty_id", "is", null);
+
+  const top1AccuracyPct = (result7dTotal ?? 0) > 0
+    ? Math.max(0, 100 - (100 * (feedback7dDown ?? 0)) / (result7dTotal ?? 1))
+    : null;
+  const lowConfPct = (result7dTotal ?? 0) > 0
+    ? (100 * (result7dLowConf ?? 0)) / (result7dTotal ?? 1)
+    : null;
+  const overridePct = (feedback7dTotal ?? 0) > 0
+    ? (100 * (feedback7dOverrides ?? 0)) / (feedback7dTotal ?? 1)
+    : null;
+
+  // ── 7-day daily buckets for sparkline trends (C3) ───────────────────
+  // Fetch raw rows once, bucket client-side. Cheaper than 7 separate
+  // counts per metric (would be 7*3=21 count queries).
+  const { data: resultRows7d } = await sb
+    .from("triage_sessions")
+    .select("created_at,confidence_0_1")
+    .eq("envelope_type", "RESULT")
+    .gte("created_at", sevenDaysAgoIso);
+  const { data: feedbackRows7d } = await sb
+    .from("triage_feedback")
+    .select("created_at,rating,user_selected_specialty_id")
+    .gte("created_at", sevenDaysAgoIso);
+
+  function dayKey(iso: string): string {
+    return new Date(iso).toISOString().slice(0, 10);
+  }
+  // Build an ordered list of the last 7 day keys (today + prior 6),
+  // oldest first so the sparkline reads left-to-right chronologically.
+  const dayKeys: string[] = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setUTCDate(d.getUTCDate() - i);
+    dayKeys.push(d.toISOString().slice(0, 10));
+  }
+
+  const dailyResult: Record<string, { total: number; lowConf: number }> = {};
+  for (const k of dayKeys) dailyResult[k] = { total: 0, lowConf: 0 };
+  for (const row of (resultRows7d ?? []) as any[]) {
+    const k = dayKey(row.created_at);
+    if (dailyResult[k] === undefined) continue;
+    dailyResult[k].total += 1;
+    const conf = typeof row.confidence_0_1 === "number" ? row.confidence_0_1 : null;
+    if (conf !== null && conf < LOW_CONF_THRESHOLD) {
+      dailyResult[k].lowConf += 1;
+    }
+  }
+
+  const dailyFeedback: Record<string, { total: number; overrides: number; downWithOverride: number }> = {};
+  for (const k of dayKeys) dailyFeedback[k] = { total: 0, overrides: 0, downWithOverride: 0 };
+  for (const row of (feedbackRows7d ?? []) as any[]) {
+    const k = dayKey(row.created_at);
+    if (dailyFeedback[k] === undefined) continue;
+    dailyFeedback[k].total += 1;
+    const overridden = !!row.user_selected_specialty_id;
+    if (overridden) {
+      dailyFeedback[k].overrides += 1;
+      if (row.rating === "down") dailyFeedback[k].downWithOverride += 1;
+    }
+  }
+
+  // Derive per-day percentages for each of the three B2 cards.
+  const top1AccuracySpark: number[] = dayKeys.map((k) => {
+    const total = dailyResult[k].total;
+    if (total === 0) return 100; // "no data" days anchor at 100 for visual baseline
+    return Math.max(0, 100 - (100 * dailyFeedback[k].downWithOverride) / total);
+  });
+  const lowConfSpark: number[] = dayKeys.map((k) => {
+    const total = dailyResult[k].total;
+    if (total === 0) return 0;
+    return (100 * dailyResult[k].lowConf) / total;
+  });
+  const overrideSpark: number[] = dayKeys.map((k) => {
+    const total = dailyFeedback[k].total;
+    if (total === 0) return 0;
+    return (100 * dailyFeedback[k].overrides) / total;
+  });
+
+  // ── 7-day LLM health KPIs (A1 telemetri) ────────────────────────────
+  // Source: llm_calls table (populated by services/llm_nlu.py _log_llm_call).
+  // Alert signal: success_rate < 80% warrants investigation (usually an
+  // auth regression or upstream provider outage).
+  const { data: llmCallsRows } = await sb
+    .from("llm_calls")
+    .select("success,latency_ms,error_type")
+    .gte("created_at", sevenDaysAgoIso);
+
+  const llmCallsArr = (llmCallsRows ?? []) as {
+    success: boolean | null;
+    latency_ms: number | null;
+    error_type: string | null;
+  }[];
+  const llmCallTotal = llmCallsArr.length;
+  const llmSuccessCount = llmCallsArr.filter((r) => r.success === true).length;
+  const llmSuccessPct = llmCallTotal > 0
+    ? (100 * llmSuccessCount) / llmCallTotal
+    : null;
+  const llmAvgLatencyMs = llmCallTotal > 0
+    ? Math.round(
+        llmCallsArr.reduce((acc, r) => acc + (r.latency_ms ?? 0), 0) /
+          llmCallTotal
+      )
+    : null;
+  const llmErrorTypeCounts: Record<string, number> = {};
+  for (const r of llmCallsArr) {
+    if (r.success === true) continue;
+    const et = r.error_type || "unknown";
+    llmErrorTypeCounts[et] = (llmErrorTypeCounts[et] || 0) + 1;
+  }
+  const llmErrorTypeRanked = Object.entries(llmErrorTypeCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5);
+  const LLM_SUCCESS_ALERT_THRESHOLD = 80;
+  const llmHealthStatus: "ok" | "warn" | "no-data" =
+    llmSuccessPct === null
+      ? "no-data"
+      : llmSuccessPct >= LLM_SUCCESS_ALERT_THRESHOLD
+        ? "ok"
+        : "warn";
 
   const dailyCounts: Record<string, number> = {};
   (dailySessions ?? []).forEach((s: any) => {
@@ -205,6 +418,99 @@ export default async function AnalyticsPage() {
         <Stat label={t("analytics.result")} value={resultSessions ?? 0} />
         <Stat label={t("analytics.emergency")} value={emergencySessions ?? 0} />
         <Stat label={t("analytics.feedback")} value={`${fbUpCount ?? 0} / ${fbDownCount ?? 0}`} sub={t("analytics.feedbackSub")} />
+      </div>
+
+      <div className="mt-5">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">{t("analytics.accuracy7dTitle")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-3 gap-3">
+              <Stat
+                label={t("analytics.top1Accuracy")}
+                value={top1AccuracyPct === null ? "—" : `${top1AccuracyPct.toFixed(1)}%`}
+                sub={top1AccuracyPct === null ? t("analytics.accuracyNoData") : t("analytics.top1AccuracySub")}
+                spark={top1AccuracySpark}
+              />
+              <Stat
+                label={t("analytics.lowConfRate")}
+                value={lowConfPct === null ? "—" : `${lowConfPct.toFixed(1)}%`}
+                sub={lowConfPct === null ? t("analytics.accuracyNoData") : t("analytics.lowConfRateSub")}
+                spark={lowConfSpark}
+              />
+              <Stat
+                label={t("analytics.feedbackOverrideRate")}
+                value={overridePct === null ? "—" : `${overridePct.toFixed(1)}%`}
+                sub={overridePct === null ? t("analytics.accuracyNoData") : t("analytics.feedbackOverrideRateSub")}
+                spark={overrideSpark}
+              />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="mt-5">
+        <Card>
+          <CardHeader>
+            <CardTitle
+              className={cn(
+                "text-base flex items-center gap-2",
+                llmHealthStatus === "warn" && "text-red-700 dark:text-red-400",
+              )}
+            >
+              {t("analytics.llmHealthTitle")}
+              {llmHealthStatus === "warn" && (
+                <span className="text-xs bg-red-100 dark:bg-red-950 text-red-800 dark:text-red-200 px-2 py-0.5 rounded">
+                  {t("analytics.llmHealthAlert")}
+                </span>
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-3 gap-3">
+              <Stat
+                label={t("analytics.llmCalls")}
+                value={llmCallTotal}
+                sub={t("analytics.llmCallsSub")}
+              />
+              <Stat
+                label={t("analytics.llmSuccessRate")}
+                value={llmSuccessPct === null ? "—" : `${llmSuccessPct.toFixed(1)}%`}
+                sub={
+                  llmSuccessPct === null
+                    ? t("analytics.accuracyNoData")
+                    : llmHealthStatus === "warn"
+                      ? `${t("analytics.llmSuccessRateSub")} (<${LLM_SUCCESS_ALERT_THRESHOLD}%)`
+                      : t("analytics.llmSuccessRateSub")
+                }
+              />
+              <Stat
+                label={t("analytics.llmAvgLatency")}
+                value={llmAvgLatencyMs === null ? "—" : `${llmAvgLatencyMs} ms`}
+                sub={t("analytics.llmAvgLatencySub")}
+              />
+            </div>
+            {llmErrorTypeRanked.length > 0 && (
+              <div className="mt-4">
+                <div className="text-xs text-muted-foreground mb-2">
+                  {t("analytics.llmErrorTypes")}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {llmErrorTypeRanked.map(([et, cnt]) => (
+                    <div
+                      key={et}
+                      className="text-xs px-2 py-1 rounded border border-border bg-muted"
+                    >
+                      <span className="font-mono">{et}</span>{" "}
+                      <span className="font-bold">{cnt}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       {envelopeDistribution.length > 0 && (

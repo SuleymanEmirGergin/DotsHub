@@ -1,0 +1,51 @@
+# Mobile Jest test suite.
+# Runs on mobile/** changes plus the workflow file itself. Separate
+# from maestro-smoke (which is device/emulator-based and lives in
+# mobile-e2e.yml); this one is the fast-feedback unit+API-mock
+# contract layer using MSW v2.
+name: Mobile Tests
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "mobile/**"
+      - ".github/workflows/mobile-tests.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "mobile/**"
+      - ".github/workflows/mobile-tests.yml"
+  workflow_dispatch: {}
+
+defaults:
+  run:
+    working-directory: mobile
+
+jobs:
+  jest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Install dependencies
+        # --legacy-peer-deps — the Expo 54 + React 19 + RN 0.81 matrix
+        # has a few peer warnings that are safe to bypass; the Expo
+        # team's own docs use the same flag for CI installs.
+        run: npm ci --legacy-peer-deps || npm install --legacy-peer-deps
+
+      - name: Run Jest test suite
+        run: npm test -- --ci --colors
+        env:
+          # Silence Node 22 experimental-vm-modules warning; Jest 29
+          # + MSW v2 work fine on the default CJS loader given the
+          # transformIgnorePatterns in jest.config.js.
+          NODE_OPTIONS: "--no-warnings"

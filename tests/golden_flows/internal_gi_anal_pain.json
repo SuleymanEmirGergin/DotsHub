@@ -10,7 +10,7 @@
   "expected": {
     "final_type": "RESULT",
     "recommended_specialty": "internal_gi",
-    "top_condition_contains": "Dimorphic hemmorhoids(piles)",
+    "top_condition_contains": "Hemoroid",
     "urgency": "ROUTINE"
   }
 }

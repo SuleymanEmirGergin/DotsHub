@@ -55,9 +55,17 @@
           "ağzım kaydı",
           "tek tarafım uyuştu",
           "kolum tutmuyor",
-          "bacağım tutmuyor"
+          "bacağım tutmuyor",
+          "ağzı yan tarafa kaydı",
+          "yüzü kaydı",
+          "yüzü yan tarafa kaydı",
+          "ağzı kaydı",
+          "kelimeleri bulamıyor",
+          "kelimeler karışıyor",
+          "kolu güçsüzleşti",
+          "kolunu kaldıramıyor"
         ],
-        "regex": "\\b(konuş(ama|amı)yorum|konuşmam\\s*bozuldu|ağz(ım|ı)\\s*kayd(ı|ı)|tek\\s*taraf(ım|ımda)\\s*(uyuş|güçsüz)|kolum\\s*tutmuyor|bacağım\\s*tutmuyor)\\b",
+        "regex": "\\b(konuş(ama|amı)yorum|konuşmam\\s*bozuldu|ağz(ım|ı)\\s*kayd(ı|ı)|tek\\s*taraf(ım|ımda)\\s*(uyuş|güçsüz)|kolum\\s*tutmuyor|bacağım\\s*tutmuyor|(eşi(m|n|nin)|anne(m|sinin)?|baba(m|sının)?|kardeşi(m|nin)?)\\s+(ağz|yüz).*kayd(ı|i)|ağz(ı|ın)\\s*yan\\s*tarafa\\s*kayd|yüz(ü|ün)\\s*kayd|kelimeler\\s*kar(ış|is)|kelimeleri\\s*bulam|kol(u|unu)\\s*(kaldıramıyor|güçsüzleşti))\\b",
         "action": "ER_NOW"
       },
       {
@@ -123,9 +131,16 @@
           "intihar",
           "kendimi öldürmek",
           "kendime zarar",
-          "ölmek istiyorum"
+          "ölmek istiyorum",
+          "kendime zarar vermeyi planlıyorum",
+          "bu dünyadan gitmek istiyorum",
+          "yaşamak istemiyorum",
+          "dayanacak gücüm yok",
+          "artık dayanacak gücüm yok",
+          "ilaçları biriktirdim",
+          "ilaç biriktirdim"
         ],
-        "regex": "\\b(intihar|kendimi\\s*öldürmek|kendime\\s*zarar|ölmek\\s*istiyorum)\\b",
+        "regex": "\\b(intihar|kendimi\\s*öldürmek|kendime\\s*zarar|ölmek\\s*istiyorum|bu\\s*dünyadan\\s*gitmek\\s*istiyorum|yaşamak\\s*istemiyorum|dayanacak\\s*gücüm\\s*yok|ilaç(ları|\\s+)\\s*biriktir)\\b",
         "action": "ER_NOW"
       },
       {

@@ -70,6 +70,76 @@ class Settings(BaseSettings):
     LLM_NLU_LOG_TO_SUPABASE: bool = True
     LLM_EXPLAIN_ENABLED: bool = False        # optional explanation layer (B9)
 
+    # ── Curated injection score tiers (audit follow-up) ──────────────────
+    # triage_engine.py used to hardcode per-injection score_0_1 values
+    # scattered across 25+ call sites. They collapse into three tiers.
+    # Ops can tune these without a code release; the percentage shown
+    # in the mobile UI and the RESULT envelope derives from these.
+    #
+    #   HIGH   — core curated categories where the canonical pattern
+    #             maps 1:1 to the clinical label (panic attack,
+    #             otitis, bronchiolitis, renal colic, dysmenorrhea,
+    #             PCOS, conjunctivitis).
+    #   MEDIUM — strong signal but multi-label (migraine, diabetes,
+    #             hypertension, hypothyroid, ENT/derm/GI categories).
+    #   LOW    — lifecycle or less-specific (prenatal follow-up,
+    #             menopause, cataract, stye, frozen shoulder,
+    #             lumbar-pain / sciatica, knee injury).
+    CURATED_INJECTION_SCORE_HIGH: float = 0.70
+    CURATED_INJECTION_SCORE_MEDIUM: float = 0.60
+    CURATED_INJECTION_SCORE_LOW: float = 0.55
+
+    # ── HTTP 5xx health alerts (post-C3 observability) ───────────────────
+    # Rolling-window 5xx rate; same design as LLM health monitor.
+    HTTP_5XX_ALERT_ENABLED: bool = True
+    HTTP_5XX_ALERT_WINDOW: int = 50
+    HTTP_5XX_ALERT_MIN_REQS: int = 20
+    HTTP_5XX_ALERT_SUCCESS_THRESHOLD_PCT: float = 95.0  # <95% success → alert
+    HTTP_5XX_ALERT_COOLDOWN_SEC: int = 600  # 10 minutes
+
+    # ── LLM health alerts (post-C3 observability) ────────────────────────
+    # When the rolling-window LLM success rate drops below
+    # LLM_HEALTH_ALERT_THRESHOLD_PCT, notifier.py posts a webhook alert
+    # to Slack/Discord (if configured). Only fires once per
+    # LLM_HEALTH_ALERT_COOLDOWN_SEC to avoid storm-on-outage.
+    LLM_HEALTH_ALERT_ENABLED: bool = True
+    LLM_HEALTH_ALERT_WINDOW: int = 20        # rolling-window size (# calls)
+    LLM_HEALTH_ALERT_MIN_CALLS: int = 5      # require this many observations before evaluating
+    LLM_HEALTH_ALERT_THRESHOLD_PCT: float = 80.0
+    LLM_HEALTH_ALERT_COOLDOWN_SEC: int = 900  # 15 minutes
+
+    # ── RESULT envelope top_conditions gate (C2) ──────────────────────────
+    # Below this confidence, Kaggle-derived disease candidates are dropped
+    # from the RESULT envelope's top_conditions. Curated entries (Panik
+    # Bozukluk, Majör Depresyon, Bronşiolit, Akut Otitis Media, Renal
+    # Kolik, Dismenore, PCOS, Alerjik Konjonktivit) are exempt — they
+    # come from deterministic canonical patterns, not fragile score
+    # overlaps. Tune this against user feedback on the confidence-
+    # indicator quality. 0.00 disables the gate entirely (all Kaggle
+    # candidates surface); 1.00 drops all Kaggle candidates regardless
+    # of confidence. Typical live scenarios sit in 0.09–0.50.
+    RESULT_TOP_CONDITIONS_GATE: float = 0.25
+
+    # ── Mobile client version enforcement (M4) ────────────────────────────
+    # Surfaced via /v1/config/features. The mobile app reads this on
+    # startup and compares against its own app.version (expo-constants).
+    #
+    # enforcement_mode semantics:
+    #   "off"   — ignore version mismatches (default for dev)
+    #   "warn"  — show a non-blocking banner asking user to update
+    #   "block" — refuse to proceed, send user to the app-store link
+    #
+    # Rolled as a feature flag rather than a hard-fail semantic so ops
+    # can flip "block" on only after a bake period on "warn". Also
+    # lets a single field-fix release ship with enforcement off while
+    # a separate release ships "block" for anyone still on the prior
+    # broken version.
+    MIN_CLIENT_VERSION: str = "0.0.0"         # below this → treated as out-of-date
+    LATEST_CLIENT_VERSION: str = "0.0.0"      # informational, surfaced to the UI
+    CLIENT_VERSION_ENFORCEMENT: str = "off"   # "off" | "warn" | "block"
+    CLIENT_VERSION_UPDATE_URL_IOS: str = ""   # optional app-store deep link
+    CLIENT_VERSION_UPDATE_URL_ANDROID: str = ""
+
     model_config = {
         "env_file": ".env",
         "env_file_encoding": "utf-8",

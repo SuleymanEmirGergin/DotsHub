@@ -38,8 +38,23 @@ export default async function SessionsPage({
     : "created_at";
   const ascending = orderDir === "asc";
 
-  // Use admin client for data fetching (RLS bypass, works without auth setup)
-  const sb = supabaseAdmin();
+  // Use admin client for data fetching (RLS bypass, works without auth
+  // setup). Throws SupabaseEnvMissingError when env vars aren't set
+  // (localhost Playwright CI). Catch that specific case and render an
+  // empty "Sessions" state — beats crashing into not-found.
+  let sb: ReturnType<typeof supabaseAdmin>;
+  try {
+    sb = supabaseAdmin();
+  } catch {
+    return (
+      <div className="p-6 max-w-[1200px] mx-auto bg-background text-foreground">
+        <h1 className="text-2xl font-bold mb-4">Sessions</h1>
+        <p className="text-muted-foreground">
+          {getText(locale, "common.error")}: Supabase env not configured.
+        </p>
+      </div>
+    );
+  }
 
   // Feedback filter: find session_ids with matching feedback rating
   let sessionIds: string[] | null = null;

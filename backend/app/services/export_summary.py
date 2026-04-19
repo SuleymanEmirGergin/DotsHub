@@ -1,11 +1,20 @@
 """
 Oturum sonucunun yapılandırılmış metin olarak dışa aktarılması.
 E-posta özeti ile uyumlu; PDF için aynı metin kullanılabilir.
+
+Defense in depth: the payload shouldn't contain raw user text at
+this point (input_text gets redacted before it hits Supabase), but
+doctor_ready_summary_tr can sometimes echo snippets that the user
+typed. We run the assembled text through app.pii.redact_pii() once
+at the bottom so any stray phone/email/TC pattern never ends up in
+a downloadable file or PDF.
 """
 
 from __future__ import annotations
 
 from typing import Any
+
+from app.pii import redact_pii
 
 
 def build_export_text(payload: dict[str, Any], locale: str = "tr-TR") -> str:
@@ -60,4 +69,4 @@ def build_export_text(payload: dict[str, Any], locale: str = "tr-TR") -> str:
         for note in payload.get("safety_notes_tr") or []:
             lines.append(f"  - {note}")
 
-    return "\n".join(lines)
+    return redact_pii("\n".join(lines))

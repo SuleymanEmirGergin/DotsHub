@@ -7,8 +7,10 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  TouchableOpacity,
   View,
 } from "react-native";
+import type { TopCondition } from "@/src/state/types";
 import { sendFeedback } from "@/src/api/feedbackClient";
 import { sendSummaryEmail, exportSummary } from "@/src/api/summaryClient";
 import { useTriageStore } from "@/src/state/triageStore";
@@ -185,12 +187,34 @@ export default function ResultScreen() {
 
         <Card style={styles.cardSpacing}>
           <SectionTitle style={rtlText}>{t("result.possibleConditions")}</SectionTitle>
+          <Text style={[styles.possibleConditionsSubtitle, rtlText]}>
+            {t("result.possibleConditionsSubtitle")}
+          </Text>
           {result.top_conditions.map((c, i) => (
-            <View key={i} style={styles.conditionRow}>
-              <Text style={[styles.conditionLabel, rtlText]}>{c.disease_label}</Text>
-              <Text style={[styles.conditionScore, rtlText]}>%{Math.round(c.score_0_1 * 100)}</Text>
-            </View>
+            <ConditionItem
+              key={i}
+              condition={c}
+              rtlText={rtlText}
+              labels={{
+                curated: t("result.condCuratedBadge"),
+                icd10: t("result.condIcd10"),
+                description: t("result.condDescription"),
+                doctorQuestions: t("result.condDoctorQuestions"),
+                symptomsToTrack: t("result.condSymptomsToTrack"),
+                whenToEscalate: t("result.condWhenToEscalate"),
+                selfCare: t("result.condSelfCare"),
+                urgencyNote: t("result.condUrgencyNote"),
+                tip: t("result.condTip"),
+                expandHint: t("result.condExpandHint"),
+                collapseHint: t("result.condCollapseHint"),
+              }}
+            />
           ))}
+          {result.top_conditions.some((c) => c.disclaimer_tr) && (
+            <Text style={[styles.possibleConditionsDisclaimer, rtlText]}>
+              {result.top_conditions.find((c) => c.disclaimer_tr)?.disclaimer_tr}
+            </Text>
+          )}
         </Card>
 
         <Card style={styles.cardSpacing}>
@@ -388,6 +412,72 @@ const styles = StyleSheet.create({
     color: tokens.colors.textPrimary,
     fontWeight: "700",
   },
+  possibleConditionsSubtitle: {
+    ...tokens.typography.caption,
+    color: tokens.colors.textMuted,
+    marginTop: -tokens.spacing.xs,
+    marginBottom: tokens.spacing.sm,
+  },
+  possibleConditionsDisclaimer: {
+    ...tokens.typography.caption,
+    color: tokens.colors.textMuted,
+    marginTop: tokens.spacing.sm,
+    fontStyle: "italic",
+  },
+  conditionItemHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: tokens.spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: tokens.colors.border,
+  },
+  conditionItemLabelRow: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: tokens.spacing.xs,
+    marginRight: tokens.spacing.sm,
+  },
+  conditionCuratedBadge: {
+    ...tokens.typography.caption,
+    color: "#2F4F8F",
+    backgroundColor: "#E8EEF8",
+    borderColor: "#D7E2F3",
+    borderWidth: 1,
+    borderRadius: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    fontSize: 10,
+  },
+  conditionExpandBody: {
+    paddingVertical: tokens.spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: tokens.colors.border,
+  },
+  conditionSectionLabel: {
+    ...tokens.typography.caption,
+    color: tokens.colors.textPrimary,
+    fontWeight: "700",
+    marginTop: tokens.spacing.sm,
+    marginBottom: tokens.spacing.xs / 2,
+  },
+  conditionIcd10Text: {
+    ...tokens.typography.caption,
+    color: tokens.colors.textMuted,
+    fontFamily: "monospace",
+    marginBottom: tokens.spacing.xs,
+  },
+  conditionDescText: {
+    ...tokens.typography.body,
+    color: tokens.colors.textSecondary,
+    marginBottom: tokens.spacing.xs,
+  },
+  conditionExpandHint: {
+    ...tokens.typography.caption,
+    color: tokens.colors.textMuted,
+    marginRight: tokens.spacing.xs,
+  },
   summaryHeader: {
     flexDirection: "row",
     alignItems: "center",
@@ -493,3 +583,195 @@ const styles = StyleSheet.create({
     marginBottom: tokens.spacing.md,
   },
 });
+
+
+// ────────────────────────────────────────────────────────────────────────
+// ConditionItem — expandable row for a top_conditions entry.
+//
+// Opsiyon A (pre-triage product decision): low-key "Olası durumlar" list
+// below the specialty card. Tapping a row expands curated prep fields
+// (ICD-10, doctor questions, symptoms to track, escalation triggers,
+// self-care). Kaggle-candidate entries only carry a short description
+// when one exists, so their expand state is near-empty but the tap
+// target is still present for consistency.
+// ────────────────────────────────────────────────────────────────────────
+
+type ConditionItemLabels = {
+  curated: string;
+  icd10: string;
+  description: string;
+  doctorQuestions: string;
+  symptomsToTrack: string;
+  whenToEscalate: string;
+  selfCare: string;
+  urgencyNote: string;
+  tip: string;
+  expandHint: string;
+  collapseHint: string;
+};
+
+function ConditionItem({
+  condition,
+  rtlText,
+  labels,
+}: {
+  condition: TopCondition;
+  rtlText: any;
+  labels: ConditionItemLabels;
+}) {
+  const { isRTL } = useI18n();
+  const [expanded, setExpanded] = useState(false);
+  const curated = condition.source_type === "curated";
+  const hasExpandable =
+    !!condition.disease_description_tr ||
+    !!condition.disease_description ||
+    !!condition.icd10 ||
+    (condition.doktora_sorulacak_sorular_tr?.length ?? 0) > 0 ||
+    (condition.izlenecek_belirtiler_tr?.length ?? 0) > 0 ||
+    (condition.ne_zaman_tekrar_basvur_tr?.length ?? 0) > 0 ||
+    (condition.self_care_tr?.length ?? 0) > 0 ||
+    !!condition.aciliyet_notu_tr ||
+    !!condition.ipucu_tr;
+
+  return (
+    <View>
+      <TouchableOpacity
+        accessibilityRole="button"
+        accessibilityLabel={condition.disease_label}
+        accessibilityHint={expanded ? labels.collapseHint : labels.expandHint}
+        // Screen readers announce the collapsed/expanded state so
+        // users don't have to infer it from the ▲/▼ glyph (which is
+        // invisible to VoiceOver / TalkBack and non-localizable).
+        accessibilityState={
+          hasExpandable ? { expanded, disabled: false } : { disabled: true }
+        }
+        onPress={() => hasExpandable && setExpanded((v) => !v)}
+        activeOpacity={hasExpandable ? 0.6 : 1}
+        style={styles.conditionItemHeader}
+      >
+        <View style={styles.conditionItemLabelRow}>
+          <Text style={[styles.conditionLabel, rtlText]}>
+            {condition.disease_label}
+          </Text>
+          {curated ? (
+            <Text style={[styles.conditionCuratedBadge, rtlText]}>
+              {labels.curated}
+            </Text>
+          ) : null}
+        </View>
+        {/* RTL-aware: row-reverse mirrors the cluster (chevron +
+            score) in Arabic so the disclosure arrow sits next to
+            the percentage the same way it does in LTR. */}
+        <View
+          style={{
+            flexDirection: isRTL ? "row-reverse" : "row",
+            alignItems: "center",
+          }}
+        >
+          {hasExpandable ? (
+            <Text
+              style={[styles.conditionExpandHint, rtlText]}
+              accessibilityElementsHidden
+              importantForAccessibility="no"
+            >
+              {expanded ? "▲" : "▼"}
+            </Text>
+          ) : null}
+          <Text style={[styles.conditionScore, rtlText]}>
+            %{Math.round(condition.score_0_1 * 100)}
+          </Text>
+        </View>
+      </TouchableOpacity>
+
+      {expanded && hasExpandable ? (
+        <View style={styles.conditionExpandBody}>
+          {condition.icd10 ? (
+            <Text style={[styles.conditionIcd10Text, rtlText]}>
+              {labels.icd10}: {condition.icd10}
+            </Text>
+          ) : null}
+          {condition.disease_description_tr ||
+          condition.disease_description ? (
+            <>
+              <Text style={[styles.conditionSectionLabel, rtlText]}>
+                {labels.description}
+              </Text>
+              <Text style={[styles.conditionDescText, rtlText]}>
+                {condition.disease_description_tr ??
+                  condition.disease_description}
+              </Text>
+            </>
+          ) : null}
+          {condition.ipucu_tr ? (
+            <>
+              <Text style={[styles.conditionSectionLabel, rtlText]}>
+                {labels.tip}
+              </Text>
+              <Text style={[styles.conditionDescText, rtlText]}>
+                {condition.ipucu_tr}
+              </Text>
+            </>
+          ) : null}
+          {condition.doktora_sorulacak_sorular_tr?.length ? (
+            <>
+              <Text style={[styles.conditionSectionLabel, rtlText]}>
+                {labels.doctorQuestions}
+              </Text>
+              {condition.doktora_sorulacak_sorular_tr.map((q, i) => (
+                <Text key={i} style={[styles.bulletText, rtlText]}>
+                  • {q}
+                </Text>
+              ))}
+            </>
+          ) : null}
+          {condition.izlenecek_belirtiler_tr?.length ? (
+            <>
+              <Text style={[styles.conditionSectionLabel, rtlText]}>
+                {labels.symptomsToTrack}
+              </Text>
+              {condition.izlenecek_belirtiler_tr.map((s, i) => (
+                <Text key={i} style={[styles.bulletText, rtlText]}>
+                  • {s}
+                </Text>
+              ))}
+            </>
+          ) : null}
+          {condition.ne_zaman_tekrar_basvur_tr?.length ? (
+            <>
+              <Text style={[styles.conditionSectionLabel, rtlText]}>
+                {labels.whenToEscalate}
+              </Text>
+              {condition.ne_zaman_tekrar_basvur_tr.map((e, i) => (
+                <Text key={i} style={[styles.bulletText, rtlText]}>
+                  • {e}
+                </Text>
+              ))}
+            </>
+          ) : null}
+          {condition.self_care_tr?.length ? (
+            <>
+              <Text style={[styles.conditionSectionLabel, rtlText]}>
+                {labels.selfCare}
+              </Text>
+              {condition.self_care_tr.map((s, i) => (
+                <Text key={i} style={[styles.bulletText, rtlText]}>
+                  • {s}
+                </Text>
+              ))}
+            </>
+          ) : null}
+          {condition.aciliyet_notu_tr ? (
+            <>
+              <Text style={[styles.conditionSectionLabel, rtlText]}>
+                {labels.urgencyNote}
+              </Text>
+              <Text style={[styles.conditionDescText, rtlText]}>
+                {condition.aciliyet_notu_tr}
+              </Text>
+            </>
+          ) : null}
+        </View>
+      ) : null}
+    </View>
+  );
+}

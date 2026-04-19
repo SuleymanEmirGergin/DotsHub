@@ -1,0 +1,158 @@
+{
+  "version": "1.0",
+  "language": "tr-TR",
+  "description": "Kaggle disease matrix'ten gelen (kaggle_candidate) disease_label'ları için hasta-yüzlü meta: ICD-10 + kısa TR açıklama + opsiyonel hazırlık ipuçları. Curated kataloğun hafifletilmiş versiyonu — Kaggle tarafı deterministik ve genişletilmesi daha ucuz olduğu için her giriş bu seviyede tutulur. Keyler disease_label_overrides.json'ın HEDEF (TR) label'ına eşleşir; runtime bu map'i apply_label_overrides() çıktısına bağlar.",
+  "_notes": [
+    "tenant_scope: multi-tenant mimariye geçişte tenant-override desteklenecek (C1'de).",
+    "Safety-critical (EMERGENCY) label'lar (Akut koroner sendrom şüphesi, İnme / SVH şüphesi) kasıtlı olarak liste dışında — bunlar top_conditions listesinde asla normal candidate olarak görünmezler; EMERGENCY envelope'ta ayrı bir yoldan render edilirler.",
+    "Disclaimer her entry için runtime tarafından eklenir — burada tekrarlanmıyor."
+  ],
+  "tenant_scope": "default",
+  "conditions": {
+    "Hipertansiyon": {
+      "icd10": "I10",
+      "disease_description_tr": "Kan basıncının sürekli yüksek seyretmesi (genellikle 140/90 mmHg ve üzeri). Başlangıçta belirtisiz olabilir; uzun vadede kalp ve böbrek hasarı riski artar.",
+      "ipucu_tr": "Ölçümlerinizi (zaman, değer, hangi kolda) bir günlüğe kaydedin; doktora bunu getirin."
+    },
+    "Tip 2 Diyabet": {
+      "icd10": "E11",
+      "disease_description_tr": "Vücudun insülini yeterince kullanamaması sonucu kan şekerinin yükselmesi. Aşırı susama, sık idrara çıkma, halsizlik ve yavaş iyileşen yaralar tipik belirtilerdir.",
+      "ipucu_tr": "Mümkünse son HbA1c sonucunu ve ilaç listenizi doktora iletin."
+    },
+    "Osteoartrit": {
+      "icd10": "M19",
+      "disease_description_tr": "Eklem kıkırdağının yaş ve aşınmaya bağlı yıpranması. Diz, kalça, omurga ve parmaklarda ağrı ve tutukluk yapar; hareketle artar, dinlenmeyle azalır.",
+      "ipucu_tr": "Hangi eklemlerin etkilendiğini, ağrının günün hangi saatlerinde arttığını kaydedin."
+    },
+    "Hemoroid": {
+      "icd10": "K64",
+      "disease_description_tr": "Anüs çevresindeki damarların genişleyip şişmesi. Tuvalet sırasında kanama, ağrı ve kaşıntı tipik belirtilerdir; genellikle kabızlık tetikler.",
+      "ipucu_tr": "Lifli beslenme ve bol su alımı çoğu vakada şikayeti azaltır; doktora ne kadar süredir olduğunu söyleyin."
+    },
+    "Gastroözofageal reflü (GER hastalığı)": {
+      "icd10": "K21.9",
+      "disease_description_tr": "Mide içeriğinin yemek borusuna geri kaçması. Yemek sonrası göğüs arkasında yanma, ağza ekşi tat gelmesi ve yatınca artan rahatsızlık tipiktir.",
+      "ipucu_tr": "Son ne zamandır süregeldiğini, tetikleyici gıdaları ve yattığınızda arttığını not edin."
+    },
+    "Peptik Ülser": {
+      "icd10": "K27.9",
+      "disease_description_tr": "Mide veya oniki parmak bağırsağı iç yüzeyinde yara oluşması. Aç karnına artan, yemekle azalan/artan epigastrik ağrı ve bazen kusma ile belirir.",
+      "ipucu_tr": "Kullandığınız ağrı kesici (NSAİİ) ve kahve tüketiminizi doktora bildirin."
+    },
+    "Kronik kolestaz": {
+      "icd10": "K83.1",
+      "disease_description_tr": "Safra akışının uzun süreli engellenmesi. Sararma, kaşıntı, açık renkli dışkı ve koyu idrar birlikte görülebilir.",
+      "ipucu_tr": "Cilt/kaşıntı başlangıcı, idrar-dışkı renk değişiklikleri ve süre bilgisi doktora yararlıdır."
+    },
+    "Fungal enfeksiyon": {
+      "icd10": "B35",
+      "disease_description_tr": "Ciltte mantar kaynaklı enfeksiyon. En sık ayak parmak araları, kasık ve tırnaklarda görülür; kaşıntı, soyulma ve kızarıklık tipiktir.",
+      "ipucu_tr": "Havuz, spor salonu gibi nemli ortam temasını doktora söyleyin."
+    },
+    "İlaç reaksiyonu": {
+      "icd10": "T88.7",
+      "disease_description_tr": "Bir ilaca bağlı cilt veya sistemik reaksiyon. Döküntü, kaşıntı, kızarıklık yaygındır; bazen ateş ve mukoza tutulumu eşlik edebilir.",
+      "ipucu_tr": "Son 2 hafta içinde başladığınız tüm ilaç/besin takviyesini listelemek doktora yardımcı olur."
+    },
+    "Alerji": {
+      "icd10": "T78.4",
+      "disease_description_tr": "Bir alerjen (polen, gıda, ilaç, hayvan tüyü vs.) karşısında bağışıklık sisteminin aşırı tepkisi. Kaşıntı, döküntü, hapşırık, göz sulanması yaygındır.",
+      "ipucu_tr": "Tetikleyici olabilecek gıda, ortam ve zaman bilgilerini not edin."
+    },
+    "Astım": {
+      "icd10": "J45",
+      "disease_description_tr": "Hava yollarının kronik iltihabı; hırıltılı nefes, nefes darlığı, göğüste sıkışma ve öksürük ataklar halinde gelir. Genellikle alerjen veya efor tetikler.",
+      "ipucu_tr": "İnhaler kullanım sıklığınız ve gece uyanma sayısı kontrol düzeyini gösterir."
+    },
+    "Üst solunum yolu enfeksiyonu (ÜSYE)": {
+      "icd10": "J06.9",
+      "disease_description_tr": "Soğuk algınlığı / viral ÜSYE. Burun akıntısı, boğaz ağrısı, hafif ateş ve öksürük ile kendini gösterir; genellikle 7-10 günde kendiliğinden geçer.",
+      "ipucu_tr": "Belirtilerin süresi ve ateşin derecesini doktora söyleyin."
+    },
+    "Pnömoni": {
+      "icd10": "J18.9",
+      "disease_description_tr": "Akciğer dokusunun enfeksiyonu. Ateş, öksürük (sıklıkla balgamlı), göğüs ağrısı ve nefes darlığı tipiktir; hastaneye yatış gerektirebilir.",
+      "ipucu_tr": "Ateş eğrisi, balgam rengi ve nefes darlığının şiddetini not edin."
+    },
+    "Tüberküloz": {
+      "icd10": "A15",
+      "disease_description_tr": "Mycobacterium tuberculosis kaynaklı kronik akciğer enfeksiyonu. 2+ haftadır süren öksürük, gece terlemesi, kilo kaybı ve bazen balgamla kan tipiktir.",
+      "ipucu_tr": "Yakın çevrede TBC geçmişi olup olmadığını doktora bildirin."
+    },
+    "Migren": {
+      "icd10": "G43",
+      "disease_description_tr": "Tekrarlayan, sıklıkla tek taraflı, zonklayıcı baş ağrısı atakları. Işık/ses hassasiyeti, bulantı ve kusma eşlik edebilir.",
+      "ipucu_tr": "Atak sıklığı, süresi ve tetikleyicileri (uyku, açlık, menstrüel döngü) not edin."
+    },
+    "Benign paroksismal pozisyonel vertigo (BPPV)": {
+      "icd10": "H81.1",
+      "disease_description_tr": "Baş pozisyonu değişikliğiyle tetiklenen kısa süreli dönme hissi. İç kulaktaki otokoni parçacıklarının yer değiştirmesine bağlıdır; tedavisi basit manevralardır.",
+      "ipucu_tr": "Hangi hareketlerin tetiklediğini ve kaç saniye sürdüğünü not edin."
+    },
+    "Servikal spondiloz": {
+      "icd10": "M47.8",
+      "disease_description_tr": "Boyun omurgasının yaşa bağlı dejenerasyonu. Boyun ağrısı, tutukluk, baş ağrısı ve kollara yayılan uyuşma tipiktir.",
+      "ipucu_tr": "Günün hangi saatlerinde arttığını ve hangi aktivitelerle tetiklendiğini not edin."
+    },
+    "Artrit": {
+      "icd10": "M13.9",
+      "disease_description_tr": "Bir veya birden fazla eklemin iltihabı. Ağrı, şişlik, sıcaklık ve sabah tutukluğu yapar; romatoid, enfeksiyöz veya gut tipi olabilir.",
+      "ipucu_tr": "Hangi eklemler, simetrik mi, sabah tutukluğu ne kadar sürüyor — bu üçünü doktora söyleyin."
+    },
+    "Sarılık": {
+      "icd10": "R17",
+      "disease_description_tr": "Cilt ve göz akının sararması (bilirübin yüksekliği). Karaciğer/safra yolu sorunlarında veya aşırı hemoliz durumunda oluşur.",
+      "ipucu_tr": "İdrar ve dışkı rengindeki değişikliği, alkol/ilaç kullanımını doktora bildirin."
+    },
+    "Hepatit A": {
+      "icd10": "B15",
+      "disease_description_tr": "Hepatit A virüsüne bağlı karaciğer enfeksiyonu; kontamine gıda/sudan bulaşır. Bulantı, halsizlik, karın ağrısı ve sarılık görülür; çoğu vakada kendini sınırlar.",
+      "ipucu_tr": "Son 2-6 hafta içindeki seyahat ve gıda öyküsü önemli."
+    },
+    "İdrar yolu enfeksiyonu (İYE)": {
+      "icd10": "N39.0",
+      "disease_description_tr": "Mesane, üretra veya böbreklerde bakteriyel enfeksiyon. Sık idrara çıkma, yanma, bulanık/kokulu idrar ve alt karın rahatsızlığı tipiktir.",
+      "ipucu_tr": "Ateş, yan ağrısı veya bulantı eklenirse böbrek enfeksiyonu şüphesi artar; doktora söyleyin."
+    },
+    "Gastroenterit": {
+      "icd10": "A09",
+      "disease_description_tr": "Mide ve bağırsakların viral/bakteriyel iltihabı. İshal, bulantı-kusma, karın ağrısı ve bazen ateş yapar; çoğu vaka 2-5 günde geçer.",
+      "ipucu_tr": "Sıvı alımı ve idrar sıklığı dehidrasyonu izlemek için önemli."
+    },
+    "Akne": {
+      "icd10": "L70.0",
+      "disease_description_tr": "Yağ bezlerinin iltihabı. Yüz, sırt ve göğüste sivilce, siyah nokta ve iltihaplı nodüller oluşur; ergenlik ve hormonal değişikliklerle ilişkilidir.",
+      "ipucu_tr": "Kullandığınız krem/tedaviler ve süresi doktora yararlıdır."
+    },
+    "Sedef hastalığı (psoriasis)": {
+      "icd10": "L40",
+      "disease_description_tr": "Kronik, otoimmün cilt hastalığı. Gümüş-beyaz kepekli, kırmızı plaklar tipik olarak dirsek, diz, saçlı deri ve tırnakta görülür.",
+      "ipucu_tr": "Ailede psoriasis öyküsü ve eklem ağrısı olup olmadığını doktora söyleyin."
+    },
+    "Suçiçeği": {
+      "icd10": "B01",
+      "disease_description_tr": "Varicella-zoster virüsü kaynaklı bulaşıcı hastalık. Kaşıntılı veziküler (içi sıvı dolu) döküntü, ateş ve halsizlik yapar; genellikle çocuklukta görülür.",
+      "ipucu_tr": "Döküntünün başlangıç zamanı ve yayılma hızını not edin; bağışıklığı düşük kişilerle teması bildirin."
+    },
+    "Varis": {
+      "icd10": "I83.9",
+      "disease_description_tr": "Bacak toplardamarlarının genişlemesi ve kıvrımlılaşması. Ayakta durmakla artan ağrı, şişlik ve estetik endişe yaygındır; ileri vakalarda ülser olabilir.",
+      "ipucu_tr": "Uzun süre ayakta durma, hamilelik ve ailede varis öyküsü risk faktörleri."
+    },
+    "Hipotiroidi": {
+      "icd10": "E03.9",
+      "disease_description_tr": "Tiroid bezinin yetersiz hormon üretmesi. Yorgunluk, kilo alımı, kuru cilt, üşüme ve saç dökülmesi tipik belirtilerdir.",
+      "ipucu_tr": "TSH, T4 son kan sonuçlarınızı ve kullandığınız ilaçları (örn. levotiroksin) doktora getirin."
+    },
+    "Hipertiroidi": {
+      "icd10": "E05.9",
+      "disease_description_tr": "Tiroid bezinin aşırı hormon üretmesi. Kilo kaybı, çarpıntı, el titremesi, terleme ve iştah artışı tipik belirtilerdir.",
+      "ipucu_tr": "Nabız takibi ve kilo değişimi faydalı; son TSH değerinizi iletin."
+    },
+    "Hipoglisemi": {
+      "icd10": "E16.2",
+      "disease_description_tr": "Kan şekerinin normalin altına düşmesi. Titreme, terleme, açlık, sersemlik, konsantrasyon güçlüğü ve ileri vakada bilinç kaybı yapabilir.",
+      "ipucu_tr": "Atak ne zaman oluyor (açlık, egzersiz sonrası, yemek sonrası)? Doktora bunu söyleyin."
+    }
+  }
+}

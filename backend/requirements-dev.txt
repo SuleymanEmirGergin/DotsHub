@@ -1,4 +1,10 @@
+# Dev-only deps (not installed in production images).
+# Pin ranges on the generous side — we're optimizing for coverage tooling,
+# not bleeding-edge features. Bump deliberately.
+
 -r requirements.txt
+
+coverage>=7.13
 pytest>=9.0
 pytest-cov>=7.0
-coverage>=7.13
+pytest-asyncio>=0.25

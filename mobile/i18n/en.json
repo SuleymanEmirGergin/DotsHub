@@ -37,7 +37,8 @@
     "history": "📋 History",
     "evaluating": "Evaluating…",
     "symptomInput": "Symptom input",
-    "symptomInputHint": "Type your symptom and send"
+    "symptomInputHint": "Type your symptom and send",
+    "emergencyDisclaimer": "In emergencies, call your local emergency number."
   },
   "question": {
     "whyAsking": "Why are we asking?",
@@ -72,7 +73,18 @@
     "feedbackThanksMessage": "Your feedback has been received.",
     "feedbackError": "Feedback could not be sent.",
     "whySpecialty": "Why this specialty?",
-    "possibleConditions": "Possible conditions (estimated)",
+    "possibleConditions": "Possible conditions (for info)",
+    "possibleConditionsSubtitle": "Not a diagnosis. Tap a row for details.",
+    "condCuratedBadge": "Clinical info",
+    "condIcd10": "ICD-10",
+    "condDescription": "What is it?",
+    "condDoctorQuestions": "Questions to ask your doctor",
+    "condSymptomsToTrack": "Symptoms to track",
+    "condWhenToEscalate": "When to seek care again",
+    "condSelfCare": "Things you can do yourself",
+    "condUrgencyNote": "Urgency note",
+    "condExpandHint": "Tap to expand",
+    "condCollapseHint": "Tap to collapse",
     "summaryForDoctor": "Summary for doctor",
     "shareAsText": "Text",
     "pdf": "PDF",
@@ -83,7 +95,8 @@
     "feedbackSubmit": "Send",
     "feedbackThanksInline": "Your feedback has been recorded. Thank you!",
     "alertError": "Error",
-    "alertInfo": "Info"
+    "alertInfo": "Info",
+    "condTip": "Tip"
   },
   "emergency": {
     "title": "Emergency Assessment May Be Required",

@@ -1,0 +1,31 @@
+{
+  "version": "1.0",
+  "language": "tr-TR",
+  "description": "Demo tenant (demo_hospital) curated catalog — used by the C1 multi-tenant test suite to confirm that per-tenant catalogs load correctly. This file is safe to delete in production; it's checked in so CI can exercise the tenant-lookup code path. Intentionally minimal: only one condition, so the test can assert a difference from the default catalog.",
+  "_notes": [
+    "This catalog ONLY overrides Panik Bozukluk with a demo description.",
+    "All other curated labels (Majör Depresyon, Akut Otitis Media, …) are absent here, which is itself the test — a partial override must not crash the orchestrator.",
+    "In production a hospital would author this file through the admin UI (C2, upcoming)."
+  ],
+  "tenant_scope": "demo_hospital",
+  "disclaimer_tr": "DEMO — Bu katalog yalnızca multi-tenant test içindir; klinik kullanım için değildir.",
+  "conditions": {
+    "Panik Bozukluk": {
+      "icd10": "F41.0",
+      "disease_description_tr": "[DEMO TENANT] Panik bozukluk demo açıklaması — bu metin demo_hospital kataloğundan yüklendiği zaman görünür. Default tenant'tan farklı olmalıdır.",
+      "doktora_sorulacak_sorular_tr": [
+        "[DEMO] Ataklar ne sıklıkta?"
+      ],
+      "izlenecek_belirtiler_tr": [
+        "[DEMO] Atak sıklığı"
+      ],
+      "ne_zaman_tekrar_basvur_tr": [
+        "[DEMO] Göğüs ağrısı sol kola yayılıyorsa 112"
+      ],
+      "self_care_tr": [
+        "[DEMO] Nefes egzersizi"
+      ],
+      "aciliyet_notu_tr": "[DEMO] Rutin psikiyatri değerlendirmesi."
+    }
+  }
+}

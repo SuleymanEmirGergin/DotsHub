@@ -37,7 +37,8 @@
     "history": "📋 Geçmiş",
     "evaluating": "Değerlendiriyorum…",
     "symptomInput": "Belirti girişi",
-    "symptomInputHint": "Belirtinizi yazıp gönderin"
+    "symptomInputHint": "Belirtinizi yazıp gönderin",
+    "emergencyDisclaimer": "Acil durumlarda 112'yi arayın."
   },
   "question": {
     "whyAsking": "Neden soruyoruz?",
@@ -72,7 +73,18 @@
     "feedbackThanksMessage": "Geri bildirimin alındı.",
     "feedbackError": "Geri bildirim gönderilemedi.",
     "whySpecialty": "Neden bu branş?",
-    "possibleConditions": "Olası durumlar (tahmini)",
+    "possibleConditions": "Olası durumlar (bilgi amaçlı)",
+    "possibleConditionsSubtitle": "Tanı değildir. Ayrıntı için bir satıra dokunun.",
+    "condCuratedBadge": "Klinik bilgi",
+    "condIcd10": "ICD-10",
+    "condDescription": "Nedir?",
+    "condDoctorQuestions": "Doktora sorabileceğin sorular",
+    "condSymptomsToTrack": "Takip edebileceğin belirtiler",
+    "condWhenToEscalate": "Ne zaman tekrar başvur?",
+    "condSelfCare": "Kendi kendine yapabileceklerin",
+    "condUrgencyNote": "Aciliyet notu",
+    "condExpandHint": "Detayı açmak için dokun",
+    "condCollapseHint": "Kapatmak için dokun",
     "summaryForDoctor": "Doktora gösterilecek özet",
     "shareAsText": "Metin",
     "pdf": "PDF",
@@ -83,7 +95,8 @@
     "feedbackSubmit": "Gönder",
     "feedbackThanksInline": "Geri bildirimin kaydedildi. Teşekkürler!",
     "alertError": "Hata",
-    "alertInfo": "Bilgi"
+    "alertInfo": "Bilgi",
+    "condTip": "İpucu"
   },
   "emergency": {
     "title": "Acil Değerlendirme Gerekebilir",

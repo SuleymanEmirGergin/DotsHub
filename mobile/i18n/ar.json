@@ -35,7 +35,10 @@
     "subtitle": "سأطرح بضعة أسئلة قصيرة لتوجيهك بشكل أفضل.",
     "locationHint": "شارك موقعك لرؤية المرافق الصحية القريبة في شاشة النتائج (اختياري).",
     "history": "📋 السجل",
-    "evaluating": "جاري التقييم…"
+    "evaluating": "جاري التقييم…",
+    "symptomInput": "إدخال الأعراض",
+    "symptomInputHint": "اكتب عرضك وأرسله.",
+    "emergencyDisclaimer": "في حالات الطوارئ اتصل برقم الطوارئ المحلي."
   },
   "question": {
     "whyAsking": "لماذا نسأل؟",
@@ -70,7 +73,7 @@
     "feedbackThanksMessage": "تم استلام ملاحظاتك.",
     "feedbackError": "تعذر إرسال الملاحظات.",
     "whySpecialty": "لماذا هذا التخصص؟",
-    "possibleConditions": "الحالات المحتملة (تقديرية)",
+    "possibleConditions": "الحالات المحتملة (للمعلومات)",
     "summaryForDoctor": "ملخص للطبيب",
     "shareAsText": "نص",
     "pdf": "PDF",
@@ -81,7 +84,19 @@
     "feedbackSubmit": "إرسال",
     "feedbackThanksInline": "تم حفظ ملاحظاتك. شكراً!",
     "alertError": "خطأ",
-    "alertInfo": "معلومات"
+    "alertInfo": "معلومات",
+    "possibleConditionsSubtitle": "ليست تشخيصاً. اضغط على صف للتفاصيل.",
+    "condCuratedBadge": "معلومات سريرية",
+    "condIcd10": "ICD-10",
+    "condDescription": "ما هو؟",
+    "condDoctorQuestions": "أسئلة لتسألها طبيبك",
+    "condSymptomsToTrack": "أعراض للمراقبة",
+    "condWhenToEscalate": "متى تطلب الرعاية مرة أخرى",
+    "condSelfCare": "أشياء يمكنك القيام بها بنفسك",
+    "condUrgencyNote": "ملاحظة عن مدى الإلحاح",
+    "condExpandHint": "اضغط للتوسيع",
+    "condCollapseHint": "اضغط للطي",
+    "condTip": "نصيحة"
   },
   "emergency": {
     "title": "قد يلزم تقييم طارئ",

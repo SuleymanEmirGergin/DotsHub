@@ -3,7 +3,8 @@
 Default provider: Wiro.ai  →  google/gemini-2-5-flash
   Submit:  POST https://api.wiro.ai/v1/Run/google/gemini-2-5-flash  (multipart)
   Poll:    POST https://api.wiro.ai/v1/Task/Detail                   (JSON)
-  Auth:    x-api-key: WIRO_API_KEY
+  Auth:    HMAC-SHA256 signature — x-api-key + x-nonce + x-signature
+           (signature = HMAC(key=API_KEY, msg=API_SECRET+NONCE) hex)
 
 Design constraints (different from the async Wiro client in core/llm_client.py):
   - Fully synchronous  — triage_engine.py is sync
@@ -22,6 +23,8 @@ PII is redacted from user text before any network call.
 
 from __future__ import annotations
 
+import hashlib
+import hmac
 import logging
 import re
 import time
@@ -41,20 +44,13 @@ _WIRO_SUCCESS = {"task_postprocess_end", "task_end"}
 _WIRO_ERROR = {"task_error", "task_error_full", "task_cancel", "task_kill"}
 
 # ---------------------------------------------------------------------------
-# PII redaction
+# PII redaction — delegate to the canonical app.pii module so regexes
+# can't drift between this client and the database / email / PDF paths.
+# Retained as a local name so existing call sites (redact_pii(user))
+# don't need to change.
 # ---------------------------------------------------------------------------
 
-_TC_ID_RE = re.compile(r"\b[1-9]\d{10}\b")                              # TR TC kimlik
-_PHONE_RE = re.compile(r"(\+90\s?\d{3}\s?\d{3}\s?\d{2}\s?\d{2}|05\d{9})\b")
-_EMAIL_RE = re.compile(r"[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}")
-
-
-def redact_pii(text: str) -> str:
-    """Replace known PII patterns with [REDACTED] before sending to LLM."""
-    text = _TC_ID_RE.sub("[REDACTED]", text)
-    text = _PHONE_RE.sub("[REDACTED]", text)
-    text = _EMAIL_RE.sub("[REDACTED]", text)
-    return text
+from app.pii import redact_pii  # noqa: F401  (re-exported for module users)
 
 
 # ---------------------------------------------------------------------------
@@ -64,6 +60,39 @@ def redact_pii(text: str) -> str:
 def _wiro_api_key() -> str:
     """Return the effective API key: LLM_API_KEY if set, else WIRO_API_KEY."""
     return settings.LLM_API_KEY or settings.WIRO_API_KEY
+
+
+def _wiro_auth_headers() -> dict:
+    """Build Wiro HMAC-signed auth headers per Wiro API docs.
+
+    Signature scheme (https://wiro.ai/docs/introduction):
+        signature = HMAC-SHA256(key=API_KEY, message=API_SECRET + NONCE)
+        Headers: x-api-key, x-nonce (unix timestamp), x-signature (hex)
+
+    The API_SECRET never travels over the wire — only the HMAC output does.
+    Nonce gives replay-attack protection (Wiro rejects stale nonces).
+
+    Falls back to the legacy x-api-secret header when no secret is
+    configured (some Wiro projects still accept static auth); if
+    signature auth is enforced on the project, this path returns 401.
+    """
+    key = _wiro_api_key()
+    secret = getattr(settings, "WIRO_API_SECRET", "") or ""
+    if not secret:
+        # Legacy / single-credential mode (dev sandboxes).
+        return {"x-api-key": key}
+
+    nonce = str(int(time.time()))
+    signature = hmac.new(
+        key.encode("utf-8"),
+        (secret + nonce).encode("utf-8"),
+        hashlib.sha256,
+    ).hexdigest()
+    return {
+        "x-api-key": key,
+        "x-nonce": nonce,
+        "x-signature": signature,
+    }
 
 
 def _wiro_base() -> str:
@@ -89,7 +118,7 @@ def _wiro_submit(client: httpx.Client, model: str, prompt: str) -> str:
         "topP":             (None, "0.95"),
         "maxOutputTokens":  (None, "512"),
     }
-    resp = client.post(url, headers={"x-api-key": _wiro_api_key()}, files=fields)
+    resp = client.post(url, headers=_wiro_auth_headers(), files=fields)
     resp.raise_for_status()
     body = resp.json()
     if not body.get("result"):
@@ -113,7 +142,7 @@ def _wiro_poll(client: httpx.Client, token: str, deadline: float) -> dict:
 
         resp = client.post(
             url,
-            headers={"Content-Type": "application/json", "x-api-key": _wiro_api_key()},
+            headers={"Content-Type": "application/json", **_wiro_auth_headers()},
             json={"tasktoken": token},
         )
         resp.raise_for_status()

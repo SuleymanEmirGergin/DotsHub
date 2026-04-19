@@ -21,6 +21,9 @@ from app.api.routes.facilities import router as facilities_router
 from app.api.routes.summary_email import router as summary_email_router
 from app.api.routes.push_token import router as push_token_router
 from app.admin_api import router as admin_router
+from app.admin_tenants_api import router as admin_tenants_router
+from app.admin_feedback_api import router as admin_feedback_router
+from app.api.routes.data_rights import router as data_rights_router
 from app.admin_v5 import router as admin_v5_router
 from app.middleware.security_headers import SecurityHeadersMiddleware
 from app.version_gating import CapabilityGateMiddleware
@@ -100,6 +103,80 @@ async def request_id_middleware(request, call_next):
     response = await call_next(request)
     response.headers["X-Request-ID"] = rid
     return response
+
+
+# ── HTTP 5xx health monitor ────────────────────────────────────────────
+# Rolling-window 5xx-rate watcher; paging sibling for the dashboard's
+# envelope-distribution card. Wakes the Slack/Discord dispatcher when
+# the last HTTP_5XX_ALERT_WINDOW requests have success rate below
+# HTTP_5XX_ALERT_SUCCESS_THRESHOLD_PCT and the cool-down allows it.
+# In-memory per worker, same pattern / trade-offs as the LLM health
+# monitor in services/llm_nlu.py.
+from collections import Counter as _Counter, deque as _deque
+from threading import Lock as _Lock
+import time as _time
+
+_HTTP_LOCK = _Lock()
+_HTTP_EVENTS: _deque = _deque()  # (is_5xx: bool, status_code: int, path: str)
+_HTTP_LAST_ALERT_TS: float = 0.0
+
+
+def _http_observe(status: int, path: str) -> None:
+    if not getattr(settings, "HTTP_5XX_ALERT_ENABLED", True):
+        return
+    window = int(getattr(settings, "HTTP_5XX_ALERT_WINDOW", 50))
+    min_reqs = int(getattr(settings, "HTTP_5XX_ALERT_MIN_REQS", 20))
+    threshold = float(getattr(settings, "HTTP_5XX_ALERT_SUCCESS_THRESHOLD_PCT", 95.0))
+    cooldown = float(getattr(settings, "HTTP_5XX_ALERT_COOLDOWN_SEC", 600))
+
+    is_5xx = status >= 500
+    global _HTTP_LAST_ALERT_TS
+    with _HTTP_LOCK:
+        _HTTP_EVENTS.append((is_5xx, status, path))
+        while len(_HTTP_EVENTS) > window:
+            _HTTP_EVENTS.popleft()
+        n = len(_HTTP_EVENTS)
+        if n < min_reqs:
+            return
+        fails = sum(1 for b, _s, _p in _HTTP_EVENTS if b)
+        success_pct = 100.0 * (n - fails) / n
+        if success_pct >= threshold:
+            return
+        now = _time.monotonic()
+        if now - _HTTP_LAST_ALERT_TS < cooldown:
+            return
+        _HTTP_LAST_ALERT_TS = now
+        # Find the most-hit 5xx (path, status) pair for the alert body.
+        pairs = _Counter((p, s) for b, s, p in _HTTP_EVENTS if b)
+        top_pair = pairs.most_common(1)[0][0] if pairs else (None, None)
+        top_path, top_status = top_pair
+
+    try:
+        from app.notifier import send_http_5xx_alert
+
+        send_http_5xx_alert(
+            success_rate_pct=success_pct,
+            window_size=n,
+            top_path=top_path,
+            top_status=top_status,
+            threshold_pct=threshold,
+        )
+    except Exception:
+        pass
+
+
+@app.middleware("http")
+async def http_5xx_monitor_middleware(request, call_next):
+    """Observe every response; surface 5xx rate spikes as webhook alerts."""
+    try:
+        response = await call_next(request)
+        _http_observe(response.status_code, request.scope.get("path", "?"))
+        return response
+    except Exception:
+        # Unhandled exception → treat as 500 for observability, then
+        # let FastAPI's default handler produce the actual response.
+        _http_observe(500, request.scope.get("path", "?"))
+        raise
 
 
 @app.middleware("http")
@@ -185,19 +262,43 @@ app.include_router(push_token_router, prefix="/v1", tags=["Push Token"])
 app.include_router(session_router, prefix="/v1", tags=["Session (legacy)"])
 app.include_router(message_router, prefix="/v1", tags=["Message (legacy)"])
 app.include_router(admin_router, prefix="/v1", tags=["Admin"])
-app.include_router(admin_v5_router, tags=["Admin V5"])
+app.include_router(admin_tenants_router, prefix="/v1", tags=["Admin Tenants"])
+app.include_router(admin_feedback_router, prefix="/v1", tags=["Admin Feedback"])
+app.include_router(data_rights_router, prefix="/v1", tags=["Data Rights"])
+# admin_v5_router carries its own prefix="/admin"; mounting under /v1
+# places it at /v1/admin/* so the admin_rate_limit_middleware (which
+# gates /v1/admin/*) actually protects these endpoints. Without the
+# /v1 prefix the routes came out at /admin/* and bypassed rate limits.
+app.include_router(admin_v5_router, prefix="/v1", tags=["Admin V5"])
 
 
 @app.get("/v1/config/features")
 async def features():
     """Return current feature-flag state for client-side consent and UI gating.
 
-    Mobile app reads LLM_NLU_ENABLED to decide whether to show the KVKK/AI consent
-    banner before the first triage turn.
+    Consumed by the mobile app on startup:
+    - `llm_nlu_enabled` — whether to show the KVKK/AI consent banner
+      before the first triage turn.
+    - `llm_explain_enabled` — whether the explain-my-recommendation UI
+      should surface.
+    - `client_version` — min/latest/mode trio for the version-gate
+      banner. The mobile app compares its own
+      `Constants.expoConfig.version` against `min` and decides (based
+      on `mode`) whether to warn, block, or stay silent. Rolled as a
+      feature flag rather than a hard-fail semantic so ops can bake
+      "warn" before flipping "block" — see CLIENT_VERSION_ENFORCEMENT
+      in core/config.py.
     """
     return {
         "llm_nlu_enabled": settings.LLM_NLU_ENABLED,
         "llm_explain_enabled": settings.LLM_EXPLAIN_ENABLED,
+        "client_version": {
+            "min": settings.MIN_CLIENT_VERSION,
+            "latest": settings.LATEST_CLIENT_VERSION,
+            "mode": settings.CLIENT_VERSION_ENFORCEMENT,
+            "update_url_ios": settings.CLIENT_VERSION_UPDATE_URL_IOS or None,
+            "update_url_android": settings.CLIENT_VERSION_UPDATE_URL_ANDROID or None,
+        },
     }
 
 

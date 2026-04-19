@@ -30,6 +30,21 @@ export type RecommendedSpecialty = {
 export type TopCondition = {
   disease_label: string;
   score_0_1: number;
+  // C2 "possible conditions" metadata. All optional — pre-C2 sessions
+  // and Kaggle-derived candidates will be missing most of these.
+  source_type?: "curated" | "kaggle_candidate";
+  disease_description?: string;            // EN description (Kaggle)
+  disease_description_tr?: string;         // TR description (curated)
+  icd10?: string;
+  doktora_sorulacak_sorular_tr?: string[];
+  izlenecek_belirtiler_tr?: string[];
+  ne_zaman_tekrar_basvur_tr?: string[];
+  self_care_tr?: string[];
+  aciliyet_notu_tr?: string;
+  // Short one-liner attached to Kaggle-candidate entries via
+  // kaggle_condition_meta.json (B3). Rendered under description.
+  ipucu_tr?: string;
+  disclaimer_tr?: string;
 };
 
 export type ResultPayload = {

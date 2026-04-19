@@ -10,7 +10,18 @@ from typing import Any, Dict, List, Optional
 
 import httpx
 
-from app.db import supabase
+# Lazy proxy for app.db.supabase — importing the real client at module
+# load time would break every CI test that imports app.main when
+# SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY are absent (app.db raises
+# RuntimeError in that case). Same pattern as admin_v5.py and
+# data_rights.py.
+class _LazySupabase:
+    def __getattr__(self, item):
+        from app.db import supabase as _sb
+        return getattr(_sb, item)
+
+
+supabase = _LazySupabase()
 
 logger = logging.getLogger(__name__)
 

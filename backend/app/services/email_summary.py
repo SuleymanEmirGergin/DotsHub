@@ -59,6 +59,12 @@ def build_summary_body(session: dict[str, Any], locale: str = "tr") -> tuple[str
         ]
 
     body_text = title + "\n\n" + "\n".join(lines)
+    # Defense-in-depth redaction before sending outside the system.
+    # The session row should already be PII-free, but future callers
+    # might pass richer dicts that echo user text — redact once here
+    # so we never email a raw phone / email / TC id.
+    from app.pii import redact_pii
+    body_text = redact_pii(body_text)
     body_html = f"<h2>{title}</h2><pre>{body_text}</pre>"
     return body_text, body_html
 

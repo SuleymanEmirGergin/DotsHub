@@ -30,6 +30,16 @@ STEPS = [
         name="kaggle_mapping_guardrails",
         command=[sys.executable, "scripts/validate_kaggle_mapping.py"],
     ),
+    # Hot-path coverage gate — runs the test suite a second time under
+    # coverage and asserts per-module minimums (see the script for the
+    # threshold rationale). Kept as a separate step so the first suite
+    # fails fast on a real test regression without waiting for the
+    # coverage measurement.
+    Step(
+        name="hotpath_coverage_gate",
+        command=[sys.executable, "scripts/check_hotpath_coverage.py"],
+        env_override={"REDIS_URL": ""},
+    ),
 ]
 
 

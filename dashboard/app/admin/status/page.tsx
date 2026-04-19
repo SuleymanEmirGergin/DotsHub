@@ -49,6 +49,9 @@ async function checkSupabase(t: (key: string) => string): Promise<{ status: Stat
     if (error) return { status: "error", message: error.message };
     return { status: "ok", message: t("status.connected") };
   } catch (e: any) {
+    // supabaseAdmin() throws SupabaseEnvMissingError when env vars
+    // aren't set — we want the tile to render a friendly "not
+    // configured" state rather than propagate the exception.
     return { status: "error", message: e?.message ?? t("status.connectionFailed") };
   }
 }

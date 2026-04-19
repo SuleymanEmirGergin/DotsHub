@@ -1,0 +1,239 @@
+{
+  "version": "1.0",
+  "language": "tr-TR",
+  "description": "Pre-triage bağlamında kullanılan eklenen (curated) hastalık şüphesi kataloğu. Aktif orkestratör (triage_engine) bu etiketleri belirli canonical kombinasyonları tetiklendiğinde top_conditions'a inject eder. Kaggle disease matrix'te olmayan veya klinik olarak daha spesifik etiketler burada tutulur. UI bu entry'leri source_type='curated' olarak gösterir; Kaggle tabanlı adaylar source_type='kaggle_candidate' rozeti alır.",
+  "_notes": [
+    "Bu liste tanı değildir — pre-triage hazırlık verisidir. UI tarafı disclaimer'ı her zaman göstermek zorundadır.",
+    "tenant_scope şu an 'default' — çoklu-tenant (A hastanesi / B hastanesi) için mimari TODO.",
+    "Her entry'de doktora_sorulacak_sorular_tr / izlenecek_belirtiler_tr / ne_zaman_tekrar_basvur_tr / self_care_tr alanları hasta hazırlığına yardımcı olur; icd10 ve aciliyet_notu_tr metadatadır."
+  ],
+  "tenant_scope": "default",
+  "disclaimer_tr": "Bu liste tanı değildir, yalnızca hazırlık amaçlıdır. Kesin değerlendirme için lütfen hekiminize başvurun.",
+  "conditions": {
+    "Panik Bozukluk": {
+      "icd10": "F41.0",
+      "disease_description_tr": "Ataklar halinde ani başlayan, birkaç dakika içinde zirveye ulaşan ve kendiliğinden geçen yoğun korku/kaygı atakları. Bedensel belirtiler (çarpıntı, nefes darlığı) sıktır ama kalp hastalığı değildir.",
+      "doktora_sorulacak_sorular_tr": [
+        "Ataklar ne sıklıkta oluyor ve ne kadar sürüyor?",
+        "Ataklar sırasında ne hissediyor, ne düşünüyorum?",
+        "Panik bozukluk dışında başka bir neden (tiroid, kalp) ekarte edilmeli mi?",
+        "Tedavi seçeneklerim neler? İlaç, terapi veya kombinasyon?"
+      ],
+      "izlenecek_belirtiler_tr": [
+        "Atakların sıklığı ve süresi",
+        "Atağı tetikleyen durum/yer/düşünce",
+        "Atak dışında süregelen kaygı düzeyi",
+        "Günlük işlevsellik (iş, sosyal yaşam) üzerindeki etki"
+      ],
+      "ne_zaman_tekrar_basvur_tr": [
+        "Göğüs ağrısı sol kola/çeneye yayılıyorsa veya 15 dakikadan uzun sürüyorsa acile",
+        "Bayılma, görme kaybı veya konuşma bozukluğu eşlik ederse acile",
+        "Kendine veya başkasına zarar verme düşünceleri varsa hemen destek hattı veya acile"
+      ],
+      "self_care_tr": [
+        "Yavaş ve diyafragmatik nefes egzersizi (4 saniye al, 6 saniye ver)",
+        "Kafein ve alkol tüketimini azalt",
+        "Düzenli uyku ve fiziksel aktivite",
+        "Bir günlük tutarak tetikleyicileri not et"
+      ],
+      "aciliyet_notu_tr": "Genellikle rutin psikiyatri değerlendirmesi uygundur; göğüs ağrısı kalıcılaşırsa kardiyolojik ekartasyon gerekebilir."
+    },
+    "Majör Depresyon": {
+      "icd10": "F33.0",
+      "disease_description_tr": "En az 2 hafta süren belirgin çökkün duygu durumu veya ilgi/zevk kaybı, uyku-iştah-enerji değişiklikleri ve işlevsellikte bozulma ile karakterize bir psikiyatrik durum. Tedavi edilebilir.",
+      "doktora_sorulacak_sorular_tr": [
+        "Belirtilerim ne kadar süredir var ve giderek mi ağırlaşıyor?",
+        "İlaç tedavisi mi, psikoterapi mi, her ikisi mi benim için uygun?",
+        "Tedavi ne kadar sürer, ne zaman etkisini göstermeye başlar?",
+        "Yan etki olursa ne yapmalıyım?"
+      ],
+      "izlenecek_belirtiler_tr": [
+        "Uyku süresi ve kalitesi",
+        "İştah ve kilo değişimi",
+        "Kendine zarar verme veya intihar düşünceleri (varsa hemen destek)",
+        "Günlük işlere devam etme kapasitesi"
+      ],
+      "ne_zaman_tekrar_basvur_tr": [
+        "Aktif intihar planı veya kendine zarar verme düşüncesi → hemen 112 veya 182 (ALO Psikiyatri)",
+        "Yeme-içme tamamen durduysa veya kilo hızla düşüyorsa acile",
+        "İki haftadan uzun süreli, günlük işlerini engelleyen belirtiler rutin randevu"
+      ],
+      "self_care_tr": [
+        "Her gün kısa da olsa dışarı çık, günlük ışık al",
+        "Küçük görevlere böl: bir anda çok şey bekleme",
+        "Güvendiğin biriyle konuş, izole olma",
+        "Alkol ve uyku ilaçlarını hekim onayı olmadan kullanma"
+      ],
+      "aciliyet_notu_tr": "Aktif intihar planı varsa acildir; değilse rutin psikiyatri değerlendirmesi uygundur."
+    },
+    "Akut Otitis Media": {
+      "icd10": "H66.0",
+      "disease_description_tr": "Orta kulak iltihabı. Küçük çocuklarda sıktır; ateş, kulağı çekiştirme, huzursuzluk ve uyku bozukluğu ile belirir.",
+      "doktora_sorulacak_sorular_tr": [
+        "Antibiyotik şart mı yoksa gözlem mi öneriyorsunuz?",
+        "Ağrı kesici ne kadar ve nasıl verilmeli?",
+        "Bu tekrarlarsa kulak tüpü gerekir mi?",
+        "Ne zaman kontrol muayenesi?"
+      ],
+      "izlenecek_belirtiler_tr": [
+        "Ateş (38.5°C üstü veya uzarsa)",
+        "Kulak akıntısı (şeffaf/sarı/kanlı)",
+        "Çocuğun genel durumu (uyku, beslenme)",
+        "Dengesizlik veya işitmede azalma"
+      ],
+      "ne_zaman_tekrar_basvur_tr": [
+        "Yüksek ateş (39°C üstü) veya havale → acile",
+        "Kulak arkasında şişlik, kızarıklık veya çocuk çok letarjik → acile",
+        "48-72 saat içinde belirtiler düzelmediyse kontrole"
+      ],
+      "self_care_tr": [
+        "Hekim önerdiği dozda parasetamol veya ibuprofen ile ağrı kontrolü",
+        "Bol sıvı, baş yüksekte yatırma",
+        "Pasif sigara dumanına maruz bırakma",
+        "Kulağa damla veya yabancı nesne koyma"
+      ],
+      "aciliyet_notu_tr": "Çoğu vaka 3 gün içinde değerlendirme ile rutin pediatrik bakım altında çözülür."
+    },
+    "Bronşiolit": {
+      "icd10": "J21.9",
+      "disease_description_tr": "Genellikle 2 yaş altındaki bebeklerde viral (sıklıkla RSV) üst solunum yolu enfeksiyonu sonrası küçük hava yollarında daralma. Hırıltılı nefes, hızlı solunum ve beslenmede azalma tipiktir.",
+      "doktora_sorulacak_sorular_tr": [
+        "Bebeğimin oksijen satürasyonu nedir?",
+        "Evde takip yeterli mi, hastaneye yatış gerekir mi?",
+        "Beslenme nasıl olmalı, kaç saatte bir?",
+        "Belirtiler hangi noktada acil olur?"
+      ],
+      "izlenecek_belirtiler_tr": [
+        "Solunum sayısı ve güçlüğü (burun kanatlarının çekilmesi, göğüs çekilmesi)",
+        "Beslenme miktarı (alışkın olduğunun <%50'si endişe verici)",
+        "Dudak/tırnak rengi (morarma)",
+        "Uyku hali ve uyanıklık"
+      ],
+      "ne_zaman_tekrar_basvur_tr": [
+        "Dudak veya tırnak morarması / apne (nefes durması) → 112",
+        "Ciddi göğüs çekilmeleri, nefes alamıyor gibi görünüyor → acile",
+        "6 saatten uzun beslenme reddi, dehidrasyon işaretleri → acile",
+        "2 aydan küçükse her kötüleşme hızla değerlendirilmeli"
+      ],
+      "self_care_tr": [
+        "Burun temizleme (serum fizyolojik + aspiratör)",
+        "Beslenmeyi küçük porsiyonlar halinde sık ver",
+        "Sigara dumanından uzak tut",
+        "Ateşe ilaç yalnızca hekim onayıyla (özellikle <6 ay)"
+      ],
+      "aciliyet_notu_tr": "Aynı gün (SAME_DAY) pediatri değerlendirmesi önerilir; kötüleşme hızlıysa acil servis."
+    },
+    "Renal Kolik": {
+      "icd10": "N23",
+      "disease_description_tr": "Böbrek veya idrar yolundaki taşın yol açtığı dalga tarzı şiddetli yan ağrısı; bulantı ve idrarda kan (hematüri) eşlik edebilir.",
+      "doktora_sorulacak_sorular_tr": [
+        "Görüntüleme (ultrason/BT) gerekli mi?",
+        "Taş boyutu ne, kendiliğinden düşme şansı var mı?",
+        "Bol sıvı ve ağrı kesici yeterli mi, başka tedavi gerekir mi?",
+        "Tekrarı nasıl önlerim?"
+      ],
+      "izlenecek_belirtiler_tr": [
+        "Ağrının şiddeti ve sıklığı",
+        "İdrarda kan veya taş parçası",
+        "Ateş ve titreme (enfeksiyon işareti)",
+        "Bulantı-kusma ve sıvı alımı"
+      ],
+      "ne_zaman_tekrar_basvur_tr": [
+        "Ateş (38.5°C+) ve titreme → acile (obstrüktif piyelonefrit riski)",
+        "Kontrol edilemeyen ağrı veya idrara çıkamama → acile",
+        "Tek böbrekli hastaysan veya gebeyseniz hızla değerlendirilmeli"
+      ],
+      "self_care_tr": [
+        "Bol su iç (günde 2-3 L)",
+        "Hekim önerisiyle ağrı kesici kullan",
+        "İdrarı filtreleyerek taşı yakalamaya çalış (analiz için)",
+        "Aşırı tuz ve oksalatlı gıdalardan kaçın"
+      ],
+      "aciliyet_notu_tr": "Ateş eşlik ediyorsa veya ağrı kontrol edilemiyorsa acildir; aksi halde aynı gün (SAME_DAY) nefroloji/üroloji değerlendirmesi."
+    },
+    "Dismenore": {
+      "icd10": "N94.6",
+      "disease_description_tr": "Adet dönemine eşlik eden pelvik kramp. Primer dismenore genç yaşlarda başlar ve altta yatan hastalık yoktur; sekonder dismenore daha geç başlar ve endometriozis gibi bir nedene bağlı olabilir.",
+      "doktora_sorulacak_sorular_tr": [
+        "Ağrım primer mi sekonder mi olabilir?",
+        "Hangi ağrı kesici ne zaman ve ne kadar?",
+        "Hormonal tedavi (oral kontraseptif) benim için uygun mu?",
+        "Endometriozis ekartasyonu için hangi tetkikler gerekli?"
+      ],
+      "izlenecek_belirtiler_tr": [
+        "Ağrının şiddeti ve günlük işlere etkisi",
+        "Adet döngüsünün düzenliliği",
+        "Cinsel ilişkide ağrı",
+        "Adet dışı pelvik ağrı"
+      ],
+      "ne_zaman_tekrar_basvur_tr": [
+        "Ani başlayan şiddetli ağrı, ateş, atipik vajinal kanama → acile",
+        "İlk kez ortaya çıkan, alışkın olmadığınız yoğunlukta ağrı → erken değerlendirme",
+        "3 aydan uzun süren kötüleşen ağrı rutin jinekoloji"
+      ],
+      "self_care_tr": [
+        "Sıcak uygulama (termofor)",
+        "İbuprofen/naproksen adet başlamadan hemen önce başlatıldığında daha etkili",
+        "Düzenli egzersiz ağrıyı azaltabilir",
+        "Kafein ve tuzu azaltmak bazı kişilerde işe yarar"
+      ],
+      "aciliyet_notu_tr": "Ateş veya atipik kanama yoksa rutin jinekoloji değerlendirmesi uygundur."
+    },
+    "PCOS (Polikistik Over Sendromu)": {
+      "icd10": "E28.2",
+      "disease_description_tr": "Adet düzensizliği, androjen fazlalığı (hirsutizm/akne) ve polikistik over görüntüsünden en az ikisinin bulunduğu bir endokrin-jinekolojik sendrom. Metabolik sendrom ve infertilite ile ilişkilidir.",
+      "doktora_sorulacak_sorular_tr": [
+        "Tanıyı kesinleştirmek için hangi tetkikler gerekli (hormon, USG)?",
+        "İnsülin direnci veya diyabet riskim ne, nasıl taranır?",
+        "Adet düzenlemek için hormonal tedavi şart mı?",
+        "Kilo yönetimi / yaşam tarzı değişikliği neleri içermeli?"
+      ],
+      "izlenecek_belirtiler_tr": [
+        "Adet sıklığı ve düzeni",
+        "Kilo değişimi ve bel çevresi",
+        "Akne ve tüylenme seyri",
+        "Kan şekeri belirtileri (aşırı susama, sık idrara çıkma)"
+      ],
+      "ne_zaman_tekrar_basvur_tr": [
+        "6 aydan uzun adet görmeme → jinekoloji",
+        "Yüksek kan basıncı veya şeker semptomları → endokrinoloji",
+        "Gebelik planı varsa üreme sağlığı değerlendirmesi"
+      ],
+      "self_care_tr": [
+        "Düzenli, orta yoğunluklu egzersiz",
+        "Düşük glisemik indeksli beslenme, rafine şeker azaltma",
+        "Kilo yönetimi (%5-10 kayıp bile belirgin iyileşme sağlayabilir)",
+        "Uyku düzeni ve stres yönetimi"
+      ],
+      "aciliyet_notu_tr": "Rutin jinekoloji/endokrinoloji değerlendirmesi uygundur."
+    },
+    "Alerjik Konjonktivit": {
+      "icd10": "H10.1",
+      "disease_description_tr": "Polen, toz akarı veya evcil hayvan gibi alerjenlere bağlı göz iç zarının iltihaplanması. Her iki gözde kaşıntı, sulanma ve kızarıklık tipiktir; genellikle mevsimseldir.",
+      "doktora_sorulacak_sorular_tr": [
+        "Antihistaminik göz damlası mı, oral ilaç mı daha uygun?",
+        "Altta yatan bir alerji paneli yaptırmalı mıyım?",
+        "Kontakt lens kullanıyorum — ne zaman tekrar takabilirim?",
+        "Bu nasıl konjunktivit (alerjik / viral / bakteriyel) ayırt edilir?"
+      ],
+      "izlenecek_belirtiler_tr": [
+        "Görme değişikliği (olmamalı; varsa farklı bir durum)",
+        "Tek taraflı mı, iki taraflı mı?",
+        "Sarı-yeşil akıntı (bakteriyel şüphesi)",
+        "Göz ağrısı veya ışık hassasiyeti (farklı tanıya geçiş)"
+      ],
+      "ne_zaman_tekrar_basvur_tr": [
+        "Ani görme kaybı, şiddetli göz ağrısı veya halka görme → acile",
+        "Sarı-yeşil akıntı artıyor, tek gözde yoğun kızarıklık → 1-2 gün içinde göz hekimi",
+        "Kontakt lens takıyorken başladıysa → aynı gün göz hekimi"
+      ],
+      "self_care_tr": [
+        "Soğuk kompres",
+        "Gözü ovuşturma",
+        "Alerjen kaynağını azalt (polen sezonunda pencere kapalı)",
+        "Kontakt lensi geçici olarak bırak, günlük lens tercih et"
+      ],
+      "aciliyet_notu_tr": "Rutin oftalmoloji değerlendirmesi uygundur."
+    }
+  }
+}

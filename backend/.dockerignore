@@ -1,0 +1,45 @@
+# Everything that doesn't need to be in the image layer.
+# Keep this tight — smaller context = faster builds + less attack surface.
+
+# Python noise
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.tox/
+.coverage
+htmlcov/
+
+# Virtualenvs / local installs
+.venv/
+venv/
+env/
+
+# Local dev artifacts
+*.db
+*.sqlite*
+dotshub.db*
+.env
+.env.*
+
+# Editor
+.vscode/
+.idea/
+
+# Tests + scripts — not needed at runtime, reduces image size + RCE
+# surface for an attacker who gets code exec in the container.
+tests/
+scripts/
+
+# Repo-level stuff (we COPY only ./app from build context)
+../dashboard
+../mobile
+../docs
+../tests
+../.github
+../.claude
+../.git
+../README.md
+../CHANGELOG.md

@@ -148,4 +148,78 @@ export const handlers = [
   http.delete("*/v1/triage/push-token", async () => {
     return HttpResponse.json({ ok: true });
   }),
+
+  // ── Unified triage turn (V4 envelope) ───────────────────────────────
+  //
+  // Consumed by triageClient.test.ts. Returns a RESULT envelope shaped
+  // like the live API: recommended_specialty + top_conditions +
+  // disclaimer. Tests that care about error paths (429, 500, network)
+  // override via server.use() in the test body.
+  http.post("*/v1/triage/turn", async ({ request }) => {
+    const body = (await request.json()) as Record<string, unknown>;
+    return HttpResponse.json({
+      type: "RESULT",
+      session_id: body.session_id ?? DEFAULT_SESSION_ID,
+      turn_index: 1,
+      payload: {
+        recommended_specialty: { id: "internal_gi", tr: "Dahiliye" },
+        confidence_0_1: 0.82,
+        top_conditions: [
+          {
+            disease_label: "Gastrit",
+            score_0_1: 0.67,
+            source_type: "curated",
+            disease_description: "Mide astarının iltihabı.",
+            ipucu_tr: "Boş mideye kahve azaltın.",
+          },
+        ],
+        doctor_ready_summary_tr: "Son 3 gündür mide ağrısı ve bulantı.",
+        disclaimer_tr: DEFAULT_DISCLAIMER_TR,
+      },
+    });
+  }),
+
+  // POST /v1/triage/feedback → ok
+  http.post("*/v1/triage/feedback", async () => {
+    return HttpResponse.json({ ok: true });
+  }),
+
+  // POST /v1/triage/send-summary → ok
+  http.post("*/v1/triage/send-summary", async () => {
+    return HttpResponse.json({ ok: true });
+  }),
+
+  // POST /v1/triage/export-summary → PDF bytes (plain text stand-in
+  // so tests can assert Content-Type + non-empty body without a
+  // real PDF encoder in the fixture).
+  http.post("*/v1/triage/export-summary", async () => {
+    return HttpResponse.text("PDF-BYTES", {
+      status: 200,
+      headers: { "Content-Type": "application/pdf" },
+    });
+  }),
+
+  // DELETE /v1/me/sessions/:id → KVKK tombstone receipt
+  http.delete("*/v1/me/sessions/:session_id", async ({ params }) => {
+    return HttpResponse.json({
+      ok: true,
+      session_id: params.session_id,
+      derived_deleted: { triage_events: 3, llm_calls: 2, triage_feedback: 1 },
+    });
+  }),
+
+  // GET /v1/config/features → M4 feature-flag + version gate payload
+  http.get("*/v1/config/features", async () => {
+    return HttpResponse.json({
+      llm_nlu_enabled: false,
+      llm_explain_enabled: false,
+      client_version: {
+        min: "0.0.0",
+        latest: "0.0.0",
+        mode: "off",
+        update_url_ios: null,
+        update_url_android: null,
+      },
+    });
+  }),
 ];

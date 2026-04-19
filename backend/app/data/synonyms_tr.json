@@ -183,7 +183,13 @@
         "soluk alış güçleşti",
         "akciğerlerimde daralma var",
         "hava yetmiyor",
-        "ciğerlerim dolmuyor"
+        "ciğerlerim dolmuyor",
+        "nefes alamadım",
+        "nefesim daraldı",
+        "nefesim kesildi",
+        "nefes alamıyormuş gibi",
+        "nefes alamıyormuş gibi oldum",
+        "nefesim yetmiyor gibi"
       ]
     },
     {
@@ -206,7 +212,13 @@
         "kalbim durmadan çarpıyor",
         "palpitasyon yaşıyorum",
         "kalbim hopluyor",
-        "kalbim çarpmaya başladı"
+        "kalbim çarpmaya başladı",
+        "kalbim hızlandı",
+        "kalp hızlanması",
+        "kalbim atıyor gibi",
+        "kalbim çarpmaya başlıyor",
+        "kalbim hızlanıyor",
+        "aniden kalbim"
       ]
     },
     {
@@ -273,7 +285,10 @@
         "boğulur gibi öksürüyorum",
         "sabah öksürüğüm var",
         "öksürük geçmiyor",
-        "uzun süredir öksürüyorum"
+        "uzun süredir öksürüyorum",
+        "1 aydır kuru öksürük",
+        "kuru öksürüğüm geçmiyor",
+        "geceleri artıyor öksürük"
       ]
     },
     {
@@ -295,7 +310,12 @@
         "kafam zonkluyor",
         "baş ağrısı geçmiyor",
         "başım zonk zonk ağrıyor",
-        "baş ağrısından uyuyamıyorum"
+        "baş ağrısından uyuyamıyorum",
+        "tekrarlayan şiddetli baş ağrıları",
+        "ayda birkaç kez şiddetli baş ağrısı",
+        "zonklayıcı baş ağrısı",
+        "tek taraflı zonklayıcı",
+        "başım ağrıyor ve halsizlik"
       ]
     },
     {
@@ -362,7 +382,11 @@
         "idrar çıkarırken ağrı var",
         "mesanem yanıyor",
         "idrar yaparken acı veriyor",
-        "idrar kanalı yanıyor"
+        "idrar kanalı yanıyor",
+        "yanma oluyor idrarımda",
+        "idrarımda yanma",
+        "idrarım bulanık kokulu",
+        "bulanık kokulu idrar"
       ]
     },
     {
@@ -428,7 +452,11 @@
         "artık yaşamak istemiyorum",
         "kendime kötü davranıyorum",
         "daha fazla dayanamıyorum hayata",
-        "kendime zarar vermeyi düşünüyorum"
+        "kendime zarar vermeyi düşünüyorum",
+        "kendime zarar vermeyi planlıyorum",
+        "ilaçları biriktirdim",
+        "ilaç biriktirdim",
+        "bu dünyadan gitmek istiyorum"
       ]
     },
     {
@@ -450,7 +478,13 @@
         "gece de idrara kalkıyorum",
         "idrar aciliyeti var",
         "idrar ihtiyacım çok sık geliyor",
-        "sürekli çiş gelme hissi var"
+        "sürekli çiş gelme hissi var",
+        "sık idrara çıkıyorum",
+        "sık işiyorum",
+        "sık tuvalete çıkıyorum",
+        "tuvalete çok sık gidiyorum",
+        "çok sık tuvalete",
+        "her yarım saatte tuvalete"
       ]
     },
     {
@@ -516,7 +550,11 @@
         "yüzüm sivilce dolu",
         "sivilce izleri var",
         "akne komedonu var",
-        "cildimde irin dolu sivilce var"
+        "cildimde irin dolu sivilce var",
+        "yüzümde ve sırtımda sivilceler",
+        "iltihaplı sivilce",
+        "derin iltihaplı sivilceler",
+        "uzun süredir sivilceler"
       ]
     },
     {
@@ -604,7 +642,12 @@
         "ayağa kalkmak zor eklemler nedeniyle",
         "eklem hareket açıklığı azaldı",
         "tutukluk geçmiyor",
-        "mafsallarım sertleşti"
+        "mafsallarım sertleşti",
+        "sabahları eklemlerim tutuk",
+        "sabah tutukluğu",
+        "ellerim şişiyor ve ağrıyor",
+        "1 saatten fazla tutukluk",
+        "sabah sertliği"
       ]
     },
     {
@@ -714,7 +757,9 @@
         "her şey zor geliyor yorgunluktan",
         "uyandığımda bile yorgunum",
         "halsizliğim geçmiyor",
-        "tükenmiş hissediyorum"
+        "tükenmiş hissediyorum",
+        "halsiz hissediyorum",
+        "çok yorgunum kilo aldım"
       ]
     },
     {
@@ -730,7 +775,10 @@
         "uyku kalitem kötü",
         "yatağa girince aklım çalışıyor",
         "geceleri düşüncelerim durmuyor",
-        "insomnia"
+        "insomnia",
+        "2 aydır uyuyamıyorum",
+        "3-4 saat uyuyabiliyorum",
+        "uykuya dalmakta zorlanıyorum"
       ]
     },
     {
@@ -748,14 +796,17 @@
         "depresif hissediyorum",
         "neşesizim",
         "boşluk hissediyorum",
-        "ruhen çöküntü"
+        "ruhen çöküntü",
+        "3 haftadır kötü hissediyorum",
+        "çok kötü hissediyorum",
+        "kendimi kötü hissediyorum",
+        "mutsuzum"
       ]
     },
     {
       "canonical": "anksiyete",
       "type": "symptom",
       "variants_tr": [
-        "anksiyete",
         "kaygılanıyorum",
         "sürekli endişeleniyorum",
         "içim sıkışıyor",
@@ -780,7 +831,25 @@
         "ölüm korkusu yaşadım",
         "atak geçirdim",
         "panik krizi",
-        "aniden fenalaştım ve çok korktum"
+        "aniden fenalaştım ve çok korktum",
+        "öleceğimi sandım",
+        "öleceğim korkusu",
+        "kontrolü kaybetme korkusu",
+        "aniden korktum",
+        "panik yaşadım",
+        "kontrolümü kaybetme korkusu",
+        "kontrolümü kaybetmek",
+        "ölecekmişim gibi",
+        "ölecekmişim gibi hissediyorum",
+        "ölecekmişim",
+        "panik atağı geçiriyorum",
+        "panik atağı yaşadım",
+        "metroda aniden kalbim",
+        "aniden kalbim çok hızlandı kendimi kötü hissettim",
+        "birden kalbim çarpmaya başlıyor",
+        "kendimi kötü hissettim geçti",
+        "öleceğim hissine kapılıyorum",
+        "çok korktum geçti"
       ]
     },
     {
@@ -807,7 +876,9 @@
         "bir şeye uzun süre bakamıyorum",
         "unutkanlık arttı",
         "zihin bulanıklığı",
-        "düşüncelerim karışık"
+        "düşüncelerim karışık",
+        "kontrol etme takıntım var",
+        "sürekli endişeliyim"
       ]
     },
     {
@@ -891,7 +962,15 @@
         "düzensiz adet",
         "oligomenore",
         "menorajim var",
-        "adet kanaması çok uzun sürüyor"
+        "adet kanaması çok uzun sürüyor",
+        "2-3 ayda bir adet",
+        "adetler seyrek",
+        "adet gecikmesi",
+        "3-4 ayda bir adet",
+        "3-4 ayda bir oluyor",
+        "adetlerim seyrek",
+        "adetlerim seyrek ve düzensiz",
+        "seyrek adet"
       ]
     },
     {
@@ -905,7 +984,15 @@
         "adet krampları",
         "bayılacak gibi ağrıyor",
         "adet sancısı",
-        "her adet çok acı veriyor"
+        "her adet çok acı veriyor",
+        "şiddetli kramplar",
+        "adet dönemimde çok şiddetli kramplar",
+        "karnıma bıçak saplanıyor",
+        "karnıma bıçak saplanıyormuş gibi",
+        "adet döneminde şiddetli kramp",
+        "adet ağrısı bel ağrısı",
+        "şiddetli kramp ve bel ağrım",
+        "her adet dönemimde çok şiddetli kramp"
       ]
     },
     {
@@ -927,12 +1014,10 @@
       "type": "symptom",
       "variants_tr": [
         "memem ağrıyor",
-        "göğsüm ağrıyor",
         "meme akıntısı",
         "memeden akıntı geliyor",
         "memede kitle var",
         "memem şişti",
-        "göğsümde ağrı var",
         "meme hassasiyeti"
       ]
     },
@@ -987,7 +1072,13 @@
         "görüşüm aniden bozuldu",
         "bir taraf görmüyor",
         "görme kayboldu",
-        "ani körlük"
+        "ani körlük",
+        "perde indi",
+        "perde iniyor",
+        "göremiyorum",
+        "o taraf görmüyor",
+        "gözümde perde",
+        "aniden kör oldum"
       ]
     },
     {
@@ -1013,7 +1104,11 @@
         "gözüm pembe",
         "konjonktivit",
         "gözüm kan çanağına döndü",
-        "gözlerim çok kızarık"
+        "gözlerim çok kızarık",
+        "gözlerim kırmızı",
+        "iki gözüm de kırmızı",
+        "gözlerim sulanıyor ve kırmızı",
+        "baharda gözlerim kırmızı"
       ]
     },
     {
@@ -1051,7 +1146,21 @@
         "gözlerim sulandı",
         "gözümden su geliyor",
         "gözüm yanıyor ve kaşınıyor",
-        "alerjik göz"
+        "alerjik göz",
+        "gözüm çok kaşınıyor",
+        "iki gözüm de kaşınıyor",
+        "her iki gözüm kaşınıyor",
+        "gözüm kaşındı",
+        "gözüm de kaşınıyor",
+        "kaşınıyor ve sulanıyor",
+        "iki gözüm de çok kaşınıyor",
+        "iki gözüm de kaşınıyor ve kızarıyor",
+        "gözlerim kaşınıyor ve sulanıyor",
+        "baharda gözlerim kaşınıyor",
+        "kırmızı kaşıntılı ve sulanıyor",
+        "her iki gözüm kırmızı kaşıntılı",
+        "iki gözüm kırmızı kaşıntılı",
+        "polen sezonunda kaşınıyor"
       ]
     },
     {
@@ -1088,7 +1197,10 @@
         "bebeğimde kızarıklık ve ateş çıktı",
         "ateşle birlikte leke çıktı",
         "vücudunda döküntü ve ateşi var",
-        "döküntü ateşle birlikte geldi"
+        "döküntü ateşle birlikte geldi",
+        "4 yaşındaki oğlumun vücudunda kırmızı noktalar",
+        "kırmızı noktalar çıktı ateş",
+        "boynunda bez var ateşi"
       ]
     },
     {
@@ -1138,7 +1250,10 @@
         "bebek ishal ve susuz kaldı",
         "çocuk çok ishal yapıyor ve dudakları kurudu",
         "dehidrasyon belirtisi var çocukta",
-        "çocukta sulu ishal ve gözleri çöküyor"
+        "çocukta sulu ishal ve gözleri çöküyor",
+        "3 yaşındaki kızım 2 gündür ishalde",
+        "2 yaşındaki oğlum ishal",
+        "günde 5-6 kez sulu ishal"
       ]
     },
     {
@@ -1151,7 +1266,14 @@
         "febril nöbet",
         "ateşli havale",
         "havale geçirdi ateşle",
-        "ateşte kasılma oldu"
+        "ateşte kasılma oldu",
+        "kasılmaya başladı",
+        "havale geçirdi",
+        "havale",
+        "gözleri döndü",
+        "bilinci gitti",
+        "kasılıyor",
+        "nöbet geçirdi"
       ]
     },
     {
@@ -1165,7 +1287,23 @@
         "bel yanı ağrısı",
         "kasığa vuran yan ağrısı",
         "renal kolik",
-        "dalga tarzı ağrı böbrek"
+        "dalga tarzı ağrı böbrek",
+        "sol böbreğim ağrıyor",
+        "sağ böbreğim ağrıyor",
+        "sol böbrek ağrısı",
+        "sağ böbrek ağrısı",
+        "lomber ağrı",
+        "sol böbreğim çok şiddetli ağrıyor",
+        "sağ böbreğim çok şiddetli ağrıyor",
+        "böbreğimde ağrı",
+        "böbrekte ağrı",
+        "şiddetli böbrek ağrısı",
+        "sağ yan tarafım",
+        "sağ yanımda",
+        "sol yanımda",
+        "sağ yan tarafımda dalga dalga",
+        "dalga dalga gelen ağrı",
+        "yan tarafımda dalga"
       ]
     },
     {
@@ -1177,7 +1315,15 @@
         "kırmızı idrar",
         "kanlı işedim",
         "pembe idrar",
-        "idrar rengi değişti kana döndü"
+        "idrar rengi değişti kana döndü",
+        "kırmızımsı idrar",
+        "idrarımda kan",
+        "idrarda kan",
+        "idrarımın rengi kırmızı",
+        "kan işedim",
+        "idrarımın rengi kırmızımsı",
+        "idrar rengi kırmızımsı",
+        "idrarım kırmızımsı"
       ]
     },
     {
@@ -1207,12 +1353,12 @@
       "canonical": "poliüri",
       "type": "symptom",
       "variants_tr": [
-        "çok sık idrara çıkıyorum",
         "çok fazla idrar yapıyorum",
         "geceleri çok kalkıyorum idrara",
         "idrar miktarı arttı",
-        "poliüri",
-        "aşırı idrar"
+        "aşırı idrar",
+        "çok idrar yapıyorum",
+        "bol bol idrara çıkıyorum"
       ]
     },
     {
@@ -1232,12 +1378,14 @@
       "canonical": "sağ alt karın ağrısı",
       "type": "symptom",
       "variants_tr": [
-        "sağ alt karın ağrısı",
         "apandis ağrısı gibi",
         "sağ kasık bölgesi ağrıyor",
         "sağ alt bölge ağrısı",
         "sağda alt kısım çok ağrıyor",
-        "göbek altı sağ ağrı"
+        "göbek altı sağ ağrı",
+        "sağ alt karnım ağrıyor",
+        "sağ alt karın bölgem",
+        "sağ alt kadranda ağrı"
       ]
     },
     {
@@ -1250,6 +1398,228 @@
         "kasık bölgesinde yumru",
         "fıtık çıktı",
         "kasıkta şişme"
+      ]
+    },
+    {
+      "canonical": "ışık haleleri",
+      "type": "symptom",
+      "variants_tr": [
+        "ışıkların etrafında hale",
+        "ışıkların etrafında halka",
+        "ışıkta hale görüyorum",
+        "ışıkların etrafında çember",
+        "halo görme",
+        "ışıklara bakınca halka",
+        "ışıkların çevresinde halka",
+        "ışıklara bakınca halo"
+      ]
+    },
+    {
+      "canonical": "yenidoğan ateşi",
+      "type": "symptom",
+      "variants_tr": [
+        "6 haftalık bebeğim ateş",
+        "2 aylık bebeğim ateş",
+        "yenidoğanda ateş",
+        "1 aylık bebeğim 38",
+        "3 aydan küçük bebeğim ateş",
+        "yenidoğan bebeğim ateşlendi",
+        "bebeğim 6 haftalık ve 38",
+        "bebeğim 6 haftalık ve termometre 38"
+      ]
+    },
+    {
+      "canonical": "hirsutizm",
+      "type": "symptom",
+      "variants_tr": [
+        "yüzümde tüylenme",
+        "erkeksi kıllanma",
+        "yüzde kıllanma arttı",
+        "istenmeyen tüylenme",
+        "çene bölgemde tüylenme",
+        "çenede tüylenme",
+        "göğsümde koyu tüyler",
+        "yüzümde koyu tüyler",
+        "yüzümde ve göğsümde koyu tüyler"
+      ]
+    },
+    {
+      "canonical": "konjunktivit",
+      "type": "symptom",
+      "variants_tr": [
+        "gözüm hem kaşınıyor hem sulanıyor",
+        "göz kaşıntısı ve sulanma",
+        "kaşınıyor sulanıyor kırmızı"
+      ]
+    },
+    {
+      "canonical": "yüksek tansiyon",
+      "type": "symptom",
+      "variants_tr": [
+        "hipertansiyon",
+        "tansiyonum yüksek",
+        "tansiyonum 170",
+        "tansiyonum 180",
+        "tansiyonum çıktı",
+        "yüksek tansiyonum var",
+        "doktorum yüksek tansiyon",
+        "170/100",
+        "180/110",
+        "tansiyonum 170/100",
+        "evde ölçtüm 170"
+      ]
+    },
+    {
+      "canonical": "ayak mantarı",
+      "type": "symptom",
+      "variants_tr": [
+        "ayak parmaklarımın arasında kaşıntılı",
+        "ayak parmakları arası kaşıntı",
+        "ayakta soyulan döküntü",
+        "havuza gittikten sonra kaşıntı",
+        "atlet ayağı"
+      ]
+    },
+    {
+      "canonical": "psoriasis belirtisi",
+      "type": "symptom",
+      "variants_tr": [
+        "gümüş beyaz kepekli plaklar",
+        "dirseklerim gümüş kepekli",
+        "saçlı derimde kepekli plaklar",
+        "kırmızı plaklar kepekli",
+        "psoriasis",
+        "sedef hastalığı"
+      ]
+    },
+    {
+      "canonical": "kulak kanalı akıntısı",
+      "type": "symptom",
+      "variants_tr": [
+        "kulak kanalım ağrıyor",
+        "kulakta akıntı kaşıntı",
+        "yüzerken kulağıma su kaçtı",
+        "dış kulak iltihabı"
+      ]
+    },
+    {
+      "canonical": "sinüs basıncı",
+      "type": "symptom",
+      "variants_tr": [
+        "yüzümde basınç",
+        "alın ve yanak bölgesinde basınç",
+        "yüzümde alın ve yanak basınç",
+        "burnum tıkalı ve akıyor",
+        "sinüzit"
+      ]
+    },
+    {
+      "canonical": "bademcik iltihabı",
+      "type": "symptom",
+      "variants_tr": [
+        "bademciklerim şiş",
+        "bademciklerim beyaz lekeli",
+        "tonsillit",
+        "yutkunamıyorum ateş"
+      ]
+    },
+    {
+      "canonical": "bel ağrısı",
+      "type": "symptom",
+      "variants_tr": [
+        "belimde çok şiddetli ağrı",
+        "belim ağrıyor",
+        "bel ağrım bacağıma vuruyor",
+        "bel ağrısı bacağa yayılıyor",
+        "siyatik ağrı",
+        "siyatik",
+        "otururken artıyor bel ağrısı"
+      ]
+    },
+    {
+      "canonical": "diz yaralanması",
+      "type": "symptom",
+      "variants_tr": [
+        "dizim döndü",
+        "dizim şişti ve ağrıyor",
+        "dize basamıyorum",
+        "menisküs",
+        "bağ yaralanması"
+      ]
+    },
+    {
+      "canonical": "omuz ağrısı",
+      "type": "symptom",
+      "variants_tr": [
+        "omzum ağrıyor",
+        "omzumu kaldıramıyorum",
+        "donuk omuz",
+        "frozen shoulder",
+        "omuz hareketi kısıtlı"
+      ]
+    },
+    {
+      "canonical": "arpacık belirtisi",
+      "type": "symptom",
+      "variants_tr": [
+        "göz kapağımda ağrılı kırmızı şişlik",
+        "göz kapağında küçük şişlik",
+        "arpacık",
+        "göz kapağı sivilce gibi"
+      ]
+    },
+    {
+      "canonical": "görme bulanıklığı ilerleyen",
+      "type": "symptom",
+      "variants_tr": [
+        "görüşüm yavaş yavaş bulanıklaştı",
+        "geceleri farlar etrafında kamaşma",
+        "kataract",
+        "göz merceği bulanıklaşması",
+        "yaş bağlı görme azalması"
+      ]
+    },
+    {
+      "canonical": "hipertiroidi belirtisi",
+      "type": "symptom",
+      "variants_tr": [
+        "kilo verdim çarpıntım var",
+        "ellerim titriyor ve çok terliyorum",
+        "iştahım iyi ama zayıflıyorum",
+        "hipertiroidi",
+        "tiroid yüksek"
+      ]
+    },
+    {
+      "canonical": "obsesif kompülsif belirti",
+      "type": "symptom",
+      "variants_tr": [
+        "günde 20 kez ellerimi yıkıyorum",
+        "kontrol etme takıntı",
+        "takıntı var",
+        "kompülsiyon",
+        "obsesif",
+        "evden çıkamıyorum takıntı"
+      ]
+    },
+    {
+      "canonical": "gebelik takibi isteği",
+      "type": "symptom",
+      "variants_tr": [
+        "adetim gecikti test pozitif",
+        "gebeyim ilk kontrol",
+        "gebelik takibi",
+        "ilk prenatal kontrol"
+      ]
+    },
+    {
+      "canonical": "menopoz belirtisi yaşam",
+      "type": "symptom",
+      "variants_tr": [
+        "sıcak basması gece terlemesi",
+        "6 aydır adet görmedim",
+        "50 yaşında adet yok",
+        "menopoz dönemi"
       ]
     }
   ]
