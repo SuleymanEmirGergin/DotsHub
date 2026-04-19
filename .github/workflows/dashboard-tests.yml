@@ -73,7 +73,10 @@ jobs:
     # include_staging=true. Hits a real staging Supabase + deployed
     # dashboard using repo secrets. Never runs on push/PR automatically
     # to avoid polluting staging with every commit.
-    needs: test
+    #
+    # Intentionally independent of `test` — staging exercises real
+    # Supabase auth + data against a deployed URL and must not be held
+    # hostage to pre-existing flakiness in the localhost smoke job.
     if: github.event_name == 'workflow_dispatch' && inputs.include_staging == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
