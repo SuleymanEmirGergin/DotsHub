@@ -26,6 +26,7 @@ from app.admin_feedback_api import router as admin_feedback_router
 from app.api.routes.data_rights import router as data_rights_router
 from app.admin_v5 import router as admin_v5_router
 from app.middleware.security_headers import SecurityHeadersMiddleware
+from app.version_gating import CapabilityGateMiddleware
 from app.rate_limit import (
     check_rate_limit,
     check_rate_limit_redis,
@@ -88,6 +89,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.add_middleware(SecurityHeadersMiddleware)
+# Client-capability gating — strips payload fields for clients that did
+# not advertise support for them. See app/version_gating.py for the
+# protocol and docs/client_versioning.md for the rationale.
+app.add_middleware(CapabilityGateMiddleware)
 
 
 @app.middleware("http")

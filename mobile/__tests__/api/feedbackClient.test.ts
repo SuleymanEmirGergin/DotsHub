@@ -7,7 +7,7 @@
 
 import { http, HttpResponse } from "msw";
 
-import { server } from "../mocks/server";
+import { server } from "../../mocks/server";
 
 jest.mock("@/src/config/runtime", () => ({
   API_BASE: "http://api.test",

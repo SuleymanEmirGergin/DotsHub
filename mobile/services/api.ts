@@ -10,6 +10,7 @@
  */
 
 import { API_BASE } from "@/src/config/runtime";
+import { getCapabilitiesHeader } from "@/src/config/capabilities";
 
 const API_BASE_URL = `${API_BASE}/v1`;
 
@@ -140,8 +141,12 @@ class ApiClient {
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
     const response = await fetch(url, {
-      headers: { 'Content-Type': 'application/json', ...options.headers },
       ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Client-Capabilities': getCapabilitiesHeader(),
+        ...options.headers,
+      },
     });
 
     if (!response.ok) {

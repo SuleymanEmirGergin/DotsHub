@@ -12,7 +12,7 @@
 
 import { http, HttpResponse } from "msw";
 
-import { server } from "../mocks/server";
+import { server } from "../../mocks/server";
 
 // Pin the runtime config before importing the client — the module
 // reads API_BASE at import time.

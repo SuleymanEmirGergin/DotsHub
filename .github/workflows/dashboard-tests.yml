@@ -73,7 +73,10 @@ jobs:
     # include_staging=true. Hits a real staging Supabase + deployed
     # dashboard using repo secrets. Never runs on push/PR automatically
     # to avoid polluting staging with every commit.
-    needs: test
+    #
+    # Intentionally independent of `test` — staging exercises real
+    # Supabase auth + data against a deployed URL and must not be held
+    # hostage to pre-existing flakiness in the localhost smoke job.
     if: github.event_name == 'workflow_dispatch' && inputs.include_staging == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -106,6 +109,10 @@ jobs:
           STAGING_SUPABASE_ANON_KEY: ${{ secrets.STAGING_SUPABASE_ANON_KEY }}
           STAGING_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY }}
           STAGING_TEST_ADMIN_EMAIL: ${{ secrets.STAGING_TEST_ADMIN_EMAIL }}
+          # Optional: bypass Vercel Deployment Protection (SSO wall) on
+          # preview deploys. Generate in Vercel → Settings → Deployment
+          # Protection → "Protection Bypass for Automation".
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
         timeout-minutes: 10
 
       - name: Upload Playwright report

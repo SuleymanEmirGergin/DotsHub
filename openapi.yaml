@@ -2,9 +2,18 @@ openapi: 3.0.3
 info:
   title: Pre-Triage Agentic AI API
   version: 0.1.1
-  description: >
+  description: |
     Medical pre-triage system. Does not diagnose; provides routing & urgency guidance.
     Legacy reference spec. Primary contract is docs/openapi_orchestrator.yaml.
+
+    ## Client capability protocol
+
+    Every `/v1/*` request MAY send `X-Client-Version` and `X-Client-Capabilities`
+    headers. The server strips payload fields whose capability is not advertised.
+    See `components/parameters/ClientCapabilitiesHeader` and
+    `docs/client_versioning.md` for the registry of tokens.
+
+    Missing header = minimal baseline (no gated fields included).
 servers:
   - url: https://api.example.com
 x-default-integration-path:
@@ -176,6 +185,34 @@ paths:
                       score: 11
 
 components:
+  parameters:
+    ClientVersionHeader:
+      name: X-Client-Version
+      in: header
+      required: false
+      schema:
+        type: string
+      description: |
+        Free-form client version string. Logged for analytics; does NOT gate payload shape.
+    ClientCapabilitiesHeader:
+      name: X-Client-Capabilities
+      in: header
+      required: false
+      schema:
+        type: string
+      description: |
+        Comma-separated capability tokens the client can parse. The server strips any
+        response field whose capability token is absent. Missing header = minimal baseline
+        (nothing gated-in).
+
+        Known tokens (see docs/client_versioning.md):
+          - `curated_meta`        — unlocks `Envelope.payload.top_conditions[*]` curated fields
+            (icd10, disease_description_tr, self_care_tr, …).
+          - `emergency_specialty` — unlocks `Envelope.payload.recommended_specialty` on EMERGENCY envelopes.
+
+        Unknown tokens are silently ignored (forward-compatible).
+      example: "curated_meta,emergency_specialty"
+
   schemas:
     SessionStartRequest:
       type: object

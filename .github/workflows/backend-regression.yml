@@ -83,3 +83,58 @@ jobs:
             echo "the build itself is what this job primarily verifies."
             exit 0
           )
+
+  safety-critical-coverage:
+    # Gate: blocks merge if branch coverage of safety-critical modules
+    # (emergency_router, safety_guard, version_gating) drops below 100%.
+    # Complements the hotpath_coverage_gate step inside golden-flow-
+    # regression — that gate covers a wider module list at looser
+    # thresholds; this job enforces 100% branch coverage on the
+    # narrowest "never regress" set via --cov-fail-under=100.
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: "backend/requirements-dev.txt"
+
+      - name: Install backend + dev dependencies
+        run: |
+          cd backend
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: Safety-critical branch coverage (fail-under=100)
+        run: |
+          cd backend
+          python -m pytest \
+            tests/test_emergency_router_branches.py \
+            tests/test_safety_guard_branches.py \
+            tests/test_version_gating.py \
+            --cov=app.emergency_router \
+            --cov=app.safety_guard \
+            --cov=app.version_gating \
+            --cov-branch \
+            --cov-report=term-missing \
+            --cov-fail-under=100
+
+      - name: Overall backend coverage (advisory)
+        # Non-blocking: reports the overall number so drift is visible,
+        # but does not gate merges while pre-existing test failures are
+        # being worked through.
+        continue-on-error: true
+        run: |
+          cd backend
+          python -m pytest tests/ \
+            --cov=app \
+            --cov-branch \
+            --cov-report=term \
+            --ignore=tests/test_golden_flows.py \
+            --ignore=tests/test_synonym_collisions.py

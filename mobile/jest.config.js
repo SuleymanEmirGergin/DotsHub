@@ -5,8 +5,8 @@
  * environment (mocks every native module) that breaks for node-level
  * tests of our API clients and utility modules. The preset is aimed
  * at component tests with @testing-library/react-native; adopting it
- * would require rewriting pushClient.test.ts, deviceId.test.ts, and
- * the new API client tests to work under its setup.
+ * would require rewriting pushClient.test.ts and the API client tests
+ * to work under its setup.
  *
  * Instead: `testEnvironment: "node"` with plain babel-jest and a
  * narrow transformIgnorePatterns that lets MSW (and its ESM-only
@@ -18,24 +18,27 @@ module.exports = {
   testMatch: ["**/__tests__/**/*.test.[jt]s?(x)", "**/*.test.[jt]s?(x)"],
   testPathIgnorePatterns: [
     "/node_modules/",
-    // The MSW handlers module is a helper, not a test.
+    // Helper modules in __tests__/mocks/ are support code, not tests.
     "/__tests__/mocks/",
   ],
   transform: {
-    // `.mjs` must be matched too — MSW v2 and several of its deps
-    // (rettime in particular) ship .mjs entry points. Without this,
-    // babel-jest skips them and Node's CJS loader chokes on `import`.
-    "^.+\\.(m?js|tsx?)$": "babel-jest",
+    // `.mjs` must match too — MSW v2 and several of its deps (rettime
+    // in particular) ship .mjs entry points. Without this, babel-jest
+    // skips them and Node's CJS loader chokes on `import`.
+    "^.+\\.m?[jt]sx?$": "babel-jest",
   },
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/$1",
   },
-  setupFilesAfterEnv: ["<rootDir>/jest.setup.js"],
+  setupFilesAfterEnv: ["<rootDir>/jest.setup.ts"],
+  // MSW v2 pulls in several ESM-only deps (@open-draft/*, rettime,
+  // until-async, headers-polyfill, …). Jest ignores node_modules by
+  // default, so we whitelist the MSW ecosystem to be passed through
+  // babel-jest → CJS for the Node env. Trailing slash in the lookahead
+  // matters: without it, names like `outvariant` would also catch
+  // `outvariant-other`.
   transformIgnorePatterns: [
-    // Transform these ESM-only node_modules. Format is
-    // `node_modules/(?!<allow-list>/)` — classic Jest pattern. The
-    // trailing slash in the lookahead matters: without it, names
-    // like `outvariant` would also match `outvariant-other`.
-    "node_modules/(?!(msw|@mswjs|until-async|@bundled-es-modules|@open-draft|strict-event-emitter|headers-polyfill|outvariant|rettime|is-node-process|path-to-regexp|cookie|statuses|graphql)/)",
+    "/node_modules/(?!(msw|@mswjs/interceptors|@bundled-es-modules|@open-draft|headers-polyfill|tough-cookie|universal-user-agent|until-async|rettime|outvariant|strict-event-emitter|is-node-process|path-to-regexp|cookie|statuses|graphql)/)",
+    "\\.pnp\\.[^\\\\/]+$",
   ],
 };

@@ -69,9 +69,14 @@ DotsHub Wiro.txt
 .pytest_cache/
 .mypy_cache/
 .coverage
+.coverage.*
+coverage.xml
 htmlcov/
 backend/reports/.tmp_guardrails/
 backend/tests/.tmp_guardrails/
 backend/reports/kaggle_mapping_validation_*.json
 backend/.tmp_kaggle_download/
 backend/raw_data/*.csv
+
+# Claude Code session state (worktree-local)
+.claude/

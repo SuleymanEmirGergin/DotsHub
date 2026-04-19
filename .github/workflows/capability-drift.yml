@@ -1,0 +1,30 @@
+name: Capability drift
+
+# Fast parity check: backend KNOWN_CAPABILITIES ↔ mobile CLIENT_CAPABILITIES.
+# Either side changing the registry without the other breaks the protocol —
+# this job is the tripwire. Runs on every PR / push touching either file.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "backend/app/version_gating.py"
+      - "mobile/src/config/capabilities.ts"
+      - "scripts/check_capability_drift.cjs"
+      - ".github/workflows/capability-drift.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "backend/app/version_gating.py"
+      - "mobile/src/config/capabilities.ts"
+      - "scripts/check_capability_drift.cjs"
+      - ".github/workflows/capability-drift.yml"
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run drift check
+        run: node scripts/check_capability_drift.cjs
