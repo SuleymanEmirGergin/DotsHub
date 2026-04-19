@@ -1,4 +1,3 @@
-import { supabaseServerAuthed } from "./supabaseServerAuthed";
 import { supabaseAdmin } from "./supabaseServer";
 
 /**

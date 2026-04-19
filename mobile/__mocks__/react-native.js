@@ -25,6 +25,8 @@ module.exports = {
   Text: passThrough,
   ScrollView: passThrough,
   TouchableOpacity: passThrough,
+  Pressable: passThrough,
+  SafeAreaView: passThrough,
   TextInput: passThrough,
   ActivityIndicator: passThrough,
 

@@ -42,7 +42,7 @@ sb.from("triage_sessions")
   .select("id")
   .limit(1)
   .maybeSingle()
-  .then(({ data, error }) => {
+  .then(({ data: _data, error }) => {
     if (error) {
       console.log("ERROR:", error.message);
       process.exit(1);

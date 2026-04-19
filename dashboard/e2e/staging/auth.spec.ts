@@ -77,7 +77,10 @@ test.describe("magic link auth", () => {
   });
 
   test("non-admin authed user is redirected to /login?e=not_admin", async ({
-    page,
+    // `page` fixture isn't touched — the test spins up a fresh
+    // context via `browser.newContext()` so cookies from the admin
+    // test don't leak in. Prefix-underscore marks it intentional.
+    page: _page,
     browser,
   }) => {
     const state = readRunState();

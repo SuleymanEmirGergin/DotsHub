@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-export async function POST(req: NextRequest) {
+export async function POST(_req: NextRequest) {
     const base = process.env.NEXT_PUBLIC_API_BASE!;
     const key = process.env.ADMIN_API_KEY!;
 
