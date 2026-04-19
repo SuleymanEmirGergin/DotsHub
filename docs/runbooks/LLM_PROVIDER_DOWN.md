@@ -1,5 +1,18 @@
 # Runbook: LLM Provider Down (Wiro / Anthropic / OpenAI / Google)
 
+## Quick checklist (incident started → green)
+
+- [ ] Confirm alert is real (not a false-positive from low traffic)
+- [ ] Grab the `top_error` from the webhook alert body (timeout /
+      http_error / rate_limit)
+- [ ] Check status page of the active provider (Wiro / Anthropic)
+- [ ] Decision: flip `LLM_NLU_ENABLED=false` OR switch `LLM_PROVIDER`
+      to a healthy alternative
+- [ ] Redeploy / reload config
+- [ ] Watch rolling-window rate for 10 min — should recover to >80%
+- [ ] Ping #dotshub-ops with timeline
+- [ ] Open a post-incident ticket (see bottom)
+
 ## Symptoms (how you know)
 
 - **Slack / Discord alert** fires from `send_llm_health_alert()` —
@@ -108,3 +121,18 @@ not a leak.
   incident, not ten times.
 - Run `scripts/shadow_eval.py` in pre-release CI to catch auth
   regressions before merge.
+
+## Post-incident checklist
+
+- [ ] **Timeline**: detected at, mitigated at, green at (from
+      webhook timestamps)
+- [ ] **Root cause**: one sentence — provider outage / auth rotation
+      missed / rate-limit change / our bug
+- [ ] **Impact**: how many sessions got deterministic-only
+      (query `llm_calls` for the window, count `success=false`)
+- [ ] **What went well** / **what didn't**: 3 bullets each
+- [ ] **Action items**: opened tickets for prevention (widen shadow
+      eval, bump cooldown, etc.)
+- [ ] Link the postmortem doc from the alert's Slack thread so
+      future ops can find it
+- [ ] Close the incident in ops tracker

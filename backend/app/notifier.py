@@ -54,6 +54,38 @@ def send_llm_health_alert(
     thread.start()
 
 
+def send_rate_limit_alert(
+    rejection_rate_pct: float,
+    window_size: int,
+    top_bucket: Optional[str],
+    top_key: Optional[str],
+    threshold_pct: float,
+) -> None:
+    """Fire webhook alert when rate-limit rejections spike.
+
+    Called from the rate-limit observer in app.main. Stateless — the
+    observer owns the rolling window and cool-down. Body surfaces the
+    bucket type (default / admin / send_summary / llm_nlu) and the
+    top-rejected key (usually an IP or device_id) so the on-call can
+    eyeball whether it's genuine abuse or a legitimate traffic spike
+    that needs the cap raised.
+
+    Same dispatch pattern as the LLM health / HTTP 5xx alerts: daemon
+    thread, never raises.
+    """
+    if not settings.WEBHOOK_ENABLED:
+        return
+    if not settings.WEBHOOK_SLACK_URL and not settings.WEBHOOK_DISCORD_URL:
+        return
+
+    thread = threading.Thread(
+        target=_dispatch_rate_limit,
+        args=(rejection_rate_pct, window_size, top_bucket, top_key, threshold_pct),
+        daemon=True,
+    )
+    thread.start()
+
+
 def send_http_5xx_alert(
     success_rate_pct: float,
     window_size: int,
@@ -405,6 +437,91 @@ def _dispatch_http_5xx(
                     logger.warning("Discord 5xx webhook: %s", resp.status_code)
         except Exception as exc:
             logger.warning("Discord 5xx webhook failed: %s", exc)
+
+
+# ── Rate-limit dispatcher ──────────────────────────────────
+
+
+def _dispatch_rate_limit(
+    rejection_rate_pct: float,
+    window_size: int,
+    top_bucket: Optional[str],
+    top_key: Optional[str],
+    threshold_pct: float,
+) -> None:
+    """Background thread target for send_rate_limit_alert."""
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    title = (
+        f"🚦 Rate-limit rejections yükseldi: %{rejection_rate_pct:.1f}"
+    )
+    bucket_line = (
+        f"En sık bucket: `{top_bucket}` (key `{top_key}`)"
+        if top_bucket and top_key
+        else "Bucket bilgisi yok."
+    )
+    if settings.WEBHOOK_SLACK_URL:
+        try:
+            blocks = [
+                {"type": "header", "text": {"type": "plain_text", "text": title}},
+                {"type": "divider"},
+                {
+                    "type": "section",
+                    "fields": [
+                        {"type": "mrkdwn", "text": f"*Son {window_size} karar*"},
+                        {
+                            "type": "mrkdwn",
+                            "text": f"*Rejection oranı:* %{rejection_rate_pct:.1f}",
+                        },
+                        {"type": "mrkdwn", "text": f"*Eşik:* %{threshold_pct:.0f}"},
+                        {"type": "mrkdwn", "text": f"*Zaman:* {now}"},
+                    ],
+                },
+                {"type": "section", "text": {"type": "mrkdwn", "text": bucket_line}},
+            ]
+            with httpx.Client(timeout=10) as client:
+                resp = client.post(
+                    settings.WEBHOOK_SLACK_URL, json={"blocks": blocks, "text": title}
+                )
+                if resp.status_code >= 400:
+                    logger.warning("Slack rate-limit webhook: %s", resp.status_code)
+        except Exception as exc:
+            logger.warning("Slack rate-limit webhook failed: %s", exc)
+
+    if settings.WEBHOOK_DISCORD_URL:
+        try:
+            embed = {
+                "title": title,
+                "color": 0xE65100,
+                "fields": [
+                    {
+                        "name": "Pencere",
+                        "value": f"{window_size} karar",
+                        "inline": True,
+                    },
+                    {
+                        "name": "Rejection",
+                        "value": f"%{rejection_rate_pct:.1f}",
+                        "inline": True,
+                    },
+                    {"name": "Eşik", "value": f"%{threshold_pct:.0f}", "inline": True},
+                    {
+                        "name": "En sık bucket",
+                        "value": (top_bucket or "-"),
+                        "inline": False,
+                    },
+                    {"name": "Top key", "value": (top_key or "-"), "inline": False},
+                ],
+                "footer": {"text": f"DotsHub rate-limit • {now}"},
+            }
+            with httpx.Client(timeout=10) as client:
+                resp = client.post(
+                    settings.WEBHOOK_DISCORD_URL,
+                    json={"embeds": [embed], "content": title},
+                )
+                if resp.status_code >= 400:
+                    logger.warning("Discord rate-limit webhook: %s", resp.status_code)
+        except Exception as exc:
+            logger.warning("Discord rate-limit webhook failed: %s", exc)
 
 
 # ── Test helper (synchronous) ──────────────────────────────

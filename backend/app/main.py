@@ -2,6 +2,7 @@
 
 import logging
 from contextlib import asynccontextmanager
+from typing import Optional
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -128,6 +129,60 @@ _HTTP_LOCK = _Lock()
 _HTTP_EVENTS: _deque = _deque()  # (is_5xx: bool, status_code: int, path: str)
 _HTTP_LAST_ALERT_TS: float = 0.0
 
+# ── Rate-limit rejection monitor ────────────────────────────────────────
+# Rolling-window watcher paired with the rate_limit + admin_rate_limit
+# middlewares: counts rejections (429) vs. decisions. Fires a webhook
+# when rejection rate crosses RATE_LIMIT_ALERT_THRESHOLD_PCT — tells
+# ops whether something's being abused OR whether a legitimate traffic
+# spike hit the cap. Same design contract as the 5xx monitor above:
+# per-worker deque, cool-down to avoid storming, disable-able via flag.
+_RL_LOCK = _Lock()
+_RL_EVENTS: _deque = _deque()  # (allowed: bool, bucket: str, key: str)
+_RL_LAST_ALERT_TS: float = 0.0
+
+
+def _rate_limit_observe(bucket: str, key: str, allowed: bool) -> None:
+    if not getattr(settings, "RATE_LIMIT_ALERT_ENABLED", True):
+        return
+    window = int(getattr(settings, "RATE_LIMIT_ALERT_WINDOW", 100))
+    min_dec = int(getattr(settings, "RATE_LIMIT_ALERT_MIN_DECISIONS", 30))
+    threshold = float(getattr(settings, "RATE_LIMIT_ALERT_THRESHOLD_PCT", 10.0))
+    cooldown = float(getattr(settings, "RATE_LIMIT_ALERT_COOLDOWN_SEC", 600))
+
+    global _RL_LAST_ALERT_TS
+    with _RL_LOCK:
+        _RL_EVENTS.append((bool(allowed), bucket, key or ""))
+        while len(_RL_EVENTS) > window:
+            _RL_EVENTS.popleft()
+        n = len(_RL_EVENTS)
+        if n < min_dec:
+            return
+        rejections = sum(1 for a, _b, _k in _RL_EVENTS if not a)
+        rejection_pct = 100.0 * rejections / n
+        if rejection_pct < threshold:
+            return
+        now = _time.monotonic()
+        if now - _RL_LAST_ALERT_TS < cooldown:
+            return
+        _RL_LAST_ALERT_TS = now
+        # Most-rejected (bucket, key) pair for the alert body —
+        # usually points at an abuser IP / device.
+        pairs = _Counter((b, k) for a, b, k in _RL_EVENTS if not a)
+        top_bucket, top_key = pairs.most_common(1)[0][0] if pairs else (None, None)
+
+    try:
+        from app.notifier import send_rate_limit_alert
+
+        send_rate_limit_alert(
+            rejection_rate_pct=rejection_pct,
+            window_size=n,
+            top_bucket=top_bucket,
+            top_key=top_key,
+            threshold_pct=threshold,
+        )
+    except Exception:
+        pass
+
 
 def _http_observe(status: int, path: str) -> None:
     if not getattr(settings, "HTTP_5XX_ALERT_ENABLED", True):
@@ -193,7 +248,9 @@ async def rate_limit_middleware(request, call_next):
     path = request.scope.get("path", "")
     ip = request.client.host if request.client else None
 
+    bucket: Optional[str] = None
     if path in ("/v1/triage/send-summary", "/v1/triage/export-summary"):
+        bucket = "send_summary"
         key = build_send_summary_rl_key(ip)
         redis = getattr(request.app.state, "redis", None)
         if redis:
@@ -202,6 +259,7 @@ async def rate_limit_middleware(request, call_next):
             allowed, remaining, reset_in = check_send_summary_rate_limit(key)
         limit_header = SEND_SUMMARY_MAX_REQ
     elif path in ("/v1/triage/turn", "/v1/triage/feedback"):
+        bucket = "default"
         device_id = request.headers.get("x-device-id")
         key = build_rl_key(ip, device_id)
         redis = getattr(request.app.state, "redis", None)
@@ -212,6 +270,10 @@ async def rate_limit_middleware(request, call_next):
         limit_header = MAX_REQ
     else:
         return await call_next(request)
+
+    # Record the decision before returning — rate-limit observer feeds
+    # the rejection-rate alert.
+    _rate_limit_observe(bucket, key, allowed)
 
     if not allowed:
         return JSONResponse(
@@ -244,6 +306,7 @@ async def admin_rate_limit_middleware(request, call_next):
         allowed, remaining, reset_in = await check_admin_rate_limit_redis(redis, key)
     else:
         allowed, remaining, reset_in = check_admin_rate_limit(key)
+    _rate_limit_observe("admin", key, allowed)
     if not allowed:
         return JSONResponse(
             status_code=429,

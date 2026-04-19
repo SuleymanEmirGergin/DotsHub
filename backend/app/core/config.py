@@ -140,6 +140,20 @@ class Settings(BaseSettings):
     CLIENT_VERSION_UPDATE_URL_IOS: str = ""   # optional app-store deep link
     CLIENT_VERSION_UPDATE_URL_ANDROID: str = ""
 
+    # ── Rate-limit rejection monitor (Session 4) ─────────────────────────
+    # Rolling-window observer fires a webhook when the rate-limit
+    # rejection rate (per decision, across all buckets) exceeds a
+    # threshold. Same shape as LLM_HEALTH_ALERT_* and HTTP_5XX_ALERT_*:
+    # min_decisions gate, cool-down to avoid storm-on-abuse, disable-
+    # able via the _ENABLED flag. Fires one INFO line per alert so ops
+    # can distinguish "real abuse" vs "legit traffic spike" without
+    # staring at logs.
+    RATE_LIMIT_ALERT_ENABLED: bool = True
+    RATE_LIMIT_ALERT_WINDOW: int = 100          # last N rate-limit decisions
+    RATE_LIMIT_ALERT_MIN_DECISIONS: int = 30    # require this many before evaluating
+    RATE_LIMIT_ALERT_THRESHOLD_PCT: float = 10.0  # >10% rejected → alert
+    RATE_LIMIT_ALERT_COOLDOWN_SEC: int = 600    # 10 minutes between pages
+
     # ── Sentry error aggregation ─────────────────────────────────────────
     # If SENTRY_DSN is empty, sentry_sdk.init() is a no-op — the app
     # runs unchanged without an external dep. Set the DSN + environment

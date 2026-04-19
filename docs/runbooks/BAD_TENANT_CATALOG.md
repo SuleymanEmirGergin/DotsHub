@@ -1,5 +1,17 @@
 # Runbook: Bad Tenant Catalog Upload
 
+## Quick checklist (incident → green)
+
+- [ ] Confirm scope: ONE tenant affected (else it's probably a
+      shipped code bug — escalate, don't rollback)
+- [ ] Pull the most recent `tenant_catalog_audit` row for that
+      tenant_id (Supabase admin SQL)
+- [ ] Diff current catalog vs. last known-good (audit carries both)
+- [ ] Decision: rollback via audit row vs. hand-edit in admin UI
+- [ ] Apply rollback; verify with a triage turn on staging first
+- [ ] Communicate to tenant (they may have seen corrupt output)
+- [ ] Post-incident ticket (see bottom)
+
 ## Symptoms
 
 - A specific hospital's (tenant_id = X) triage sessions go weird
@@ -101,3 +113,18 @@ In practice this means:
    with prep metadata.
 3. Update the tenant's admin with rollback note + timestamp for
    their own records.
+
+## Post-incident checklist
+
+- [ ] **Timeline**: when did the bad edit land, when detected,
+      when rolled back (UTC)
+- [ ] **Root cause**: admin typo / malformed import / upstream
+      editing bug / audit-log miss
+- [ ] **Impact**: how many sessions hit the tenant during the window,
+      did any reach a patient with visibly-wrong curated content
+- [ ] **Disclosure**: did we notify the tenant? (usually yes — their
+      users saw it)
+- [ ] **What went well** / **what didn't**: 3 bullets each
+- [ ] **Action items**: editor validation, staging preview before
+      publish, audit-log query UX
+- [ ] Close the incident + archive the audit row screenshot
