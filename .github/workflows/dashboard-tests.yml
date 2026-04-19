@@ -109,6 +109,10 @@ jobs:
           STAGING_SUPABASE_ANON_KEY: ${{ secrets.STAGING_SUPABASE_ANON_KEY }}
           STAGING_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY }}
           STAGING_TEST_ADMIN_EMAIL: ${{ secrets.STAGING_TEST_ADMIN_EMAIL }}
+          # Optional: bypass Vercel Deployment Protection (SSO wall) on
+          # preview deploys. Generate in Vercel → Settings → Deployment
+          # Protection → "Protection Bypass for Automation".
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
         timeout-minutes: 10
 
       - name: Upload Playwright report

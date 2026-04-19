@@ -11,6 +11,13 @@ if (process.env.E2E_MODE === "staging") {
 const isStaging = process.env.E2E_MODE === "staging";
 const isCI = !!process.env.CI;
 
+// Vercel Deployment Protection: preview deploys require SSO by default.
+// If the project has "Protection Bypass for Automation" enabled, the
+// secret lets automated traffic skip the SSO wall. Header is attached
+// to every request via `extraHTTPHeaders` — Supabase-to-Vercel redirects
+// stay inside the Playwright context, so Vercel sees the header too.
+const vercelBypass = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+
 export default defineConfig({
   testDir: "./e2e",
   // localhost tests run in parallel (pure smoke, no shared state).
@@ -31,6 +38,10 @@ export default defineConfig({
       : (process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:3002"),
     trace: "on-first-retry",
     screenshot: "only-on-failure",
+    extraHTTPHeaders:
+      isStaging && vercelBypass
+        ? { "x-vercel-protection-bypass": vercelBypass }
+        : undefined,
   },
   projects: [
     {
