@@ -126,10 +126,12 @@ jobs:
             tests/test_safety_guard_branches.py \
             tests/test_version_gating.py \
             tests/test_confidence_gate.py \
+            tests/test_features_endpoint.py \
             --cov=app.emergency_router \
             --cov=app.safety_guard \
             --cov=app.version_gating \
             --cov=app.top_conditions_filter \
+            --cov=app.core.config \
             --cov-branch \
             --cov-report=term-missing \
             --cov-fail-under=100

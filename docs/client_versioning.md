@@ -65,7 +65,25 @@ Invalid JSON is passed through untouched — the server stays correct even when 
 ## Testing
 
 - `backend/tests/test_version_gating.py` → 100% branch coverage on parser, filter, and middleware.
-- Safety-critical gate in `backend-regression.yml` enforces `--cov-fail-under=100` on `app.version_gating` alongside `emergency_router` / `safety_guard`.
+- Safety-critical gate in `backend-regression.yml` enforces `--cov-fail-under=100` on `app.version_gating` alongside `emergency_router`, `safety_guard`, and `top_conditions_filter`.
+
+## Related: runtime feature flags (`useVersionGate`)
+
+This protocol is **not** the same as the runtime feature-flag layer the mobile app also uses. They operate on different axes:
+
+| Layer | Where it lives | Direction | Question answered |
+|---|---|---|---|
+| Capability gating (this doc) | `backend/app/version_gating.py` + `mobile/src/config/capabilities.ts` | Client → Server, every request | "Which response FIELDS can I parse?" |
+| Feature-flag gating | `backend/app/api/routes/features.py` + `mobile/src/hooks/useVersionGate.ts` + `mobile/src/api/featuresClient.ts` + `mobile/src/utils/semver.ts` | Server → Client, at startup | "Which FEATURES should I enable, and is my build still supported?" |
+
+The two layers are **complementary**, not redundant:
+
+- Capability gating lets the backend ship new response fields (curated metadata, an EMERGENCY specialty hint) without waiting for every installed build to understand them. The response is shape-correct for whatever version of the client is asking.
+- `useVersionGate` lets the backend tell a client "LLM explanations are on this week", "you're 2 minor versions behind, show a banner", or "your build is too old, block new sessions". None of that is about payload shape.
+
+When adding a new user-visible feature, you'll usually touch both: gate the new payload field with a capability, AND (if the feature has runtime UX state — rollout toggle, banner, block) surface it in the `/v1/config/features` response that `useVersionGate` reads.
+
+If a capability is advertised but the corresponding feature flag is off, the backend still emits the gated field (it has no reason to strip a field the client claims to understand); the client just chooses not to render it because the feature flag is off. Neither layer has to know about the other.
 
 ## Mobile side
 
