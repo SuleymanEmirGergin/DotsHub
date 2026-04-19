@@ -33,6 +33,36 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+
+# ─── Prometheus counter helper ─────────────────────────────────────
+#
+# One chokepoint for `rate_limit_hits_total{bucket,outcome}` so every
+# allow/deny path becomes a single `_inc_rate_limit(...)` call at its
+# return site.
+#
+# Double-count avoidance: the Redis variants call their in-memory
+# counterpart on transient failure (see `_warn_redis_degraded_once`
+# fallback path). The Redis variant does NOT increment on the fallback
+# branch — the in-memory function it delegates to will. Net: exactly
+# one counter bump per public rate-limit decision regardless of which
+# backend actually made the call.
+
+def _inc_rate_limit(bucket: str, outcome: str) -> None:
+    """Bump `rate_limit_hits_total{bucket,outcome}`.
+
+    Labels are bounded: four bucket names × two outcomes = 8 series,
+    which keeps cardinality trivial. Import is lazy so test envs that
+    don't install prometheus_client stay importable; when the import
+    fails the call is silently a no-op (the scrape just won't see
+    these counters).
+    """
+    try:
+        from app.observability import rate_limit_hits_total
+    except ImportError:  # pragma: no cover — prometheus_client optional
+        return
+    rate_limit_hits_total.labels(bucket=bucket, outcome=outcome).inc()
+
+
 # Track which buckets we've already warned about to avoid log spam —
 # one warn per key per process is enough to surface the Redis outage
 # without drowning logs. Cleared naturally on process restart.
@@ -88,11 +118,13 @@ def check_rate_limit(key: str) -> Tuple[bool, int, int]:
 
     if len(q) >= MAX_REQ:
         reset_in = int(WINDOW_SEC - (now - q[0])) if q else WINDOW_SEC
+        _inc_rate_limit("default", "denied")
         return False, 0, max(reset_in, 1)
 
     q.append(now)
     remaining = MAX_REQ - len(q)
     reset_in = int(WINDOW_SEC - (now - q[0])) if q else WINDOW_SEC
+    _inc_rate_limit("default", "allowed")
     return True, remaining, max(reset_in, 1)
 
 
@@ -110,10 +142,13 @@ async def check_rate_limit_redis(redis: "Redis", key: str) -> Tuple[bool, int, i
         reset_in = max(ttl, 1) if ttl > 0 else WINDOW_SEC
         if count > MAX_REQ:
             await redis.decr(rkey)
+            _inc_rate_limit("default", "denied")
             return False, 0, reset_in
+        _inc_rate_limit("default", "allowed")
         return True, MAX_REQ - count, reset_in
     except Exception as exc:
         _warn_redis_degraded_once(f"default:{key}", exc)
+        # NOTE: do not inc counter here — check_rate_limit() below will.
         return check_rate_limit(key)
 
 
@@ -152,10 +187,12 @@ def check_send_summary_rate_limit(key: str) -> Tuple[bool, int, int]:
     _prune_send_summary(q, now)
     if len(q) >= SEND_SUMMARY_MAX_REQ:
         reset_in = int(SEND_SUMMARY_WINDOW_SEC - (now - q[0])) if q else SEND_SUMMARY_WINDOW_SEC
+        _inc_rate_limit("send_summary", "denied")
         return False, 0, max(reset_in, 1)
     q.append(now)
     remaining = SEND_SUMMARY_MAX_REQ - len(q)
     reset_in = int(SEND_SUMMARY_WINDOW_SEC - (now - q[0])) if q else SEND_SUMMARY_WINDOW_SEC
+    _inc_rate_limit("send_summary", "allowed")
     return True, remaining, max(reset_in, 1)
 
 
@@ -170,10 +207,13 @@ async def check_send_summary_rate_limit_redis(redis: "Redis", key: str) -> Tuple
         reset_in = max(ttl, 1) if ttl > 0 else SEND_SUMMARY_WINDOW_SEC
         if count > SEND_SUMMARY_MAX_REQ:
             await redis.decr(rkey)
+            _inc_rate_limit("send_summary", "denied")
             return False, 0, reset_in
+        _inc_rate_limit("send_summary", "allowed")
         return True, SEND_SUMMARY_MAX_REQ - count, reset_in
     except Exception as exc:
         _warn_redis_degraded_once(f"send_summary:{key}", exc)
+        # NOTE: fallback inc'd inside check_send_summary_rate_limit().
         return check_send_summary_rate_limit(key)
 
 
@@ -189,10 +229,12 @@ def check_admin_rate_limit(key: str) -> Tuple[bool, int, int]:
         q.popleft()
     if len(q) >= ADMIN_MAX_REQ:
         reset_in = int(ADMIN_WINDOW_SEC - (now - q[0])) if q else ADMIN_WINDOW_SEC
+        _inc_rate_limit("admin", "denied")
         return False, 0, max(reset_in, 1)
     q.append(now)
     remaining = ADMIN_MAX_REQ - len(q)
     reset_in = int(ADMIN_WINDOW_SEC - (now - q[0])) if q else ADMIN_WINDOW_SEC
+    _inc_rate_limit("admin", "allowed")
     return True, remaining, max(reset_in, 1)
 
 
@@ -207,10 +249,13 @@ async def check_admin_rate_limit_redis(redis: "Redis", key: str) -> Tuple[bool, 
         reset_in = max(ttl, 1) if ttl > 0 else ADMIN_WINDOW_SEC
         if count > ADMIN_MAX_REQ:
             await redis.decr(rkey)
+            _inc_rate_limit("admin", "denied")
             return False, 0, reset_in
+        _inc_rate_limit("admin", "allowed")
         return True, ADMIN_MAX_REQ - count, reset_in
     except Exception as exc:
         _warn_redis_degraded_once(f"admin:{key}", exc)
+        # NOTE: fallback inc'd inside check_admin_rate_limit().
         return check_admin_rate_limit(key)
 
 
@@ -246,11 +291,13 @@ def check_llm_nlu_rate_limit(key: str = "global") -> Tuple[bool, int, int]:
 
     if len(q) >= LLM_NLU_MAX_REQ:
         reset_in = int(LLM_NLU_WINDOW_SEC - (now - q[0])) if q else LLM_NLU_WINDOW_SEC
+        _inc_rate_limit("llm_nlu", "denied")
         return False, 0, max(reset_in, 1)
 
     q.append(now)
     remaining = LLM_NLU_MAX_REQ - len(q)
     reset_in = int(LLM_NLU_WINDOW_SEC - (now - q[0])) if q else LLM_NLU_WINDOW_SEC
+    _inc_rate_limit("llm_nlu", "allowed")
     return True, remaining, max(reset_in, 1)
 
 
@@ -267,8 +314,11 @@ async def check_llm_nlu_rate_limit_redis(
         reset_in = max(ttl, 1) if ttl > 0 else LLM_NLU_WINDOW_SEC
         if count > LLM_NLU_MAX_REQ:
             await redis.decr(rkey)
+            _inc_rate_limit("llm_nlu", "denied")
             return False, 0, reset_in
+        _inc_rate_limit("llm_nlu", "allowed")
         return True, LLM_NLU_MAX_REQ - count, reset_in
     except Exception as exc:
         _warn_redis_degraded_once(f"llm_nlu:{key}", exc)
+        # NOTE: fallback inc'd inside check_llm_nlu_rate_limit().
         return check_llm_nlu_rate_limit(key)

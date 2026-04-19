@@ -1,0 +1,20 @@
+# Grafana provisioning — auto-wire the local Prometheus datasource.
+# Mounted into the Grafana container at
+#   /etc/grafana/provisioning/datasources/datasources.yml
+# by docker-compose.monitoring.yml. On container start, Grafana reads
+# this file and creates the Prometheus datasource with uid "prometheus"
+# so dashboard-dotshub.json's `${DS_PROMETHEUS}` templating resolves.
+
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    uid: prometheus
+    url: http://prometheus:9090
+    isDefault: true
+    editable: false
+    jsonData:
+      timeInterval: 15s
+      httpMethod: POST

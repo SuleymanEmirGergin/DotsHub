@@ -89,6 +89,14 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# Prometheus — /metrics endpoint + default HTTP histograms. Custom
+# counters (capability gate strips, rate-limit decisions, envelope
+# type counts, confidence distribution) are registered at module-
+# import time via app.observability.metrics. Grafana Cloud /
+# self-hosted Prometheus both scrape the same /metrics route.
+from app.observability import setup_metrics
+setup_metrics(app)
+
 # CORS
 app.add_middleware(
     CORSMiddleware,

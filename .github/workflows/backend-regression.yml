@@ -132,6 +132,7 @@ jobs:
             tests/test_canonical_extract_branches.py \
             tests/test_rate_limit_branches.py \
             tests/test_rate_limit_redis_fallback.py \
+            tests/test_metrics.py \
             --cov=app.emergency_router \
             --cov=app.safety_guard \
             --cov=app.version_gating \
@@ -142,6 +143,7 @@ jobs:
             --cov=app.middleware.security_headers \
             --cov=app.canonical_extract \
             --cov=app.rate_limit \
+            --cov=app.observability.metrics \
             --cov-branch \
             --cov-report=term-missing \
             --cov-fail-under=100
