@@ -15,6 +15,23 @@ import { findSeeded, readRunState } from "../helpers/runState";
 import { supabaseAdmin } from "../helpers/supabaseAdmin";
 
 async function signInAsAdmin(page: import("@playwright/test").Page): Promise<void> {
+  // Capture browser-side errors + console so staging-only failures
+  // (JS throws from `createBrowserClient`, setSession errors, cookie-
+  // domain warnings) surface in the assertion message. Otherwise the
+  // failure looks identical to "no session cookies" regardless of the
+  // actual cause.
+  const consoleLines: string[] = [];
+  const pageErrors: string[] = [];
+  page.on("console", (msg) => {
+    const type = msg.type();
+    if (type === "error" || type === "warning") {
+      consoleLines.push(`[${type}] ${msg.text()}`);
+    }
+  });
+  page.on("pageerror", (err) => {
+    pageErrors.push(`${err.name}: ${err.message}`);
+  });
+
   const state = readRunState();
   const sb = supabaseAdmin();
   const link = await generateMagicLink(
@@ -29,16 +46,22 @@ async function signInAsAdmin(page: import("@playwright/test").Page): Promise<voi
 
   const finalUrl = page.url();
   if (!/\/admin\/sessions/.test(finalUrl)) {
-    // Pull up all cookies so the report explains why requireAdmin bounced.
     const cookies = await page.context().cookies();
+    const allCookieNames = cookies.map((c) => c.name).sort();
     const sbCookies = cookies
       .filter((c) => c.name.includes("sb-") || c.name.includes("supabase"))
       .map((c) => `${c.name}=${c.value.slice(0, 20)}…`);
+
     throw new Error(
-      `signInAsAdmin landed on ${finalUrl}, expected /admin/sessions. ` +
-        `Supabase cookies present: [${sbCookies.join(", ") || "NONE"}]. ` +
-        `If no cookies → browser client didn't persist session. ` +
-        `If cookies present but URL is /login?e=not_admin → admin_users row missing for ${state.adminEmail}.`,
+      [
+        `signInAsAdmin landed on ${finalUrl}, expected /admin/sessions.`,
+        `All cookie names: [${allCookieNames.join(", ") || "NONE"}]`,
+        `Supabase cookies: [${sbCookies.join(", ") || "NONE"}]`,
+        `Page errors: ${pageErrors.length ? pageErrors.join(" | ") : "(none)"}`,
+        `Console errors/warnings (last 10): ${
+          consoleLines.slice(-10).join(" | ") || "(none)"
+        }`,
+      ].join("\n"),
     );
   }
 }
