@@ -42,9 +42,22 @@ Contract testleri: `pnpm run test:routes`, `pnpm run test:i18n-contract`. E2E: `
 
 ```bash
 cd mobile
-npm install
+npm install              # or: npm ci --legacy-peer-deps (CI)
 npx expo start
 ```
+
+**Package manager**: mobile uses `npm` (tracked via `package-lock.json`),
+dashboard uses `pnpm` (tracked via `pnpm-lock.yaml`). The split is
+deliberate:
+
+- Mobile follows Expo's documented default (`npm ci` +
+  `--legacy-peer-deps` for the Expo 54 + React 19 + RN 0.81 matrix).
+  CI uses `npm` to match. Do not run `pnpm install` inside `mobile/`.
+- Dashboard's Next.js + Vercel tooling plays better with `pnpm`.
+  CI uses `pnpm` to match. Do not run `npm install` inside
+  `dashboard/`.
+
+The backend is Python, so it's independent of this choice.
 
 ## Mock’lar ve Ortam
 

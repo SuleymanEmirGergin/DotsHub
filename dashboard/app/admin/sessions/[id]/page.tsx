@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import Link from "next/link";
 import { requireAdmin } from "@/lib/requireAdmin";
 import { supabaseAdmin } from "@/lib/supabaseServer";
 import { getText } from "@/lib/i18n";
@@ -216,12 +217,12 @@ export default async function SessionDetail({
     <div className="p-6 max-w-[1000px] mx-auto bg-background text-foreground min-h-screen">
       <Breadcrumb items={[{ label: getText(locale, "nav.admin"), href: "/admin/sessions" }, { label: getText(locale, "nav.sessions"), href: "/admin/sessions" }, { label: getText(locale, "sessions.sessionDetail") }]} />
       <div className="flex justify-between items-center">
-        <a href="/admin/sessions" className="text-muted-foreground no-underline text-sm">
+        <Link href="/admin/sessions" className="text-muted-foreground no-underline text-sm">
           &larr; {getText(locale, "sessions.backToSessions")}
-        </a>
-        <a href={`/admin/sessions/${id}/replay`} className="font-extrabold text-primary no-underline">
+        </Link>
+        <Link href={`/admin/sessions/${id}/replay`} className="font-extrabold text-primary no-underline">
           Replay →
-        </a>
+        </Link>
       </div>
 
       <h1 className="text-2xl font-extrabold mt-3">Session Detail</h1>

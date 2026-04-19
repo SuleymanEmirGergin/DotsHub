@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import Link from "next/link";
 import { requireAdmin } from "@/lib/requireAdmin";
 import { supabaseAdmin } from "@/lib/supabaseServer";
 import { Breadcrumb } from "@/app/components/Breadcrumb";
@@ -222,9 +223,9 @@ export default async function FeedbackPage({
           <p className="text-muted-foreground mt-1.5 text-[13px]">{t("feedback.subtitle")}</p>
         </div>
         <div className="flex gap-3">
-          <a href="/admin/sessions" className="font-bold text-primary no-underline text-[13px]">
+          <Link href="/admin/sessions" className="font-bold text-primary no-underline text-[13px]">
             {t("feedback.sessionsLink")} &rarr;
-          </a>
+          </Link>
           <a href="/admin/analytics" className="font-bold text-primary no-underline text-[13px]">
             {t("feedback.analyticsLink")} &rarr;
           </a>

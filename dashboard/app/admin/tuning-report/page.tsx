@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import Link from "next/link";
 import { requireAdmin } from "@/lib/requireAdmin";
 import {
   listReports,
@@ -78,9 +79,9 @@ export default async function TuningReportPage({
           <a href="/admin/analytics" className="font-bold text-primary no-underline text-[13px]">
             {getText(locale, "tuningReport.analyticsLink")}
           </a>
-          <a href="/admin/sessions" className="font-bold text-primary no-underline text-[13px]">
+          <Link href="/admin/sessions" className="font-bold text-primary no-underline text-[13px]">
             {getText(locale, "tuningReport.sessionsLink")}
-          </a>
+          </Link>
         </div>
       </div>
 

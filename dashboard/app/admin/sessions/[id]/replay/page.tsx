@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import Link from "next/link";
 import { requireAdmin } from "@/lib/requireAdmin";
 import { supabaseAdmin } from "@/lib/supabaseServer";
 import { getText } from "@/lib/i18n";
@@ -153,15 +154,15 @@ export default async function SessionReplayPage({
           </div>
         </div>
         <div className="flex gap-2.5">
-          <a href={`/admin/sessions/${sessionId}`} className="font-extrabold text-primary no-underline">
+          <Link href={`/admin/sessions/${sessionId}`} className="font-extrabold text-primary no-underline">
             {getText(locale, "sessionReplay.detailLink")}
-          </a>
-          <a href="/admin/sessions" className="font-extrabold text-primary no-underline">
+          </Link>
+          <Link href="/admin/sessions" className="font-extrabold text-primary no-underline">
             {getText(locale, "sessionReplay.sessionsLink")}
-          </a>
-          <a href="/admin/analytics" className="font-extrabold text-primary no-underline">
+          </Link>
+          <Link href="/admin/analytics" className="font-extrabold text-primary no-underline">
             {getText(locale, "sessionReplay.analyticsLink")}
-          </a>
+          </Link>
         </div>
       </div>
 

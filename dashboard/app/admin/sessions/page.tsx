@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import Link from "next/link";
 import { requireAdmin } from "@/lib/requireAdmin";
 import { supabaseAdmin } from "@/lib/supabaseServer";
 import { getText } from "@/lib/i18n";
@@ -120,7 +121,7 @@ export default async function SessionsPage({
       </div>
 
       <div className="flex gap-2.5 mt-4">
-        <a
+        <Link
           href="/admin/sessions"
           className={cn(
             "py-2 px-4 rounded-[10px] border border-border no-underline text-[13px] font-bold",
@@ -128,8 +129,8 @@ export default async function SessionsPage({
           )}
         >
           {getText(locale, "sessions.all")}
-        </a>
-        <a
+        </Link>
+        <Link
           href="/admin/sessions?feedback=down"
           className={cn(
             "py-2 px-4 rounded-[10px] border border-border no-underline text-[13px] font-extrabold",
@@ -137,8 +138,8 @@ export default async function SessionsPage({
           )}
         >
           {getText(locale, "sessions.downOnly")}
-        </a>
-        <a
+        </Link>
+        <Link
           href="/admin/sessions?feedback=up"
           className={cn(
             "py-2 px-4 rounded-[10px] border border-border no-underline text-[13px] font-bold",
@@ -146,7 +147,7 @@ export default async function SessionsPage({
           )}
         >
           {getText(locale, "sessions.upOnly")}
-        </a>
+        </Link>
       </div>
 
       <div className="mt-4 w-full overflow-hidden rounded-xl border border-border bg-card shadow-sm">
