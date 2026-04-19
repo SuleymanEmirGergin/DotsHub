@@ -299,6 +299,123 @@ def _has_bronchiolitis_context(canonicals: List[str], text_norm: str) -> bool:
     return True
 
 
+# Subacute pulmonary softener (Session-2 RC) ─────────────────────────────
+#
+# Chronic/subacute respiratory presentations (bronchitis with 10 days of
+# productive cough, COPD with months of exertional dyspnea, hemoptysis
+# with 3 weeks of cough + night sweats, pneumonia with 5-day fever +
+# chest pain) trip both safety_guard (chest_pressure_sweating fires on
+# bare "göğüs ağrısı" or "terliyorum"; breathing_severe on "nefes
+# darlığı") and evaluate_emergency (anaphylaxis fires on "nefes
+# darlığı" + "hırıltı" without swelling; chest_pain_sob fires on
+# "göğüs ağrısı" without acute onset). The clinically correct output
+# is RESULT/pulmonology — these are outpatient cases, not 112 calls.
+#
+# Softener fires when:
+#   1. Duration marker present (days/weeks/months/years)
+#   2. Respiratory canonical present (öksürük/balgam/nefes darlığı + ≥2)
+#   3. No TRUE cardiac hard signal (sol kola vuruyor, çeneye vuruyor,
+#      bayıldım, ani başladı, kalp krizi gibi, morardım)
+#   4. No TRUE anaphylaxis signal (dil/dudak/boğaz şişti, yaygın
+#      döküntü, kurdeşen)
+#   5. No TRUE severe breathing (boğuluyorum, nefes alamıyorum,
+#      inhalere rağmen, morardım)
+#
+# Rules softened:
+#   safety_guard:  chest_pressure_sweating, breathing_severe, chest_pain
+#   emergency_router:  anaphylaxis, chest_pain_sob,
+#                      chest_pain_plus_breathlessness,
+#                      chest_pain_breathlessness_soft
+_PULMONARY_SUBACUTE_SOFTEN_SAFETY_GUARD_IDS = frozenset({
+    "chest_pressure_sweating", "breathing_severe", "chest_pain",
+    # rules.json's anaphylaxis hard_trigger matches on "nefes darlığı"
+    # + "hırıltı" without requiring swelling — fires false-positive
+    # on subacute bronchitis. We only soften when the override
+    # signals (dil/dudak/boğaz şişti, yaygın döküntü) are absent.
+    "anaphylaxis",
+})
+_PULMONARY_SUBACUTE_SOFTEN_EMERGENCY_RULES = frozenset({
+    "anaphylaxis", "chest_pain_sob",
+    "chest_pain_plus_breathlessness", "chest_pain_breathlessness_soft",
+})
+
+# Markers that a complaint is subacute/chronic, not acute minutes.
+# Kept conservative — must sit next to a duration word so "günlerce"
+# used in a different idiom doesn't over-match.
+#
+# Note on the suffix char class: Turkish locative suffix varies with
+# vowel harmony — "gündür", "gündür", "haftadır", "yıldır", "aydır".
+# Rather than enumerating every vowel variant we accept any chars
+# after the unit word up to a space — the anchor is the digit +
+# unit noun, not the suffix. "10 gün" alone (no suffix) also counts
+# as subacute for our purposes.
+import re as _re_subacute
+_SUBACUTE_DURATION_RE = _re_subacute.compile(
+    r"(\d+\s*(gün|hafta|ay|yıl|sene)|"
+    r"günlerdir|haftalardır|aylardır|yıllardır|senelerdir|"
+    r"uzun\s*s[üu]redir|\d+\s*seneden\s*beri|"
+    r"birkaç\s*(gün|hafta|ay|yıl)|"
+    r"son\s+(aylarda|haftada|yıllarda))",
+    flags=_re_subacute.IGNORECASE | _re_subacute.UNICODE,
+)
+
+_PULMONARY_CANONICALS = frozenset({
+    "öksürük", "balgam", "nefes darlığı", "hemoptizi",
+})
+
+# Textual markers — pulmonary signal can also come from raw phrases
+# that aren't in the synonym dictionary (hırıltı, kan tükürme,
+# balgamda kan, gece terlemesi). Treated as additive evidence on top
+# of canonical hits.
+_PULMONARY_TEXT_MARKERS = (
+    "hırıltı", "balgamımda kan", "balgamda kan",
+    "kan tükür", "gece terleme", "geceleri terl",
+    "öksürü", "balgam", "nefesim daral", "nefes darl",
+)
+
+# Signals that OVERRIDE the softener — actual ER-grade presentations.
+# If any of these match the raw text (normalized), we do NOT soften.
+# Includes cardiac MI signs, anaphylaxis swelling/hives, asthma
+# status-asthmaticus markers, and cyanosis.
+_PULMONARY_HARD_OVERRIDE_SIGNALS = (
+    # Cardiac MI pattern
+    "sol kola vuruyor", "sol kola yay", "çeneye vuruyor",
+    "çeneye yay", "bayılacak gibi", "bayıldım", "kalp krizi gibi",
+    "ani başladı", "aniden başladı",
+    # Anaphylaxis
+    "dilim şişti", "boğazım şişti", "dudaklarım şişti", "yüzüm şişti",
+    "yaygın döküntü", "kurdeşen",
+    # Severe breathing / cyanosis
+    "boğuluyorum", "nefes alamıyorum", "hiç nefes alamıyorum",
+    "inhalere rağmen", "inhalere ragmen",
+    "morardım", "moraran", "moraraıyor", "mor oldu",
+)
+
+
+def _has_subacute_pulmonary_context(canonicals: List[str], text_norm: str) -> bool:
+    """True when the message describes subacute/chronic respiratory
+    complaint with no ER-grade override signal.
+
+    Pulmonary evidence is the union of canonical hits + free-text
+    markers (hırıltı, kan tükürme, gece terlemesi). Threshold of 2
+    distinct signals avoids softening on a single "öksürük" remark
+    that might be incidental to a cardiac complaint.
+    """
+    canonical_hits = sum(1 for c in canonicals if c in _PULMONARY_CANONICALS)
+    text_hits = sum(1 for m in _PULMONARY_TEXT_MARKERS if m in text_norm)
+    # De-dupe overlap — "balgam" canonical and "balgam" text marker
+    # shouldn't double-count. Use max as a conservative bound.
+    total_signals = max(canonical_hits, text_hits)
+    if total_signals < 2:
+        return False
+    if not _SUBACUTE_DURATION_RE.search(text_norm):
+        return False
+    for sig in _PULMONARY_HARD_OVERRIDE_SIGNALS:
+        if sig in text_norm:
+            return False
+    return True
+
+
 def _emergency_specialty_for(rule_id: Optional[str]) -> Tuple[str, str]:
     """Return (specialty_id, specialty_tr) for an emergency rule_id.
 
@@ -499,6 +616,9 @@ def run_orchestrator_turn(
     _bronchiolitis_context = _has_bronchiolitis_context(
         _safety_canonicals, _text_norm_for_panic
     )
+    _subacute_pulm_context = _has_subacute_pulmonary_context(
+        _safety_canonicals, _text_norm_for_panic
+    )
 
     emergency = safety_guard_check(input_text, answers, runtime.rules_json)
     if (
@@ -523,6 +643,17 @@ def run_orchestrator_turn(
             emergency.get("rule_id"),
         )
         emergency = None
+    if (
+        emergency
+        and _subacute_pulm_context
+        and emergency.get("rule_id") in _PULMONARY_SUBACUTE_SOFTEN_SAFETY_GUARD_IDS
+    ):
+        logger.info(
+            "Subacute pulmonary softener: suppressed safety_guard rule_id=%s "
+            "because subacute respiratory pattern with no ER override signal",
+            emergency.get("rule_id"),
+        )
+        emergency = None
 
     if not emergency and runtime.emergency_rules_cfg:
         _em_match = evaluate_emergency(
@@ -538,6 +669,18 @@ def run_orchestrator_turn(
             logger.info(
                 "A2 panic softener: suppressed evaluate_emergency rule_id=%s "
                 "because panik atak canonical is present",
+                _em_match.rule_id,
+            )
+            _em_match = None
+        if (
+            _em_match is not None
+            and _subacute_pulm_context
+            and _em_match.rule_id in _PULMONARY_SUBACUTE_SOFTEN_EMERGENCY_RULES
+        ):
+            logger.info(
+                "Subacute pulmonary softener: suppressed evaluate_emergency "
+                "rule_id=%s because subacute respiratory pattern with no ER "
+                "override signal",
                 _em_match.rule_id,
             )
             _em_match = None

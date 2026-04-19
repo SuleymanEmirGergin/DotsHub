@@ -484,7 +484,42 @@
         "sık tuvalete çıkıyorum",
         "tuvalete çok sık gidiyorum",
         "çok sık tuvalete",
-        "her yarım saatte tuvalete"
+        "her yarım saatte tuvalete",
+        "gece idrara kalkıyorum",
+        "geceleri idrara kalkıyorum",
+        "nokturi"
+      ]
+    },
+    {
+      "canonical": "idrar akışı yavaşlığı",
+      "type": "symptom",
+      "variants_tr": [
+        "idrar akışı yavaş",
+        "idrarım yavaş akıyor",
+        "idrarım kesik kesik",
+        "idrar yaparken zorlanıyorum",
+        "idrarım kesik kesik geliyor",
+        "işeme akışım zayıf",
+        "idrar akımı zayıfladı",
+        "prostat problemim var",
+        "prostat büyümesi",
+        "zor işiyorum"
+      ]
+    },
+    {
+      "canonical": "idrar inkontinansı",
+      "type": "symptom",
+      "variants_tr": [
+        "idrarımı tutamıyorum",
+        "öksürünce idrarımı kaçırıyorum",
+        "öksürünce idrar kaçırıyorum",
+        "gülünce idrar kaçırıyorum",
+        "idrar kaçırıyorum",
+        "stres inkontinans",
+        "idrar kaçağım var",
+        "hapşırınca idrar kaçırıyorum",
+        "koşunca idrar kaçırıyorum",
+        "idrar tutma sorunum var"
       ]
     },
     {

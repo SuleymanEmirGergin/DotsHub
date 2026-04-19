@@ -158,5 +158,17 @@
     "de": "German",
     "ru": "Russian",
     "ar": "Arabic"
+  },
+  "version": {
+    "bannerTitle": "Update available",
+    "bannerSubtitle": "You are on version {current}; the minimum recommended version is {min}. Please update.",
+    "bannerUpdate": "Update",
+    "bannerDismiss": "Dismiss",
+    "bannerA11y": "App update notice",
+    "blockTitle": "Update required",
+    "blockBody": "Version {current} is no longer supported. Please upgrade to {min} or newer to continue using the pre-triage service.",
+    "blockUpdate": "Update from store",
+    "blockNoLinkHint": "Install the latest version from your app store.",
+    "blockFooterHint": "For emergencies, call 112."
   }
 }

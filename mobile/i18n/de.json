@@ -158,5 +158,17 @@
     "de": "Deutsch",
     "ru": "Russisch",
     "ar": "Arabisch"
+  },
+  "version": {
+    "bannerTitle": "Update verfügbar",
+    "bannerSubtitle": "Sie verwenden Version {current}; die empfohlene Mindestversion ist {min}. Bitte aktualisieren.",
+    "bannerUpdate": "Aktualisieren",
+    "bannerDismiss": "Schließen",
+    "bannerA11y": "Hinweis auf App-Update",
+    "blockTitle": "Update erforderlich",
+    "blockBody": "Version {current} wird nicht mehr unterstützt. Bitte auf {min} oder neuer aktualisieren, um den Vor-Triage-Dienst weiter zu nutzen.",
+    "blockUpdate": "Aus dem Store aktualisieren",
+    "blockNoLinkHint": "Installieren Sie die neueste Version aus Ihrem App-Store.",
+    "blockFooterHint": "In Notfällen 112 anrufen."
   }
 }
