@@ -20,6 +20,7 @@ from app.api.routes.feedback import router as feedback_router
 from app.api.routes.facilities import router as facilities_router
 from app.api.routes.summary_email import router as summary_email_router
 from app.api.routes.push_token import router as push_token_router
+from app.api.routes.features import router as features_router
 from app.admin_api import router as admin_router
 from app.admin_tenants_api import router as admin_tenants_router
 from app.admin_feedback_api import router as admin_feedback_router
@@ -259,6 +260,7 @@ app.include_router(feedback_router, prefix="/v1", tags=["Feedback"])
 app.include_router(facilities_router, prefix="/v1", tags=["Facilities"])
 app.include_router(summary_email_router, prefix="/v1", tags=["Summary Email"])
 app.include_router(push_token_router, prefix="/v1", tags=["Push Token"])
+app.include_router(features_router, prefix="/v1", tags=["Config"])
 app.include_router(session_router, prefix="/v1", tags=["Session (legacy)"])
 app.include_router(message_router, prefix="/v1", tags=["Message (legacy)"])
 app.include_router(admin_router, prefix="/v1", tags=["Admin"])
@@ -272,34 +274,10 @@ app.include_router(data_rights_router, prefix="/v1", tags=["Data Rights"])
 app.include_router(admin_v5_router, prefix="/v1", tags=["Admin V5"])
 
 
-@app.get("/v1/config/features")
-async def features():
-    """Return current feature-flag state for client-side consent and UI gating.
-
-    Consumed by the mobile app on startup:
-    - `llm_nlu_enabled` — whether to show the KVKK/AI consent banner
-      before the first triage turn.
-    - `llm_explain_enabled` — whether the explain-my-recommendation UI
-      should surface.
-    - `client_version` — min/latest/mode trio for the version-gate
-      banner. The mobile app compares its own
-      `Constants.expoConfig.version` against `min` and decides (based
-      on `mode`) whether to warn, block, or stay silent. Rolled as a
-      feature flag rather than a hard-fail semantic so ops can bake
-      "warn" before flipping "block" — see CLIENT_VERSION_ENFORCEMENT
-      in core/config.py.
-    """
-    return {
-        "llm_nlu_enabled": settings.LLM_NLU_ENABLED,
-        "llm_explain_enabled": settings.LLM_EXPLAIN_ENABLED,
-        "client_version": {
-            "min": settings.MIN_CLIENT_VERSION,
-            "latest": settings.LATEST_CLIENT_VERSION,
-            "mode": settings.CLIENT_VERSION_ENFORCEMENT,
-            "update_url_ios": settings.CLIENT_VERSION_UPDATE_URL_IOS or None,
-            "update_url_android": settings.CLIENT_VERSION_UPDATE_URL_ANDROID or None,
-        },
-    }
+# /v1/config/features moved to app/api/routes/features.py so the
+# handler lives next to the rest of the route modules (triage,
+# feedback, facilities, …) and is importable for tests without
+# spinning up the whole FastAPI app. Router is included below.
 
 
 @app.get("/health")

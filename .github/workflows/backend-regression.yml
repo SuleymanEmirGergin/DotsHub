@@ -132,6 +132,7 @@ jobs:
             --cov=app.version_gating \
             --cov=app.top_conditions_filter \
             --cov=app.core.config \
+            --cov=app.api.routes.features \
             --cov-branch \
             --cov-report=term-missing \
             --cov-fail-under=100

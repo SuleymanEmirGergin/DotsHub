@@ -56,6 +56,52 @@ Single middleware — `CapabilityGateMiddleware` — mounted in `backend/app/mai
 
 Invalid JSON is passed through untouched — the server stays correct even when the response isn't a triage envelope.
 
+### Flow diagram
+
+A successful triage turn from a capability-aware mobile build:
+
+```mermaid
+sequenceDiagram
+    participant Mobile as Mobile app
+    participant FW as fetchWithTimeout
+    participant API as Backend FastAPI
+    participant Mw as CapabilityGateMiddleware
+    participant R as Route handler
+
+    Note over Mobile: Startup
+    Mobile->>Mobile: getCapabilitiesHeader()<br/>= "curated_meta,emergency_specialty"
+    Mobile->>Mobile: useVersionGate() fetchFeatures()
+    Mobile->>FW: GET /v1/config/features
+    FW->>API: + X-Client-Capabilities header
+    API->>Mw: dispatch()
+    Mw->>R: call_next()
+    R-->>Mw: { llm_nlu_enabled, client_version, ... }<br/>(non-envelope)
+    Mw->>Mw: filter_envelope() → no-op<br/>(not a triage envelope)
+    Mw-->>FW: response pass-through
+    FW-->>Mobile: feature flags
+
+    Note over Mobile: User submits symptoms
+    Mobile->>FW: POST /v1/triage/turn<br/>+ X-Client-Capabilities
+    FW->>API: request
+    API->>Mw: dispatch()
+    Mw->>R: call_next()
+    R-->>Mw: Envelope (RESULT)<br/>payload.top_conditions[*].icd10 etc.
+    alt Client advertises all KNOWN_CAPABILITIES
+        Mw-->>FW: fast-path, untouched
+    else Client missing some caps
+        Mw->>Mw: filter_envelope()<br/>strip gated fields
+        Mw->>Mw: log "capability_gate.filtered"<br/>(caps_missing, bytes_before/after)
+        Mw-->>FW: rewritten body + new Content-Length
+    end
+    FW-->>Mobile: envelope (shape-adjusted)
+    Mobile->>Mobile: ResultScreen renders<br/>(conditional on field presence)
+```
+
+Two things the diagram makes explicit that easily drift out of prose:
+
+1. `/v1/config/features` goes through the same middleware as `/v1/triage/turn`. The middleware recognises non-envelope responses and no-ops on them — that's what keeps the startup feature-flag fetch safe.
+2. The fast-path `caps >= KNOWN_CAPABILITIES` branch means fully-current clients pay zero serialisation cost.
+
 ## What's explicitly not gated
 
 - **Routing semantics**: `recommended_specialty_tr` on RESULT, `urgency`, `stop_reason`.

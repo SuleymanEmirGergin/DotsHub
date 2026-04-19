@@ -184,6 +184,22 @@ paths:
                       id: "neurology"
                       score: 11
 
+  /v1/config/features:
+    get:
+      summary: Client startup feature flags + version gate
+      description: |
+        Mirror of the primary contract in docs/openapi_orchestrator.yaml
+        for legacy consumers that still reference this file. See the
+        primary spec for full semantics, examples, and the
+        `ConfigFeaturesResponse` schema.
+      responses:
+        "200":
+          description: Feature flag snapshot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConfigFeaturesResponse"
+
 components:
   parameters:
     ClientVersionHeader:
@@ -214,6 +230,24 @@ components:
       example: "curated_meta,emergency_specialty"
 
   schemas:
+    ConfigFeaturesResponse:
+      # Kept minimal here — the primary contract in
+      # docs/openapi_orchestrator.yaml has the full split and examples.
+      type: object
+      required: [llm_nlu_enabled, llm_explain_enabled, client_version]
+      properties:
+        llm_nlu_enabled: { type: boolean }
+        llm_explain_enabled: { type: boolean }
+        client_version:
+          type: object
+          required: [min, latest, mode]
+          properties:
+            min: { type: string }
+            latest: { type: string }
+            mode: { type: string, enum: [off, warn, block] }
+            update_url_ios: { type: ["string", "null"], format: uri }
+            update_url_android: { type: ["string", "null"], format: uri }
+
     SessionStartRequest:
       type: object
       required: [user_input_tr]
