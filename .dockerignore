@@ -1,0 +1,75 @@
+# Root-level .dockerignore for the Fly.io build (Dockerfile.fly).
+# Build context = repo root, so we aggressively exclude everything
+# that's not backend/ or config/ to keep the upload + layers small.
+#
+# `backend/.dockerignore` is for the Compose-side build (context =
+# backend/) — do not delete it. Both files can diverge safely.
+
+# ── Frontend apps — not in the backend image ─────────────────────
+dashboard/
+mobile/
+
+# ── Dev / meta ───────────────────────────────────────────────────
+.git/
+.github/
+.claude/
+.vscode/
+.idea/
+.userhome/
+.pnpm-store/
+.venv/
+__repo_new/
+
+# ── Tests + scripts — runtime doesn't need them, also shrinks the
+#    attack surface if someone gets container exec.
+tests/
+scripts/
+examples/
+
+# ── Docs (keep the image clean; docs served elsewhere) ──────────
+docs/
+README.md
+CHANGELOG.md
+CONTRIBUTING.md
+DotsHub\ Wiro.txt
+
+# ── Python bytecode / build noise ────────────────────────────────
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.pyd
+**/.pytest_cache/
+**/.mypy_cache/
+**/.tox/
+**/.coverage
+**/htmlcov/
+
+# ── Local DBs / env / secrets (NEVER commit, and NEVER bake in) ──
+**/*.db
+**/*.sqlite*
+**/dotshub.db*
+**/.env
+**/.env.*
+**/.env.observability
+
+# ── Backend-level local dev artifacts ────────────────────────────
+backend/.venv/
+backend/venv/
+backend/env/
+backend/.pytest_cache/
+backend/reports/
+backend/uvicorn_*.log
+backend/test.db
+backend/dotshub.db
+
+# ── Editor / OS / CI caches ──────────────────────────────────────
+.DS_Store
+Thumbs.db
+node_modules/
+
+# ── Observability / infra manifests (used at build/deploy time by
+#    the CI + compose, not needed at runtime inside the container).
+docker-compose.yml
+docker-compose.observability.yml
+openapi.yaml
+run_emulator.ps1

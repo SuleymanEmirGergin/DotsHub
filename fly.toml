@@ -1,0 +1,109 @@
+# Fly.io app manifest for the Dotshub backend.
+#
+# Runtime shape
+# -------------
+# - Primary region: ams (Amsterdam). EU-resident users + Grafana Cloud
+#   EU-central observability endpoint → sub-50ms metric push.
+# - 1× shared-cpu-1x VM @ 512 MB. Sufficient for the current API mix
+#   (triage turns are CPU-bounded for ~100-200ms each, memory
+#   dominated by the in-memory canonical/config dicts ~80 MB).
+# - auto_stop_machines = "stop" + min_machines_running = 0 → scale-to-
+#   zero when idle. Cold start latency on first hit after idle is
+#   ~2-3s (uvicorn + config load). Acceptable for a hobby deploy;
+#   raise min_machines_running to 1 when users care.
+#
+# Secrets
+# -------
+# Anything the runtime needs is set via `flyctl secrets set KEY=VALUE`.
+# See docs/DEPLOY_FLY.md for the full required + optional list. Never
+# commit secret values here; this file is public in the repo.
+#
+# Healthcheck
+# -----------
+# /health verifies Supabase reachability too (lib/supabase) so a
+# degraded upstream also fails the Fly check and the machine is
+# recycled. Keep grace_period long enough for cold start.
+
+app = "dotshub-backend"
+primary_region = "ams"
+# Keep fly.toml generator opt-out of "PaaS defaults" we don't need.
+kill_signal = "SIGINT"
+kill_timeout = "30s"
+
+[build]
+  # Repo-root Dockerfile so we can COPY both backend/app/ and config/.
+  dockerfile = "Dockerfile.fly"
+
+[env]
+  APP_ENV = "production"
+  PORT = "8000"
+  LOG_FORMAT = "json"
+  LOG_LEVEL = "INFO"
+  # Baked-in config tree inside the image (see Dockerfile.fly).
+  PRETRIAGE_CONFIG_DIR = "/app/config"
+  # Consumed by the Prometheus external_labels in the agent sidecar
+  # (added in Phase A3) and by app/core/config.py for env-aware
+  # behaviour (e.g. strict CORS).
+  DEPLOYMENT_ENV = "production"
+  SENTRY_ENVIRONMENT = "production"
+  # Sentry traces: 10% sample is a safe production default (errors
+  # always, 1 in 10 requests fully traced). Bump to 1.0 during an
+  # incident via `flyctl secrets set`.
+  SENTRY_TRACES_SAMPLE_RATE = "0.1"
+
+# ─── HTTP service ──────────────────────────────────────────────────
+#
+# TLS + HTTPS is terminated at Fly's edge; the container only speaks
+# plain HTTP on 8000. `force_https = true` makes the edge upgrade
+# :80 → :443 before the request ever reaches us.
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ["app"]
+
+  # Concurrency knobs — when any one is exceeded Fly considers the
+  # machine "full" and routes new requests to another instance (or
+  # starts one if auto_start_machines). Hard limit kills in-flight
+  # requests on a struggling machine so the cluster stays healthy.
+  [http_service.concurrency]
+    type = "requests"
+    soft_limit = 50
+    hard_limit = 100
+
+# Sync healthcheck — Fly hits this from outside the machine; if 3
+# consecutive fail, the machine is marked unhealthy and replaced.
+[[http_service.checks]]
+  grace_period = "30s"
+  interval = "30s"
+  method = "GET"
+  path = "/health"
+  protocol = "http"
+  timeout = "10s"
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory = "512mb"
+
+# ─── Processes ─────────────────────────────────────────────────────
+#
+# One process for now: `app` runs uvicorn. Phase A3 (observability
+# wiring) adds a second process here for the Grafana Agent sidecar,
+# sharing the machine's localhost so it can scrape 127.0.0.1:8000.
+
+[processes]
+  app = "sh -c 'uvicorn app.main:app --host 0.0.0.0 --port ${PORT} --proxy-headers --forwarded-allow-ips=*'"
+
+# ─── Deploy release phase ─────────────────────────────────────────
+#
+# Release command runs ONCE per deploy, BEFORE any machine receives
+# traffic. Kept empty intentionally — we have no DB migrations
+# (Supabase is schema-externally-managed) and no one-time bootstraps.
+# If migrations get added to backend/sql/ with a runner, wire that
+# command here.
+[deploy]
+  strategy = "rolling"
