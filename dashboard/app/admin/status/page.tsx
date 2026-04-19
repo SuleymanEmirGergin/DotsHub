@@ -45,6 +45,10 @@ async function checkBackendHealth(t: (key: string) => string): Promise<{ status:
 async function checkSupabase(t: (key: string) => string): Promise<{ status: Status; message: string }> {
   try {
     const sb = supabaseAdmin();
+    // Missing env → render a friendly "not configured" status rather
+    // than blowing the whole page into not-found (localhost Playwright
+    // hits this path).
+    if (!sb) return { status: "info", message: t("status.apiBaseOrKeyMissing") };
     const { error } = await sb.from("triage_sessions").select("id").limit(1).maybeSingle();
     if (error) return { status: "error", message: error.message };
     return { status: "ok", message: t("status.connected") };
