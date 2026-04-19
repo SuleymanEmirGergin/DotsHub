@@ -29,7 +29,23 @@ THRESHOLDS: dict[str, float] = {
     "app/emergency_router.py": 100.0,
     "app/top_conditions_filter.py": 100.0,
     "app/triage_engine.py": 85.0,
-    "app/services/llm_nlu.py": 75.0,
+    # llm_nlu bumped 75 → 85 in Session 3 after adding
+    # test_llm_nlu_inner_threads.py (Supabase insert/upsert branches).
+    # Do NOT drop this back without writing coverage-ratchet notes —
+    # the observability layer is the sole audit trail of NLU failures
+    # on prod.
+    "app/services/llm_nlu.py": 85.0,
+    # Rate-limit is safety-critical (abuse protection). Added the
+    # Redis fail-closed path in Session 3 along with a dedicated test
+    # file; keep the floor high to protect the fallback contract.
+    "app/rate_limit.py": 85.0,
+    # Version gating owns capability-based payload trimming. Regression
+    # here silently breaks old mobile clients. 100% is achievable and
+    # cheap here — it's a small module.
+    "app/version_gating.py": 90.0,
+    # Sentry init — small module, easy to pin; the scrubbing contract
+    # must not regress without an explicit signoff.
+    "app/observability/sentry_init.py": 90.0,
 }
 
 

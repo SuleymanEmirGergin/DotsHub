@@ -140,6 +140,17 @@ class Settings(BaseSettings):
     CLIENT_VERSION_UPDATE_URL_IOS: str = ""   # optional app-store deep link
     CLIENT_VERSION_UPDATE_URL_ANDROID: str = ""
 
+    # ── Sentry error aggregation ─────────────────────────────────────────
+    # If SENTRY_DSN is empty, sentry_sdk.init() is a no-op — the app
+    # runs unchanged without an external dep. Set the DSN + environment
+    # in prod to enable error tracking; traces_sample_rate controls
+    # perf-trace sampling (0 = no traces, 1 = every request — costly).
+    # PII scrubbing is applied in a before_send hook (see app/main.py).
+    SENTRY_DSN: str = ""
+    SENTRY_ENVIRONMENT: str = "development"
+    SENTRY_TRACES_SAMPLE_RATE: float = 0.0   # default: error-only, no perf
+    SENTRY_RELEASE: str = ""                 # blank → let SDK auto-detect
+
     model_config = {
         "env_file": ".env",
         "env_file_encoding": "utf-8",

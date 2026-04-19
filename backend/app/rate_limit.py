@@ -1,6 +1,28 @@
-"""Rate limiting: in-memory (default) or Redis for multi-instance."""
+"""Rate limiting: in-memory (default) or Redis for multi-instance.
+
+Failure-mode contract
+---------------------
+When Redis is reachable, it's the authoritative bucket (multi-instance
+consistency). When it isn't, every `*_redis` function degrades to the
+in-memory bucket for that key rather than silently allowing the
+request. Rationale:
+
+  - Pure fail-open (previous behavior, returned allowed=True on any
+    Redis error) lets abuse bypass rate limits completely during a
+    Redis outage. That's unacceptable for a public endpoint.
+  - Pure fail-closed (reject on any Redis blip) flaps user-facing 429s
+    on every transient network hiccup.
+  - In-memory fallback keeps per-instance enforcement going. Multi-
+    instance consistency is lost during the outage (same user could
+    hit N × limit if N workers are running), but the absolute cap
+    per-worker stays enforced.
+
+Every degradation is logged WARN once per bucket key, so ops sees the
+split-brain in dashboards/Loki even if the user sees nothing.
+"""
 from __future__ import annotations
 
+import logging
 import os
 import time
 from collections import deque
@@ -8,6 +30,24 @@ from typing import TYPE_CHECKING, Deque, Dict, Optional, Tuple
 
 if TYPE_CHECKING:
     from redis.asyncio import Redis
+
+logger = logging.getLogger(__name__)
+
+# Track which buckets we've already warned about to avoid log spam —
+# one warn per key per process is enough to surface the Redis outage
+# without drowning logs. Cleared naturally on process restart.
+_REDIS_DEGRADED_WARNED: set[str] = set()
+
+
+def _warn_redis_degraded_once(key: str, exc: Exception) -> None:
+    if key not in _REDIS_DEGRADED_WARNED:
+        _REDIS_DEGRADED_WARNED.add(key)
+        logger.warning(
+            "Redis rate-limit unavailable for key=%s (%s: %s). "
+            "Degrading to in-memory bucket — multi-instance cap is LOST "
+            "until Redis recovers; per-worker cap still enforced.",
+            key, type(exc).__name__, exc,
+        )
 
 WINDOW_SEC = int(os.getenv("RATE_LIMIT_WINDOW_SEC", "60"))
 MAX_REQ = int(os.getenv("RATE_LIMIT_MAX_REQ", "20"))
@@ -72,9 +112,9 @@ async def check_rate_limit_redis(redis: "Redis", key: str) -> Tuple[bool, int, i
             await redis.decr(rkey)
             return False, 0, reset_in
         return True, MAX_REQ - count, reset_in
-    except Exception:
-        # On Redis error, fall back to allowing (fail open) or use in-memory in middleware
-        return True, MAX_REQ - 1, WINDOW_SEC
+    except Exception as exc:
+        _warn_redis_degraded_once(f"default:{key}", exc)
+        return check_rate_limit(key)
 
 
 def build_rl_key(ip: Optional[str], device_id: Optional[str]) -> str:
@@ -132,8 +172,9 @@ async def check_send_summary_rate_limit_redis(redis: "Redis", key: str) -> Tuple
             await redis.decr(rkey)
             return False, 0, reset_in
         return True, SEND_SUMMARY_MAX_REQ - count, reset_in
-    except Exception:
-        return True, SEND_SUMMARY_MAX_REQ - 1, SEND_SUMMARY_WINDOW_SEC
+    except Exception as exc:
+        _warn_redis_degraded_once(f"send_summary:{key}", exc)
+        return check_send_summary_rate_limit(key)
 
 
 def check_admin_rate_limit(key: str) -> Tuple[bool, int, int]:
@@ -168,8 +209,9 @@ async def check_admin_rate_limit_redis(redis: "Redis", key: str) -> Tuple[bool, 
             await redis.decr(rkey)
             return False, 0, reset_in
         return True, ADMIN_MAX_REQ - count, reset_in
-    except Exception:
-        return True, ADMIN_MAX_REQ - 1, ADMIN_WINDOW_SEC
+    except Exception as exc:
+        _warn_redis_degraded_once(f"admin:{key}", exc)
+        return check_admin_rate_limit(key)
 
 
 # ---------------------------------------------------------------------------
@@ -227,5 +269,6 @@ async def check_llm_nlu_rate_limit_redis(
             await redis.decr(rkey)
             return False, 0, reset_in
         return True, LLM_NLU_MAX_REQ - count, reset_in
-    except Exception:
-        return True, LLM_NLU_MAX_REQ - 1, LLM_NLU_WINDOW_SEC
+    except Exception as exc:
+        _warn_redis_degraded_once(f"llm_nlu:{key}", exc)
+        return check_llm_nlu_rate_limit(key)
