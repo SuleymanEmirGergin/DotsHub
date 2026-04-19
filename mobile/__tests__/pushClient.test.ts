@@ -1,3 +1,14 @@
+/**
+ * pushClient tests — MSW-based (handler intercepts in mocks/server).
+ *
+ * Per-test `server.use()` overrides capture the outgoing request
+ * (URL, method, body) so we can assert the wire format without
+ * manually stubbing `globalThis.fetch`.
+ */
+import { http, HttpResponse } from "msw";
+
+import { server } from "../mocks/server";
+
 jest.mock("react-native", () => ({
   Platform: { OS: "ios" },
 }));
@@ -6,131 +17,106 @@ jest.mock("@/src/config/runtime", () => ({
   API_BASE: "http://api.example.com",
 }));
 
-type CapturedCall = {
-  url: string;
+type Captured = {
   method: string;
-  body: string;
+  url: string;
+  body: unknown;
 };
 
-function installFetchMock(
-  calls: CapturedCall[],
-  response: { ok: boolean; status?: number; json: () => Promise<unknown> },
-) {
-  (globalThis as { fetch: typeof fetch }).fetch = (async (url, opts) => {
-    calls.push({
-      url: String(url),
-      method: String(opts?.method ?? ""),
-      body: String(opts?.body ?? ""),
-    });
-    return response as unknown as Response;
-  }) as typeof fetch;
-}
-
 describe("pushClient", () => {
-  const originalFetch = globalThis.fetch;
-
-  afterAll(() => {
-    (globalThis as { fetch: typeof fetch }).fetch = originalFetch;
-  });
-
   it("registerPushToken posts expected payload", async () => {
-    const calls: CapturedCall[] = [];
-    installFetchMock(calls, {
-      ok: true,
-      json: async () => ({ ok: true }),
-    });
+    let captured: Captured | null = null;
+    server.use(
+      http.post("*/v1/triage/push-token", async ({ request }) => {
+        captured = {
+          method: request.method,
+          url: request.url,
+          body: await request.json(),
+        };
+        return HttpResponse.json({ ok: true });
+      }),
+    );
 
     const { registerPushToken } = require("../src/api/pushClient");
     const out = await registerPushToken("ExponentPushToken[abc]", "device-1", "en");
 
-    expect(JSON.stringify(out)).toBe(JSON.stringify({ ok: true }));
-    expect(calls.length).toBe(1);
-    expect(calls[0].url).toBe("http://api.example.com/v1/triage/push-token");
-    expect(calls[0].method).toBe("POST");
-    expect(
-      JSON.stringify(JSON.parse(calls[0].body)),
-    ).toBe(
-      JSON.stringify({
-        expo_push_token: "ExponentPushToken[abc]",
-        device_id: "device-1",
-        platform: "ios",
-        locale: "en-US",
-      }),
-    );
+    expect(out).toEqual({ ok: true });
+    expect(captured).not.toBeNull();
+    expect(captured!.method).toBe("POST");
+    expect(captured!.url).toBe("http://api.example.com/v1/triage/push-token");
+    expect(captured!.body).toEqual({
+      expo_push_token: "ExponentPushToken[abc]",
+      device_id: "device-1",
+      platform: "ios",
+      locale: "en-US",
+    });
   });
 
   it("registerPushToken falls back locale to tr-TR", async () => {
-    const calls: CapturedCall[] = [];
-    installFetchMock(calls, {
-      ok: true,
-      json: async () => ({ ok: true }),
-    });
+    let capturedBody: { locale?: string } | null = null;
+    server.use(
+      http.post("*/v1/triage/push-token", async ({ request }) => {
+        capturedBody = (await request.json()) as { locale?: string };
+        return HttpResponse.json({ ok: true });
+      }),
+    );
 
     const { registerPushToken } = require("../src/api/pushClient");
     await registerPushToken("ExponentPushToken[abc]", "device-2", "xx");
 
-    const payload = JSON.parse(calls[0].body) as { locale: string };
-    expect(payload.locale).toBe("tr-TR");
+    expect(capturedBody).not.toBeNull();
+    expect(capturedBody!.locale).toBe("tr-TR");
   });
 
   it("registerPushToken surfaces backend detail on failure", async () => {
-    const calls: CapturedCall[] = [];
-    installFetchMock(calls, {
-      ok: false,
-      status: 503,
-      json: async () => ({ detail: "persist failed" }),
-    });
+    server.use(
+      http.post("*/v1/triage/push-token", async () => {
+        return HttpResponse.json({ detail: "persist failed" }, { status: 503 });
+      }),
+    );
 
     const { registerPushToken } = require("../src/api/pushClient");
-
-    let message = "";
-    try {
-      await registerPushToken("ExponentPushToken[abc]", "device-3", "tr");
-    } catch (err) {
-      message = err instanceof Error ? err.message : String(err);
-    }
-
-    expect(message).toBe("persist failed");
+    await expect(
+      registerPushToken("ExponentPushToken[abc]", "device-3", "tr"),
+    ).rejects.toThrow("persist failed");
   });
 
   it("unregisterPushToken sends delete with device id", async () => {
-    const calls: CapturedCall[] = [];
-    installFetchMock(calls, {
-      ok: true,
-      json: async () => ({ ok: true }),
-    });
+    let captured: Captured | null = null;
+    server.use(
+      http.delete("*/v1/triage/push-token", async ({ request }) => {
+        captured = {
+          method: request.method,
+          url: request.url,
+          body: await request.json(),
+        };
+        return HttpResponse.json({ ok: true });
+      }),
+    );
 
     const { unregisterPushToken } = require("../src/api/pushClient");
     const out = await unregisterPushToken("device-9");
 
-    expect(JSON.stringify(out)).toBe(JSON.stringify({ ok: true }));
-    expect(calls.length).toBe(1);
-    expect(calls[0].url).toBe("http://api.example.com/v1/triage/push-token");
-    expect(calls[0].method).toBe("DELETE");
-    expect(JSON.stringify(JSON.parse(calls[0].body))).toBe(
-      JSON.stringify({ device_id: "device-9" }),
-    );
+    expect(out).toEqual({ ok: true });
+    expect(captured).not.toBeNull();
+    expect(captured!.method).toBe("DELETE");
+    expect(captured!.url).toBe("http://api.example.com/v1/triage/push-token");
+    expect(captured!.body).toEqual({ device_id: "device-9" });
   });
 
   it("unregisterPushToken returns fallback message when response is not json", async () => {
-    const calls: CapturedCall[] = [];
-    installFetchMock(calls, {
-      ok: false,
-      status: 500,
-      json: async () => {
-        throw new Error("invalid json");
-      },
-    });
+    server.use(
+      http.delete("*/v1/triage/push-token", async () => {
+        return new HttpResponse("not json", {
+          status: 500,
+          headers: { "Content-Type": "text/plain" },
+        });
+      }),
+    );
 
     const { unregisterPushToken } = require("../src/api/pushClient");
-
-    let message = "";
-    try {
-      await unregisterPushToken("device-10");
-    } catch (err) {
-      message = err instanceof Error ? err.message : String(err);
-    }
-
-    expect(message).toBe("Unregister failed (HTTP 500)");
+    await expect(unregisterPushToken("device-10")).rejects.toThrow(
+      "Unregister failed (HTTP 500)",
+    );
   });
 });

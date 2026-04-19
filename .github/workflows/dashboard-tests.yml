@@ -12,6 +12,14 @@ on:
     paths:
       - "dashboard/**"
       - ".github/workflows/dashboard-tests.yml"
+  workflow_dispatch:
+    inputs:
+      include_staging:
+        description: "Run the live-staging e2e suite against the staging Supabase"
+        required: false
+        default: "false"
+        type: choice
+        options: ["false", "true"]
 
 defaults:
   run:
@@ -54,8 +62,63 @@ jobs:
         run: |
           for i in $(seq 1 30); do curl -sf http://localhost:3000 && break; sleep 2; done
 
-      - name: Run E2E tests
-        run: pnpm exec playwright test --project=chromium
+      - name: Run localhost E2E tests
+        run: pnpm exec playwright test --project=localhost
         env:
           PLAYWRIGHT_BASE_URL: http://localhost:3000
         timeout-minutes: 5
+
+  e2e-staging:
+    # Opt-in live-staging run: manual trigger via workflow_dispatch with
+    # include_staging=true. Hits a real staging Supabase + deployed
+    # dashboard using repo secrets. Never runs on push/PR automatically
+    # to avoid polluting staging with every commit.
+    #
+    # Intentionally independent of `test` — staging exercises real
+    # Supabase auth + data against a deployed URL and must not be held
+    # hostage to pre-existing flakiness in the localhost smoke job.
+    if: github.event_name == 'workflow_dispatch' && inputs.include_staging == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+          cache-dependency-path: dashboard/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run staging E2E tests
+        run: pnpm run test:e2e:staging
+        env:
+          PLAYWRIGHT_BASE_URL: ${{ secrets.STAGING_BASE_URL }}
+          STAGING_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
+          STAGING_SUPABASE_ANON_KEY: ${{ secrets.STAGING_SUPABASE_ANON_KEY }}
+          STAGING_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY }}
+          STAGING_TEST_ADMIN_EMAIL: ${{ secrets.STAGING_TEST_ADMIN_EMAIL }}
+          # Optional: bypass Vercel Deployment Protection (SSO wall) on
+          # preview deploys. Generate in Vercel → Settings → Deployment
+          # Protection → "Protection Bypass for Automation".
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+        timeout-minutes: 10
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-staging
+          path: dashboard/playwright-report/
+          retention-days: 7

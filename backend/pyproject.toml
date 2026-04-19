@@ -1,0 +1,35 @@
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+# unittest.TestCase subclasses are auto-discovered; no special flag needed.
+# Treat unhandled warnings strictly so masked test leaks surface fast.
+filterwarnings = [
+    "error::DeprecationWarning:app.*",
+]
+
+[tool.coverage.run]
+branch = true
+source = ["app"]
+omit = [
+    "app/main.py",
+    "app/data/*",
+    "app/**/data/*",
+    "app/__init__.py",
+    "app/**/__init__.py",
+]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+precision = 2
+exclude_also = [
+    "raise NotImplementedError",
+    "if TYPE_CHECKING:",
+    "if __name__ == .__main__.:",
+    "\\.\\.\\.",
+]
+
+[tool.coverage.paths]
+source = ["app/", "*/app/"]
