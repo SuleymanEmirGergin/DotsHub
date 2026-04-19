@@ -29,16 +29,25 @@ module.exports = {
   },
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/$1",
+    // Render tests pull in real React Native under a node environment,
+    // which can't load native modules. Redirect imports to a tiny JS
+    // shim that covers View/Text/StyleSheet/Platform — enough for
+    // pure-markup leaf components (RiskBadge, EmergencyBanner, …).
+    "^react-native$": "<rootDir>/__mocks__/react-native.js",
   },
   setupFilesAfterEnv: ["<rootDir>/jest.setup.ts"],
   // MSW v2 pulls in several ESM-only deps (@open-draft/*, rettime,
-  // until-async, headers-polyfill, …). Jest ignores node_modules by
-  // default, so we whitelist the MSW ecosystem to be passed through
-  // babel-jest → CJS for the Node env. Trailing slash in the lookahead
-  // matters: without it, names like `outvariant` would also catch
-  // `outvariant-other`.
+  // until-async, headers-polyfill, …) plus its own runtime graph
+  // (is-node-process, path-to-regexp, cookie, statuses, graphql).
+  // Jest ignores node_modules by default, so we whitelist the MSW
+  // ecosystem to be passed through babel-jest → CJS for the Node env.
+  //
+  // Pattern matches the package name ANYWHERE after a `node_modules/`
+  // segment so it works for:
+  //   - npm/yarn flat: `node_modules/rettime/...`
+  //   - pnpm nested:   `node_modules/.pnpm/rettime@x.y.z_hash/node_modules/rettime/...`
   transformIgnorePatterns: [
-    "/node_modules/(?!(msw|@mswjs/interceptors|@bundled-es-modules|@open-draft|headers-polyfill|tough-cookie|universal-user-agent|until-async|rettime|outvariant|strict-event-emitter|is-node-process|path-to-regexp|cookie|statuses|graphql)/)",
+    "node_modules/(?!.*(?:msw|@mswjs/interceptors|@bundled-es-modules|@open-draft|headers-polyfill|tough-cookie|universal-user-agent|until-async|rettime|outvariant|strict-event-emitter|is-node-process|path-to-regexp|cookie|statuses|graphql))",
     "\\.pnp\\.[^\\\\/]+$",
   ],
 };

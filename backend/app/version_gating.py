@@ -155,21 +155,28 @@ class CapabilityGateMiddleware(BaseHTTPMiddleware):
         if filtered is data:
             return _passthrough(response, body)
 
-        # Structured log — one line per actual strip, at DEBUG so it
-        # can be sampled or silenced per-env. Operators use this to
-        # track old-client adoption + spot unexpected capability drops.
-        logger.debug(
+        new_body = json.dumps(filtered, ensure_ascii=False).encode("utf-8")
+
+        # One INFO-level line per actual strip so adoption can be read
+        # straight from production logs without a separate telemetry
+        # pipeline. Structured fields (request_id when available,
+        # original vs. filtered byte-size, the missing token set, the
+        # envelope type we filtered) land in the JSON log record as-is.
+        envelope_type = data.get("type") if isinstance(data, Mapping) else None
+        logger.info(
             "capability_gate.filtered",
             extra={
                 "path": request.scope.get("path", ""),
                 "method": request.method,
+                "envelope_type": envelope_type,
                 "client_version": request.headers.get("x-client-version", ""),
+                "request_id": request.headers.get("x-request-id", ""),
                 "caps_received": sorted(caps),
                 "caps_missing": sorted(KNOWN_CAPABILITIES - caps),
+                "bytes_before": len(body),
+                "bytes_after": len(new_body),
             },
         )
-
-        new_body = json.dumps(filtered, ensure_ascii=False).encode("utf-8")
         headers = dict(response.headers)
         headers.pop("content-length", None)
         headers["content-length"] = str(len(new_body))

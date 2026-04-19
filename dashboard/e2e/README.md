@@ -72,15 +72,26 @@ pnpm test:e2e:staging:ui       # interactive
 
 ### CI
 
-`.github/workflows/dashboard-tests.yml` has a separate `e2e-staging` job that runs on `workflow_dispatch`. Required repository secrets:
+`.github/workflows/dashboard-tests.yml` has a separate `e2e-staging` job that runs on **`workflow_dispatch` + `include_staging=true`** AND on a **nightly cron (06:00 UTC)**. Required repository secrets:
 
 - `STAGING_SUPABASE_URL`
 - `STAGING_SUPABASE_ANON_KEY`
 - `STAGING_SUPABASE_SERVICE_ROLE_KEY`
-- `STAGING_BASE_URL`
+- `STAGING_BASE_URL` — deployed URL; see alias note below
 - `STAGING_TEST_ADMIN_EMAIL`
+- `VERCEL_AUTOMATION_BYPASS_SECRET` — Vercel Protection Bypass for Automation token (generated in Vercel → Settings → Deployment Protection)
 
-Trigger via `gh workflow run dashboard-tests.yml --ref <branch>` or the Actions UI.
+Trigger manually: `gh workflow run dashboard-tests.yml --ref <branch> -f include_staging=true` or via Actions UI.
+
+### Stable `STAGING_BASE_URL` via Vercel alias
+
+Per-commit Vercel preview URLs embed the deployment hash and change on every build, so hard-coding one into `STAGING_BASE_URL` means the secret goes stale every push. Fix this **once** in Vercel:
+
+1. Vercel → DotsHub project → Deployments → pick the preview deployment you want the nightly cron to target (usually the one tracking `main`, i.e. the most recent production deployment).
+2. Click the deployment → **Domains** tab → **Add Domain** → pick a subdomain you control (e.g. `dots-hub-staging.vercel.app` if free, or any custom domain you own). Vercel will promote the alias to always point at the latest deployment for the chosen branch.
+3. Update the `STAGING_BASE_URL` repo secret to that alias — it now stays valid regardless of how many PRs deploy.
+
+Alternative: if you already use a production alias (e.g. `dots-hub.vercel.app`), point the nightly job there — production is the source of truth the regression should catch anyway.
 
 ### Adding a new staging test
 

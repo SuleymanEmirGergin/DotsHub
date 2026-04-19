@@ -70,9 +70,24 @@ jobs:
         run: pnpm exec playwright install --with-deps chromium
 
       - name: Start dev server
+        # Dummy Supabase env is set so:
+        #   1. `supabaseAdmin()` / `createServerClient()` don't throw at
+        #      module load (they need non-empty URL + key to construct).
+        #   2. `requireAdmin()` takes the real auth path (ANON_KEY set,
+        #      so the dev-bypass is skipped), hits the stub URL, fails
+        #      to fetch a user, and redirects to /login — which the
+        #      smoke test accepts.
+        # Real staging secrets are NOT used here; those only feed the
+        # `e2e-staging` job.
         run: pnpm run dev &
         env:
           CI: "true"
+          NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: dummy-anon-key-for-ci-smoke
+          SUPABASE_URL: http://127.0.0.1:54321
+          SUPABASE_SERVICE_ROLE_KEY: dummy-service-role-for-ci-smoke
+          NEXT_PUBLIC_API_BASE: http://127.0.0.1:8000
+          ADMIN_API_KEY: dummy
 
       - name: Wait for server
         run: |
