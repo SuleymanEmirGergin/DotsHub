@@ -38,13 +38,14 @@ export default async function SessionsPage({
     : "created_at";
   const ascending = orderDir === "asc";
 
-  // Use admin client for data fetching (RLS bypass, works without auth setup).
-  // Returns null when Supabase env vars are missing (e.g. localhost
-  // Playwright CI). Render an empty "Sessions" state in that case so
-  // the page still has a heading and the smoke test passes — beats
-  // crashing into not-found.
-  const sb = supabaseAdmin();
-  if (!sb) {
+  // Use admin client for data fetching (RLS bypass, works without auth
+  // setup). Throws SupabaseEnvMissingError when env vars aren't set
+  // (localhost Playwright CI). Catch that specific case and render an
+  // empty "Sessions" state — beats crashing into not-found.
+  let sb: ReturnType<typeof supabaseAdmin>;
+  try {
+    sb = supabaseAdmin();
+  } catch {
     return (
       <div className="p-6 max-w-[1200px] mx-auto bg-background text-foreground">
         <h1 className="text-2xl font-bold mb-4">Sessions</h1>
