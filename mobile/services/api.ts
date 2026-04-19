@@ -1,5 +1,9 @@
 /**
- * API client V2 — aligned with openapi.yaml
+ * API client V2 — aligned with docs/openapi_orchestrator.yaml
+ *
+ * (The repo-root openapi.yaml is the legacy reference spec with
+ * `deprecated: true` on every path; docs/openapi_orchestrator.yaml
+ * is the live contract that tracks the FastAPI routes.)
  *
  * Endpoints:
  *   POST /v1/session/start         { user_input_tr, profile }

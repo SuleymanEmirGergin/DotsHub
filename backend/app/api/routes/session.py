@@ -1,4 +1,9 @@
-"""Session routes V2 — aligned with openapi.yaml (/v1/session/...)."""
+"""Session routes V2 — aligned with docs/openapi_orchestrator.yaml (/v1/session/...).
+
+Note: root-level `openapi.yaml` is a legacy reference spec; every path
+is marked `deprecated: true`. Primary contract is
+`docs/openapi_orchestrator.yaml` and tracks the FastAPI routes here.
+"""
 
 import uuid
 import logging
