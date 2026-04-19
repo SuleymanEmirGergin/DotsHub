@@ -67,95 +67,186 @@ is trivial for any scraper.
 **Free tier:** 10k active series, 50 GB logs, 14-day retention. More
 than enough for Dotshub's scale.
 
-### 1. Sign up + grab remote_write credentials
+Everything in this section is GitOps-managed out of the box:
+- Dashboard JSON, alert rules, agent config are all in the repo.
+- `.github/workflows/observability-sync.yml` pushes dashboard + alerts
+  to Grafana Cloud on every `main` commit that touches
+  `config/grafana/**` (gated by whether secrets are configured — if
+  not, the job skips instead of failing).
 
-1. Create a free stack at <https://grafana.com/products/cloud/>.
-2. Navigate to **My Account → My Stack → Prometheus → Details**.
-3. Copy:
-   - `remote_write` endpoint URL (looks like
+### One-time user-action checklist
+
+**You need to do this once**; everything else is automated.
+
+1. **Create Grafana Cloud stack**  
+   <https://grafana.com/products/cloud/> → *Start for free*. Note your
+   stack URL (e.g. `https://dotshub.grafana.net`).
+
+2. **Get remote_write credentials**  
+   Grafana Cloud UI → **My Account → Prometheus → Sending metrics**.  
+   Copy:
+   - `remote_write` URL (looks like
      `https://prometheus-prod-XX-prod-eu-west-X.grafana.net/api/prom/push`)
-   - A new API key with `MetricsPublisher` scope.
+   - Numeric user id
+   - Create a new access token with **MetricsPublisher** + **Rule write**
+     scopes. *(Rule-write is needed so the sync workflow can push alert
+     rules. If you skip it, only dashboards sync; alerts have to be
+     hand-imported.)*
 
-### 2. Pick a scraper
+3. **Create an admin API token for dashboard sync**  
+   Grafana Cloud UI → **Administration → Access → Service accounts →
+   New** → role: Editor. Copy the generated token.
 
-You have two options:
+4. **Create a Sentry project + get the DSN** (optional but recommended)  
+   <https://sentry.io/> → new Python project.  
+   Copy the DSN from **Project Settings → Client Keys**.
 
-#### 2a. Grafana Agent Flow sidecar (recommended)
+5. **Wire repo secrets** (GitHub → Settings → Secrets and variables →
+   Actions):
 
-Run the Grafana Agent next to the backend (same host / pod / Fly machine).
-It scrapes `localhost:8000/metrics` every 15s and forwards to Grafana
-Cloud. Minimal Alloy / Flow config:
+   | Secret                       | Value |
+   | ---------------------------- | ----- |
+   | `GRAFANA_CLOUD_STACK_URL`    | `https://<slug>.grafana.net` |
+   | `GRAFANA_CLOUD_API_TOKEN`    | the service-account token from step 3 |
+   | `GRAFANA_CLOUD_PROM_URL`     | the `remote_write` URL from step 2 |
+   | `GRAFANA_CLOUD_PROM_USER`    | the numeric user id from step 2 |
+   | `GRAFANA_CLOUD_PROM_TOKEN`   | the MetricsPublisher/Rule-write token from step 2 |
 
-```river
-prometheus.scrape "backend" {
-  targets = [
-    { "__address__" = "localhost:8000" },
-  ]
-  metrics_path = "/metrics"
-  scrape_interval = "15s"
-  forward_to = [prometheus.remote_write.cloud.receiver]
-}
+6. **Wire runtime env on the agent host**  
+   Same five values minus `GRAFANA_CLOUD_STACK_URL` + `GRAFANA_CLOUD_API_TOKEN`,
+   plus:
 
-prometheus.remote_write "cloud" {
-  endpoint {
-    url = env("GRAFANA_CLOUD_PROM_URL")
-    basic_auth {
-      username = env("GRAFANA_CLOUD_PROM_USER")
-      password = env("GRAFANA_CLOUD_PROM_API_KEY")
-    }
-  }
-}
+   ```
+   DEPLOYMENT_ENV=production
+   BACKEND_SCRAPE_TARGET=backend:8000   # or your actual hostname
+   ```
+
+   How you wire env depends on the platform — see "Production deploy
+   paths" below.
+
+7. **Wire `SENTRY_DSN` on the backend process env**  
+   Set in the same place the backend's other env vars live
+   (`SUPABASE_URL`, `ADMIN_API_KEY`, etc.). The SDK auto-initialises
+   on import — no other code change needed.
+
+8. **Push a commit that touches `config/grafana/**`** (or manually
+   dispatch the workflow) to kick off the first sync. The dashboard
+   lands under the default folder; alerts land in the
+   `dotshub-backend` namespace.
+
+9. **(Optional) Wire Grafana Cloud alert routes** to Slack / email.
+   Grafana Cloud UI → **Alerting → Contact points**. Bind to the
+   severity labels the rules emit (`critical`, `warning`, `info`).
+
+### Production deploy paths
+
+The Grafana Agent is platform-agnostic — it's just a container that
+needs network access to `backend:8000` and to Grafana Cloud. Three
+common shapes:
+
+#### Docker Compose host
+
+```bash
+# Starts the backend + agent with the agent pulling env from a .env:
+docker compose \
+  -f docker-compose.yml \
+  -f docker-compose.observability.yml \
+  --env-file .env.production \
+  up -d
 ```
 
-Deploy the agent as a separate container / systemd unit / Fly process.
+`docker-compose.observability.yml` builds `config/grafana-agent/` and
+attaches it to the same network as the backend (service DNS name
+`backend` resolves). No code change in the main compose file.
 
-#### 2b. Backend-side `remote_write` (no agent)
+#### Fly.io
 
-`prometheus_client` can push directly — but this adds a write path
-inside the request process. Prefer the agent unless the deployment
-platform makes sidecars painful (Vercel functions, Lambda). Docs:
-<https://prometheus.github.io/client_python/exporting/remote_write/>.
+Add a second process to `fly.toml`:
 
-### 3. Import the dashboard
+```toml
+[processes]
+  web   = "uvicorn app.main:app --host 0.0.0.0 --port 8000 --proxy-headers"
+  agent = "/bin/alloy run /etc/alloy/config.river --server.http.listen-addr=0.0.0.0:12345"
 
-1. Grafana Cloud UI → **Dashboards → New → Import**.
-2. Upload `config/grafana/dashboard-dotshub.json`.
-3. When asked for the datasource, pick the Grafana Cloud Prometheus
-   one (auto-provisioned under the name `grafanacloud-<stack>-prom`).
-
-Panels:
-
-- **HTTP**: request rate by status group, p50/p95/p99 latency.
-- **Capability gate**: strip rate by envelope type, bandwidth saved.
-- **Triage envelope mix**: donut of envelope types (EMERGENCY spike
-  check, QUESTION stall watch).
-- **Confidence score**: heatmap for distribution drift.
-- **Rate limiting**: stacked allowed/denied per bucket, denied-fraction
-  stat panel with yellow > 1% / red > 5% thresholds.
-
-### 4. (Optional) Alerts
-
-Grafana Cloud includes Alertmanager. Suggested starting rules:
-
-```promql
-# HTTP 5xx spike
-sum(rate(http_requests_total{status=~"5.."}[5m])) > 0.5
-
-# p95 latency regression
-histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket[5m]))) > 2
-
-# Rate-limit denied fraction sustained > 5%
-sum(rate(rate_limit_hits_total{outcome="denied"}[10m])) /
-  clamp_min(sum(rate(rate_limit_hits_total[10m])), 1) > 0.05
-
-# EMERGENCY envelope anomaly (3x over 1h baseline)
-sum(rate(triage_envelope_total{envelope_type="EMERGENCY"}[15m])) /
-  clamp_min(avg_over_time(
-    sum(rate(triage_envelope_total{envelope_type="EMERGENCY"}[15m]))[1h:15m]
-  ), 0.01) > 3
+[build.args]
+  # Bake the River config into the deploy image; simpler than two images.
 ```
 
-Wire notifications to the same Slack / PagerDuty channel as Sentry.
+Set the five Grafana Cloud env vars + `SENTRY_DSN` via
+`fly secrets set`. The agent reaches the web process via
+`localhost:8000` — they share the same machine.
+
+#### Kubernetes sidecar
+
+Add a second container to the backend Deployment Pod spec:
+
+```yaml
+      - name: grafana-agent
+        image: ghcr.io/<org>/dotshub-grafana-agent:<tag>   # or build on push
+        env:
+          - name: BACKEND_SCRAPE_TARGET
+            value: "localhost:8000"
+          - name: GRAFANA_CLOUD_PROM_URL
+            valueFrom: { secretKeyRef: { name: grafana-cloud, key: prom_url } }
+          - name: GRAFANA_CLOUD_PROM_USER
+            valueFrom: { secretKeyRef: { name: grafana-cloud, key: prom_user } }
+          - name: GRAFANA_CLOUD_PROM_TOKEN
+            valueFrom: { secretKeyRef: { name: grafana-cloud, key: prom_token } }
+          - name: DEPLOYMENT_ENV
+            value: "production"
+        resources:
+          requests: { cpu: "10m", memory: "64Mi" }
+          limits:   { cpu: "100m", memory: "256Mi" }
+```
+
+The agent sees the backend on `localhost:8000` because they share the
+Pod's network namespace.
+
+#### Render / Railway
+
+Deploy `config/grafana-agent/` as a separate service pointing at the
+backend's internal hostname. Both platforms provide an internal DNS so
+the agent can reach the backend without going through the public LB.
+Set `BACKEND_SCRAPE_TARGET` to the internal address.
+
+### Verify the stack after deploy
+
+After the first successful deploy, run:
+
+```bash
+BACKEND_URL=https://api.pretriage.app \
+GRAFANA_CLOUD_PROM_URL=... \
+GRAFANA_CLOUD_PROM_USER=... \
+GRAFANA_CLOUD_PROM_TOKEN=... \
+bash scripts/verify_observability.sh
+```
+
+This checks:
+1. `/metrics` is 200 + Prometheus format.
+2. Every expected counter/histogram is registered.
+3. A sample lands in Grafana Cloud within ~2 min (proves remote_write
+   is flowing).
+4. A Sentry test event is accepted (if `sentry-cli` + `SENTRY_DSN` are
+   present).
+
+Non-zero exit = at least one check failed; the script lists every
+failure (doesn't stop at the first).
+
+### Sync automation
+
+`.github/workflows/observability-sync.yml`:
+
+- **PRs touching `config/grafana/**`** → DRY_RUN lint. mimirtool
+  validates the alert-rule YAMLs, jq validates dashboard JSON
+  structure, `scripts/grafana_sync.sh` prints what WOULD be pushed.
+- **main pushes** → real sync. If the `GRAFANA_CLOUD_*` secrets are
+  missing, the job emits a `::notice::` and skips the push — so you
+  can ship the repo-side of observability before the cloud account
+  exists without CI turning red.
+
+Manual re-sync: run the workflow via **Actions → Observability Sync →
+Run workflow**. Useful after rotating API tokens or repairing a
+botched hand-edit in the Grafana UI.
 
 ## Option B — Local docker-compose stack (dev only)
 
@@ -198,6 +289,13 @@ docker compose -f docker-compose.monitoring.yml down
 | `config/grafana/datasources.yml`             | Grafana provisioning — local Prometheus datasource. |
 | `config/grafana/dashboards.yml`              | Grafana provisioning — auto-import the dashboard JSON. |
 | `docker-compose.monitoring.yml`              | Local Prometheus + Grafana stack. |
+| `docker-compose.observability.yml`           | Production Grafana Agent sidecar (overlay on main compose). |
+| `config/grafana-agent/config.river`          | Alloy / Grafana Agent Flow scrape + remote_write config (env-driven). |
+| `config/grafana-agent/Dockerfile`            | Sidecar image that bakes the River config. |
+| `config/grafana/alerts/*.yaml`               | Alert rules as code (Prometheus/Mimir format). |
+| `scripts/grafana_sync.sh`                    | Idempotent push of dashboards + alerts to Grafana Cloud. |
+| `scripts/verify_observability.sh`            | Post-deploy health check for `/metrics` + cloud scrape + Sentry. |
+| `.github/workflows/observability-sync.yml`   | PR lint + main-push auto-sync to Grafana Cloud. |
 
 ## Gotchas
 
