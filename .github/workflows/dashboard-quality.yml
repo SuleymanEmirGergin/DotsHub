@@ -1,20 +1,23 @@
 name: Dashboard Quality
 
 on:
+  # NOTE: GitHub Actions rejects a workflow file that declares both
+  # `paths` and `paths-ignore` at the same trigger level (run fails
+  # with "workflow file issue" in 0s, no logs). We collapse both into
+  # `paths` with a negative glob for markdown — same semantics, valid
+  # schema.
   pull_request:
     paths:
       - "dashboard/**"
+      - "!dashboard/**/*.md"
       - ".github/workflows/dashboard-quality.yml"
-    paths-ignore:
-      - "dashboard/**/*.md"
   push:
     branches:
       - main
     paths:
       - "dashboard/**"
+      - "!dashboard/**/*.md"
       - ".github/workflows/dashboard-quality.yml"
-    paths-ignore:
-      - "dashboard/**/*.md"
   workflow_dispatch: {}
 
 concurrency:

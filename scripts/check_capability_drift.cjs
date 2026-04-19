@@ -1,20 +1,21 @@
 #!/usr/bin/env node
 /**
- * Capability drift-check: backend ↔ mobile parity.
+ * Capability drift-check: backend ↔ mobile ↔ docs parity.
  *
- * Fails (exit 1) when `KNOWN_CAPABILITIES` in
- *   backend/app/version_gating.py
- * doesn't match `CLIENT_CAPABILITIES` in
- *   mobile/src/config/capabilities.ts
+ * Fails (exit 1) when the token set in any of:
+ *   - `KNOWN_CAPABILITIES` in backend/app/version_gating.py
+ *   - `CLIENT_CAPABILITIES` in mobile/src/config/capabilities.ts
+ *   - registry table in docs/client_versioning.md
+ * disagrees with the other two.
  *
- * The two registries MUST stay in lock-step: the mobile build
- * advertises what it can parse, and the backend middleware trusts
- * that list. Divergence either ships dead fields (backend generates,
- * no client reads) or breaks clients (client claims a capability the
- * backend doesn't serve).
+ * All three MUST stay in lock-step:
+ *   - backend is the source-of-truth for what gets filtered.
+ *   - mobile advertises what it can parse.
+ *   - the doc is where engineers look when adding a new token, so
+ *     it has to list every supported token or the checklist lies.
  *
  * Run: `node scripts/check_capability_drift.cjs`
- * CI:  wired into backend-regression + dashboard-tests workflows.
+ * CI:  `.github/workflows/capability-drift.yml`.
  */
 "use strict";
 
@@ -126,6 +127,53 @@ function extractMobileCapabilities(source) {
   return tokens;
 }
 
+/**
+ * Parse the markdown "registry" table in docs/client_versioning.md.
+ * The table starts with a `| Token | What it unlocks |` header; each
+ * subsequent row has a first-column cell of the form `| `token` | …`.
+ * We extract tokens from that first column only — anything else on
+ * the page (headers, prose, the capability-vs-feature-flag table) is
+ * ignored.
+ */
+function extractDocsCapabilities(source) {
+  // Find the "Token | What it unlocks" table heading. Then consume
+  // data rows until the table ends (blank line or next heading).
+  const lines = source.split(/\r?\n/);
+  let i = 0;
+  let tableStart = -1;
+  for (; i < lines.length; i++) {
+    if (/^\|\s*Token\s*\|\s*What it unlocks\s*\|/.test(lines[i])) {
+      tableStart = i + 2; // skip header + separator row
+      break;
+    }
+  }
+  if (tableStart < 0) {
+    fail(
+      "docs/client_versioning.md: could not locate the `| Token | What it unlocks |` registry table",
+    );
+  }
+  const tokens = [];
+  for (let j = tableStart; j < lines.length; j++) {
+    const line = lines[j];
+    if (!line.startsWith("|")) break; // table ended
+    const cells = line.split("|").map((c) => c.trim());
+    if (cells.length < 3) continue;
+    const first = cells[1]; // e.g. "`curated_meta`"
+    const m = first.match(/`([a-z_][a-z0-9_]*)`/);
+    if (m) tokens.push(m[1]);
+  }
+  if (tokens.length === 0) {
+    fail(
+      "docs/client_versioning.md: registry table located but no tokens parsed — the row format changed?",
+    );
+  }
+  return tokens;
+}
+
+function diffSets(a, b) {
+  return [...a].filter((t) => !b.has(t)).sort();
+}
+
 function main() {
   const backendTokens = extractBackendCapabilities(
     readFile("backend/app/version_gating.py"),
@@ -133,32 +181,39 @@ function main() {
   const mobileTokens = extractMobileCapabilities(
     readFile("mobile/src/config/capabilities.ts"),
   );
+  const docsTokens = extractDocsCapabilities(
+    readFile("docs/client_versioning.md"),
+  );
 
   const backend = new Set(backendTokens);
   const mobile = new Set(mobileTokens);
+  const docs = new Set(docsTokens);
 
-  const backendOnly = [...backend].filter((t) => !mobile.has(t)).sort();
-  const mobileOnly = [...mobile].filter((t) => !backend.has(t)).sort();
+  const issues = [];
+  const addIssue = (label, missing) => {
+    if (missing.length) issues.push(`  ${label}: ${missing.join(", ")}`);
+  };
+  addIssue("backend has, mobile missing", diffSets(backend, mobile));
+  addIssue("mobile has, backend missing", diffSets(mobile, backend));
+  addIssue("backend has, docs missing", diffSets(backend, docs));
+  addIssue("docs has, backend missing", diffSets(docs, backend));
+  addIssue("mobile has, docs missing", diffSets(mobile, docs));
+  addIssue("docs has, mobile missing", diffSets(docs, mobile));
 
-  if (backendOnly.length === 0 && mobileOnly.length === 0) {
+  if (issues.length === 0) {
     process.stdout.write(
-      `[capability-drift] ok — ${backendTokens.length} capabilities in sync: ` +
-        `${backendTokens.sort().join(", ")}\n`,
+      `[capability-drift] ok — ${backendTokens.length} capabilities in sync ` +
+        `(backend + mobile + docs): ${backendTokens.sort().join(", ")}\n`,
     );
     return;
   }
 
-  let msg = "backend ↔ mobile capability drift detected:\n";
-  if (backendOnly.length) {
-    msg += `  backend has, mobile missing: ${backendOnly.join(", ")}\n`;
-  }
-  if (mobileOnly.length) {
-    msg += `  mobile has, backend missing: ${mobileOnly.join(", ")}\n`;
-  }
-  msg +=
-    "  fix: update whichever side is behind, then rerun this check.\n" +
-    "  see docs/client_versioning.md for the protocol.";
-  fail(msg);
+  fail(
+    "3-way capability drift detected:\n" +
+      issues.join("\n") +
+      "\n  fix: update whichever side is behind, then rerun this check.\n" +
+      "  see docs/client_versioning.md → 'Adding a new capability'.",
+  );
 }
 
 main();

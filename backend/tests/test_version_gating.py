@@ -318,3 +318,47 @@ def test_middleware_passthroughs_non_envelope_json(client: TestClient):
     r = c.get("/v1/unrelated")
     assert r.json() == {"foo": "bar", "nested": {"ok": True}}
     assert int(r.headers["content-length"]) == len(r.content)
+
+
+def test_middleware_passthroughs_config_features_shape():
+    # Regression guard for the `/v1/config/features` endpoint shape
+    # that `useVersionGate` (mobile/src/hooks/useVersionGate.ts)
+    # consumes at startup. The response is a flat object with
+    # llm_nlu_enabled + llm_explain_enabled + a nested client_version
+    # block — it is NOT a triage envelope, and the capability gate
+    # must leave it alone regardless of which client advertises what.
+    # Without this test, the cross-layer protocol
+    # (docs/client_versioning.md → "Related: runtime feature flags")
+    # is wired only by inspection.
+    app = FastAPI()
+    app.add_middleware(CapabilityGateMiddleware)
+
+    @app.get("/v1/config/features")
+    async def features():
+        return {
+            "llm_nlu_enabled": True,
+            "llm_explain_enabled": False,
+            "client_version": {
+                "min": "1.0.0",
+                "latest": "1.2.0",
+                "mode": "warn",
+                "update_url_ios": None,
+                "update_url_android": None,
+            },
+        }
+
+    c = TestClient(app)
+
+    # No header — empty capability set. Still must round-trip.
+    r1 = c.get("/v1/config/features")
+    assert r1.status_code == 200
+    assert r1.json()["client_version"]["mode"] == "warn"
+    assert int(r1.headers["content-length"]) == len(r1.content)
+
+    # Full caps header. Fast-path returns the response untouched; same
+    # payload expected.
+    r2 = c.get(
+        "/v1/config/features",
+        headers={"X-Client-Capabilities": "curated_meta,emergency_specialty"},
+    )
+    assert r2.json() == r1.json()

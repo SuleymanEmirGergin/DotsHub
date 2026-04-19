@@ -153,6 +153,45 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-report-staging
+          # Unique suffix per run so reports accumulate instead of
+          # overwriting each other — lets us diff nightly runs week
+          # over week.
+          name: playwright-report-staging-${{ github.run_id }}-${{ github.run_attempt }}
           path: dashboard/playwright-report/
-          retention-days: 7
+          # 90 days is the upper bound most plans support; keeps the
+          # historical window long enough to investigate flakes that
+          # only surface after a backend release.
+          retention-days: 90
+          if-no-files-found: ignore
+
+      - name: Upload test-results (screenshots + traces)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-test-results-${{ github.run_id }}-${{ github.run_attempt }}
+          path: dashboard/test-results/
+          retention-days: 90
+          if-no-files-found: ignore
+
+      - name: Notify webhook on failure
+        # Optional: if `STAGING_WEBHOOK_URL` is set (Slack / Discord /
+        # generic incoming webhook), ping it with a one-line summary
+        # and a link back to the run. Skips silently when the secret
+        # is empty so forks + dev triggers don't fail.
+        if: failure() && github.event_name == 'schedule'
+        env:
+          WEBHOOK_URL: ${{ secrets.STAGING_WEBHOOK_URL }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          if [ -z "$WEBHOOK_URL" ]; then
+            echo "STAGING_WEBHOOK_URL not set — skipping notification."
+            exit 0
+          fi
+          payload=$(cat <<EOF
+          {
+            "text": ":rotating_light: Nightly staging e2e failed on \`${{ github.ref_name }}\`. Run: ${RUN_URL}"
+          }
+          EOF
+          )
+          curl -sS -X POST -H "Content-Type: application/json" \
+            --data "$payload" "$WEBHOOK_URL" || true
