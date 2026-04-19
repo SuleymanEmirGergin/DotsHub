@@ -20,13 +20,29 @@ on:
         default: "false"
         type: choice
         options: ["false", "true"]
+  # Nightly staging regression — runs the full live-staging e2e suite
+  # against the deployed Vercel preview + staging Supabase, so Supabase
+  # / Vercel / deploy drift is caught without waiting for the next PR.
+  # Runs only e2e-staging (localhost smoke is gated on push/PR paths).
+  schedule:
+    - cron: "0 6 * * *"
 
 defaults:
   run:
     working-directory: dashboard
 
+env:
+  # Opt into Node.js 24 for actions/checkout@v4 etc. before the
+  # June 2026 Node 20 removal. Silences the deprecation warning
+  # currently printed on every run. Runner honours this flag
+  # workflow-wide, so individual jobs do not need to repeat it.
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 jobs:
   test:
+    # localhost smoke — push + PR + manual dispatch. Skip on schedule
+    # so the nightly cron runs only `e2e-staging`.
+    if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -69,15 +85,18 @@ jobs:
         timeout-minutes: 5
 
   e2e-staging:
-    # Opt-in live-staging run: manual trigger via workflow_dispatch with
-    # include_staging=true. Hits a real staging Supabase + deployed
-    # dashboard using repo secrets. Never runs on push/PR automatically
-    # to avoid polluting staging with every commit.
+    # Live-staging run triggered by either:
+    #   - workflow_dispatch with include_staging=true (manual on-demand)
+    #   - scheduled cron (nightly regression against staging)
+    # Never runs on push/PR automatically so regular commits don't
+    # pollute staging Supabase.
     #
     # Intentionally independent of `test` — staging exercises real
     # Supabase auth + data against a deployed URL and must not be held
     # hostage to pre-existing flakiness in the localhost smoke job.
-    if: github.event_name == 'workflow_dispatch' && inputs.include_staging == 'true'
+    if: >-
+      (github.event_name == 'workflow_dispatch' && inputs.include_staging == 'true') ||
+      github.event_name == 'schedule'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:

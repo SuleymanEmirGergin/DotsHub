@@ -6,6 +6,15 @@ info:
     Primary API contract for integrations.
     Unified triage: POST /v1/triage/turn; feedback, history, send-summary, export-summary,
     push-token, facilities, and /health are documented below.
+
+    ## Client capability protocol
+
+    Every `/v1/*` request MAY send `X-Client-Version` and
+    `X-Client-Capabilities` headers. The server strips payload fields
+    whose capability token the client did not advertise. Missing
+    header = minimal baseline (no gated fields). See
+    `components/parameters/ClientCapabilitiesHeader` and
+    `docs/client_versioning.md` for the registry of tokens.
 servers:
   - url: http://localhost:8000
     description: Local development
@@ -261,6 +270,34 @@ paths:
                   version: { type: string }
 
 components:
+  parameters:
+    ClientVersionHeader:
+      name: X-Client-Version
+      in: header
+      required: false
+      schema:
+        type: string
+      description: |
+        Free-form client version string. Logged for analytics; does NOT
+        gate payload shape.
+    ClientCapabilitiesHeader:
+      name: X-Client-Capabilities
+      in: header
+      required: false
+      schema:
+        type: string
+      description: |
+        Comma-separated capability tokens the client can parse. The
+        server strips any response field whose capability token is
+        absent. Missing header = minimal baseline (nothing gated-in).
+
+        Known tokens (see docs/client_versioning.md):
+          - `curated_meta`        — unlocks `Envelope.payload.top_conditions[*]` curated fields (icd10, disease_description_tr, self_care_tr, …).
+          - `emergency_specialty` — unlocks `Envelope.payload.recommended_specialty` on EMERGENCY envelopes.
+
+        Unknown tokens are silently ignored (forward-compatible).
+      example: "curated_meta,emergency_specialty"
+
   schemas:
     TriageTurnRequest:
       type: object

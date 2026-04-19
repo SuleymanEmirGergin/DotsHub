@@ -21,6 +21,13 @@ concurrency:
   group: dashboard-quality-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  # Opt into Node.js 24 for actions/checkout@v4 etc. before the
+  # June 2026 Node 20 removal. Silences the deprecation warning
+  # currently printed on every run. Runner honours this flag
+  # workflow-wide, so individual jobs do not need to repeat it.
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 jobs:
   dashboard-quality:
     runs-on: ubuntu-latest
