@@ -19,6 +19,13 @@ export const tokens: {
     success: string;
     warning: string;
     error: string;
+    // Soft error tints — used by emergency/alert surfaces that need
+    // a clearly-red-coded card without the full error hex as a solid
+    // background (too loud for body text). All three are WCAG AA
+    // contrast-safe against textPrimary.
+    errorBg: string;
+    errorBorder: string;
+    errorDivider: string;
   };
   spacing: {
     xs: number;
@@ -69,6 +76,9 @@ export const tokens: {
     success: "#2E7D32",
     warning: "#F59E0B",
     error: "#C62828",
+    errorBg: "#FFF8F8",
+    errorBorder: "#F1B5B5",
+    errorDivider: "#F2D4D4",
   },
   spacing: {
     xs: 6,
