@@ -1,6 +1,6 @@
 # Smoke: Intro ekranı açılır, başlık veya Başla görünür
 # Run: maestro test .maestro/intro_smoke.yaml (Maestro CLI gerekir)
-appId: com.dotshub.app
+appId: com.triaige.app
 ---
 - launchApp
 - extendedWaitUntil:

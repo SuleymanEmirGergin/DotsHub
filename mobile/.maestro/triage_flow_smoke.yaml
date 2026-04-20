@@ -1,6 +1,6 @@
 # Smoke: Intro -> semptom girişi -> gönder -> QUESTION veya RESULT ekranı
 # Backend erişilebilir olmalı (EXPO_PUBLIC_API_BASE). Run: maestro test .maestro/triage_flow_smoke.yaml
-appId: com.dotshub.app
+appId: com.triaige.app
 ---
 - launchApp
 - extendedWaitUntil:

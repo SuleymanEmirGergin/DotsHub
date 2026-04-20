@@ -27,7 +27,7 @@ describe("featuresClient", () => {
             latest: "1.3.5",
             mode: "warn",
             update_url_ios: "itms-apps://apple.com/app/id123",
-            update_url_android: "market://details?id=com.dotshub",
+            update_url_android: "market://details?id=com.triaige",
           },
         }),
       ),

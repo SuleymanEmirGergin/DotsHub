@@ -1,6 +1,10 @@
 import Constants from "expo-constants";
 
-const GLOBAL_DEVICE_ID_KEY = "__dotshub_device_id__";
+// NOTE: Rename'den önce bu key `__dotshub_device_id__`'di. Değiştirdik
+// çünkü tüm repo "triaige" adına geçti ve prod kullanıcı yoktu → stale
+// device ID'leri rehabilitate etmeye gerek yok. Kendi dev cihazında
+// bir önceki ID'yi tekrar kullanmak istersen bu sabiti geri al.
+const GLOBAL_DEVICE_ID_KEY = "__triaige_device_id__";
 let cachedDeviceId: string | null = null;
 
 type ConstantsShape = {
