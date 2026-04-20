@@ -207,6 +207,12 @@ _EMERGENCY_RULE_TO_SPECIALTY: List[Tuple[str, str, str]] = [
     ("self_harm", "psychiatry", "Psikiyatri"),
     ("chest_pain_plus_breathlessness", "cardiology", "Kardiyoloji"),
     ("chest_pain_breathlessness_soft", "cardiology", "Kardiyoloji"),
+    # safety_guard id used by rules.json — the classic "göğüs ağrısı
+    # + terleme + nefes darlığı" pattern. Without this the EMERGENCY
+    # envelope picked up the generic "Acil Tıp" specialty, which fails
+    # the real_corpus cardiology expectation even though the triage
+    # decision (EMERGENCY) was correct.
+    ("chest_pressure_sweating", "cardiology", "Kardiyoloji"),
     # breathing_severe deliberately NOT mapped to pulmonology — that
     # hard-trigger fires on "nefes alamıyorum / boğuluyorum / morardım"
     # which are ER-grade regardless of the underlying pulmonary cause.
@@ -445,6 +451,78 @@ def _has_menopause_context(text_norm: str) -> bool:
     return True
 
 
+_CHRONIC_PALPITATION_SOFTEN_EMERGENCY_RULES = frozenset({
+    "chest_pain_sob",
+    # Anaphylaxis fires on a bare `nefes darlığı` canonical in
+    # `config/emergency_rules.json` — the same gap that the panic +
+    # subacute-pulmonary softeners already have to handle. Chronic
+    # palpitation with exertional dyspnea is NOT anaphylaxis; the
+    # softener keeps the cardiology RESULT on the routine path.
+    "anaphylaxis",
+})
+# Text markers that indicate a stable / exertional / chronic
+# palpitation pattern — i.e. something the patient has been living
+# with for weeks or months, not a sudden acute event. Triggers the
+# softener only when the ONLY emergency signal is "nefes darlığı"
+# without an acute anchor ("göğüs ağrısı" canonical, "ani başladı",
+# "şiddetli ağrı").
+_CHRONIC_PALPITATION_CHRONICITY_MARKERS = (
+    "son birkaç haftadır", "son birkaç aydır",
+    "birkaç haftadır", "birkaç aydır",
+    "ara sıra", "ara ara", "arada sırada",
+    "zaman zaman", "bazen",
+    "merdiven çıkınca", "yürüyünce",
+    "efor nefes", "eforla",
+)
+# Cardiac anchors: if ANY of these are present, the emergency is
+# real and the softener must NOT fire. Mirrors the
+# _MENOPAUSE_HARD_OVERRIDE_SIGNALS pattern.
+_CHRONIC_PALPITATION_HARD_OVERRIDE_SIGNALS = (
+    "göğüs ağrısı",
+    "sıkıştırıcı göğüs",
+    "baskı gibi göğüs",
+    "sol kola vuruyor",
+    "çeneye vuruyor",
+    "bayılacak gibi",
+    "ani başladı göğüs",
+    "ani başlayan",
+    "şiddetli göğüs",
+    "terleme ve göğüs",
+)
+
+
+def _has_chronic_palpitation_context(canonicals: List[str], text_norm: str) -> bool:
+    """True when the message is a chronic / exertional palpitation
+    description (weeks-months timeline, or only triggered by effort)
+    AND carries no acute cardiac anchor.
+
+    Rationale: the chest_pain_sob emergency rule currently fires on a
+    bare "nefes darlığı" canonical even without actual chest pain or
+    an acute onset. For scenarios like "son birkaç haftadır kalbim
+    düzensiz atıyor, merdiven çıkınca nefes darlığı" that's a false-
+    positive — the patient describes a stable, likely benign
+    arrhythmia that belongs in a cardiology RESULT, not a 112 call.
+    """
+    # Must mention palpitation / heart-rate language — if the text
+    # doesn't anchor on the heart at all, don't even enter this path.
+    heart_markers = (
+        "kalbim", "kalp atış",
+        "çarpıntı", "çarpıntım",
+        "düzensiz atıyor", "düzensiz çarpıyor",
+        "ritim",
+    )
+    if not any(m in text_norm for m in heart_markers):
+        return False
+    # Must be chronic / exertional (at least one marker).
+    if not any(m in text_norm for m in _CHRONIC_PALPITATION_CHRONICITY_MARKERS):
+        return False
+    # Must have NO acute cardiac override.
+    for sig in _CHRONIC_PALPITATION_HARD_OVERRIDE_SIGNALS:
+        if sig in text_norm:
+            return False
+    return True
+
+
 def _has_subacute_pulmonary_context(canonicals: List[str], text_norm: str) -> bool:
     """True when the message describes subacute/chronic respiratory
     complaint with no ER-grade override signal.
@@ -673,6 +751,9 @@ def run_orchestrator_turn(
         _safety_canonicals, _text_norm_for_panic
     )
     _menopause_context = _has_menopause_context(_text_norm_for_panic)
+    _chronic_palpitation_context = _has_chronic_palpitation_context(
+        _safety_canonicals, _text_norm_for_panic
+    )
 
     emergency = safety_guard_check(input_text, answers, runtime.rules_json)
     if (
@@ -757,6 +838,18 @@ def run_orchestrator_turn(
             logger.info(
                 "Menopause softener: suppressed evaluate_emergency "
                 "rule_id=%s because menopause signature (>=2 markers)",
+                _em_match.rule_id,
+            )
+            _em_match = None
+        if (
+            _em_match is not None
+            and _chronic_palpitation_context
+            and _em_match.rule_id in _CHRONIC_PALPITATION_SOFTEN_EMERGENCY_RULES
+        ):
+            logger.info(
+                "Chronic palpitation softener: suppressed evaluate_emergency "
+                "rule_id=%s because chronic/exertional palpitation pattern "
+                "with no acute cardiac anchor",
                 _em_match.rule_id,
             )
             _em_match = None

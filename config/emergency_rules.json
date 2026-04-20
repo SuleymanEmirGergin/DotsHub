@@ -146,6 +146,31 @@
         "anjiyoödem",
         "nefes darlığı",
         "yaygın döküntü"
+      ],
+      "_comment": "require_any_group narrows the rule: a base canonical_any hit ('nefes darlığı' alone) is no longer enough to fire anaphylaxis — the text also needs a genuine allergic-reaction signal (swelling, rash, generalised pruritus). Without this, bare chronic dyspnea and benign palpitation-with-exertional-SOB scenarios fire EMERGENCY incorrectly; with it, the rule still catches classic anaphylaxis presentations (edema + airway + reported allergy) while avoiding the FP tax.",
+      "require_any_group": [
+        {
+          "keyword_any": [
+            "dillim şişti",
+            "dilim şişti",
+            "boğazım şişti",
+            "dudaklarım şişti",
+            "yüzüm şişti",
+            "kurdeşen",
+            "ürtiker",
+            "yaygın döküntü",
+            "her yerim kaşınıyor",
+            "tüm vücut kaşıntı",
+            "alerji geliştim",
+            "anaflaksi"
+          ]
+        },
+        {
+          "canonical_any": [
+            "anjiyoödem",
+            "yaygın döküntü"
+          ]
+        }
       ]
     },
     {
