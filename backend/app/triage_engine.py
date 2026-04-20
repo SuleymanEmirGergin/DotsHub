@@ -220,6 +220,8 @@ _EMERGENCY_RULE_TO_SPECIALTY: List[Tuple[str, str, str]] = [
     ("chest_pain_sob", "cardiology", "Kardiyoloji"),
     ("acute_glaucoma_crisis", "ophthalmology", "Göz Hastalıkları"),
     ("sudden_vision_loss", "ophthalmology", "Göz Hastalıkları"),
+    # Session-5: new retina detach rule — same specialty destination.
+    ("retinal_emergency", "ophthalmology", "Göz Hastalıkları"),
     ("infant_fever_under3months", "pediatrics", "Pediatri"),
     ("petechial_rash_child", "pediatrics", "Pediatri"),
     ("febrile_seizure_active", "pediatrics", "Pediatri"),
@@ -229,9 +231,14 @@ _EMERGENCY_RULE_TO_SPECIALTY: List[Tuple[str, str, str]] = [
     ("preeclampsia_suspect", "obgyn", "Kadın Hastalıkları ve Doğum"),
     ("postpartum_hemorrhage", "obgyn", "Kadın Hastalıkları ve Doğum"),
     ("acute_appendicitis_suspect", "general_surgery", "Genel Cerrahi"),
+    # Session-5: epileptic seizure — route to neurology nöbeti.
+    ("seizure_active", "neurology", "Nöroloji"),
     # Truly systemic emergencies — no single specialty, route to ER.
     ("anaphylaxis", "emergency", "Acil Tıp"),
     ("severe_bleeding", "emergency", "Acil Tıp"),
+    ("severe_burn", "emergency", "Acil Tıp"),
+    ("poisoning_ingestion", "emergency", "Acil Tıp"),
+    ("sepsis_suspect", "emergency", "Acil Tıp"),
     ("high_fever_with_red_flags", "emergency", "Acil Tıp"),
 ]
 
@@ -390,6 +397,52 @@ _PULMONARY_HARD_OVERRIDE_SIGNALS = (
     "inhalere rağmen", "inhalere ragmen",
     "morardım", "moraran", "moraraıyor", "mor oldu",
 )
+
+
+# Menopause / hot-flash softener (Session-5) ─────────────────────────────
+#
+# The classic menopause picture — sıcak basmaları + gece terlemeleri +
+# adet yokluğu — trips chest_pressure_sweating ("terliyorum" keyword)
+# and chest_pain_sob (when çarpıntı is in the synonym list). These are
+# not MI patients. Soften the same cardiac rules we soften for panic
+# and subacute pulmonary when the menopause signature is unambiguous
+# AND no true acute cardiac signal is present.
+_MENOPAUSE_SOFTEN_SAFETY_GUARD_IDS = frozenset({
+    "chest_pressure_sweating",
+})
+_MENOPAUSE_SOFTEN_EMERGENCY_RULES = frozenset({
+    "chest_pain_sob",
+})
+_MENOPAUSE_MARKERS = (
+    "sıcak basması", "sıcak basmaları",
+    "gece terleme", "gece terlemeleri",
+    "menopoz",
+    "adet görmedim", "adetim kesildi",
+)
+# Same override list as panic — a real MI/anaphylaxis can coexist with
+# a menopausal presentation and we must not hide it.
+_MENOPAUSE_HARD_OVERRIDE_SIGNALS = (
+    "sol kola vuruyor", "çeneye vuruyor",
+    "bayılacak gibi", "bayıldım",
+    "dilim şişti", "boğazım şişti", "dudaklarım şişti",
+    "yaygın döküntü", "morardım",
+    "ani başladı göğüs", "ani başlayan göğüs ağrısı",
+)
+
+
+def _has_menopause_context(text_norm: str) -> bool:
+    """True when the message carries >=2 menopause markers and no
+    hard cardiac override. Uses text markers (not canonicals) because
+    'sıcak basması' + 'gece terleme' aren't individually extracted —
+    they're descriptive phrases.
+    """
+    hits = sum(1 for m in _MENOPAUSE_MARKERS if m in text_norm)
+    if hits < 2:
+        return False
+    for sig in _MENOPAUSE_HARD_OVERRIDE_SIGNALS:
+        if sig in text_norm:
+            return False
+    return True
 
 
 def _has_subacute_pulmonary_context(canonicals: List[str], text_norm: str) -> bool:
@@ -619,6 +672,7 @@ def run_orchestrator_turn(
     _subacute_pulm_context = _has_subacute_pulmonary_context(
         _safety_canonicals, _text_norm_for_panic
     )
+    _menopause_context = _has_menopause_context(_text_norm_for_panic)
 
     emergency = safety_guard_check(input_text, answers, runtime.rules_json)
     if (
@@ -654,6 +708,17 @@ def run_orchestrator_turn(
             emergency.get("rule_id"),
         )
         emergency = None
+    if (
+        emergency
+        and _menopause_context
+        and emergency.get("rule_id") in _MENOPAUSE_SOFTEN_SAFETY_GUARD_IDS
+    ):
+        logger.info(
+            "Menopause softener: suppressed safety_guard rule_id=%s "
+            "because menopause signature (>=2 markers) with no ER override signal",
+            emergency.get("rule_id"),
+        )
+        emergency = None
 
     if not emergency and runtime.emergency_rules_cfg:
         _em_match = evaluate_emergency(
@@ -681,6 +746,17 @@ def run_orchestrator_turn(
                 "Subacute pulmonary softener: suppressed evaluate_emergency "
                 "rule_id=%s because subacute respiratory pattern with no ER "
                 "override signal",
+                _em_match.rule_id,
+            )
+            _em_match = None
+        if (
+            _em_match is not None
+            and _menopause_context
+            and _em_match.rule_id in _MENOPAUSE_SOFTEN_EMERGENCY_RULES
+        ):
+            logger.info(
+                "Menopause softener: suppressed evaluate_emergency "
+                "rule_id=%s because menopause signature (>=2 markers)",
                 _em_match.rule_id,
             )
             _em_match = None

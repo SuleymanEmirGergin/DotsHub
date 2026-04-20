@@ -29,7 +29,15 @@
         "kulak kanalım ağrıyor",
         "kulakta akıntı kaşıntı",
         "yüzerken kulağıma su kaçtı",
-        "dış kulak iltihabı"
+        "dış kulak iltihabı",
+        "alerjik rinit",
+        "işitme kaybı",
+        "tinnitus",
+        "kulak çınlaması",
+        "polen sezonunda burnum akıyor",
+        "kulağımdan iyi duyamıyorum",
+        "saman nezlesi",
+        "alerjik nezle"
       ],
       "negative_keywords_tr": [
         "göğüs ağrısı",
@@ -195,7 +203,17 @@
         "dirseklerim gümüş kepekli",
         "saçlı derimde kepekli plaklar",
         "psoriasis",
-        "sedef hastalığı"
+        "sedef hastalığı",
+        "saç dökülmesi",
+        "saçlarım dökülüyor",
+        "böcek ısırığı",
+        "sivrisinek ısırığı",
+        "seboreik dermatit",
+        "seboreik egzama",
+        "kepek",
+        "akne belirtisi",
+        "mantar enfeksiyonu",
+        "alopesi"
       ],
       "negative_keywords_tr": [
         "dudak şişti",
@@ -258,7 +276,12 @@
         "yaş bağlı görme azalması",
         "göz kapağımda ağrılı kırmızı şişlik",
         "göz kapağı sivilce gibi",
-        "arpacık göz"
+        "arpacık göz",
+        "kuru göz",
+        "gözlerim çok kuru",
+        "bilgisayar başında gözlerim batıyor",
+        "kuru göz sendromu",
+        "göz kuruluğu"
       ],
       "negative_keywords_tr": []
     },
@@ -291,7 +314,19 @@
         "omzum ağrıyor kaldıramıyorum",
         "donuk omuz",
         "frozen shoulder",
-        "omuz hareketi kısıtlı"
+        "omuz hareketi kısıtlı",
+        "topuk ağrısı",
+        "topuğumda ağrı",
+        "plantar fasiit",
+        "plantar fasyit",
+        "topuk dikeni",
+        "dirsek ağrısı",
+        "dirseğim ağrıyor",
+        "tenisçi dirseği",
+        "lateral epikondilit",
+        "eklem iltihabı",
+        "artrit",
+        "romatoid artrit"
       ],
       "negative_keywords_tr": []
     },
@@ -354,7 +389,16 @@
         "uykuya dalmakta zorlanıyorum",
         "3-4 saat uyuyabiliyorum",
         "dayanacak gücüm yok",
-        "artık dayanacak gücüm yok"
+        "artık dayanacak gücüm yok",
+        "alkol bağımlılığı",
+        "alkol kullanım bozukluğu",
+        "her gün akşam içiyorum",
+        "içkiyi bırakamıyorum",
+        "bipolar bozukluk",
+        "manik dönem depresif dönem",
+        "manik atak",
+        "ruh halim dalgalı",
+        "aşırı enerji sonra çöküş"
       ],
       "negative_keywords_tr": []
     },
@@ -530,7 +574,18 @@
         "kilo verdim çarpıntı",
         "ellerim titriyor terliyorum",
         "iştahım iyi ama zayıflıyorum",
-        "yorgunum kilo aldım cildim kuru saçlarım dökülüyor"
+        "yorgunum kilo aldım cildim kuru saçlarım dökülüyor",
+        "hipotiroidi belirtisi",
+        "troksin kullanıyorum",
+        "tiroid düşük",
+        "osteoporoz",
+        "kemik erimesi",
+        "boy kısalması",
+        "tiroid nodülü",
+        "boynumda şişlik",
+        "adrenal bezden",
+        "kortizol yüksek",
+        "feokromositoma"
       ],
       "negative_keywords_tr": []
     },

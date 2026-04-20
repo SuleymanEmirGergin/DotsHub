@@ -226,6 +226,9 @@
       "keyword_any": [
         "hamile",
         "gebeyim",
+        "gebe olduğumu biliyorum",
+        "gebe olduğumu öğrendim",
+        "hamile olduğumu biliyorum",
         "gebelik testi pozitif",
         "test pozitif çıktı",
         "gebelik testim pozitif",
@@ -234,10 +237,7 @@
         "gebe kaldım"
       ],
       "canonical_any": [
-        "gebelik şüphesi",
-        "pelvik ağrı",
-        "vajinal kanama",
-        "kasık şişliği"
+        "gebelik şüphesi"
       ],
       "require_any_group": [
         {
@@ -259,7 +259,10 @@
             "sol kasığımda şiddetli",
             "kanama oluyor",
             "az kanama",
-            "az miktarda kanama"
+            "az miktarda kanama",
+            "hafif kanama",
+            "vajinal kanama",
+            "hafif kanama oluyor"
           ]
         },
         {
@@ -347,7 +350,11 @@
         "göz içi basıncım yüksek",
         "ışıkların etrafında hale",
         "ışıkların etrafında halka",
-        "ışıkta hale görüyorum"
+        "ışıkta hale görüyorum",
+        "ışıklara bakınca hale",
+        "ışıklara bakınca halka",
+        "ışıklara bakınca halo",
+        "gözüm aniden çok ağrımaya başladı"
       ],
       "canonical_any": [
         "göz ağrısı",
@@ -582,6 +589,111 @@
           ]
         }
       ]
+    },
+    {
+      "id": "severe_burn",
+      "severity": 3,
+      "title_tr": "Yanık - büyük yüzeyli / derin",
+      "message_tr": "Kaynar su veya ateşle oluşan, vücudun geniş alanına yayılan veya derin (kabarcıklı) yanıklar hemen tıbbi müdahale gerektirir. En yakın acile gidin.",
+      "recommendation_tr": "112 / Acil Servis / Yanık Ünitesi",
+      "keyword_any": [
+        "yanık oluştu",
+        "kabarcıklı yanık",
+        "kaynar su döküldü",
+        "ateşte yandım",
+        "geniş yanık",
+        "derin yanık",
+        "kabarcıklar oluştu yandı"
+      ],
+      "canonical_any": []
+    },
+    {
+      "id": "poisoning_ingestion",
+      "severity": 3,
+      "title_tr": "Zehirlenme / kimyasal yutma",
+      "message_tr": "Temizlik ürünü, ilaç fazlası veya bilinmeyen kimyasal yutulması ciddi iç yaralanma yapabilir. Hemen 114 Zehir Danışma Merkezi'ni arayın ve acile gidin.",
+      "recommendation_tr": "114 Zehir Danışma / 112 / Acil Servis",
+      "keyword_any": [
+        "temizlik malzemesi yuttum",
+        "kimyasal yuttum",
+        "ilaç fazla aldım",
+        "yanlışlıkla yuttum",
+        "deterjan içtim",
+        "çamaşır suyu içtim",
+        "zehirlendim",
+        "bilerek ilaç aldım"
+      ],
+      "canonical_any": []
+    },
+    {
+      "id": "sepsis_suspect",
+      "severity": 3,
+      "title_tr": "Sepsis şüphesi",
+      "message_tr": "Yüksek ateş, titreme, hızlı kalp atışı ve konfüzyon kombinasyonu sepsis belirtisi olabilir. Gecikmeden acile gidin.",
+      "recommendation_tr": "112 / Acil Servis",
+      "keyword_any": [],
+      "canonical_any": [],
+      "require_any_group": [
+        {
+          "keyword_any": [
+            "39 ateş",
+            "39.5",
+            "40 ateş",
+            "yüksek ateş"
+          ]
+        },
+        {
+          "keyword_any": [
+            "titriyorum",
+            "titreme",
+            "hızlı kalp",
+            "kalbim hızlı atıyor",
+            "kalbim çok hızlı",
+            "konfüzyon",
+            "konfüzyonel",
+            "kendimi toplayamıyorum",
+            "çok halsiz"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "seizure_active",
+      "severity": 3,
+      "title_tr": "Nöbet / bilinç kaybı - epileptik atak",
+      "message_tr": "Bilinç kaybı, kas kasılması ve sonrasında yorgunluk epileptik nöbet belirtisidir. İlk nöbet veya tekrarlayan nöbetler için mutlaka acile başvurun.",
+      "recommendation_tr": "112 / Acil Servis / Nöroloji",
+      "keyword_any": [
+        "bilincim gitti",
+        "bilincim kapandı",
+        "kasıldı",
+        "kasılmam oldu",
+        "nöbet geçirdim",
+        "epileptik nöbet",
+        "kollarım ve bacaklarım kasıldı",
+        "kendime gelince yorgundum",
+        "bilincim 30 saniye gitti",
+        "tuvalette bilincim gitti"
+      ],
+      "canonical_any": []
+    },
+    {
+      "id": "retinal_emergency",
+      "severity": 3,
+      "title_tr": "Retina dekolmanı şüphesi",
+      "message_tr": "Ani ışık çakmaları, çok sayıda uçuşan nokta ve görme alanında perde hissi retina dekolmanı belirtisidir. Görmeyi kurtarmak için hemen göz acile gidin.",
+      "recommendation_tr": "Acil Servis / Göz Hastalıkları Nöbeti",
+      "keyword_any": [
+        "ışık çakmaları",
+        "ışık çakması görüyorum",
+        "çok fazla siyah nokta",
+        "görüş alanımda perde",
+        "perde indi",
+        "perde iniyor",
+        "yıldız yağmuru",
+        "uçuşan noktalar"
+      ],
+      "canonical_any": []
     }
   ]
 }
