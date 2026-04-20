@@ -5,6 +5,7 @@
 
 import { useEffect, useRef } from "react";
 import { registerPushToken, unregisterPushToken } from "@/src/api/pushClient";
+import { addPushLifecycleBreadcrumb } from "@/src/observability/breadcrumb";
 import { getDeviceId } from "@/utils/deviceId";
 
 type ExpoNotificationsLike = {
@@ -40,14 +41,21 @@ export function usePushRegistration(locale: string = "tr"): void {
         const { status } = await notifications.requestPermissionsAsync();
         if (cancelled) return;
         if (status !== "granted") {
+          addPushLifecycleBreadcrumb("permission_denied", { status });
           try {
             await unregisterPushToken(deviceId);
-          } catch {
+            addPushLifecycleBreadcrumb("unregistered", { reason: "permission_denied" });
+          } catch (err) {
             // Permission denied ve unregister hatasında UI akışını kesme
+            addPushLifecycleBreadcrumb("unregister_failed", {
+              reason: "permission_denied",
+              error: err instanceof Error ? err.message : String(err),
+            });
           }
           doneRef.current = true;
           return;
         }
+        addPushLifecycleBreadcrumb("permission_granted");
 
         const tokenData = await notifications.getExpoPushTokenAsync({
           projectId: process.env.EXPO_PUBLIC_PROJECT_ID ?? undefined,
@@ -55,19 +63,36 @@ export function usePushRegistration(locale: string = "tr"): void {
         const token = tokenData?.data;
         if (cancelled) return;
         if (!token) {
+          addPushLifecycleBreadcrumb("token_missing");
           try {
             await unregisterPushToken(deviceId);
-          } catch {
+            addPushLifecycleBreadcrumb("unregistered", { reason: "token_missing" });
+          } catch (err) {
             // Token alınamadıysa eski kayıt temizleme denemesi best-effort
+            addPushLifecycleBreadcrumb("unregister_failed", {
+              reason: "token_missing",
+              error: err instanceof Error ? err.message : String(err),
+            });
           }
           doneRef.current = true;
           return;
         }
+        addPushLifecycleBreadcrumb("token_acquired");
 
-        await registerPushToken(token, deviceId, locale);
+        try {
+          await registerPushToken(token, deviceId, locale);
+          addPushLifecycleBreadcrumb("registered", { locale });
+        } catch (err) {
+          addPushLifecycleBreadcrumb("register_failed", {
+            error: err instanceof Error ? err.message : String(err),
+          });
+          throw err;
+        }
         doneRef.current = true;
       } catch {
-        // Expo Go'da veya izin reddedildiğinde sessizce atla
+        // Expo Go'da veya izin reddedildiğinde sessizce atla.
+        // Breadcrumbs above already captured the specific failure
+        // point if any reached this catch.
       }
     })();
     return () => {

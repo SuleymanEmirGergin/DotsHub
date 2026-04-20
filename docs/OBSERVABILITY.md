@@ -321,6 +321,39 @@ unchanged for OSS clones without a Sentry account).
 | `SENTRY_AUTH_TOKEN`                       | EAS build time only        | `sentry-cli` auth for source map upload. MUST be an EAS secret (never EXPO_PUBLIC_). |
 | `SENTRY_ORG`, `SENTRY_PROJECT`            | EAS build time only        | Source map upload target (default `triaige` / `triaige-mobile-rn`). |
 
+### Breadcrumb categories
+
+Every breadcrumb the mobile app emits falls into one of four
+categories. Category values are fixed — if you need a fifth, add it
+to `mobile/src/observability/breadcrumb.ts` with a test in
+`mobile/__tests__/observability/breadcrumb.test.ts` so the contract
+stays documented.
+
+| Category       | Emitted by                                                     | Message shape                                           | Level rules                                                   |
+| -------------- | -------------------------------------------------------------- | ------------------------------------------------------- | ------------------------------------------------------------- |
+| `api`          | `addApiBreadcrumb` (called from `services/api.ts`)             | `METHOD /path → STATUS`                                 | `info` on 2xx, `error` on non-2xx + network failures.         |
+| `navigation`   | `addNavigationBreadcrumb` via `useNavigationBreadcrumbs()` hook in `_layout.tsx` | `from -> to`                                            | Always `info`.                                                |
+| `version_gate` | `addVersionGateBreadcrumb` (called from `useVersionGate`)      | `gate=DECISION current=VERSION min=VERSION`             | `info` for `ok` / `warn`, `warning` for `block`.              |
+| `push`         | `addPushLifecycleBreadcrumb` (called from `usePushRegistration`) | `push.EVENT`                                            | `info` for success paths; `warning` for `_failed` + `permission_denied`. |
+
+Path strings inside `api` crumbs are run through `redactUrlPath`
+(session UUIDs collapse to `/v1/session/[id]/...`). Params are
+deliberately NOT tracked on `navigation` crumbs — mobile route
+space is small and keeping them out is cheaper than case-by-case
+scrubbing.
+
+### Weekly DSN smoke test
+
+`.github/workflows/sentry-smoke.yml` runs every Monday 09:00 UTC
+(plus `workflow_dispatch`). Calls `scripts/sentry_smoke.sh` which
+POSTs a synthetic `info`-level event straight to the Sentry store
+API using `MOBILE_SENTRY_DSN`. HTTP 200 = pipe open. Any non-200,
+DSN typo, or quota-exhaustion surfaces as a failed weekly job —
+before the next real incident exposes the gap.
+
+If the secret isn't configured, the job prints a warning and exits
+0 so a fresh fork doesn't see red CI out of the gate.
+
 ### Source maps — EAS build hook
 
 The `@sentry/react-native/expo` config plugin runs after `metro
@@ -379,6 +412,10 @@ leave a DSN in the shell never phone home.
 | `mobile/app/_layout.tsx`                     | Calls `initSentry()` at module top (before router mount). |
 | `mobile/eas.json`                            | EAS build profiles wire `EXPO_PUBLIC_SENTRY_ENVIRONMENT` per build type. |
 | `mobile/__tests__/observability/sentry.test.ts` | Unit tests for the scrubber + init kill switch. |
+| `mobile/src/observability/useNavigationBreadcrumbs.ts` | Hook that emits one `navigation` breadcrumb per pathname change. |
+| `mobile/__tests__/observability/breadcrumb.test.ts` | Unit tests for each breadcrumb category (api / navigation / version_gate / push). |
+| `scripts/sentry_smoke.sh`                    | Bash smoke — POSTs a synthetic event to the Sentry store API to verify the DSN pipe is open. |
+| `.github/workflows/sentry-smoke.yml`         | Weekly cron (Mon 09:00 UTC) + manual trigger running the smoke script. |
 
 ## Gotchas
 
