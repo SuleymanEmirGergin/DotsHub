@@ -220,9 +220,23 @@ export default async function SessionDetail({
         <Link href="/admin/sessions" className="text-muted-foreground no-underline text-sm">
           &larr; {getText(locale, "sessions.backToSessions")}
         </Link>
-        <Link href={`/admin/sessions/${id}/replay`} className="font-extrabold text-primary no-underline">
-          Replay →
-        </Link>
+        <div className="flex items-center gap-4">
+          {/* PDF export (Phase B7 U2). Plain anchor with download hint
+              — browser handles the bytes stream + Save-As dialog. Using
+              a real <a href> avoids needing client-side state; the
+              route handler sets Content-Disposition so the filename
+              flows from the backend. */}
+          <a
+            href={`/api/admin/session/${id}/export-pdf`}
+            className="font-semibold text-primary no-underline hover:underline"
+            download
+          >
+            📄 {getText(locale, "sessions.exportPdf")}
+          </a>
+          <Link href={`/admin/sessions/${id}/replay`} className="font-extrabold text-primary no-underline">
+            Replay →
+          </Link>
+        </div>
       </div>
 
       <h1 className="text-2xl font-extrabold mt-3">Session Detail</h1>

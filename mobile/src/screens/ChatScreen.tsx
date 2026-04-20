@@ -24,6 +24,7 @@ export default function ChatScreen() {
   const { sessionId, messages, loading, appendMessage, setLoading, setLastRequest, applyEnvelope } =
     useTriageStore();
   const setShowHistory = useTriageStore((s) => s.setShowHistory);
+  const setShowSettings = useTriageStore((s) => s.setShowSettings);
 
   async function onSend(msg?: string) {
     const trimmed = (msg || text).trim();
@@ -55,14 +56,24 @@ export default function ChatScreen() {
         <View style={styles.headerWrap}>
           <View style={styles.headerRow}>
             <SectionTitle style={styles.headerTitle}>{t("chat.title")}</SectionTitle>
-            <Pressable
-              onPress={() => setShowHistory(true)}
-              style={styles.historyBtn}
-              accessibilityRole="button"
-              accessibilityLabel={t("chat.history")}
-            >
-              <Text style={styles.historyBtnText}>{t("chat.history")}</Text>
-            </Pressable>
+            <View style={styles.headerActions}>
+              <Pressable
+                onPress={() => setShowHistory(true)}
+                style={styles.historyBtn}
+                accessibilityRole="button"
+                accessibilityLabel={t("chat.history")}
+              >
+                <Text style={styles.historyBtnText}>{t("chat.history")}</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => setShowSettings(true)}
+                style={styles.historyBtn}
+                accessibilityRole="button"
+                accessibilityLabel={t("chat.settings")}
+              >
+                <Text style={styles.historyBtnText}>{t("chat.settings")}</Text>
+              </Pressable>
+            </View>
           </View>
           <MutedText>
             {t("chat.subtitle")}
@@ -79,14 +90,27 @@ export default function ChatScreen() {
           style={styles.list}
           contentContainerStyle={styles.listContent}
           onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
+          // Announce new messages to screen readers politely (doesn't
+          // interrupt current speech). The FlatList itself doesn't
+          // need a role — each bubble below is marked as text.
+          accessibilityLiveRegion="polite"
           renderItem={({ item }) => {
             const fromUser = item.role === "user";
+            const speakerLabel = fromUser
+              ? t("chat.bubbleUser")
+              : t("chat.bubbleAssistant");
             return (
               <View
                 style={[
                   styles.bubble,
                   fromUser ? styles.bubbleUser : styles.bubbleAssistant,
                 ]}
+                // "You: Baş ağrım var" / "Assistant: Ne zaman başladı?"
+                // — the screen reader reads this combined string so
+                // the user always knows who just spoke.
+                accessible
+                accessibilityRole="text"
+                accessibilityLabel={`${speakerLabel}: ${item.text}`}
               >
                 <Text
                   style={[
@@ -109,6 +133,8 @@ export default function ChatScreen() {
                   onPress={() => onSend(chip)}
                   style={styles.chipPressable}
                   hitSlop={6}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${t("chat.quickChip")}: ${chip}`}
                 >
                   <Text style={styles.chipText}>{chip}</Text>
                 </Pressable>
@@ -168,6 +194,10 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     marginBottom: tokens.spacing.xs,
+  },
+  headerActions: {
+    flexDirection: "row",
+    gap: tokens.spacing.xs,
   },
   historyBtn: {
     paddingHorizontal: tokens.spacing.md,

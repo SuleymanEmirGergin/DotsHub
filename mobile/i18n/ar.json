@@ -35,15 +35,24 @@
     "subtitle": "سأطرح بضعة أسئلة قصيرة لتوجيهك بشكل أفضل.",
     "locationHint": "شارك موقعك لرؤية المرافق الصحية القريبة في شاشة النتائج (اختياري).",
     "history": "📋 السجل",
+    "settings": "⚙️ Settings",
     "evaluating": "جاري التقييم…",
     "symptomInput": "إدخال الأعراض",
     "symptomInputHint": "اكتب عرضك وأرسله.",
-    "emergencyDisclaimer": "في حالات الطوارئ اتصل برقم الطوارئ المحلي."
+    "emergencyDisclaimer": "في حالات الطوارئ اتصل برقم الطوارئ المحلي.",
+    "bubbleUser": "You",
+    "bubbleAssistant": "Assistant",
+    "quickChip": "Quick reply"
   },
   "question": {
     "whyAsking": "لماذا نسأل؟",
     "freeTextPlaceholder": "اكتب إجابة قصيرة…",
-    "numberPlaceholder": "أدخل رقماً…"
+    "numberPlaceholder": "أدخل رقماً…",
+    "freeTextInputLabel": "Answer",
+    "freeTextInputHint": "Type your answer to the question",
+    "numberInputLabel": "Numeric answer",
+    "numberInputHint": "Answer the question with a number",
+    "choiceOption": "Option"
   },
   "result": {
     "title": "النتيجة",
@@ -121,6 +130,21 @@
     "result": "✅ نتيجة",
     "sameDay": "⚡ اذهب اليوم",
     "confidence": "الثقة"
+  },
+  "settings": {
+    "title": "Settings",
+    "back": "← Back",
+    "languageSection": "Language",
+    "legalSection": "Legal",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service",
+    "aboutSection": "About",
+    "version": "Version",
+    "buildId": "Build",
+    "contactSection": "Contact",
+    "contactEmail": "Send email",
+    "supportLine": "Reach out to report an issue or share feedback.",
+    "linkError": "Could not open link."
   },
   "summary": {
     "title": "الملخص",

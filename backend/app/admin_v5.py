@@ -7,7 +7,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, Header, Query
+from fastapi import APIRouter, Header, HTTPException, Query, Response
 
 # NOTE: `from app.db import supabase` at module level would break every
 # CI test that imports app.main — app.db raises RuntimeError at import
@@ -152,11 +152,20 @@ def list_sessions(
     return {"items": rows[:limit]}
 
 
-@router.get("/sessions/{session_id}")
-def get_session_detail(session_id: str, x_admin_key: Optional[str] = Header(default=None)):
-    require_admin(x_admin_key)
+def _fetch_session_detail(session_id: str) -> Dict[str, Any]:
+    """Shared fetch used by both JSON detail + PDF export endpoints.
 
-    sess = supabase.table("triage_sessions").select("*").eq("session_id", session_id).single().execute()
+    Pulled out into a helper so the PDF path doesn't duplicate the
+    three Supabase queries. Raises nothing — callers decide what to
+    do with a blank session.
+    """
+    sess = (
+        supabase.table("triage_sessions")
+        .select("*")
+        .eq("session_id", session_id)
+        .single()
+        .execute()
+    )
     events = (
         supabase.table("triage_events")
         .select("*")
@@ -171,12 +180,58 @@ def get_session_detail(session_id: str, x_admin_key: Optional[str] = Header(defa
         .order("created_at", desc=False)
         .execute()
     )
-
     return {
         "session": sess.data,
-        "events": events.data,
-        "feedback": fb.data,
+        "events": events.data or [],
+        "feedback": fb.data or [],
     }
+
+
+@router.get("/sessions/{session_id}")
+def get_session_detail(session_id: str, x_admin_key: Optional[str] = Header(default=None)):
+    require_admin(x_admin_key)
+    return _fetch_session_detail(session_id)
+
+
+@router.get(
+    "/sessions/{session_id}/export-pdf",
+    responses={
+        200: {"content": {"application/pdf": {}}, "description": "Session PDF"},
+        404: {"description": "Session not found"},
+    },
+)
+def export_session_pdf(session_id: str, x_admin_key: Optional[str] = Header(default=None)):
+    """Stream a PDF snapshot of the session for admin hand-offs.
+
+    Used by the dashboard's session-detail "PDF indir" button (Phase
+    B7-U2). Lazy-imports fpdf2 so any environment that skips the dep
+    (CI without full requirements) still loads admin_v5 cleanly —
+    only this one endpoint is unavailable.
+    """
+    require_admin(x_admin_key)
+
+    detail = _fetch_session_detail(session_id)
+    if not detail.get("session"):
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    # Lazy import: fpdf2 is only ~1MB but it's an extra process-start
+    # expense we'd rather not pay on every admin endpoint warm-up. The
+    # import happens once per worker on first PDF request.
+    from app.services.session_pdf import build_session_pdf
+
+    pdf_bytes = build_session_pdf(detail)
+
+    filename = f"triaige-session-{session_id}.pdf"
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={
+            # `attachment` so browsers download instead of rendering
+            # inline — admin is explicitly asking for a file.
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "Cache-Control": "no-store, no-cache, must-revalidate",
+        },
+    )
 
 
 @router.get("/stats/overview")

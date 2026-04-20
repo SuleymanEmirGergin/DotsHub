@@ -22,7 +22,28 @@
     "login": "Giriş",
     "logout": "Çıkış",
     "privacy": "Gizlilik",
-    "terms": "Kullanım Koşulları"
+    "terms": "Kullanım Koşulları",
+    "home": "Ana Sayfa",
+    "adminEntry": "Admin Girişi"
+  },
+  "landing": {
+    "heroTitle": "Triaige",
+    "heroTagline": "Semptomlarını anlat, hangi sağlık branşına başvurman gerektiğini söyleyelim.",
+    "heroSub": "Türkçe konuşan yapay zekâ destekli ön triaj. Tıbbi tanı değil, doğru yere yönlendirme.",
+    "ctaDownload": "Uygulamayı İndir",
+    "ctaLearnMore": "Nasıl çalışır?",
+    "step1Title": "1. Belirtini anlat",
+    "step1Body": "Başın ağrıyor mu, ateşin var mı? Kendi dilinle yaz, biz anlarız.",
+    "step2Title": "2. Birkaç soru cevapla",
+    "step2Body": "Yapay zekâ seni daha iyi yönlendirmek için ek sorular sorar.",
+    "step3Title": "3. Doğru branşı öner",
+    "step3Body": "Aciliyet seviyesi + doktora sorman gereken şeylerle birlikte net bir yönlendirme.",
+    "safetyTitle": "Güvenlik Önceliğimiz",
+    "safetyBody": "Acil belirtiler (göğüs ağrısı, nefes darlığı, inme belirtileri) tespit edildiğinde Triaige seni doğrudan 112'ye yönlendirir. Tıbbi tanı koymaz — her zaman bir sağlık uzmanına danışın.",
+    "ctaTryApp": "Uygulamayı Dene",
+    "footerBuiltBy": "Emir Gergin + ekibi tarafından Türkiye'de tasarlandı.",
+    "footerContact": "İletişim",
+    "storesComingSoon": "App Store + Play Store'da yakında"
   },
   "login": {
     "title": "Giriş",
@@ -54,7 +75,8 @@
     "view": "Görüntüle",
     "noSessions": "Oturum bulunamadı.",
     "sessionDetail": "Oturum detayı",
-    "backToSessions": "Oturumlara dön"
+    "backToSessions": "Oturumlara dön",
+    "exportPdf": "PDF indir"
   },
   "status": {
     "title": "Sistem durumu",

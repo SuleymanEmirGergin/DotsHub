@@ -35,6 +35,10 @@
     "subtitle": "I'll ask a few short questions to guide you better.",
     "locationHint": "Share your location to see nearby healthcare facilities on the result screen (optional).",
     "history": "📋 History",
+    "settings": "⚙️ Settings",
+    "bubbleUser": "You",
+    "bubbleAssistant": "Assistant",
+    "quickChip": "Quick reply",
     "evaluating": "Evaluating…",
     "symptomInput": "Symptom input",
     "symptomInputHint": "Type your symptom and send",
@@ -43,7 +47,12 @@
   "question": {
     "whyAsking": "Why are we asking?",
     "freeTextPlaceholder": "Write a short answer…",
-    "numberPlaceholder": "Enter a number…"
+    "numberPlaceholder": "Enter a number…",
+    "freeTextInputLabel": "Answer",
+    "freeTextInputHint": "Type your answer to the question",
+    "numberInputLabel": "Numeric answer",
+    "numberInputHint": "Answer the question with a number",
+    "choiceOption": "Option"
   },
   "result": {
     "title": "Result",
@@ -121,6 +130,21 @@
     "result": "✅ RESULT",
     "sameDay": "⚡ SAME DAY",
     "confidence": "Confidence"
+  },
+  "settings": {
+    "title": "Settings",
+    "back": "← Back",
+    "languageSection": "Language",
+    "legalSection": "Legal",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service",
+    "aboutSection": "About",
+    "version": "Version",
+    "buildId": "Build",
+    "contactSection": "Contact",
+    "contactEmail": "Send email",
+    "supportLine": "Reach out to report an issue or share feedback.",
+    "linkError": "Could not open link."
   },
   "summary": {
     "title": "Summary",

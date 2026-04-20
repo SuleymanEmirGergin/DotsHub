@@ -7,6 +7,7 @@ import ResultScreen from "@/src/screens/ResultScreen";
 import EmergencyScreen from "@/src/screens/EmergencyScreen";
 import ErrorScreen from "@/src/screens/ErrorScreen";
 import HistoryScreen from "@/src/screens/HistoryScreen";
+import SettingsScreen from "@/src/screens/SettingsScreen";
 import { useTriageStore } from "@/src/state/triageStore";
 import { tokens } from "@/src/ui/designTokens";
 
@@ -14,21 +15,35 @@ import { tokens } from "@/src/ui/designTokens";
  * V4 routing hub - renders screen based on store state.
  *
  * Priority order:
- * 1. !acceptIntro -> IntroScreen
- * 2. emergency -> EmergencyScreen
- * 3. error -> ErrorScreen
- * 4. result -> ResultScreen
- * 5. pendingQuestion -> QuestionScreen
- * 6. default -> ChatScreen (free-text input)
+ * 1. showSettings -> SettingsScreen (overlay, preserves state behind)
+ * 2. showHistory -> HistoryScreen (same pattern)
+ * 3. !acceptIntro -> IntroScreen
+ * 4. emergency -> EmergencyScreen
+ * 5. error -> ErrorScreen
+ * 6. result -> ResultScreen
+ * 7. pendingQuestion -> QuestionScreen
+ * 8. default -> ChatScreen (free-text input)
  */
 export default function Home() {
   const acceptIntro = useTriageStore((s) => s.acceptIntro);
   const showHistory = useTriageStore((s) => s.showHistory);
   const setShowHistory = useTriageStore((s) => s.setShowHistory);
+  const showSettings = useTriageStore((s) => s.showSettings);
+  const setShowSettings = useTriageStore((s) => s.setShowSettings);
   const pendingQuestion = useTriageStore((s) => s.pendingQuestion);
   const result = useTriageStore((s) => s.result);
   const emergency = useTriageStore((s) => s.emergency);
   const error = useTriageStore((s) => s.error);
+
+  // Settings screen override — takes precedence so the user can reach
+  // settings from anywhere (intro, result, chat) without losing context.
+  if (showSettings) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <SettingsScreen onBack={() => setShowSettings(false)} />
+      </SafeAreaView>
+    );
+  }
 
   // History screen override
   if (showHistory) {

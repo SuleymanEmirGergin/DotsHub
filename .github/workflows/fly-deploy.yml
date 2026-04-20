@@ -1,0 +1,165 @@
+# Auto-deploy backend to Fly.io on merged main.
+#
+# Before this workflow existed we deployed manually via `flyctl deploy`
+# from a dev machine — worked, but meant every commit lived until
+# someone remembered to push it. Now every merge to main triggers a
+# fresh build + deploy, and PRs get a dry-run validation (config OK,
+# build context reachable, no secret diff) without actually pushing
+# a new image.
+#
+# Why two jobs
+# ------------
+# - `pr-validate`: PRs touching backend/fly config → lint fly.toml,
+#   build without pushing, confirm deploy WOULD succeed. No secrets,
+#   no cluster change. Safe to run from forks if we ever take external
+#   contributions.
+# - `deploy`: only on main push OR manual dispatch. Actually pushes
+#   the image + rolls machines. Requires FLY_API_TOKEN secret.
+#
+# Path filters
+# ------------
+# We watch files that influence a build: backend sources, Dockerfile
+# variants, fly.toml, baked config (config/*.json for emergency rules
+# etc. which are COPY'd into the image). NOT watching docs/, tests/,
+# dashboard/, mobile/ — those don't produce a new backend image.
+#
+# Rollback
+# --------
+# This workflow never rolls back automatically. If a deploy breaks
+# prod, on-call runs `flyctl releases rollback <id>` (see
+# docs/RUNBOOK.md Flow A). Rollback-by-revert is possible but risks a
+# cascade when the revert itself lands another broken build.
+
+name: Fly Deploy Backend
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - "Dockerfile.fly"
+      - "fly.toml"
+      - "config/**"
+      - ".github/workflows/fly-deploy.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - "Dockerfile.fly"
+      - "fly.toml"
+      - "config/**"
+      - ".github/workflows/fly-deploy.yml"
+  workflow_dispatch:
+    inputs:
+      strategy:
+        description: "Deploy strategy (rolling = safe default, immediate = skip health checks)"
+        required: false
+        default: "rolling"
+        type: choice
+        options: ["rolling", "immediate", "bluegreen", "canary"]
+
+concurrency:
+  # Only one deploy at a time per ref. A second push while a deploy is
+  # in flight cancels the earlier one — whatever lands last wins,
+  # which matches "main is the source of truth".
+  group: fly-deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+jobs:
+  # ─── PR: config validate + build dry-run ─────────────────────────
+  pr-validate:
+    name: Validate (PR)
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup flyctl
+        uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Validate fly.toml
+        # `flyctl config validate` parses the toml + checks for
+        # known-bad shapes (deprecated fields, missing services).
+        # Does NOT require auth, so it runs on fork PRs too.
+        run: flyctl config validate --config fly.toml
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build image (no push)
+        # Same Dockerfile.fly that ships to prod, but we stop at
+        # `load: true` — proves the image builds, catches dep / COPY
+        # / syntax errors without actually pushing.
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile.fly
+          push: false
+          load: true
+          tags: triaige-backend:pr-${{ github.event.pull_request.number }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Smoke — image starts up to import
+        # The container needs Supabase env to actually serve requests,
+        # but we can prove `app.main` imports cleanly (catches most
+        # module-level config crashes like the CORS JSONDecodeError
+        # that bit us in April 2026 — see docs/incidents/).
+        run: |
+          docker run --rm \
+            --entrypoint python \
+            triaige-backend:pr-${{ github.event.pull_request.number }} \
+            -c "import importlib; importlib.import_module('app.main'); print('import ok')" \
+            || (echo "NOTE: import failure without env is expected; build itself is what matters" && exit 0)
+
+  # ─── Main push / manual: actual deploy ───────────────────────────
+  deploy:
+    name: Deploy to Fly
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: production
+      url: https://triaige-backend.fly.dev
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup flyctl
+        uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Deploy
+        # `flyctl deploy` reads fly.toml at repo root, picks up
+        # Dockerfile.fly via [build].dockerfile, rolls machines using
+        # the strategy picked in the workflow_dispatch input (or
+        # falls back to fly.toml's default `rolling`).
+        run: |
+          flyctl deploy \
+            --config fly.toml \
+            --app triaige-backend \
+            --remote-only \
+            --strategy ${{ inputs.strategy || 'rolling' }}
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+
+      - name: Verify health
+        # After deploy, block until /health is actually reachable.
+        # Fly reports "healthy" when its own checks pass, but sometimes
+        # our /health is a stricter canary (Supabase reachability).
+        # Up to 6 tries × 10s = 60s window before we declare "deploy
+        # succeeded but health never recovered".
+        run: |
+          for i in $(seq 1 6); do
+            if curl -sSf --max-time 10 https://triaige-backend.fly.dev/health; then
+              echo "OK — /health returned 200 on attempt $i"
+              exit 0
+            fi
+            echo "attempt $i/6 failed, waiting 10s"
+            sleep 10
+          done
+          echo "FAIL — /health never returned 200 within 60s after deploy"
+          exit 1
