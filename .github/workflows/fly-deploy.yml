@@ -83,9 +83,21 @@ jobs:
 
       - name: Validate fly.toml
         # `flyctl config validate` parses the toml + checks for
-        # known-bad shapes (deprecated fields, missing services).
-        # Does NOT require auth, so it runs on fork PRs too.
-        run: flyctl config validate --config fly.toml
+        # known-bad shapes (deprecated fields, missing services). In
+        # recent flyctl versions it DOES need auth — the doc was out
+        # of date. Pass FLY_API_TOKEN if configured; otherwise skip
+        # gracefully so fork PRs / fresh clones without the secret
+        # don't get a red "Validate" check they can't fix from the
+        # PR itself.
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+        run: |
+          if [[ -z "${FLY_API_TOKEN:-}" ]]; then
+            echo "::warning::FLY_API_TOKEN not configured — skipping flyctl config validate."
+            echo "To enable: Settings → Secrets → Actions → add FLY_API_TOKEN."
+            exit 0
+          fi
+          flyctl config validate --config fly.toml
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3

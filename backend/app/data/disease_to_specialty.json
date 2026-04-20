@@ -47,8 +47,8 @@
     },
     {
       "disease_label": "Diabetes ",
-      "specialty_id": "internal_gi",
-      "specialty_tr": "Dahiliye (gerekirse Endokrinoloji)",
+      "specialty_id": "endocrinology",
+      "specialty_tr": "Endokrinoloji",
       "confidence": 0.9
     },
     {
@@ -191,20 +191,20 @@
     },
     {
       "disease_label": "Hypothyroidism",
-      "specialty_id": "internal_gi",
-      "specialty_tr": "Dahiliye (gerekirse Endokrinoloji)",
+      "specialty_id": "endocrinology",
+      "specialty_tr": "Endokrinoloji",
       "confidence": 0.9
     },
     {
       "disease_label": "Hyperthyroidism",
-      "specialty_id": "internal_gi",
-      "specialty_tr": "Dahiliye (gerekirse Endokrinoloji)",
+      "specialty_id": "endocrinology",
+      "specialty_tr": "Endokrinoloji",
       "confidence": 0.9
     },
     {
       "disease_label": "Hypoglycemia",
-      "specialty_id": "internal_gi",
-      "specialty_tr": "Dahiliye (gerekirse Endokrinoloji)",
+      "specialty_id": "endocrinology",
+      "specialty_tr": "Endokrinoloji",
       "confidence": 0.85
     },
     {
@@ -320,6 +320,90 @@
       "specialty_id": "psychiatry",
       "specialty_tr": "Psikiyatri",
       "confidence": 0.9
+    },
+    {
+      "disease_label": "Arrhythmia",
+      "specialty_id": "cardiology",
+      "specialty_tr": "Kardiyoloji",
+      "confidence": 0.9
+    },
+    {
+      "disease_label": "Tachycardia",
+      "specialty_id": "cardiology",
+      "specialty_tr": "Kardiyoloji",
+      "confidence": 0.85
+    },
+    {
+      "disease_label": "Angina pectoris",
+      "specialty_id": "cardiology",
+      "specialty_tr": "Kardiyoloji",
+      "confidence": 0.9
+    },
+    {
+      "disease_label": "Pericarditis",
+      "specialty_id": "cardiology",
+      "specialty_tr": "Kardiyoloji",
+      "confidence": 0.85
+    },
+    {
+      "disease_label": "Hypotension",
+      "specialty_id": "cardiology",
+      "specialty_tr": "Kardiyoloji",
+      "confidence": 0.75
+    },
+    {
+      "disease_label": "Adrenal insufficiency",
+      "specialty_id": "endocrinology",
+      "specialty_tr": "Endokrinoloji",
+      "confidence": 0.9
+    },
+    {
+      "disease_label": "Osteoporosis",
+      "specialty_id": "endocrinology",
+      "specialty_tr": "Endokrinoloji",
+      "confidence": 0.85
+    },
+    {
+      "disease_label": "Thyroid nodule",
+      "specialty_id": "endocrinology",
+      "specialty_tr": "Endokrinoloji",
+      "confidence": 0.9
+    },
+    {
+      "disease_label": "Dysmenorrhea",
+      "specialty_id": "obgyn",
+      "specialty_tr": "Kadın Hastalıkları ve Doğum",
+      "confidence": 0.9
+    },
+    {
+      "disease_label": "Endometriosis",
+      "specialty_id": "obgyn",
+      "specialty_tr": "Kadın Hastalıkları ve Doğum",
+      "confidence": 0.9
+    },
+    {
+      "disease_label": "Uterine fibroid",
+      "specialty_id": "obgyn",
+      "specialty_tr": "Kadın Hastalıkları ve Doğum",
+      "confidence": 0.9
+    },
+    {
+      "disease_label": "PCOS",
+      "specialty_id": "obgyn",
+      "specialty_tr": "Kadın Hastalıkları ve Doğum",
+      "confidence": 0.9
+    },
+    {
+      "disease_label": "Routine pregnancy follow-up",
+      "specialty_id": "obgyn",
+      "specialty_tr": "Kadın Hastalıkları ve Doğum",
+      "confidence": 0.95
+    },
+    {
+      "disease_label": "Menopause",
+      "specialty_id": "obgyn",
+      "specialty_tr": "Kadın Hastalıkları ve Doğum",
+      "confidence": 0.85
     }
   ]
 }

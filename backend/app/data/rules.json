@@ -35,13 +35,13 @@
       {
         "id": "chest_pressure_sweating",
         "label": "Göğüs baskısı/ağrısı + terleme/nefes darlığı",
+        "_comment": "`terliyorum` REMOVED from the keyword fallback because alone it's a benign/febrile signal (hyperthyroidism, menopause, viral illness all produce it). The regex already captures the real rule — göğüs + ağrı/baskı OR kalp krizi OR kol/çene vuruyor. Keyword fallback should only list phrases that are ER-worthy ON THEIR OWN; safety_guard.py tries regex first and falls back to keyword only when regex didn't match.",
         "keywords": [
           "göğsümde baskı",
           "göğüs ağrısı",
           "kalp krizi",
           "sol kola vuruyor",
-          "çeneme vuruyor",
-          "terliyorum"
+          "çeneme vuruyor"
         ],
         "regex": "\\b(göğüs(üm|ümde)?\\s*(ağr(ı|iyor)|bask(ı|ı var))|kalp\\s*krizi|sol\\s*kola\\s*vur(uyor|du)|çene(me)?\\s*vur(uyor|du))\\b",
         "action": "ER_NOW"
