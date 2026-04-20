@@ -1,0 +1,75 @@
+// Grafana Agent Flow (Alloy) — production sidecar config.
+//
+// Role: scrape the backend /metrics endpoint every 15s and forward to
+// Grafana Cloud's hosted Prometheus via remote_write. Runs as a
+// separate container / process next to the backend — never inside
+// it — so an agent crash doesn't take the API down.
+//
+// Three env vars drive everything (supplied by the host platform as
+// regular env, or via secret managers):
+//
+//   BACKEND_SCRAPE_TARGET     e.g. "backend:8000"            (compose service name)
+//                             or   "localhost:8000"          (same-host sidecar)
+//                             or   "pretriage.internal:8000" (Fly internal DNS)
+//   GRAFANA_CLOUD_PROM_URL    https://prometheus-prod-XX-prod-eu-west-X.grafana.net/api/prom/push
+//   GRAFANA_CLOUD_PROM_USER   numeric user id from the "Sending metrics" page
+//   GRAFANA_CLOUD_PROM_TOKEN  API key with `MetricsPublisher` scope
+//   DEPLOYMENT_ENV            production | staging (propagated as external label)
+//
+// Drop-in compat: this also works on classic grafana-agent binaries
+// via `grafana-agent-flow run config.river` and on the newer
+// `alloy run config.river`. The River syntax is the same.
+
+// ─── Scrape ───────────────────────────────────────────────────────
+
+prometheus.scrape "triaige_backend" {
+  targets = [
+    {
+      __address__ = sys.env("BACKEND_SCRAPE_TARGET"),
+      // Labels propagated to every sample. Keep cardinality bounded:
+      // only identifiers that are stable per-deploy belong here.
+      service     = "backend",
+      component   = "pretriage",
+    },
+  ]
+  metrics_path    = "/metrics"
+  scheme          = "http"
+  scrape_interval = "15s"
+  scrape_timeout  = "10s"
+
+  forward_to = [prometheus.remote_write.grafana_cloud.receiver]
+}
+
+// ─── remote_write → Grafana Cloud ─────────────────────────────────
+
+prometheus.remote_write "grafana_cloud" {
+  endpoint {
+    url = sys.env("GRAFANA_CLOUD_PROM_URL")
+
+    basic_auth {
+      username = sys.env("GRAFANA_CLOUD_PROM_USER")
+      password = sys.env("GRAFANA_CLOUD_PROM_TOKEN")
+    }
+
+    // Retries make transient network blips harmless. Queue sits
+    // in-memory; sized for a ~5 minute outage at 15s scrape.
+    queue_config {
+      capacity           = 10000
+      max_shards         = 50
+      min_shards         = 1
+      max_samples_per_send = 2000
+      batch_send_deadline  = "5s"
+      min_backoff          = "30ms"
+      max_backoff          = "5s"
+      retry_on_http_429    = true
+    }
+  }
+
+  // External labels attach to every metric before remote_write so
+  // Grafana dashboards can filter by env without the scrape having
+  // to know (useful for multi-env single-tenant stacks).
+  external_labels = {
+    env    = sys.env("DEPLOYMENT_ENV"),
+    source = "grafana-agent-flow",
+  }
+}

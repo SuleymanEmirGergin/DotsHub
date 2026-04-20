@@ -1,0 +1,70 @@
+# Local monitoring stack — Prometheus + Grafana with the Dotshub
+# dashboard pre-provisioned.
+#
+# Why a separate compose file: production observability will run on
+# Grafana Cloud (see docs/OBSERVABILITY.md). This stack is for local
+# development — verifying panels render, PromQL queries return data,
+# and the /metrics endpoint works end-to-end without signing up for a
+# cloud account.
+#
+# Usage:
+#   docker compose -f docker-compose.monitoring.yml up -d
+#     → Prometheus on http://localhost:9090
+#     → Grafana on    http://localhost:3001 (admin / admin)
+#
+# The backend is expected to be running on localhost:8000 on the host
+# (either `uvicorn app.main:app` or the main `docker-compose.yml`).
+# Prometheus reaches it via `host.docker.internal:8000` — works on
+# Docker Desktop for macOS/Windows and Linux Docker ≥ 20.10.
+
+services:
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: dotshub-prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./config/grafana/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=15d"
+      - "--web.enable-lifecycle"
+    extra_hosts:
+      # Makes `host.docker.internal` resolve on native Linux Docker the
+      # same way it does on Docker Desktop. On mac/Windows this line is
+      # a no-op but harmless.
+      - "host.docker.internal:host-gateway"
+
+  grafana:
+    image: grafana/grafana:11.2.2
+    container_name: dotshub-grafana
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+    ports:
+      # 3001 instead of 3000 to avoid clashing with the Next.js dev
+      # server that typically runs on 3000.
+      - "3001:3000"
+    environment:
+      # No auth headache for local dev — admin/admin out of the box.
+      # Grafana Cloud handles auth properly in production.
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+      # Auto-provisioning reads from /etc/grafana/provisioning.
+      - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
+    volumes:
+      # Datasource + dashboards provisioning (read-only).
+      - ./config/grafana/datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml:ro
+      - ./config/grafana/dashboards.yml:/etc/grafana/provisioning/dashboards/dashboards.yml:ro
+      # The dashboard JSON itself — Grafana's file provisioner watches
+      # this dir and re-imports on change.
+      - ./config/grafana/dashboard-triaige.json:/var/lib/grafana/dashboards/dashboard-triaige.json:ro
+      - grafana-data:/var/lib/grafana
+
+volumes:
+  prometheus-data:
+  grafana-data:

@@ -1,5 +1,19 @@
 # Runbook: Supabase Down / Unreachable
 
+## Quick checklist (incident → green)
+
+- [ ] Backend `/health` → check the `supabase` field
+- [ ] Supabase status page (https://status.supabase.com)
+- [ ] If provider-wide: comms on status page + #dotshub-ops
+- [ ] If our project only: Supabase dashboard → Project → Health
+- [ ] Triage `/v1/triage/turn` keeps working (deterministic fallback);
+      feedback + admin + send-summary degrade
+- [ ] Decision: wait for provider vs. swap pooler URL vs.
+      failover to backup project
+- [ ] Watch `/health` recovery; rate-limit alerts may fire as
+      in-memory buckets drift from Redis cache
+- [ ] Post-incident ticket (see bottom)
+
 ## Symptoms
 
 - **Backend `/health`** returns 503 with `supabase: unreachable`.
@@ -79,3 +93,16 @@
   Our `.env.example` documents both (`SUPABASE_DB_URL` +
   `SUPABASE_DB_POOLER_URL`). Confirm prod uses the pooler on
   IPv4-only networks.
+
+## Post-incident checklist
+
+- [ ] **Timeline**: detected, mitigated, green (UTC)
+- [ ] **Root cause**: Supabase-side incident / our project /
+      connection-pool exhaustion / schema migration gone wrong
+- [ ] **Impact**: feedback rows lost? analytics dashboard gap?
+      session-detail data missing for the window?
+- [ ] **What went well** / **what didn't**: 3 bullets each
+- [ ] **Action items**: pooler config audit, `/health` response
+      improvement, connection-recovery test
+- [ ] Link postmortem from the Slack alert thread
+- [ ] Close the incident in ops tracker

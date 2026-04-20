@@ -2,7 +2,13 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { createClient } from "@supabase/supabase-js";
+// IMPORTANT: use the same `@supabase/ssr` cookie-backed client as
+// app/auth/callback/page.tsx — otherwise the PKCE code_verifier
+// stored here (localStorage) won't be found by exchangeCodeForSession
+// on the callback side, which reads from cookies. That mismatch was
+// the root cause of staging e2e auth tests failing 4/4 runs
+// (post-mortem in docs/OPS_STAGING_SETUP.md isteyen olursa).
+import { createBrowserClient } from "@/lib/supabaseBrowser";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
@@ -12,9 +18,10 @@ const isSupabaseConfigured =
   supabaseAnonKey.length > 0 &&
   supabaseAnonKey !== "your_anon_key";
 
-const sb = isSupabaseConfigured
-  ? createClient(supabaseUrl, supabaseAnonKey)
-  : null;
+// Falls back to null when env isn't set so the UI can render a helpful
+// "configure env" message instead of crashing on the non-null assertion
+// inside createBrowserClient().
+const sb = isSupabaseConfigured ? createBrowserClient() : null;
 
 const RATE_LIMIT_COOLDOWN_SEC = 60;
 

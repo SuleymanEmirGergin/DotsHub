@@ -1,0 +1,111 @@
+# syntax=docker/dockerfile:1.7
+#
+# Fly.io-specific variant of backend/Dockerfile.
+# ---------------------------------------------
+# Differences vs backend/Dockerfile:
+#   - Build context is the repo ROOT (Fly.io reads fly.toml from root),
+#     so COPY paths are prefixed with `backend/`.
+#   - The repo's `config/` directory (risk_rules.json,
+#     emergency_rules.json, etc.) is BAKED INTO the image at
+#     /app/config. On Fly we don't have persistent volumes configured
+#     (hobby plan default), and the files are small + deterministic,
+#     so shipping them in the layer is the simplest correct option.
+#   - `PRETRIAGE_CONFIG_DIR` is overridden to `/app/config` so
+#     runtime.py resolves the baked-in files instead of the legacy
+#     `/srv/pretriage/config` bind-mount path.
+#
+# Keep this file in sync with backend/Dockerfile whenever the
+# dependency layer changes (requirements.txt bumps, system packages).
+# A small amount of duplication is accepted here — the alternative
+# (shared parameterised Dockerfile) complicates the Compose dev path
+# without real benefit.
+
+# ── Builder: compile deps into a clean site-packages ─────────────────────
+FROM python:3.11-slim AS builder
+
+ENV PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential \
+        libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /build
+COPY backend/requirements.txt ./
+RUN pip install --prefix=/install -r requirements.txt
+
+# ── Runtime: copy install dir + app + baked config, drop privileges ──────
+FROM python:3.11-slim AS runtime
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app \
+    PRETRIAGE_CONFIG_DIR=/app/config \
+    PORT=8000
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        libpq5 \
+        curl \
+        unzip \
+        ca-certificates \
+    && rm -rf /var/lib/apt/lists/* \
+    && useradd --system --uid 10001 --gid 0 --home /app pretriage
+
+# ── Grafana Alloy (Agent Flow) binary for observability sidecar ────
+#
+# Phase A3: Alloy runs as a second Fly process on the same machine,
+# scrapes localhost:8000/metrics every 15s, and remote_writes to
+# Grafana Cloud. We bake the binary into the image instead of running
+# it as a separate Fly app because:
+#   - Same-machine localhost scrape avoids public-egress cost / latency
+#   - One image, one deploy path, one set of secrets
+#   - Fly hobby plan is single-machine anyway — the sidecar is "free"
+#     (shares the existing 512 MB VM; Alloy footprint ~30-40 MB RAM)
+#
+# Upgrade path: bump ALLOY_VERSION. Grafana follows semver on v1.x
+# with strong backwards compat — in-place swap is usually safe.
+ARG ALLOY_VERSION=v1.4.2
+RUN curl -fsSL "https://github.com/grafana/alloy/releases/download/${ALLOY_VERSION}/alloy-linux-amd64.zip" \
+        -o /tmp/alloy.zip \
+    && unzip -q /tmp/alloy.zip -d /tmp/alloy-extract \
+    && mv /tmp/alloy-extract/alloy-linux-amd64 /usr/local/bin/alloy \
+    && chmod +x /usr/local/bin/alloy \
+    && rm -rf /tmp/alloy.zip /tmp/alloy-extract
+
+COPY --from=builder /install /usr/local
+
+WORKDIR /app
+# App source — same as backend/Dockerfile but prefixed for root context.
+COPY --chown=10001:0 backend/app/ ./app/
+# Baked-in config tree. Read-only at runtime; hot reloads happen via
+# redeploy, not via a mount. If a tenant-specific override is ever
+# needed, a Fly volume can be mounted at /app/config.d and runtime.py
+# extended to merge it — not wired today.
+COPY --chown=10001:0 config/ ./config/
+
+# Alloy (Grafana Agent Flow) config for the sidecar process. The River
+# file reads env vars at runtime, so secrets (GRAFANA_CLOUD_*) are
+# injected via `flyctl secrets set` — never baked into this layer.
+COPY --chown=10001:0 config/grafana-agent/config.river /etc/alloy/config.river
+# Storage dir for Alloy's WAL. Must be writable by uid 10001. Only
+# used on the `agent` process; app process ignores it.
+RUN mkdir -p /var/lib/alloy && chown -R 10001:0 /var/lib/alloy
+
+USER 10001
+
+# EXPOSE is documentation only; Fly routes traffic based on fly.toml's
+# [http_service] block. Alloy admin UI (12345) stays loopback-only.
+EXPOSE 8000
+
+# Healthcheck kept identical to backend/Dockerfile so Fly's own
+# [checks] block in fly.toml sees the same signal dev + prod use.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+    CMD curl -f "http://localhost:${PORT}/health" || exit 1
+
+# Single uvicorn worker; horizontal scaling is Fly's `fly scale count`,
+# not threads inside the container. Rate-limit state lives per-worker
+# unless REDIS_URL is set (Upstash extension provides that for us).
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT} --proxy-headers --forwarded-allow-ips=*"]

@@ -1,11 +1,17 @@
 /**
  * Dil tercihini AsyncStorage ile saklama.
- * Key: @dotshub/locale — değer: tr | en | de | ru | ar
+ * Key: @triaige/locale — değer: tr | en | de | ru | ar
+ *
+ * NOTE: Rebranding (dotshub → triaige) sırasında eski `@dotshub/locale`
+ * key'i terkettik. Aynı cihazda eski build'den migration gereksiz
+ * çünkü prod kullanıcı yoktu; cihazlarında önceden data olan geliştirici
+ * build'leri ilk açılışta default dil'i yeniden seçer. Eski key için
+ * backward-read yapmıyoruz — temiz bir kesme.
  */
 import type { Locale } from "./index";
 import { SUPPORTED_LOCALES } from "./index";
 
-const LOCALE_STORAGE_KEY = "@dotshub/locale";
+const LOCALE_STORAGE_KEY = "@triaige/locale";
 const memoryStore = new Map<string, string>();
 
 type AsyncStorageLike = {

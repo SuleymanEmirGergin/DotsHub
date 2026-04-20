@@ -27,6 +27,72 @@ from starlette.responses import Response
 
 logger = logging.getLogger(__name__)
 
+
+# ─── Observability helpers ──────────────────────────────────────────
+#
+# Prometheus counters are imported lazily. That keeps `from
+# app.version_gating import …` cheap in test paths that don't wire the
+# full app (e.g. parse_capabilities / filter_envelope unit tests) and
+# tolerates environments where prometheus_client isn't installed — the
+# middleware stays fully functional; the scrape is just silent.
+
+_VALID_ENVELOPE_TYPES: FrozenSet[str] = frozenset(
+    {"RESULT", "EMERGENCY", "QUESTION", "ERROR"}
+)
+
+
+def _inc_triage_envelope(envelope_type: str | None) -> None:
+    """Bump the `triage_envelope_total{envelope_type=…}` counter.
+
+    Only valid envelope types (RESULT/EMERGENCY/QUESTION/ERROR) are
+    counted so the label cardinality is bounded. The middleware only
+    reaches this point for responses that `filter_envelope` accepted as
+    a triage envelope, so in practice `envelope_type` is always valid
+    here — the guard is defensive for weirder test fixtures.
+    """
+    if envelope_type not in _VALID_ENVELOPE_TYPES:
+        return
+    try:
+        from app.observability import triage_envelope_total
+    except ImportError:  # pragma: no cover — prometheus_client optional
+        return
+    triage_envelope_total.labels(envelope_type=envelope_type).inc()
+
+
+def _inc_gate_counters(
+    envelope_type: str | None,
+    caps_missing: FrozenSet[str],
+    bytes_saved: int,
+) -> None:
+    """Bump the `capability_gate_*` counters on a real strip.
+
+    Skipped (no-op) when:
+      - `envelope_type` is not in the four-value whitelist (bounds label
+        cardinality), or
+      - `bytes_saved <= 0` — reaching the strip path but serialising to
+        the same byte length means nothing was actually removed (e.g.
+        client missing CAP_EMERGENCY_SPECIALTY on a RESULT envelope that
+        never carried `recommended_specialty`). Avoids inflating the
+        gate metric with synthetic "strips" that stripped 0 bytes.
+    """
+    if envelope_type not in _VALID_ENVELOPE_TYPES:
+        return
+    if bytes_saved <= 0:
+        return
+    try:
+        from app.observability import (
+            capability_gate_bytes_saved_total,
+            capability_gate_filtered_total,
+        )
+    except ImportError:  # pragma: no cover — prometheus_client optional
+        return
+    capability_gate_filtered_total.labels(
+        envelope_type=envelope_type,
+        caps_missing=",".join(sorted(caps_missing)),
+    ).inc()
+    capability_gate_bytes_saved_total.inc(bytes_saved)
+
+
 # ─── Capability registry ─────────────────────────────────────────────
 #
 # Add a new token here when a new response field needs gating. The
@@ -158,6 +224,7 @@ class CapabilityGateMiddleware(BaseHTTPMiddleware):
             return _passthrough(response, body)
 
         new_body = json.dumps(filtered, ensure_ascii=False).encode("utf-8")
+        bytes_saved = len(body) - len(new_body)
 
         # One INFO-level line per actual strip so adoption can be read
         # straight from production logs without a separate telemetry
@@ -179,6 +246,12 @@ class CapabilityGateMiddleware(BaseHTTPMiddleware):
                 "bytes_after": len(new_body),
             },
         )
+        # Prometheus: one counter for envelope volume (sampled on the
+        # reduced-cap path — fully-capable clients are not decoded, by
+        # design), plus the gate-specific filtered/bytes_saved pair.
+        _inc_triage_envelope(envelope_type)
+        _inc_gate_counters(envelope_type, KNOWN_CAPABILITIES - caps, bytes_saved)
+
         headers = dict(response.headers)
         headers.pop("content-length", None)
         headers["content-length"] = str(len(new_body))

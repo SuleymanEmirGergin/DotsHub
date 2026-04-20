@@ -2,25 +2,25 @@ import "dotenv/config";
 
 export default {
   expo: {
-    name: "Dotshub",
-    slug: "dotshub",
+    name: "Triaige",
+    slug: "triaige",
     version: "1.0.0",
     orientation: "portrait" as const,
     userInterfaceStyle: "light" as const,
-    scheme: "dotshub",
+    scheme: "triaige",
     splash: {
       backgroundColor: "#0A84FF",
     },
     assetBundlePatterns: ["**/*"],
     ios: {
       supportsTablet: true,
-      bundleIdentifier: "com.dotshub.app",
+      bundleIdentifier: "com.triaige.app",
     },
     android: {
       adaptiveIcon: {
         backgroundColor: "#0A84FF",
       },
-      package: "com.dotshub.app",
+      package: "com.triaige.app",
     },
     web: {
       bundler: "metro",

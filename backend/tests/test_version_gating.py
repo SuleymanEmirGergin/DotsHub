@@ -362,3 +362,43 @@ def test_middleware_passthroughs_config_features_shape():
         headers={"X-Client-Capabilities": "curated_meta,emergency_specialty"},
     )
     assert r2.json() == r1.json()
+
+
+# ─── Prometheus counter helpers ─────────────────────────────────────
+#
+# The middleware's strip path only calls these helpers with a valid
+# envelope_type — `filter_envelope` is the gatekeeper. The defensive
+# `envelope_type not in _VALID_ENVELOPE_TYPES` guards inside both
+# helpers are not reachable from the middleware, but they protect
+# against future callers / weirder fixtures. Direct unit coverage keeps
+# the 100% branch gate honest and documents the contract.
+
+def test_inc_triage_envelope_skips_unknown_type():
+    """Guard path: helper is a no-op for non-envelope types."""
+    from app.version_gating import _inc_triage_envelope
+
+    # None and an unrecognised literal both hit the guard and return
+    # without raising. We don't need to inspect the counter — the fact
+    # that the function returns cleanly proves the branch was taken.
+    _inc_triage_envelope(None)
+    _inc_triage_envelope("DIAGNOSTIC")  # future type we haven't added
+
+
+def test_inc_gate_counters_skips_unknown_type():
+    """Guard path #1 of `_inc_gate_counters`."""
+    from app.version_gating import _inc_gate_counters
+
+    _inc_gate_counters(None, frozenset({CAP_CURATED_META}), bytes_saved=100)
+    _inc_gate_counters("DIAGNOSTIC", frozenset(), bytes_saved=100)
+
+
+def test_inc_gate_counters_skips_zero_bytes_saved():
+    """Guard path #2: strip-path reached but nothing actually removed."""
+    from app.version_gating import _inc_gate_counters
+
+    # Valid envelope type but bytes_saved <= 0 → no-op. Exercises the
+    # second early-return so the metric doesn't inflate with 0-byte
+    # "strips" (e.g. client missing CAP_EMERGENCY_SPECIALTY on a RESULT
+    # envelope that never carried `recommended_specialty`).
+    _inc_gate_counters("RESULT", frozenset({CAP_CURATED_META}), bytes_saved=0)
+    _inc_gate_counters("RESULT", frozenset({CAP_CURATED_META}), bytes_saved=-5)

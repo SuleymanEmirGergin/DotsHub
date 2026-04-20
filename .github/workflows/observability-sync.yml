@@ -1,0 +1,114 @@
+name: Observability Sync
+
+# Keeps Grafana Cloud in lockstep with the repo:
+#   - PRs: lint-only (alerts YAML is PromQL-valid, dashboard JSON
+#     is well-formed). DRY_RUN=1 so nothing is pushed.
+#   - main pushes: actually sync dashboard + alerts.
+#
+# Gated by two path filters so unrelated PRs don't spam the sync job.
+
+on:
+  pull_request:
+    paths:
+      - "config/grafana/**"
+      - "scripts/grafana_sync.sh"
+      - ".github/workflows/observability-sync.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "config/grafana/**"
+      - "scripts/grafana_sync.sh"
+      - ".github/workflows/observability-sync.yml"
+  workflow_dispatch: {}
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    # Secrets gate: if the user hasn't wired Grafana Cloud yet, skip
+    # the job instead of failing red. Lets the observability stack
+    # ship to the repo before the cloud account exists.
+    if: |
+      github.event_name == 'pull_request' ||
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      github.event_name == 'workflow_dispatch'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install jq + mimirtool
+        run: |
+          sudo apt-get update && sudo apt-get install -y jq
+          # mimirtool — pinned to a recent stable. Bump when you
+          # want new mimirtool features; the CLI API is conservative.
+          MIMIRTOOL_VERSION="2.14.0"
+          curl -fsSL -o /tmp/mimirtool \
+            "https://github.com/grafana/mimir/releases/download/mimir-${MIMIRTOOL_VERSION}/mimirtool-linux-amd64"
+          chmod +x /tmp/mimirtool
+          sudo mv /tmp/mimirtool /usr/local/bin/mimirtool
+          mimirtool version
+
+      - name: Validate dashboard JSON
+        run: |
+          jq -e '.title and .panels' config/grafana/dashboard-triaige.json >/dev/null
+          echo "dashboard JSON structurally valid"
+
+      - name: Lint alert rules (always runs)
+        run: |
+          set -e
+          for f in config/grafana/alerts/*.yaml; do
+            echo "→ $f"
+            mimirtool rules check "$f"
+          done
+
+      - name: Guard — skip push if secrets are missing
+        id: guard
+        env:
+          GRAFANA_CLOUD_STACK_URL: ${{ secrets.GRAFANA_CLOUD_STACK_URL }}
+          GRAFANA_CLOUD_API_TOKEN: ${{ secrets.GRAFANA_CLOUD_API_TOKEN }}
+          GRAFANA_CLOUD_PROM_URL: ${{ secrets.GRAFANA_CLOUD_PROM_URL }}
+          GRAFANA_CLOUD_PROM_USER: ${{ secrets.GRAFANA_CLOUD_PROM_USER }}
+          GRAFANA_CLOUD_PROM_TOKEN: ${{ secrets.GRAFANA_CLOUD_PROM_TOKEN }}
+        run: |
+          MISSING=()
+          for var in GRAFANA_CLOUD_STACK_URL GRAFANA_CLOUD_API_TOKEN \
+                     GRAFANA_CLOUD_PROM_URL GRAFANA_CLOUD_PROM_USER \
+                     GRAFANA_CLOUD_PROM_TOKEN; do
+            if [[ -z "${!var:-}" ]]; then MISSING+=("$var"); fi
+          done
+          if (( ${#MISSING[@]} > 0 )); then
+            echo "skip=1" >> "$GITHUB_OUTPUT"
+            echo "::notice::Grafana Cloud secrets not configured — skipping actual push. Missing: ${MISSING[*]}"
+          else
+            echo "skip=0" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Dry-run on PRs (lint only, no push)
+        if: github.event_name == 'pull_request'
+        env:
+          DRY_RUN: "1"
+          # Stub values so the script's env-validation doesn't abort.
+          # DRY_RUN short-circuits before any outbound call.
+          GRAFANA_CLOUD_STACK_URL: "https://dryrun.grafana.net"
+          GRAFANA_CLOUD_API_TOKEN: "dryrun"
+          GRAFANA_CLOUD_PROM_URL: "https://dryrun/api/prom/push"
+          GRAFANA_CLOUD_PROM_USER: "0"
+          GRAFANA_CLOUD_PROM_TOKEN: "dryrun"
+        run: bash scripts/grafana_sync.sh
+
+      - name: Sync to Grafana Cloud (main only)
+        if: |
+          github.event_name != 'pull_request' &&
+          steps.guard.outputs.skip == '0'
+        env:
+          GRAFANA_CLOUD_STACK_URL: ${{ secrets.GRAFANA_CLOUD_STACK_URL }}
+          GRAFANA_CLOUD_API_TOKEN: ${{ secrets.GRAFANA_CLOUD_API_TOKEN }}
+          GRAFANA_CLOUD_PROM_URL: ${{ secrets.GRAFANA_CLOUD_PROM_URL }}
+          GRAFANA_CLOUD_PROM_USER: ${{ secrets.GRAFANA_CLOUD_PROM_USER }}
+          GRAFANA_CLOUD_PROM_TOKEN: ${{ secrets.GRAFANA_CLOUD_PROM_TOKEN }}
+        run: bash scripts/grafana_sync.sh

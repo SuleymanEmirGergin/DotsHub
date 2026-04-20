@@ -1,0 +1,58 @@
+# Production observability sidecar — Grafana Agent Flow (Alloy) scraping
+# the backend /metrics and pushing to Grafana Cloud via remote_write.
+#
+# Pair with the main stack:
+#   docker compose -f docker-compose.yml -f docker-compose.observability.yml up -d
+#
+# Required env (set in host env, .env file, or secrets manager):
+#   GRAFANA_CLOUD_PROM_URL    — remote_write endpoint from Grafana Cloud
+#   GRAFANA_CLOUD_PROM_USER   — numeric user id
+#   GRAFANA_CLOUD_PROM_TOKEN  — API key (MetricsPublisher scope)
+#   DEPLOYMENT_ENV            — production | staging (attached as external label)
+#
+# The agent reaches the backend via the compose service DNS name `backend`.
+# If your main compose file names the service differently, override
+# `BACKEND_SCRAPE_TARGET` via env.
+#
+# For Kubernetes: port this as a sidecar container in the same Pod; for
+# Fly.io: run it as a second process in the same fly.toml via
+# `processes` section (agent + web share the same machine's loopback).
+# See docs/OBSERVABILITY.md "Production deploy paths" for platform-
+# specific variants.
+
+services:
+  grafana-agent:
+    build:
+      context: ./config/grafana-agent
+      dockerfile: Dockerfile
+    image: dotshub-grafana-agent:latest
+    container_name: dotshub-grafana-agent
+    restart: unless-stopped
+    environment:
+      # Override BACKEND_SCRAPE_TARGET if the backend service is named
+      # something other than `backend` in your main compose file.
+      - BACKEND_SCRAPE_TARGET=${BACKEND_SCRAPE_TARGET:-backend:8000}
+      - GRAFANA_CLOUD_PROM_URL
+      - GRAFANA_CLOUD_PROM_USER
+      - GRAFANA_CLOUD_PROM_TOKEN
+      - DEPLOYMENT_ENV=${DEPLOYMENT_ENV:-production}
+    # Join the same network as the backend so service DNS resolves.
+    # Adjust to match your main compose network name.
+    networks:
+      - default
+    # Alloy admin UI — only expose locally for debugging. DO NOT
+    # publish externally; River config and scrape state are visible.
+    ports:
+      - "127.0.0.1:12345:12345"
+    depends_on:
+      # Start after the backend so the first scrape has a target.
+      # Uses `service_started` (not _healthy) so a slow warm-up
+      # doesn't block the agent — remote_write queue tolerates gaps.
+      - backend
+
+# Assumes the main docker-compose.yml defines a `backend` service.
+# If the main stack uses a different network, override here.
+networks:
+  default:
+    name: ${COMPOSE_PROJECT_NAME:-dotshub}_default
+    external: true

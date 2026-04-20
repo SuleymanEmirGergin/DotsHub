@@ -15,3 +15,9 @@ psycopg[binary]
 # if SENTRY_DSN is unset, the SDK init is a no-op (see app/main.py).
 # Pinned to 2.x for the post-1.0 stable FastAPI integration API.
 sentry-sdk[fastapi]>=2.0
+# Prometheus — metrics scraping endpoint + custom counters/histograms.
+# /metrics exposed via prometheus-fastapi-instrumentator (HTTP defaults)
+# + prometheus_client (custom series). Safe to pull scrapes from
+# Grafana Cloud or a self-hosted Prometheus without code changes.
+prometheus-client>=0.20
+prometheus-fastapi-instrumentator>=7.0

@@ -1,0 +1,28 @@
+# Prometheus config for local dev stack (docker-compose.monitoring.yml).
+#
+# For Grafana Cloud: you don't use this file — Grafana Cloud scrapes
+# via a hosted collector (Grafana Agent Flow / prometheus-agent). See
+# docs/OBSERVABILITY.md for the cloud setup path.
+#
+# Scrape interval is 15s for local — matches Grafana Cloud defaults
+# so PromQL queries written against local data keep the same shape
+# when pointed at cloud later.
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    env: local
+
+scrape_configs:
+  # FastAPI backend — reachable on the host network from the Prometheus
+  # container via `host.docker.internal` (Docker Desktop) OR via the
+  # compose service DNS `backend` if you're running the full stack with
+  # `docker-compose up`.
+  - job_name: triaige-backend
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["host.docker.internal:8000"]
+        labels:
+          service: backend
+          component: pretriage

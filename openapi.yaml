@@ -1,8 +1,24 @@
 openapi: 3.0.3
 info:
-  title: Pre-Triage Agentic AI API
+  title: "[DEPRECATED] Pre-Triage Agentic AI API (legacy reference)"
   version: 0.1.1
   description: |
+    ⚠️  DEPRECATED — DO NOT USE FOR NEW WORK
+    =======================================
+
+    This file is the legacy reference contract. Every path below is
+    marked `deprecated: true`. The LIVE contract that tracks the
+    FastAPI routes in `backend/app/` is:
+
+        docs/openapi_orchestrator.yaml
+
+    Kept in the tree only so the historical `X-Client-Capabilities`
+    gating protocol documentation stays discoverable. If you're
+    integrating a new client, point at `docs/openapi_orchestrator.yaml`
+    and ignore this file entirely.
+
+    -----
+
     Medical pre-triage system. Does not diagnose; provides routing & urgency guidance.
     Legacy reference spec. Primary contract is docs/openapi_orchestrator.yaml.
 

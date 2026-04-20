@@ -1,4 +1,9 @@
-"""Message routes V2 — aligned with openapi.yaml (/v1/session/{session_id}/message)."""
+"""Message routes V2 — aligned with docs/openapi_orchestrator.yaml (/v1/session/{session_id}/message).
+
+Note: root-level `openapi.yaml` is a legacy reference spec (all paths
+`deprecated: true`). Primary contract lives at
+`docs/openapi_orchestrator.yaml`.
+"""
 
 import logging
 from datetime import datetime, timezone

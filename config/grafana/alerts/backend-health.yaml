@@ -1,0 +1,154 @@
+# Backend health alerts — Prometheus / Mimir rules format.
+#
+# Uploaded to Grafana Cloud Managed Alertmanager via `cortextool` or the
+# `.github/workflows/observability-sync.yml` workflow on every push to
+# `main` that touches config/grafana/alerts/**.
+#
+# Why rules-as-code instead of Grafana UI: PR review + diff history,
+# not a pile of tribal-knowledge dashboards someone clicked into
+# existence. Roll-back = git revert.
+#
+# Severity conventions (wired to notifier routing in Grafana Cloud):
+#   critical — wake someone up
+#   warning  — next-business-day; Slack #alerts
+#   info     — passive dashboard signal; no paging
+
+groups:
+  - name: backend-http
+    interval: 1m
+    rules:
+      - alert: BackendHighErrorRate
+        expr: |
+          sum(rate(http_requests_total{status=~"5.."}[5m]))
+            /
+          clamp_min(sum(rate(http_requests_total[5m])), 1)
+            > 0.02
+        for: 5m
+        labels:
+          severity: critical
+          service: backend
+        annotations:
+          summary: "Backend 5xx rate > 2% for 5+ minutes"
+          description: |
+            {{ $value | humanizePercentage }} of backend requests are 5xx.
+            Check recent deploys / Sentry for the correlating exception.
+            Dashboard: https://<stack>.grafana.net/d/triaige-pretriage
+
+      - alert: BackendLatencyRegression
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum by (le) (rate(http_request_duration_seconds_bucket[5m]))
+          ) > 2
+        for: 10m
+        labels:
+          severity: warning
+          service: backend
+        annotations:
+          summary: "Backend p95 latency > 2s for 10+ minutes"
+          description: |
+            p95 at {{ $value | humanizeDuration }}. If it didn't coincide
+            with a deploy, check downstream (Supabase / Wiro / Redis)
+            latency.
+
+  - name: backend-rate-limit
+    interval: 1m
+    rules:
+      - alert: RateLimitDeniedRateHigh
+        expr: |
+          sum(rate(rate_limit_hits_total{outcome="denied"}[10m]))
+            /
+          clamp_min(sum(rate(rate_limit_hits_total[10m])), 1)
+            > 0.05
+        for: 15m
+        labels:
+          severity: warning
+          service: backend
+        annotations:
+          summary: "Rate-limit denied fraction > 5% sustained 15m"
+          description: |
+            {{ $value | humanizePercentage }} of requests hit a cap.
+            Check if (a) abuse campaign — block at CDN, or (b) legit
+            growth — raise RATE_LIMIT_MAX_REQ / ADMIN_RATE_LIMIT_MAX_REQ.
+
+      - alert: LLMNluRateLimitSaturated
+        expr: |
+          sum(rate(rate_limit_hits_total{bucket="llm_nlu",outcome="denied"}[5m])) > 0
+        for: 10m
+        labels:
+          severity: warning
+          service: backend
+          bucket: llm_nlu
+        annotations:
+          summary: "LLM-NLU Wiro quota bucket is denying requests"
+          description: |
+            The global LLM-NLU cap ({{ $labels.bucket }}) is rejecting.
+            Either the Wiro quota is genuinely exhausted, or
+            LLM_NLU_RATE_LIMIT_MAX_REQ is too tight for current traffic.
+
+  - name: backend-triage
+    interval: 1m
+    rules:
+      - alert: EmergencyEnvelopeSpike
+        # 3x over the 1-hour baseline on a 15m window. Ambient spikes
+        # (nightshift cardio panic waves) are normal; 3x sustained is a
+        # rule-regression or data anomaly worth looking at.
+        expr: |
+          sum(rate(triage_envelope_total{envelope_type="EMERGENCY"}[15m]))
+            /
+          clamp_min(
+            avg_over_time(
+              sum(rate(triage_envelope_total{envelope_type="EMERGENCY"}[15m]))[1h:15m]
+            ),
+            0.001
+          )
+            > 3
+        for: 15m
+        labels:
+          severity: warning
+          service: backend
+        annotations:
+          summary: "EMERGENCY envelope rate 3x over 1h baseline"
+          description: |
+            Possible signal, possible rule regression. Compare against
+            `config/emergency_rules.json` last-edit time; if correlated,
+            roll back.
+
+      - alert: CapabilityGateStripRateUnusuallyHigh
+        # Healthy steady-state: most clients update within weeks of a
+        # protocol bump. >50% strips for 24h = old version stuck in the
+        # field → push a forced-update via MIN_CLIENT_VERSION.
+        expr: |
+          sum(rate(capability_gate_filtered_total[1h]))
+            /
+          clamp_min(sum(rate(http_requests_total[1h])), 1)
+            > 0.5
+        for: 24h
+        labels:
+          severity: info
+          service: backend
+        annotations:
+          summary: "Capability-gate stripping >50% of responses for 24h"
+          description: |
+            Old-version clients dominate traffic. Consider flipping
+            CLIENT_VERSION_ENFORCEMENT from warn → block on stale
+            versions (see docs/OPS_VERSION_GATE_ROLLOUT.md).
+
+  - name: backend-availability
+    interval: 30s
+    rules:
+      - alert: BackendScrapeDown
+        # up == 0 means the Grafana Agent couldn't reach /metrics.
+        # Could be: backend dead, backend unresponsive, agent network
+        # split, or /metrics route unmounted (bad deploy).
+        expr: up{service="backend"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: backend
+        annotations:
+          summary: "Grafana Agent cannot scrape backend /metrics"
+          description: |
+            `up` has been 0 for 2+ minutes. Verify the backend is
+            running (platform console) and /metrics is reachable from
+            the agent host (`curl -s <backend>:8000/metrics | head`).
