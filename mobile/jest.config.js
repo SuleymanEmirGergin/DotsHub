@@ -47,7 +47,7 @@ module.exports = {
   //   - npm/yarn flat: `node_modules/rettime/...`
   //   - pnpm nested:   `node_modules/.pnpm/rettime@x.y.z_hash/node_modules/rettime/...`
   transformIgnorePatterns: [
-    "node_modules/(?!.*(?:msw|@mswjs/interceptors|@bundled-es-modules|@open-draft|headers-polyfill|tough-cookie|universal-user-agent|until-async|rettime|outvariant|strict-event-emitter|is-node-process|path-to-regexp|cookie|statuses|graphql))",
+    "node_modules/(?!.*(?:msw|@mswjs/interceptors|@bundled-es-modules|@open-draft|headers-polyfill|tough-cookie|universal-user-agent|until-async|rettime|outvariant|strict-event-emitter|is-node-process|path-to-regexp|cookie|statuses|graphql|expo|@sentry))",
     "\\.pnp\\.[^\\\\/]+$",
   ],
 };

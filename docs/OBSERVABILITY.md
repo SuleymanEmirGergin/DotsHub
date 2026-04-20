@@ -275,6 +275,82 @@ docker compose -f docker-compose.monitoring.yml down
 # add -v to also wipe the persistent volumes
 ```
 
+## Mobile Sentry — client-side crash + replay capture
+
+Separate Sentry project (`triaige-mobile-rn`) in the same org, wired
+via the Expo config plugin at `mobile/src/observability/sentry.ts`.
+Blank `EXPO_PUBLIC_SENTRY_DSN` = full no-op (the mobile app runs
+unchanged for OSS clones without a Sentry account).
+
+### What ships
+
+- **Native crash capture** — iOS + Android crashes surface as events
+  in the mobile project. `@sentry/react-native/expo` plugin wires the
+  native SDKs at prebuild; no native config edits required.
+- **JS error capture** — unhandled errors from React render cycles
+  and thrown promises flow through `Sentry.init`. The existing
+  `ErrorBoundary` at `mobile/src/components/ErrorBoundary.tsx` stays
+  for user-facing recovery; Sentry captures the error before the
+  boundary swallows it.
+- **Session Replay** — ENABLED with `maskAllText=true`,
+  `maskAllInputs=true`, `maskAllImages=true`. Every `<Text>` and
+  `<TextInput>` renders as a filled rectangle in the replay so
+  patient free-text never leaves the device as pixels. Sampling:
+  10% of prod sessions + 100% of error-proximate sessions.
+- **API breadcrumbs** — `services/api.ts` logs one breadcrumb per
+  HTTP request (success, error-status, and network-level failure)
+  via `addApiBreadcrumb`. URL path is collapsed through
+  `redactUrlPath` so `/v1/session/{uuid}/message` aggregates as
+  `/v1/session/[id]/message` in the Sentry UI.
+- **PII scrubbing in `beforeSend`** — mirrors the backend
+  `sentry_init.beforeSend` contract. Request body keys that can
+  carry patient input (`user_input_tr`, `answers`,
+  `doctor_ready_summary_tr`, …) are replaced with `[SCRUBBED]`;
+  free-text that slips into breadcrumb messages or exception
+  messages is redacted via `redactPII` (TCKN, phone, email, UUID).
+  Authorisation + `x-device-id` headers are scrubbed from context.
+
+### Environment variables
+
+| Env var | Runtime vs. build | Purpose |
+| ------- | ----------------- | ------- |
+| `EXPO_PUBLIC_SENTRY_DSN`                  | Runtime (inlined at build) | Mobile Sentry DSN. Blank = SDK disabled. |
+| `EXPO_PUBLIC_SENTRY_ENVIRONMENT`          | Runtime (inlined at build) | `production` / `staging` / `development`. Default: `development`. Set in `eas.json` per profile. |
+| `EXPO_PUBLIC_SENTRY_RELEASE`              | Runtime (inlined at build) | Release tag. Default: `expo.version` from `app.config.ts`. Set in CI to a build-unique value. |
+| `EXPO_PUBLIC_SENTRY_TRACES_SAMPLE_RATE`   | Runtime (inlined at build) | 0.0–1.0. Default 0.1 in prod, 1.0 in dev. |
+| `SENTRY_AUTH_TOKEN`                       | EAS build time only        | `sentry-cli` auth for source map upload. MUST be an EAS secret (never EXPO_PUBLIC_). |
+| `SENTRY_ORG`, `SENTRY_PROJECT`            | EAS build time only        | Source map upload target (default `triaige` / `triaige-mobile-rn`). |
+
+### Source maps — EAS build hook
+
+The `@sentry/react-native/expo` config plugin runs after `metro
+bundle` on every EAS build. With `SENTRY_AUTH_TOKEN` + `SENTRY_ORG`
++ `SENTRY_PROJECT` set as EAS secrets, the plugin:
+
+1. Builds the Hermes/Metro bundle as normal.
+2. Invokes `sentry-cli sourcemaps upload` for the release matching
+   `EXPO_PUBLIC_SENTRY_RELEASE`.
+3. Ships the signed binary with the source maps stripped — Sentry
+   UI symbolicates stack traces server-side.
+
+Dev builds with a blank token skip step 2 silently (log warning, no
+fail). Source maps still exist on disk for local devtools.
+
+### Kill switch
+
+Blank `EXPO_PUBLIC_SENTRY_DSN` in the EAS env disables the SDK
+entirely for the next build. For an already-shipped binary:
+
+1. Apply a Sentry inbound filter on the `triaige-mobile-rn` project
+   (Settings → Inbound Filters) — events still get sent but are
+   dropped server-side without counting against the quota.
+2. Follow-up: push a new EAS build with the DSN removed so offline
+   devices stop sending eventually.
+
+The `beforeSend` hook also drops events flagged with
+`environment=test|ci`, which means Jest test runs that accidentally
+leave a DSN in the shell never phone home.
+
 ## Relevant files
 
 | Path                                         | Role |
@@ -296,6 +372,13 @@ docker compose -f docker-compose.monitoring.yml down
 | `scripts/grafana_sync.sh`                    | Idempotent push of dashboards + alerts to Grafana Cloud. |
 | `scripts/verify_observability.sh`            | Post-deploy health check for `/metrics` + cloud scrape + Sentry. |
 | `.github/workflows/observability-sync.yml`   | PR lint + main-push auto-sync to Grafana Cloud. |
+| `mobile/src/observability/sentry.ts`         | Mobile Sentry init + `beforeSend` PII scrubber. No-op when `EXPO_PUBLIC_SENTRY_DSN` is blank. |
+| `mobile/src/observability/redact.ts`         | Pure redaction utilities (`redactPII`, `redactUrlPath`). Expo-free so non-Sentry callers can use it. |
+| `mobile/src/observability/breadcrumb.ts`     | `addApiBreadcrumb` / `addBreadcrumb` helpers. Lazy-loads Sentry; silent no-op without it. |
+| `mobile/services/api.ts`                     | Calls `addApiBreadcrumb` on each HTTP round-trip (success, HTTP error, network failure). |
+| `mobile/app/_layout.tsx`                     | Calls `initSentry()` at module top (before router mount). |
+| `mobile/eas.json`                            | EAS build profiles wire `EXPO_PUBLIC_SENTRY_ENVIRONMENT` per build type. |
+| `mobile/__tests__/observability/sentry.test.ts` | Unit tests for the scrubber + init kill switch. |
 
 ## Gotchas
 

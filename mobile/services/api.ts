@@ -15,6 +15,7 @@
 
 import { API_BASE } from "@/src/config/runtime";
 import { getCapabilitiesHeader } from "@/src/config/capabilities";
+import { addApiBreadcrumb } from "@/src/observability/breadcrumb";
 
 const API_BASE_URL = `${API_BASE}/v1`;
 
@@ -144,21 +145,67 @@ class ApiClient {
 
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
-    const response = await fetch(url, {
-      ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Client-Capabilities': getCapabilitiesHeader(),
-        ...options.headers,
-      },
-    });
+    const method = (options.method ?? "GET").toUpperCase();
+    const start = Date.now();
+    // `breadcrumbed` prevents double-logging: once we've recorded a
+    // breadcrumb for the HTTP layer (success or error-status response),
+    // the outer catch does NOT log again even though the throw
+    // propagates through.
+    let breadcrumbed = false;
+    try {
+      const response = await fetch(url, {
+        ...options,
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Client-Capabilities': getCapabilitiesHeader(),
+          ...options.headers,
+        },
+      });
 
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
-      throw new Error(error.detail || `HTTP ${response.status}`);
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
+        // Record the failed call so Sentry breadcrumbs show the last
+        // few API round-trips leading up to an exception. `endpoint`
+        // is run through the session-id collapser inside
+        // `addApiBreadcrumb` so the breadcrumb trail aggregates
+        // cleanly in Sentry UI.
+        addApiBreadcrumb({
+          endpoint,
+          method,
+          status: response.status,
+          durationMs: Date.now() - start,
+          level: "error",
+        });
+        breadcrumbed = true;
+        throw new Error(error.detail || `HTTP ${response.status}`);
+      }
+
+      addApiBreadcrumb({
+        endpoint,
+        method,
+        status: response.status,
+        durationMs: Date.now() - start,
+        level: "info",
+      });
+      breadcrumbed = true;
+      return response.json();
+    } catch (err) {
+      if (!breadcrumbed) {
+        // Network-level failure (fetch rejected before any response
+        // was seen). Distinguish from HTTP errors with status=0 so
+        // ops can tell "backend unreachable" from "backend returned
+        // 500" in the Sentry breadcrumb trail.
+        addApiBreadcrumb({
+          endpoint,
+          method,
+          status: 0,
+          durationMs: Date.now() - start,
+          level: "error",
+          note: err instanceof Error ? err.name : "network",
+        });
+      }
+      throw err;
     }
-
-    return response.json();
   }
 
   /**
