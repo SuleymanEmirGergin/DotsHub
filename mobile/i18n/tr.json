@@ -35,6 +35,7 @@
     "subtitle": "Birkaç kısa soru soracağım, daha doğru yönlendireceğim.",
     "locationHint": "Konum paylaşırsanız sonuç ekranında yakındaki sağlık kuruluşları listelenir (isteğe bağlı).",
     "history": "📋 Geçmiş",
+    "settings": "⚙️ Ayarlar",
     "evaluating": "Değerlendiriyorum…",
     "symptomInput": "Belirti girişi",
     "symptomInputHint": "Belirtinizi yazıp gönderin",
@@ -121,6 +122,21 @@
     "result": "✅ SONUÇ",
     "sameDay": "⚡ BUGÜN GİT",
     "confidence": "Güven"
+  },
+  "settings": {
+    "title": "Ayarlar",
+    "back": "← Geri",
+    "languageSection": "Dil",
+    "legalSection": "Yasal",
+    "privacy": "Gizlilik Politikası",
+    "terms": "Kullanım Koşulları",
+    "aboutSection": "Uygulama Hakkında",
+    "version": "Sürüm",
+    "buildId": "Derleme",
+    "contactSection": "İletişim",
+    "contactEmail": "E-posta gönder",
+    "supportLine": "Sorun bildirmek veya geri bildirim vermek için bize yazabilirsiniz.",
+    "linkError": "Bağlantı açılamadı."
   },
   "summary": {
     "title": "Özet",

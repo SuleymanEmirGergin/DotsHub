@@ -35,6 +35,7 @@
     "subtitle": "Ich stelle einige kurze Fragen, um Sie besser weiterzuleiten.",
     "locationHint": "Teilen Sie Ihren Standort, um nahegelegene Gesundheitseinrichtungen auf dem Ergebnisbildschirm anzuzeigen (optional).",
     "history": "📋 Verlauf",
+    "settings": "⚙️ Settings",
     "evaluating": "Wird ausgewertet…",
     "symptomInput": "Symptomeingabe",
     "symptomInputHint": "Geben Sie Ihr Symptom ein und senden Sie es.",
@@ -121,6 +122,21 @@
     "result": "✅ ERGEBNIS",
     "sameDay": "⚡ HEUTE GEHEN",
     "confidence": "Vertrauen"
+  },
+  "settings": {
+    "title": "Settings",
+    "back": "← Back",
+    "languageSection": "Language",
+    "legalSection": "Legal",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service",
+    "aboutSection": "About",
+    "version": "Version",
+    "buildId": "Build",
+    "contactSection": "Contact",
+    "contactEmail": "Send email",
+    "supportLine": "Reach out to report an issue or share feedback.",
+    "linkError": "Could not open link."
   },
   "summary": {
     "title": "Zusammenfassung",

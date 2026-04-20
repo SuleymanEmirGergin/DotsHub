@@ -24,6 +24,7 @@ export default function ChatScreen() {
   const { sessionId, messages, loading, appendMessage, setLoading, setLastRequest, applyEnvelope } =
     useTriageStore();
   const setShowHistory = useTriageStore((s) => s.setShowHistory);
+  const setShowSettings = useTriageStore((s) => s.setShowSettings);
 
   async function onSend(msg?: string) {
     const trimmed = (msg || text).trim();
@@ -55,14 +56,24 @@ export default function ChatScreen() {
         <View style={styles.headerWrap}>
           <View style={styles.headerRow}>
             <SectionTitle style={styles.headerTitle}>{t("chat.title")}</SectionTitle>
-            <Pressable
-              onPress={() => setShowHistory(true)}
-              style={styles.historyBtn}
-              accessibilityRole="button"
-              accessibilityLabel={t("chat.history")}
-            >
-              <Text style={styles.historyBtnText}>{t("chat.history")}</Text>
-            </Pressable>
+            <View style={styles.headerActions}>
+              <Pressable
+                onPress={() => setShowHistory(true)}
+                style={styles.historyBtn}
+                accessibilityRole="button"
+                accessibilityLabel={t("chat.history")}
+              >
+                <Text style={styles.historyBtnText}>{t("chat.history")}</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => setShowSettings(true)}
+                style={styles.historyBtn}
+                accessibilityRole="button"
+                accessibilityLabel={t("chat.settings")}
+              >
+                <Text style={styles.historyBtnText}>{t("chat.settings")}</Text>
+              </Pressable>
+            </View>
           </View>
           <MutedText>
             {t("chat.subtitle")}
@@ -168,6 +179,10 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     marginBottom: tokens.spacing.xs,
+  },
+  headerActions: {
+    flexDirection: "row",
+    gap: tokens.spacing.xs,
   },
   historyBtn: {
     paddingHorizontal: tokens.spacing.md,

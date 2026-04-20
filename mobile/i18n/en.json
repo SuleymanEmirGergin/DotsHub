@@ -35,6 +35,7 @@
     "subtitle": "I'll ask a few short questions to guide you better.",
     "locationHint": "Share your location to see nearby healthcare facilities on the result screen (optional).",
     "history": "📋 History",
+    "settings": "⚙️ Settings",
     "evaluating": "Evaluating…",
     "symptomInput": "Symptom input",
     "symptomInputHint": "Type your symptom and send",
@@ -121,6 +122,21 @@
     "result": "✅ RESULT",
     "sameDay": "⚡ SAME DAY",
     "confidence": "Confidence"
+  },
+  "settings": {
+    "title": "Settings",
+    "back": "← Back",
+    "languageSection": "Language",
+    "legalSection": "Legal",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service",
+    "aboutSection": "About",
+    "version": "Version",
+    "buildId": "Build",
+    "contactSection": "Contact",
+    "contactEmail": "Send email",
+    "supportLine": "Reach out to report an issue or share feedback.",
+    "linkError": "Could not open link."
   },
   "summary": {
     "title": "Summary",
