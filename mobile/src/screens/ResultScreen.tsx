@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import {
   Alert,
+  Linking,
   Pressable,
   ScrollView,
   Share,
@@ -13,6 +14,11 @@ import {
 import type { TopCondition } from "@/src/state/types";
 import { sendFeedback } from "@/src/api/feedbackClient";
 import { sendSummaryEmail, exportSummary } from "@/src/api/summaryClient";
+import {
+  buildMapUrl,
+  fetchFacilities,
+  type FacilityItem,
+} from "@/src/api/facilitiesClient";
 import { useTriageStore } from "@/src/state/triageStore";
 import { computeConfidence } from "@/src/state/confidence";
 import { inputHeights, tokens } from "@/src/ui/designTokens";
@@ -61,6 +67,40 @@ export default function ResultScreen() {
   const [emailSent, setEmailSent] = useState(false);
   const [downloadingText, setDownloadingText] = useState(false);
   const disclaimer = t("result.disclaimer");
+
+  // Facilities state (F4.4/F4.5) — lazy fetch on user tap
+  const [facilities, setFacilities] = useState<FacilityItem[] | null>(null);
+  const [facilitiesLoading, setFacilitiesLoading] = useState(false);
+  const [facilitiesError, setFacilitiesError] = useState<string | null>(null);
+
+  async function onLoadFacilities() {
+    const specialtyId = result.recommended_specialty.id;
+    if (!specialtyId || facilitiesLoading) return;
+    setFacilitiesLoading(true);
+    setFacilitiesError(null);
+    try {
+      const resp = await fetchFacilities({ specialty: specialtyId, limit: 10 });
+      setFacilities(resp.items);
+    } catch (e) {
+      setFacilitiesError(e instanceof Error ? e.message : "error");
+    } finally {
+      setFacilitiesLoading(false);
+    }
+  }
+
+  async function onOpenFacilityMap(item: FacilityItem) {
+    const url = buildMapUrl(item);
+    try {
+      const supported = await Linking.canOpenURL(url);
+      if (supported) {
+        await Linking.openURL(url);
+      } else {
+        Alert.alert(t("common.error"), t("result.mapOpenError"));
+      }
+    } catch {
+      Alert.alert(t("common.error"), t("result.mapOpenError"));
+    }
+  }
 
   async function onShareSummary() {
     try {
@@ -259,6 +299,63 @@ export default function ResultScreen() {
           >
             {sendingEmail ? t("common.loading") : emailSent ? t("result.emailSent") : t("result.sendEmail")}
           </PrimaryButton>
+        </Card>
+
+        <Card style={styles.cardSpacing}>
+          <SectionTitle style={rtlText}>{t("result.facilities")}</SectionTitle>
+          {facilities == null && !facilitiesLoading && !facilitiesError ? (
+            <SecondaryButton
+              onPress={onLoadFacilities}
+              accessibilityRole="button"
+              accessibilityLabel={t("result.moreFacilities")}
+            >
+              {t("result.moreFacilities")}
+            </SecondaryButton>
+          ) : null}
+          {facilitiesLoading ? (
+            <Text style={[styles.bulletText, rtlText]}>{t("common.loading")}</Text>
+          ) : null}
+          {facilitiesError ? (
+            <View>
+              <Text style={[styles.safetyNote, rtlText]}>
+                {t("result.facilitiesLoadError")}
+              </Text>
+              <SecondaryButton onPress={onLoadFacilities}>
+                {t("common.retry")}
+              </SecondaryButton>
+            </View>
+          ) : null}
+          {facilities != null && facilities.length === 0 ? (
+            <Text style={[styles.bulletText, rtlText]}>
+              {t("result.facilitiesEmpty")}
+            </Text>
+          ) : null}
+          {facilities != null && facilities.length > 0 ? (
+            <View>
+              {facilities.map((f, i) => (
+                <View key={i} style={styles.facilityRow}>
+                  <View style={styles.facilityInfo}>
+                    <Text style={[styles.facilityName, rtlText]}>{f.name}</Text>
+                    <Text style={[styles.facilityMeta, rtlText]}>
+                      {f.address}
+                      {f.distance_km != null
+                        ? ` · ${f.distance_km.toFixed(1)} km`
+                        : ""}
+                    </Text>
+                  </View>
+                  <SecondaryButton
+                    onPress={() => onOpenFacilityMap(f)}
+                    style={styles.facilityMapBtn}
+                    textStyle={styles.copyButtonText}
+                    accessibilityRole="link"
+                    accessibilityLabel={t("result.openOnMap")}
+                  >
+                    {t("result.openOnMap")}
+                  </SecondaryButton>
+                </View>
+              ))}
+            </View>
+          ) : null}
         </Card>
 
         <Card style={styles.cardSpacing}>
@@ -521,6 +618,34 @@ const styles = StyleSheet.create({
     color: tokens.colors.textSecondary,
     marginBottom: tokens.spacing.xs,
     fontStyle: "italic",
+  },
+  facilityRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: tokens.spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: tokens.colors.border,
+    gap: tokens.spacing.sm,
+  },
+  facilityInfo: {
+    flex: 1,
+    marginRight: tokens.spacing.sm,
+  },
+  facilityName: {
+    ...tokens.typography.body,
+    color: tokens.colors.textPrimary,
+    fontWeight: "600",
+  },
+  facilityMeta: {
+    ...tokens.typography.caption,
+    color: tokens.colors.textMuted,
+    marginTop: 2,
+  },
+  facilityMapBtn: {
+    minHeight: 36,
+    paddingVertical: tokens.spacing.xs,
+    paddingHorizontal: tokens.spacing.sm,
   },
   feedbackRow: {
     flexDirection: "row",

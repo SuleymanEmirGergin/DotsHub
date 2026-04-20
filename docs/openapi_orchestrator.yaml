@@ -305,6 +305,81 @@ paths:
                       update_url_ios: "https://apps.apple.com/app/..."
                       update_url_android: "https://play.google.com/..."
 
+  /v1/triage/stream:
+    post:
+      summary: Streaming variant of /v1/triage/turn (Server-Sent Events)
+      operationId: triageStream
+      description: |
+        Same request body as `/v1/triage/turn`, but emits a sequence of SSE
+        events so the client can show a spinner while the server is thinking.
+
+        Event order:
+          1. `thinking`  — immediate ack (`{ message_tr, turn_index: 0 }`).
+          2. `envelope`  — the full triage Envelope (same shape as /triage/turn).
+          3. `done`      — terminal marker (empty data).
+
+        On failure, emits an `error` event followed by `done`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TriageTurnRequest"
+      responses:
+        "200":
+          description: text/event-stream of SSE events
+          content:
+            text/event-stream:
+              schema:
+                type: string
+                description: |
+                  Raw SSE frames. Each frame:
+                    event: <thinking|envelope|done|error>
+                    data: <JSON payload>
+
+  /v1/me/sessions/{session_id}:
+    delete:
+      summary: KVKK/GDPR — delete one triage session and wipe derived rows
+      operationId: deleteMySession
+      description: |
+        User-facing data rights endpoint. Authentication is by possession of
+        the unguessable session UUID — the mobile app is the only holder.
+
+        - Idempotent: re-calling on an already-tombstoned session returns
+          `{ok: true, already_deleted: true}`.
+        - `triage_events`, `llm_calls`, `triage_feedback` rows are hard-deleted.
+        - `triage_sessions` row is tombstoned (PII columns nulled, id kept so
+          analytics joins don't silently break). 90-day retention sweep later
+          purges the tombstone.
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Receipt of what was deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, session_id]
+                properties:
+                  ok: { type: boolean }
+                  session_id: { type: string }
+                  already_deleted: { type: boolean }
+                  derived_deleted:
+                    type: object
+                    description: Per-table delete counts (-1 = attempted, failed)
+                    additionalProperties:
+                      type: integer
+        "400":
+          description: Malformed session_id
+        "404":
+          description: Session not found
+        "500":
+          description: Tombstone write failed — retryable
+
   /health:
     get:
       summary: Health check

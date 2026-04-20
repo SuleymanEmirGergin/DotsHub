@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { Breadcrumb } from "@/app/components/Breadcrumb";
 
 type SessionRow = {
   session_id: string;
@@ -202,8 +203,46 @@ export default function SessionsPageV5() {
   const total = overview?.total ?? 0;
   const highRate = total ? high / total : 0;
 
+  function exportCsv() {
+    const cols = [
+      "session_id",
+      "created_at",
+      "updated_at",
+      "envelope_type",
+      "stop_reason",
+      "confidence_0_1",
+      "recommended_specialty_id",
+      "risk_level",
+    ];
+    const esc = (v: unknown) => {
+      const s = v == null ? "" : String(v);
+      return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    const rows = items.map((r) => [
+      r.session_id,
+      r.created_at,
+      r.updated_at,
+      r.envelope_type ?? "",
+      r.stop_reason ?? "",
+      r.confidence_0_1 ?? "",
+      r.recommended_specialty_id ?? "",
+      getRiskLevel(r.meta) ?? "",
+    ]);
+    const csv = [cols.join(","), ...rows.map((row) => row.map(esc).join(","))].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `sessions-v5-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
   return (
     <div className="p-6 space-y-5">
+      <Breadcrumb items={[{ label: "Admin", href: "/admin/sessions" }, { label: "Sessions V5" }]} />
       <div className="flex items-center justify-between">
         <div>
           <div className="flex items-center gap-2">
@@ -216,9 +255,18 @@ export default function SessionsPageV5() {
             Samples: {overview?.health?.samples ?? "-"} - Envelope-based unified orchestrator.
           </p>
         </div>
-        <button className="rounded-xl border px-3 py-2 text-sm hover:bg-slate-50" onClick={load}>
-          Refresh
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            className="rounded-xl border px-3 py-2 text-sm hover:bg-slate-50"
+            onClick={exportCsv}
+            disabled={items.length === 0}
+          >
+            Export CSV
+          </button>
+          <button className="rounded-xl border px-3 py-2 text-sm hover:bg-slate-50" onClick={load}>
+            Refresh
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-3">

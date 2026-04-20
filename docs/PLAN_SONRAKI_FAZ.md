@@ -66,12 +66,12 @@ Aşağıdaki maddeler “Kalan işler planı” Faz 4 ile eşleşir; sprint plan
 
 | # | Yapılacak | Detay |
 |---|-----------|--------|
-| F4.1 | OpenAPI senkron | [docs/openapi_orchestrator.yaml](openapi_orchestrator.yaml) (veya kullanılan OpenAPI) ile güncel API uyumlu hale getirilir; yeni endpoint’ler eklenir. |
-| F4.2 | Dashboard: breadcrumb | Admin alt sayfalarında breadcrumb navigasyonu. |
-| F4.3 | Dashboard: tablo iyileştirmeleri | Sessions ve tuning-tasks tablolarında sütun sıralama ve filtre; listeler için CSV/Excel export (YAPILACAKLAR_LISTESI). |
-| F4.4 | Mobil: tesis harita linki | Sonuç ekranında tesis için harita linki (Google/Apple Maps veya OSM). |
-| F4.5 | Mobil: daha fazla tesis | “Daha fazla tesis” ile GET /v1/facilities kullanımı (YAPILACAKLAR_LISTESI). |
-| F4.6 | Backend: Redis rate limit | Çok instance için rate limit’te Redis kullanımı (şu an in-memory); README vb. ile dokümante. |
+| F4.1 | OpenAPI senkron | ✅ `docs/openapi_orchestrator.yaml`'a `/v1/triage/stream` (SSE) ve `DELETE /v1/me/sessions/{session_id}` (KVKK data rights) path'leri eklendi. |
+| F4.2 | Dashboard: breadcrumb | ✅ Tüm admin alt sayfalarında `Breadcrumb` mount; sessions-v5 dahil. |
+| F4.3 | Dashboard: tablo iyileştirmeleri | ✅ Sessions + tuning-tasks (sort + filter + CSV); sessions-v5 client-side CSV export butonu. |
+| F4.4 | Mobil: tesis harita linki | ✅ ResultScreen `FacilitiesCard` içinde her satırda "Haritada aç" butonu (`Linking.openURL` + Google Maps URL). |
+| F4.5 | Mobil: daha fazla tesis | ✅ `mobile/src/api/facilitiesClient.ts` → `GET /v1/facilities`; ResultScreen lazy-load + 5 dil i18n. |
+| F4.6 | Backend: Redis rate limit | ✅ `rate_limit.py` — default, admin, send_summary, llm_nlu bucket'larının hepsi Redis + in-memory fallback ile; main.py lifecycle'da `redis_client` wired. |
 
 ---
 
