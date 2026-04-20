@@ -35,7 +35,15 @@ class Settings(BaseSettings):
     # App
     APP_ENV: str = "development"
     DEBUG: bool = True
-    # JSON array of allowed CORS origins. In production set explicitly to your app/dashboard URLs.
+    # Allowed CORS origins. Two accepted formats:
+    #   JSON array:  ["http://localhost:3000","https://x.com"]
+    #   CSV:         http://localhost:3000,https://x.com
+    # The JSON shape is stricter (required-quoted strings) but
+    # round-trips safely through pydantic/typed env readers; the CSV
+    # shape is human-friendlier and — crucially — avoids PowerShell
+    # quote-escape footguns when setting secrets via `flyctl secrets
+    # set`. A bad value here crashes the app on import (FastAPI never
+    # reaches a request), so tolerance-at-read is worth the 3 lines.
     CORS_ORIGINS: str = '["http://localhost:8081","http://localhost:19006","http://localhost:3000"]'
     ADMIN_API_KEY: str = ""
 
@@ -46,7 +54,40 @@ class Settings(BaseSettings):
 
     @property
     def cors_origins_list(self) -> List[str]:
-        return json.loads(self.CORS_ORIGINS)
+        """Return the CORS allow-list.
+
+        Accepts either a JSON array (`["a","b"]`) or a comma-separated
+        value (`a,b`). Leading/trailing whitespace on the whole value
+        and each CSV entry is stripped. An empty / whitespace-only
+        `CORS_ORIGINS` returns `[]` (FastAPI's CORSMiddleware will then
+        allow no cross-origin request — deliberate fail-closed for
+        production where forgetting this env was previously a silent
+        "all origins" footgun).
+
+        A bad JSON array surfaces a clear error instead of the raw
+        `json.decoder.JSONDecodeError` we used to ship to users
+        (imprint at Faz A2 Fly deploy — commit 90c7411 followup).
+        """
+        raw = (self.CORS_ORIGINS or "").strip()
+        if not raw:
+            return []
+        if raw.startswith("["):
+            try:
+                parsed = json.loads(raw)
+            except json.JSONDecodeError as exc:
+                # Re-raise with context so ops sees what was actually
+                # read from env instead of a generic JSON traceback.
+                raise ValueError(
+                    f"CORS_ORIGINS starts with '[' but is not valid JSON. "
+                    f"Got: {raw!r}. Original error: {exc.msg}"
+                ) from exc
+            if not isinstance(parsed, list):
+                raise ValueError(
+                    f"CORS_ORIGINS JSON must be a list; got {type(parsed).__name__}: {parsed!r}"
+                )
+            return [str(v).strip() for v in parsed if str(v).strip()]
+        # CSV fallback — trim whitespace, drop empty slots.
+        return [v.strip() for v in raw.split(",") if v.strip()]
 
     # Agent config
     MAX_QUESTIONS: int = 6
