@@ -5,7 +5,6 @@ import {
   StyleSheet,
   Text,
   View,
-  ActivityIndicator,
   RefreshControl,
 } from "react-native";
 import { tokens, screenPadding } from "@/src/ui/designTokens";
@@ -17,6 +16,7 @@ import {
   SecondaryButton,
   Badge,
 } from "@/src/ui/primitives";
+import { SessionCardSkeleton, SkeletonList } from "@/src/ui/Skeleton";
 import { API_BASE } from "@/constants";
 import { getDeviceId } from "@/utils/deviceId";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -183,11 +183,17 @@ export default function HistoryScreen({ onBack, onViewSession }: Props) {
 
       {/* Content */}
       {loading && !refreshing ? (
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color={tokens.colors.primary} />
-          <MutedText style={{ marginTop: tokens.spacing.md }}>
+        // Phase B6: Skeleton placeholders match the session-card
+        // shape so the transition to real data is seamless. Screen
+        // readers get the "history.loading" text still; skeletons
+        // themselves are marked accessibilityElementsHidden.
+        <View style={styles.list}>
+          <MutedText
+            style={{ marginBottom: tokens.spacing.md, textAlign: "center" }}
+          >
             {t("history.loading")}
           </MutedText>
+          <SkeletonList count={4} Item={SessionCardSkeleton} />
         </View>
       ) : error ? (
         <View style={styles.center}>

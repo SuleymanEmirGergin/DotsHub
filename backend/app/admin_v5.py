@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -287,6 +288,132 @@ def overview_stats(
         "top_canonicals": top_can,
         "recent_problem_sessions": recent,
         "health": health,
+    }
+
+
+@router.get("/stats/daily-summary")
+def daily_summary(
+    x_admin_key: Optional[str] = Header(default=None),
+    days: int = Query(default=7, ge=1, le=30),
+):
+    """Daily aggregate for dashboard charts (Phase B7).
+
+    Returns per-day triage throughput + aciliyet (urgency) breakdown
+    + top specialties + rolling avg confidence, scoped to the last
+    ``days`` days (default 7). Sized for a small panel set — bar
+    chart, pie, horizontal bar, single-line sparkline.
+
+    Query performance:
+      - One Supabase select with `created_at >= cutoff` + lookback
+        limit of 10000 rows (well beyond what a week of real traffic
+        produces; serves as a safety cap).
+      - Bucketing happens in Python, not SQL. Supabase's PostgREST
+        doesn't expose a `date_trunc` RPC without a custom function;
+        in-memory aggregation over <10k rows stays under ~50ms, fine
+        for an admin-side request.
+      - Dashboard is expected to poll this at most every 30s.
+
+    Scope of fields returned — kept small on purpose to keep the
+    response JSON under 10KB for long retention / dashboard snapshots.
+    """
+    require_admin(x_admin_key)
+
+    cutoff_dt = datetime.now(timezone.utc) - timedelta(days=days)
+    cutoff_iso = cutoff_dt.isoformat()
+
+    rows = (
+        supabase.table("triage_sessions")
+        .select(
+            "session_id,created_at,envelope_type,recommended_specialty_tr,"
+            "urgency,confidence_0_1"
+        )
+        .gte("created_at", cutoff_iso)
+        .order("created_at", desc=True)
+        .limit(10000)
+        .execute()
+        .data
+        or []
+    )
+
+    # ─── Daily buckets ──────────────────────────────────────────
+    # Keyed by `YYYY-MM-DD` in UTC. The dashboard converts these to
+    # local-time labels at render so the server stays locale-neutral.
+    daily_counts: Dict[str, int] = {}
+    daily_conf_sum: Dict[str, float] = {}
+    daily_conf_n: Dict[str, int] = {}
+
+    by_urgency: Dict[str, int] = {}
+    specialty_counts: Dict[str, int] = {}
+
+    low_conf_total = 0
+
+    for r in rows:
+        # created_at comes as ISO-8601 string from Supabase.
+        created_raw = r.get("created_at")
+        if not isinstance(created_raw, str):
+            continue
+        try:
+            # Supabase returns "2026-04-20T14:07:58.041+00:00"; the
+            # fromisoformat call handles both the "+00:00" and
+            # microsecond variations in current CPython. We only need
+            # the date portion for bucketing, so one str split is
+            # cheaper than constructing a datetime.
+            day_key = created_raw[:10]
+        except Exception:
+            continue
+        daily_counts[day_key] = daily_counts.get(day_key, 0) + 1
+
+        # Confidence average per day (only if field is present +
+        # numeric). Missing/null for EMERGENCY envelopes is expected.
+        conf = r.get("confidence_0_1")
+        if isinstance(conf, (int, float)):
+            daily_conf_sum[day_key] = daily_conf_sum.get(day_key, 0.0) + float(conf)
+            daily_conf_n[day_key] = daily_conf_n.get(day_key, 0) + 1
+            if float(conf) < 0.55:
+                low_conf_total += 1
+
+        # Urgency distribution — bounded label set (4 values +
+        # unknown), safe to aggregate without cardinality concerns.
+        urg = r.get("urgency") or "UNKNOWN"
+        by_urgency[urg] = by_urgency.get(urg, 0) + 1
+
+        # Top specialties — only count RESULT envelopes so EMERGENCY
+        # reroutes (which overwrite specialty) don't skew the list.
+        env = r.get("envelope_type")
+        spec = r.get("recommended_specialty_tr")
+        if env == "RESULT" and spec:
+            specialty_counts[spec] = specialty_counts.get(spec, 0) + 1
+
+    # ─── Sorted outputs ─────────────────────────────────────────
+    # Fill any missing days with zeros so the chart line doesn't
+    # have gaps where the baseline is visually misleading.
+    today_utc = datetime.now(timezone.utc).date()
+    daily_totals: List[Dict[str, Any]] = []
+    avg_confidence_by_day: List[Dict[str, Any]] = []
+    for i in range(days - 1, -1, -1):
+        d = (today_utc - timedelta(days=i)).isoformat()
+        daily_totals.append({"day": d, "count": daily_counts.get(d, 0)})
+        n = daily_conf_n.get(d, 0)
+        avg = (daily_conf_sum.get(d, 0.0) / n) if n else None
+        avg_confidence_by_day.append({"day": d, "avg": avg})
+
+    top_specialties = [
+        {"name": name, "count": count}
+        for name, count in sorted(
+            specialty_counts.items(), key=lambda kv: kv[1], reverse=True
+        )[:5]
+    ]
+
+    total = len(rows)
+    return {
+        "window_days": days,
+        "total": total,
+        "daily_totals": daily_totals,
+        "by_urgency": by_urgency,
+        "top_specialties": top_specialties,
+        "avg_confidence_by_day": avg_confidence_by_day,
+        "low_confidence_count": low_conf_total,
+        "low_confidence_pct": (low_conf_total / total) if total else 0.0,
     }
 
 

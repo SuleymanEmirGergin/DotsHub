@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import DailySummaryPanel from "./DailySummaryPanel";
 
 export const dynamic = "force-dynamic";
 
@@ -411,6 +412,14 @@ export default async function AnalyticsPage() {
             <Link href="/admin/tuning-report">{t("analytics.tuningLink")} &rarr;</Link>
           </Button>
         </div>
+      </div>
+
+      {/* Phase B7 — Daily summary recharts panel. Client-side fetches
+          /api/admin/daily-summary every 30s. Rendered above the static
+          stat cards so the visual takeaway (bugünkü trend) comes
+          first when the page opens. */}
+      <div className="mt-5">
+        <DailySummaryPanel />
       </div>
 
       <div className="grid grid-cols-4 gap-3 mt-5">

@@ -66,8 +66,8 @@ const styles = StyleSheet.create({
     paddingVertical: tokens.spacing.xl,
   },
   alertCard: {
-    borderColor: "#F1B5B5",
-    backgroundColor: "#FFF8F8",
+    borderColor: tokens.colors.errorBorder,
+    backgroundColor: tokens.colors.errorBg,
     marginBottom: tokens.spacing.lg,
   },
   iconWrap: {
@@ -90,7 +90,7 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: "#F2D4D4",
+    backgroundColor: tokens.colors.errorDivider,
     marginVertical: tokens.spacing.md,
   },
   instruction: {

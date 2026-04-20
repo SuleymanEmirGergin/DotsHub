@@ -21,7 +21,8 @@
     "tuningMetrics": "Tuning Metrics",
     "login": "Login",
     "logout": "Logout",
-    "privacy": "Privacy"
+    "privacy": "Privacy",
+    "terms": "Terms"
   },
   "login": {
     "title": "Login",
@@ -335,14 +336,101 @@
     "severityCritical": "CRIT"
   },
   "privacy": {
-    "title": "Privacy",
-    "intro": "This app collects data for symptom pre-triage. Summary:",
-    "dataCollectedTitle": "Data collected",
-    "storageTitle": "Storage",
-    "rightsTitle": "Your rights",
-    "dataCollected": "Data collected: triage session (symptoms, answers, result), optional feedback, summary email address and push token (device).",
-    "storage": "Data is stored in Supabase; retention is defined by operational needs.",
-    "rights": "Contact the operator for deletion requests and data portability.",
-    "disclaimer": "This text does not replace a legal policy. See docs/PRIVACY_AND_SECURITY.md for details."
+    "title": "Privacy Policy",
+    "lastUpdated": "Last updated: April 20, 2026",
+    "intro": "At Triaige we take your privacy seriously. This policy explains what data is collected, how it is processed, how long it is stored, and what rights you have as a user. Triaige complies with Turkey's KVKK (Law No. 6698) and GDPR for EU users.",
+    "dataControllerTitle": "Data Controller",
+    "dataControllerBody": "The data controller for the Triaige app is: Emir Gergin · Contact: emirgergin21@gmail.com. This email is the only authorised channel for all privacy inquiries and requests.",
+    "dataCollectedTitle": "Data We Collect",
+    "dataCollectedBody": "The following categories of data are collected when you use the app:",
+    "dataCollectedList": [
+      "Triage session data: symptoms you enter, your answers, evaluation result, recommended specialty, and urgency level",
+      "Device info: device identifier (anonymous UUID), app version, platform (iOS/Android), language preference",
+      "Optional feedback: your rating and written comments after a triage",
+      "Optional summary email: the email address you provide when requesting a summary",
+      "Push notification tokens: anonymous identifier for your device's notification system",
+      "Usage telemetry: request counts, error rates (anonymous, IP is hashed)"
+    ],
+    "notCollectedTitle": "Data We Do NOT Collect",
+    "notCollectedBody": "Triaige does NOT collect national ID numbers, date of birth, health insurance details, full name, place of birth, or similar directly-identifying special-category data. Only symptom descriptions are stored as free text.",
+    "legalBasisTitle": "Legal Basis",
+    "legalBasisBody": "Processing is necessary for the performance of a contract under GDPR Article 6(1)(b) and KVKK Article 5/2(c). For optional fields (feedback, email), your explicit consent is obtained.",
+    "purposeTitle": "Purpose of Processing",
+    "purposeBody": "Your data is processed for the following purposes:",
+    "purposeList": [
+      "Running the triage algorithm to suggest a relevant medical specialty",
+      "Ensuring app security and preventing abuse (rate limiting)",
+      "Anonymous statistics to improve service quality (accuracy, error tracking)",
+      "Sending a summary on user request (only if you provided an email)"
+    ],
+    "storageTitle": "Storage and Location",
+    "storageBody": "Triage sessions are stored in Supabase (EU servers). Retention period is 365 days; after that records are automatically deleted or anonymised. Email addresses for summary delivery are deleted within 7 days after sending.",
+    "sharingTitle": "Third-Party Sharing",
+    "sharingBody": "Your data is never sold or shared for advertising. The following service providers have limited access scoped to their processing role:",
+    "sharingList": [
+      "Supabase: database hosting (EU, GDPR-compliant)",
+      "Fly.io: server hosting (EU region)",
+      "Vercel: dashboard hosting (EU edge)",
+      "Wiro.ai (optional): LLM processing for natural language understanding (only anonymous symptom text; no identity or session mapping is sent)"
+    ],
+    "rightsTitle": "Your Rights",
+    "rightsBody": "Under KVKK and GDPR you have the following rights:",
+    "rightsList": [
+      "Right of access: request the data we hold about you",
+      "Right to rectification: request correction of inaccurate data",
+      "Right to erasure: request deletion of your data (right to be forgotten)",
+      "Right to object: object to processing of your data",
+      "Right to portability: receive your data in a structured format",
+      "Right to complain: file a complaint with the Data Protection Authority"
+    ],
+    "rightsContact": "Send rights requests to emirgergin21@gmail.com. We respond within 30 days at the latest.",
+    "securityTitle": "Security Measures",
+    "securityBody": "Data transmission is encrypted with TLS 1.3. Database access is restricted via role-based authorisation (RLS). Server secrets are managed as environment variables and never embedded in code. Regular security audits are performed.",
+    "childrenTitle": "Children",
+    "childrenBody": "Triaige does not knowingly collect data from children under 13. If as a parent/guardian you realise your child shared data inadvertently, request deletion at emirgergin21@gmail.com.",
+    "changesTitle": "Policy Changes",
+    "changesBody": "This policy may be updated. Material changes are announced via in-app notification. The last updated date is shown at the top of the page.",
+    "disclaimer": "⚠️ Medical Disclaimer: Triaige is NOT a medical diagnostic tool. The suggestions provided are for informational and referral purposes only. In an emergency call 112 (Turkey) or your local emergency number. For any health decision always consult a qualified healthcare professional."
+  },
+  "terms": {
+    "title": "Terms of Service",
+    "lastUpdated": "Last updated: April 20, 2026",
+    "intro": "By using the Triaige app you accept the following terms. Please read them carefully. If you do not accept these terms, do not use the app.",
+    "serviceTitle": "Service Description",
+    "serviceBody": "Triaige provides guidance on which medical specialty you should consult based on your symptoms. It is designed primarily for Turkish-speaking users. The service is free of charge and does NOT provide medical diagnosis, treatment, or prescriptions under any circumstances.",
+    "medicalDisclaimerTitle": "🚨 Medical Disclaimer (MOST IMPORTANT)",
+    "medicalDisclaimerBody": "Triaige is NOT a medical professional. The suggestions provided:",
+    "medicalDisclaimerList": [
+      "Do not replace medical diagnosis",
+      "Do not recommend treatment, prescriptions, or health decisions",
+      "Are not emergency response",
+      "Provide only general information for referral purposes"
+    ],
+    "medicalDisclaimerCritical": "IN AN EMERGENCY: Call 112 (Turkey) or your local emergency number, go to the nearest emergency room. For chest pain, shortness of breath, loss of consciousness, stroke symptoms, serious injury, or heavy bleeding DO NOT use the app — go directly to the emergency room. Delayed medical intervention based on Triaige's decisions is never acceptable under any circumstances.",
+    "eligibilityTitle": "Eligibility",
+    "eligibilityBody": "You must be 13 years or older to use Triaige. Users aged 13-18 must have parental/guardian consent. You may not use the app for commercial purposes or resell it.",
+    "accountTitle": "Account Responsibility",
+    "accountBody": "Triaige does not require a user account; device-based anonymous identity is used. Access to the admin dashboard is authenticated via magic link; do not share your link with anyone.",
+    "acceptableUseTitle": "Acceptable Use",
+    "acceptableUseBody": "You may NOT use the app for:",
+    "acceptableUseList": [
+      "Automated bot abuse (bypassing rate limits, scraping)",
+      "Testing system security (unauthorised penetration testing)",
+      "Training/manipulating the algorithm with misleading symptom data",
+      "Producing impersonating apps that mislead users",
+      "Illegal activities"
+    ],
+    "intellectualPropertyTitle": "Intellectual Property",
+    "intellectualPropertyBody": "The Triaige app, algorithms, interface design, and brand name belong to their owner. For non-commercial educational use of the code, see the GitHub repository. The medical database and triage rules are Triaige's intellectual property.",
+    "liabilityTitle": "Disclaimer of Liability",
+    "liabilityBody": "Triaige is provided \"as is\". The provider does not guarantee uninterrupted or error-free operation. Triaige cannot be held liable under any circumstances for any direct or indirect medical, financial, or moral damages arising from reliance on its suggestions. By using the app you accept these risks.",
+    "terminationTitle": "Service Termination",
+    "terminationBody": "The provider reserves the right to temporarily or permanently discontinue the service without prior notice. Access may be blocked for specific users in cases of abuse.",
+    "changesTitle": "Changes to Terms",
+    "changesBody": "These terms may be updated. Material changes are announced via in-app notification. Continued use after an update means acceptance of the new terms.",
+    "governingLawTitle": "Governing Law",
+    "governingLawBody": "These terms are governed by the laws of the Republic of Turkey. Any dispute shall be resolved in the Courts of Istanbul.",
+    "contactTitle": "Contact",
+    "contactBody": "For questions, feedback, or legal requests: emirgergin21@gmail.com."
   }
 }

@@ -21,7 +21,8 @@
     "tuningMetrics": "Tuning Metrikleri",
     "login": "Giriş",
     "logout": "Çıkış",
-    "privacy": "Gizlilik"
+    "privacy": "Gizlilik",
+    "terms": "Kullanım Koşulları"
   },
   "login": {
     "title": "Giriş",
@@ -335,14 +336,101 @@
     "severityCritical": "KRITIK"
   },
   "privacy": {
-    "title": "Gizlilik",
-    "intro": "Bu uygulama semptom ön triajı için veri toplar. Özet:",
-    "dataCollectedTitle": "Toplanan veriler",
-    "storageTitle": "Saklama",
+    "title": "Gizlilik Politikası",
+    "lastUpdated": "Son güncelleme: 20 Nisan 2026",
+    "intro": "Triaige olarak gizliliğinize önem veriyoruz. Bu politika, uygulamayı kullanırken hangi verilerin toplandığını, nasıl işlendiğini, saklandığını ve kullanıcı olarak haklarınızı açıklar. Triaige Türkiye'de KVKK (6698 sayılı Kişisel Verilerin Korunması Kanunu) ve AB kullanıcıları için GDPR ile uyumlu şekilde hazırlanmıştır.",
+    "dataControllerTitle": "Veri Sorumlusu",
+    "dataControllerBody": "Triaige uygulamasının veri sorumlusu kimliği: Emir Gergin · İletişim: emirgergin21@gmail.com. Bu e-posta adresi tüm gizlilik sorgulama ve talepleri için tek yetkili kanaldır.",
+    "dataCollectedTitle": "Toplanan Veriler",
+    "dataCollectedBody": "Uygulamayı kullanırken aşağıdaki veri kategorileri toplanır:",
+    "dataCollectedList": [
+      "Triaj oturumu verileri: girdiğiniz belirtiler, cevapladığınız sorular, değerlendirme sonucu, önerilen branş ve aciliyet seviyesi",
+      "Cihaz bilgileri: cihaz kimliği (anonim UUID), uygulama sürümü, platform (iOS/Android), dil tercihi",
+      "İsteğe bağlı geri bildirim: triaj sonrası derecelendirmeniz ve yazılı yorumlarınız",
+      "İsteğe bağlı özet e-postası: özet gönderim istediğinizde verdiğiniz e-posta adresi",
+      "Push bildirim tokenları: cihazınızdaki bildirim sistemi için anonim tanımlayıcı",
+      "Kullanım telemetrisi: kaç istek gönderildi, hata oranları (anonim, IP hash'lenir)"
+    ],
+    "notCollectedTitle": "Toplanmayan Veriler",
+    "notCollectedBody": "Triaige, TC kimlik numarası, doğum tarihi, sağlık sigorta bilgileri, ad-soyad, doğum yeri ve benzeri kimlik tanımlayıcı özel nitelikli verileri TOPLAMAZ. Sadece semptom betimlemeleri metin olarak kaydedilir.",
+    "legalBasisTitle": "Hukuki Dayanak",
+    "legalBasisBody": "Veri işleme KVKK Madde 5/2(c) ve GDPR Madde 6(1)(b) kapsamında sözleşmenin ifası için gereklidir. İsteğe bağlı alanlar (geri bildirim, e-posta) için açık rızanız alınır.",
+    "purposeTitle": "İşleme Amacı",
+    "purposeBody": "Verileriniz aşağıdaki amaçlarla işlenir:",
+    "purposeList": [
+      "Triaj algoritmasını çalıştırıp size sağlık branşı önerisi sunmak",
+      "Uygulamanın güvenliğini sağlamak ve kötüye kullanımı önlemek (rate-limit)",
+      "Anonim istatistiklerle hizmet kalitesini iyileştirmek (doğruluk oranı, hata takibi)",
+      "Kullanıcı talebi üzerine özet göndermek (yalnızca e-posta verdiyseniz)"
+    ],
+    "storageTitle": "Saklama ve Konum",
+    "storageBody": "Triaj oturumları Supabase veritabanında (AB sunucuları) saklanır. Saklama süresi 365 gündür; bu süre sonunda otomatik olarak silinir veya anonimleştirilir. Özet e-postası gönderimi için e-posta adresi gönderim sonrası 7 gün içinde silinir.",
+    "sharingTitle": "Üçüncü Taraflarla Paylaşım",
+    "sharingBody": "Verileriniz hiçbir şekilde satılmaz veya reklam amaçlı paylaşılmaz. Aşağıdaki hizmet sağlayıcılar işlem görevleri kapsamında sınırlı erişime sahiptir:",
+    "sharingList": [
+      "Supabase: veri tabanı barındırma (AB, GDPR uyumlu)",
+      "Fly.io: sunucu barındırma (EU bölgesi)",
+      "Vercel: dashboard barındırma (EU edge)",
+      "Wiro.ai (opsiyonel): doğal dil anlayışı için LLM işlemi (sadece anonim semptom metni gönderilir, kimlik veya oturum eşleştirmesi yapılmaz)"
+    ],
     "rightsTitle": "Haklarınız",
-    "dataCollected": "Toplanan veriler: triaj oturumu (semptomlar, cevaplar, sonuç), isteğe bağlı geri bildirim, özet e-posta adresi ve push token (cihaz).",
-    "storage": "Veriler Supabase'de saklanır; saklama süresi operasyonel gereklere göre tanımlanır.",
-    "rights": "Silme talebi ve veri taşınabilirliği için operatör ile iletişime geçin.",
-    "disclaimer": "Bu metin hukuki politika yerine geçmez. Detaylı not: docs/PRIVACY_AND_SECURITY.md."
+    "rightsBody": "KVKK ve GDPR kapsamında aşağıdaki haklara sahipsiniz:",
+    "rightsList": [
+      "Erişim hakkı: Hakkınızda tutulan verilere erişim talep etmek",
+      "Düzeltme hakkı: Yanlış verilerin düzeltilmesini istemek",
+      "Silme hakkı: Verilerinizin silinmesini istemek (unutulma hakkı)",
+      "İşlemeye itiraz hakkı: Veri işleme faaliyetlerine itiraz etmek",
+      "Taşınabilirlik hakkı: Verilerinizi yapılandırılmış formatta almak",
+      "Şikâyet hakkı: Veri Koruma Kurumu'na (KVKK) şikâyette bulunmak"
+    ],
+    "rightsContact": "Hak taleplerinizi emirgergin21@gmail.com adresine gönderebilirsiniz. Taleplere en geç 30 gün içinde yanıt verilir.",
+    "securityTitle": "Güvenlik Önlemleri",
+    "securityBody": "Veri aktarımı TLS 1.3 ile şifrelenir. Veritabanı erişimi rol-tabanlı yetkilendirme (RLS) ile kısıtlanır. Sunucu sırları ortam değişkeni olarak yönetilir; koda gömülmez. Düzenli güvenlik denetimi yapılır.",
+    "childrenTitle": "Çocuk Kullanıcılar",
+    "childrenBody": "Triaige 13 yaşın altındaki çocuklardan bilerek veri toplamaz. Ebeveyn/vasiyse farkında olmadan çocuğa ait veri paylaştıysanız emirgergin21@gmail.com adresinden silme talep edebilirsiniz.",
+    "changesTitle": "Politika Değişiklikleri",
+    "changesBody": "Bu politika güncellenebilir. Önemli değişiklikler uygulama içi bildirim ile duyurulur. Son güncelleme tarihi sayfanın başında gösterilir.",
+    "disclaimer": "⚠️ Tıbbi Uyarı: Triaige tıbbi tanı aracı değildir. Verilen öneriler sadece bilgilendirme ve sağlık hizmetine yönlendirme amaçlıdır. Acil bir durumda 112'yi arayın. Herhangi bir sağlık kararı için mutlaka bir sağlık uzmanına başvurun."
+  },
+  "terms": {
+    "title": "Kullanım Koşulları",
+    "lastUpdated": "Son güncelleme: 20 Nisan 2026",
+    "intro": "Triaige uygulamasını kullanarak aşağıdaki koşulları kabul etmiş olursunuz. Lütfen dikkatle okuyun. Bu koşulları kabul etmiyorsanız uygulamayı kullanmayın.",
+    "serviceTitle": "Hizmet Tanımı",
+    "serviceBody": "Triaige, semptomlarınıza dayalı olarak hangi sağlık branşına başvurmanız gerektiği konusunda yönlendirme sunar. Türkçe konuşan kullanıcılar için tasarlanmıştır. Hizmet ücretsizdir ve hiçbir şekilde tıbbi tanı, tedavi veya reçete sunmaz.",
+    "medicalDisclaimerTitle": "🚨 Tıbbi Uyarı (EN ÖNEMLİ)",
+    "medicalDisclaimerBody": "Triaige tıbbi bir uzman DEĞİLDİR. Sunulan öneriler:",
+    "medicalDisclaimerList": [
+      "Tıbbi tanı yerine geçmez",
+      "Tedavi, reçete veya sağlık kararı önermez",
+      "Acil durum müdahalesi değildir",
+      "Sadece yönlendirme amaçlı genel bilgi sunar"
+    ],
+    "medicalDisclaimerCritical": "ACİL DURUMDA: 112'yi arayın, en yakın acil servise gidin. Göğüs ağrısı, nefes darlığı, bilinç kaybı, felç belirtileri, ciddi yaralanma, ağır kanama gibi durumlarda uygulamayı KULLANMAYIN, doğrudan acil servise başvurun. Triaige'in kararlarına dayanarak gecikmeli tıbbi müdahale hiçbir koşulda kabul edilemez.",
+    "eligibilityTitle": "Kullanım Uygunluğu",
+    "eligibilityBody": "Triaige'i kullanmak için 13 yaşında veya üstünde olmalısınız. 13-18 yaş arası kullanıcılar ebeveyn/vasi onayı almalıdır. Uygulamayı ticari amaçla kullanamaz veya yeniden satamazsınız.",
+    "accountTitle": "Hesap Sorumluluğu",
+    "accountBody": "Triaige tek kullanıcı hesabı gerektirmez; cihaz bazlı anonim kimlik kullanılır. Admin dashboard'a erişim için magic link ile kimlik doğrulama yapılır; bağlantınızı kimseyle paylaşmayın.",
+    "acceptableUseTitle": "Kabul Edilen Kullanım",
+    "acceptableUseBody": "Uygulamayı aşağıdaki amaçlarla KULLANAMAZSINIZ:",
+    "acceptableUseList": [
+      "Otomatik bot ile kötüye kullanım (rate-limit aşma, scraping)",
+      "Sistem güvenliğini test etme (izinsiz penetration testing)",
+      "Yanıltıcı semptom bilgisi ile algoritmayı eğitme/manipüle etme",
+      "Uygulamayı taklit eden, kullanıcıları yanıltıcı versiyon üretme",
+      "Yasadışı faaliyetler için kullanmak"
+    ],
+    "intellectualPropertyTitle": "Fikri Mülkiyet",
+    "intellectualPropertyBody": "Triaige uygulaması, algoritmalar, arayüz tasarımı ve marka adı sahiplerine aittir. Kodun ticari olmayan eğitim amaçlı kullanımı için GitHub reposuna bakın. Tıbbi veri tabanı ve triaj kuralları Triaige'in fikri mülkiyetidir.",
+    "liabilityTitle": "Sorumluluk Reddi",
+    "liabilityBody": "Triaige hizmet \"olduğu gibi\" sunulur. Sağlayıcı, uygulamanın kesintisiz veya hatasız çalışacağını garanti etmez. Triaige'in önerilerine dayanarak doğrudan veya dolaylı olarak ortaya çıkan tıbbi, maddi, manevi zararlardan hiçbir şekilde sorumlu tutulamaz. Kullanıcı, uygulamayı kullanmanın risklerini kabul eder.",
+    "terminationTitle": "Hizmetin Sonlandırılması",
+    "terminationBody": "Sağlayıcı, önceden haber vermeksizin hizmeti geçici veya kalıcı olarak durdurma hakkını saklı tutar. Kötüye kullanım halinde belirli kullanıcıların erişimi engellenebilir.",
+    "changesTitle": "Koşul Değişiklikleri",
+    "changesBody": "Bu koşullar güncellenebilir. Önemli değişiklikler uygulama içi bildirim ile duyurulur. Güncellemeden sonra uygulamayı kullanmaya devam etmeniz yeni koşulları kabul ettiğiniz anlamına gelir.",
+    "governingLawTitle": "Uygulanacak Hukuk",
+    "governingLawBody": "Bu koşullar Türkiye Cumhuriyeti hukukuna tabidir. Herhangi bir anlaşmazlık İstanbul Mahkemeleri'nde çözülür.",
+    "contactTitle": "İletişim",
+    "contactBody": "Sorularınız, geri bildirimleriniz veya yasal talepleriniz için emirgergin21@gmail.com."
   }
 }
