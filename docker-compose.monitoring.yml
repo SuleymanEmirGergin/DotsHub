@@ -62,7 +62,7 @@ services:
       - ./config/grafana/dashboards.yml:/etc/grafana/provisioning/dashboards/dashboards.yml:ro
       # The dashboard JSON itself — Grafana's file provisioner watches
       # this dir and re-imports on change.
-      - ./config/grafana/dashboard-dotshub.json:/var/lib/grafana/dashboards/dashboard-dotshub.json:ro
+      - ./config/grafana/dashboard-triaige.json:/var/lib/grafana/dashboards/dashboard-triaige.json:ro
       - grafana-data:/var/lib/grafana
 
 volumes:

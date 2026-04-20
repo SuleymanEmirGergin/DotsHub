@@ -120,10 +120,10 @@ is safe to re-run if it fails mid-way — operations are idempotent.
 ```bash
 # One: create the app (Fly reads fly.toml; if app name collides with
 # someone else's, rename `app` in fly.toml and retry).
-flyctl apps create dotshub-backend --org personal
+flyctl apps create triaige-backend --org personal
 
 # Two: provision Upstash Redis (free-tier — 10K cmd/day, 256 MB).
-# This attaches REDIS_URL as a secret on `dotshub-backend`.
+# This attaches REDIS_URL as a secret on `triaige-backend`.
 flyctl redis create \
   --name dotshub-redis \
   --region ams \
@@ -150,7 +150,7 @@ flyctl status
 # → look for "State: started" + "Health: passing"
 
 # Six: hit /health from your laptop.
-curl https://dotshub-backend.fly.dev/health
+curl https://triaige-backend.fly.dev/health
 # → {"status":"ok","supabase":"reachable",...}
 ```
 
@@ -180,12 +180,12 @@ flyctl logs --no-tail        # last ~200 log lines
 flyctl checks list           # green = /health passing
 
 # 2) Backend-side smoke — hit the public URL.
-curl -sS https://dotshub-backend.fly.dev/health | jq
-curl -sS https://dotshub-backend.fly.dev/v1/config/features | jq
+curl -sS https://triaige-backend.fly.dev/health | jq
+curl -sS https://triaige-backend.fly.dev/v1/config/features | jq
 # → client-version payload
 
 # 3) Metrics endpoint — required for Phase A3.
-curl -sS https://dotshub-backend.fly.dev/metrics | head -30
+curl -sS https://triaige-backend.fly.dev/metrics | head -30
 # → HELP/TYPE lines, Prometheus exposition format
 ```
 
@@ -206,13 +206,13 @@ After the Fly URL is confirmed live, update the client configs:
 
 **Dashboard (`dashboard/.env.production`):**
 ```
-NEXT_PUBLIC_API_BASE=https://dotshub-backend.fly.dev
+NEXT_PUBLIC_API_BASE=https://triaige-backend.fly.dev
 ```
 Then push; Vercel picks up the new env on the next deploy.
 
 **Mobile (`mobile/.env`):**
 ```
-API_BASE=https://dotshub-backend.fly.dev
+API_BASE=https://triaige-backend.fly.dev
 ```
 Rebuild your Expo app (`npx expo start --clear`) or bump the EAS
 binary.
@@ -258,7 +258,7 @@ limit traffic approaches that, the free tier is fine.
 - [ ] `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` copied from Supabase dashboard
 - [ ] `WIRO_API_KEY` + `WIRO_API_SECRET` copied from `backend/.env`
 - [ ] Dashboard Vercel URL known (for `CORS_ORIGINS`)
-- [ ] `flyctl apps create dotshub-backend --org personal` done
+- [ ] `flyctl apps create triaige-backend --org personal` done
 - [ ] `flyctl redis create --plan free` done
 - [ ] `flyctl secrets set …` done (at least the 6 required)
 - [ ] `flyctl deploy` green

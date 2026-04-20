@@ -32,7 +32,7 @@ groups:
           description: |
             {{ $value | humanizePercentage }} of backend requests are 5xx.
             Check recent deploys / Sentry for the correlating exception.
-            Dashboard: https://<stack>.grafana.net/d/dotshub-pretriage
+            Dashboard: https://<stack>.grafana.net/d/triaige-pretriage
 
       - alert: BackendLatencyRegression
         expr: |

@@ -132,7 +132,7 @@ Everything in this section is GitOps-managed out of the box:
 8. **Push a commit that touches `config/grafana/**`** (or manually
    dispatch the workflow) to kick off the first sync. The dashboard
    lands under the default folder; alerts land in the
-   `dotshub-backend` namespace.
+   `triaige-backend` namespace.
 
 9. **(Optional) Wire Grafana Cloud alert routes** to Slack / email.
    Grafana Cloud UI → **Alerting → Contact points**. Bind to the
@@ -263,7 +263,7 @@ docker compose -f docker-compose.monitoring.yml up -d
 Then open:
 
 - Prometheus: <http://localhost:9090/targets> — confirm the
-  `dotshub-backend` target is `UP`.
+  `triaige-backend` target is `UP`.
 - Grafana: <http://localhost:3001> (login `admin` / `admin`, will
   prompt for password change on first login — dismiss with `Skip`).
   The Dotshub dashboard is auto-imported via provisioning.
@@ -284,7 +284,7 @@ docker compose -f docker-compose.monitoring.yml down
 | `backend/app/version_gating.py`              | Increments `capability_gate_*` and `triage_envelope_total`. |
 | `backend/app/rate_limit.py`                  | Increments `rate_limit_hits_total{bucket,outcome}` at each public decision. |
 | `backend/tests/test_metrics.py`              | Verifies `/metrics` mounts + custom counters tick. Part of the 100%-branch safety-critical gate. |
-| `config/grafana/dashboard-dotshub.json`      | Importable Grafana dashboard (datasource via `${DS_PROMETHEUS}` templating). |
+| `config/grafana/dashboard-triaige.json`      | Importable Grafana dashboard (datasource via `${DS_PROMETHEUS}` templating). |
 | `config/grafana/prometheus.yml`              | Local-dev Prometheus scrape config (Grafana Cloud does not read this). |
 | `config/grafana/datasources.yml`             | Grafana provisioning — local Prometheus datasource. |
 | `config/grafana/dashboards.yml`              | Grafana provisioning — auto-import the dashboard JSON. |

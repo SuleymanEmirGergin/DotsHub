@@ -26,7 +26,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-DASH_FILE="${ROOT}/config/grafana/dashboard-dotshub.json"
+DASH_FILE="${ROOT}/config/grafana/dashboard-triaige.json"
 ALERTS_DIR="${ROOT}/config/grafana/alerts"
 
 DRY_RUN="${DRY_RUN:-0}"
@@ -95,7 +95,7 @@ fi
 # mimirtool` or grab the release from
 #   https://github.com/grafana/mimir/releases
 #
-# Rule namespace: we use "dotshub-backend" as the Mimir "namespace"
+# Rule namespace: we use "triaige-backend" as the Mimir "namespace"
 # (rule-group collection name). Re-running overwrites in-place — the
 # `load` command deletes rule-groups not in the current file.
 

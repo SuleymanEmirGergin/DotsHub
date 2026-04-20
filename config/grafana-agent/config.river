@@ -22,7 +22,7 @@
 
 // ─── Scrape ───────────────────────────────────────────────────────
 
-prometheus.scrape "dotshub_backend" {
+prometheus.scrape "triaige_backend" {
   targets = [
     {
       __address__ = sys.env("BACKEND_SCRAPE_TARGET"),

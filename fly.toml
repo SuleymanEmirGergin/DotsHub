@@ -24,7 +24,7 @@
 # degraded upstream also fails the Fly check and the machine is
 # recycled. Keep grace_period long enough for cold start.
 
-app = "dotshub-backend"
+app = "triaige-backend"
 primary_region = "ams"
 # Keep fly.toml generator opt-out of "PaaS defaults" we don't need.
 kill_signal = "SIGINT"

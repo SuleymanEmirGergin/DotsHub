@@ -55,7 +55,7 @@ jobs:
 
       - name: Validate dashboard JSON
         run: |
-          jq -e '.title and .panels' config/grafana/dashboard-dotshub.json >/dev/null
+          jq -e '.title and .panels' config/grafana/dashboard-triaige.json >/dev/null
           echo "dashboard JSON structurally valid"
 
       - name: Lint alert rules (always runs)

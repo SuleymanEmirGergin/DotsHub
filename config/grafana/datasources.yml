@@ -3,7 +3,7 @@
 #   /etc/grafana/provisioning/datasources/datasources.yml
 # by docker-compose.monitoring.yml. On container start, Grafana reads
 # this file and creates the Prometheus datasource with uid "prometheus"
-# so dashboard-dotshub.json's `${DS_PROMETHEUS}` templating resolves.
+# so dashboard-triaige.json's `${DS_PROMETHEUS}` templating resolves.
 
 apiVersion: 1
 

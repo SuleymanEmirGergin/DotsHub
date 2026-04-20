@@ -3,7 +3,7 @@
     {
       "name": "DS_PROMETHEUS",
       "label": "Prometheus",
-      "description": "Prometheus / Grafana Cloud scraping the Dotshub /metrics endpoint.",
+      "description": "Prometheus / Grafana Cloud scraping the Triaige /metrics endpoint.",
       "type": "datasource",
       "pluginId": "prometheus",
       "pluginName": "Prometheus"
@@ -270,13 +270,13 @@
   "refresh": "30s",
   "schemaVersion": 38,
   "style": "dark",
-  "tags": ["dotshub", "pretriage", "fastapi"],
+  "tags": ["triaige", "pretriage", "fastapi"],
   "templating": { "list": [] },
   "time": { "from": "now-3h", "to": "now" },
   "timepicker": {},
   "timezone": "",
-  "title": "Dotshub — Pretriage Backend",
-  "uid": "dotshub-pretriage",
+  "title": "Triaige — Pretriage Backend",
+  "uid": "triaige-pretriage",
   "version": 1,
   "weekStart": ""
 }
