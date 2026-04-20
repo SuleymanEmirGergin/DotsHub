@@ -75,7 +75,8 @@
     "view": "Görüntüle",
     "noSessions": "Oturum bulunamadı.",
     "sessionDetail": "Oturum detayı",
-    "backToSessions": "Oturumlara dön"
+    "backToSessions": "Oturumlara dön",
+    "exportPdf": "PDF indir"
   },
   "status": {
     "title": "Sistem durumu",

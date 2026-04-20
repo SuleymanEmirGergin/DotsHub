@@ -75,7 +75,8 @@
     "view": "View",
     "noSessions": "No sessions found.",
     "sessionDetail": "Session detail",
-    "backToSessions": "Back to sessions"
+    "backToSessions": "Back to sessions",
+    "exportPdf": "Export PDF"
   },
   "status": {
     "title": "System status",

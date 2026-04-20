@@ -21,3 +21,8 @@ sentry-sdk[fastapi]>=2.0
 # Grafana Cloud or a self-hosted Prometheus without code changes.
 prometheus-client>=0.20
 prometheus-fastapi-instrumentator>=7.0
+# fpdf2 — pure-Python PDF generation for admin session export
+# (GET /admin/sessions/{id}/export-pdf). Chosen over reportlab
+# (heavy, GPL-adjacent) and wkhtmltopdf (system-binary dep). fpdf2
+# is MIT, ~1MB, supports UTF-8 + embedded TTF for Turkish text.
+fpdf2>=2.8
