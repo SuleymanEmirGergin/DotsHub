@@ -35,23 +35,23 @@
     "subtitle": "Ich stelle einige kurze Fragen, um Sie besser weiterzuleiten.",
     "locationHint": "Teilen Sie Ihren Standort, um nahegelegene Gesundheitseinrichtungen auf dem Ergebnisbildschirm anzuzeigen (optional).",
     "history": "📋 Verlauf",
-    "settings": "⚙️ Settings",
+    "settings": "⚙️ Einstellungen",
     "evaluating": "Wird ausgewertet…",
     "symptomInput": "Symptomeingabe",
     "symptomInputHint": "Geben Sie Ihr Symptom ein und senden Sie es.",
     "emergencyDisclaimer": "Wählen Sie im Notfall die örtliche Notrufnummer.",
-    "bubbleUser": "You",
-    "bubbleAssistant": "Assistant",
-    "quickChip": "Quick reply"
+    "bubbleUser": "Sie",
+    "bubbleAssistant": "Assistent",
+    "quickChip": "Schnellantwort"
   },
   "question": {
     "whyAsking": "Warum fragen wir?",
     "freeTextPlaceholder": "Kurze Antwort schreiben…",
     "numberPlaceholder": "Zahl eingeben…",
-    "freeTextInputLabel": "Answer",
-    "freeTextInputHint": "Type your answer to the question",
-    "numberInputLabel": "Numeric answer",
-    "numberInputHint": "Answer the question with a number",
+    "freeTextInputLabel": "Antwort",
+    "freeTextInputHint": "Geben Sie Ihre Antwort auf die Frage ein",
+    "numberInputLabel": "Numerische Antwort",
+    "numberInputHint": "Beantworten Sie die Frage mit einer Zahl",
     "choiceOption": "Option"
   },
   "result": {
@@ -135,19 +135,19 @@
     "confidence": "Vertrauen"
   },
   "settings": {
-    "title": "Settings",
-    "back": "← Back",
-    "languageSection": "Language",
-    "legalSection": "Legal",
-    "privacy": "Privacy Policy",
-    "terms": "Terms of Service",
-    "aboutSection": "About",
+    "title": "Einstellungen",
+    "back": "← Zurück",
+    "languageSection": "Sprache",
+    "legalSection": "Rechtliches",
+    "privacy": "Datenschutzrichtlinie",
+    "terms": "Nutzungsbedingungen",
+    "aboutSection": "Über die App",
     "version": "Version",
     "buildId": "Build",
-    "contactSection": "Contact",
-    "contactEmail": "Send email",
-    "supportLine": "Reach out to report an issue or share feedback.",
-    "linkError": "Could not open link."
+    "contactSection": "Kontakt",
+    "contactEmail": "E-Mail senden",
+    "supportLine": "Melden Sie ein Problem oder teilen Sie uns Ihr Feedback mit.",
+    "linkError": "Link konnte nicht geöffnet werden."
   },
   "summary": {
     "title": "Zusammenfassung",
