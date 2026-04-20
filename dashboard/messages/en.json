@@ -22,7 +22,28 @@
     "login": "Login",
     "logout": "Logout",
     "privacy": "Privacy",
-    "terms": "Terms"
+    "terms": "Terms",
+    "home": "Home",
+    "adminEntry": "Admin Login"
+  },
+  "landing": {
+    "heroTitle": "Triaige",
+    "heroTagline": "Describe your symptoms, we'll tell you which medical specialty to visit.",
+    "heroSub": "AI-assisted pre-triage for Turkish speakers. Not a medical diagnosis — directed referral.",
+    "ctaDownload": "Download the App",
+    "ctaLearnMore": "How it works",
+    "step1Title": "1. Describe your symptom",
+    "step1Body": "Headache? Fever? Just write in your own words, we'll understand.",
+    "step2Title": "2. Answer a few questions",
+    "step2Body": "The AI asks follow-ups to route you more accurately.",
+    "step3Title": "3. Get the right specialty",
+    "step3Body": "A clear referral with urgency level + questions to ask your doctor.",
+    "safetyTitle": "Safety Is Our Priority",
+    "safetyBody": "When an emergency symptom is detected (chest pain, shortness of breath, stroke signs), Triaige routes you directly to 112. It does not diagnose — always consult a healthcare professional.",
+    "ctaTryApp": "Try the App",
+    "footerBuiltBy": "Designed in Turkey by Emir Gergin and team.",
+    "footerContact": "Contact",
+    "storesComingSoon": "Coming soon to App Store + Play Store"
   },
   "login": {
     "title": "Login",
