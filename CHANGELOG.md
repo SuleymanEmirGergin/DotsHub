@@ -4,8 +4,16 @@ Tüm önemli değişiklikler bu dosyada listelenir.
 
 ## [Unreleased]
 
-- **Dashboard UI (Tailwind + modern tema):** Faz 1–6 tamamlandı. Tailwind v3, PostCSS, tasarım token’ları (globals.css), shadcn hazırlığı (components.json, lib/utils.ts). Layout, ThemeToggle, Breadcrumb Tailwind’e geçirildi. Tüm admin sayfaları (sessions, status, analytics, tuning-tasks, deployments, feedback, live, users) ve alt sayfalar (sessions/[id], replay, deployments/[id]/impact, tuning-report, tuning-metrics) inline style → Tailwind + cn() ile güncellendi. Fontlar: Inter, Source Serif 4, JetBrains Mono (next/font) layout’a bağlandı. Erişilebilirlik ve kontrast notu (DASHBOARD_FAZ6_ACCESSIBILITY.md); kalan işler (DASHBOARD_KALAN_ISLER.md).
-- **Plan dışı / CI ve dokümantasyon:** Mobile E2E workflow test yolu düzeltildi (mobile/.maestro/triage_flow_smoke.yaml). RELEASE_CHECKLIST, TESTING.md ve CONTRIBUTING.md dashboard komutları pnpm ile güncellendi. Sürüm öncesi testler (dashboard contract, backend regression) çalıştırıldı. PLAN_DISI_ISLER_OZET.md eklendi.
+- (Yeni değişiklikler buraya.)
+
+## [4.6.0] — 2026-04-21
+
+- **Faz 4 backlog (F4.1–F4.6):** OpenAPI senkron (`/v1/triage/stream` SSE + `DELETE /v1/me/sessions/{session_id}` KVKK); sessions-v5 Breadcrumb + client-side CSV export; ResultScreen tesis listesi + Google Maps "Haritada aç" (5 dil i18n: facilitiesEmpty/LoadError/mapOpenError); `mobile/src/api/facilitiesClient.ts` → lazy-load; Redis rate limit tüm bucket’larda (default/admin/send_summary/llm_nlu) in-memory fallback ile.
+- **Mobil:** EAS build pipeline + placeholder asset’ler + CI workflow; Settings ekranı (language/legal/about/contact); Skeleton loader’lar + error tint tokens; a11y polish (chat bubbles, form inputs, choice groups); Sentry RN SDK + KVKK-safe Session Replay; info-tint tokenization + dead legacy route temizliği.
+- **Backend:** Fly.io deploy scaffold + always-on + suspend-resume tuning; CORS_ORIGINS esnek parse (JSON + CSV fallback); `triage_sessions.urgency` kolonu (PGRST204 fix); Sentry DSN haftalık smoke; pytest-benchmark baseline (T3); session_pdf %100 branch coverage (T2); session PDF admin indirme (U2); staging e2e coverage (T1); real_corpus 60.8% → 70.9% (+15 senaryo).
+- **Dashboard UI (Tailwind + modern tema):** Faz 1–6 tamamlandı — tasarım token’ları, shadcn hazırlığı, tüm admin sayfaları Tailwind’e geçirildi; Inter/Source Serif 4/JetBrains Mono fontları; DASHBOARD_FAZ6_ACCESSIBILITY.md. Public landing page (U3); analytics daily summary paneli (Phase B7).
+- **Observability:** Prometheus `/metrics` + Grafana Cloud dashboard + lokal stack; Fly.io agent sidecar (Phase A3); alerts-as-code + CI sync; RUNBOOK.md; incidents dizini + template.
+- **Dokümantasyon:** PRIVACY_AND_SECURITY genişletildi (Terms of Service); `mobile` → `triaige` rename (bundle ID + Fly app); PLAN_DISI_ISLER_OZET.md; RELEASE_CHECKLIST / TESTING / CONTRIBUTING pnpm güncellemesi.
 
 ## [4.5.0] — 2026-02-19
 

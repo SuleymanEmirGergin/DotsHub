@@ -36,6 +36,8 @@ Bu doküman, kısa sürede bitirilebilecek işler tamamlandıktan sonra yapılab
 
 **Çıktı:** Yeni sürüm tag’i ve release sayfası; checklist işaretlenmiş.
 
+**Tamamlandı:** 2026-04-21 (CHANGELOG [4.6.0], tag v4.6.0).
+
 ---
 
 ## 3. shadcn modern-minimal tema (Dashboard)
