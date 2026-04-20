@@ -81,7 +81,7 @@ class Settings(BaseSettings):
                     f"CORS_ORIGINS starts with '[' but is not valid JSON. "
                     f"Got: {raw!r}. Original error: {exc.msg}"
                 ) from exc
-            if not isinstance(parsed, list):
+            if not isinstance(parsed, list):  # pragma: no cover - defensive: JSON starting with '[' always parses to a list
                 raise ValueError(
                     f"CORS_ORIGINS JSON must be a list; got {type(parsed).__name__}: {parsed!r}"
                 )

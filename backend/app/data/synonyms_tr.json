@@ -1564,6 +1564,12 @@
       "variants_tr": [
         "belimde çok şiddetli ağrı",
         "belim ağrıyor",
+        "bel ağrım",
+        "belimde şiddetli bir ağrı",
+        "belimde çok şiddetli bir ağrı",
+        "belimde şiddetli ağrı var",
+        "belimde ağrı",
+        "belimde bir ağrı",
         "bel ağrım bacağıma vuruyor",
         "bel ağrısı bacağa yayılıyor",
         "siyatik ağrı",
@@ -1587,7 +1593,10 @@
       "type": "symptom",
       "variants_tr": [
         "omzum ağrıyor",
+        "omzum çok ağrıyor",
         "omzumu kaldıramıyorum",
+        "kolumu kaldıramıyorum",
+        "yukarı kaldıramıyorum",
         "donuk omuz",
         "frozen shoulder",
         "omuz hareketi kısıtlı"
@@ -1655,6 +1664,195 @@
         "6 aydır adet görmedim",
         "50 yaşında adet yok",
         "menopoz dönemi"
+      ]
+    },
+    {
+      "canonical": "topuk ağrısı",
+      "type": "symptom",
+      "variants_tr": [
+        "topuğumda ağrı",
+        "topuğumda şiddetli ağrı",
+        "sabahları ilk adımları atarken ağrı",
+        "ilk adımları atarken topuğumda",
+        "plantar fasiit",
+        "plantar fasyit",
+        "topuk dikeni",
+        "sabahları topuğum ağrıyor"
+      ]
+    },
+    {
+      "canonical": "dirsek ağrısı",
+      "type": "symptom",
+      "variants_tr": [
+        "dirseğim ağrıyor",
+        "sağ dirseğim ağrıyor",
+        "sol dirseğim ağrıyor",
+        "dirseğim son 2 aydır ağrıyor",
+        "dirseğim 2 aydır ağrıyor",
+        "dirseğim aydır ağrıyor",
+        "dirseğimde ağrı",
+        "tenisçi dirseği",
+        "lateral epikondilit",
+        "bardak kaldırırken dirseğim ağrıyor",
+        "tenis oynuyorum dirseğim"
+      ]
+    },
+    {
+      "canonical": "alerjik rinit",
+      "type": "symptom",
+      "variants_tr": [
+        "burnum akıyor ve hapşırıyorum",
+        "polen sezonunda burnum akıyor",
+        "alerjik nezle",
+        "saman nezlesi",
+        "sürekli hapşırma ve burun akıntısı",
+        "her ilkbahar burnum akıyor"
+      ]
+    },
+    {
+      "canonical": "işitme kaybı",
+      "type": "symptom",
+      "variants_tr": [
+        "kulağımdan iyi duyamıyorum",
+        "duymakta zorlanıyorum",
+        "bir kulağım iyi duymuyor",
+        "kulakta dolgunluk hissi",
+        "sağırlık",
+        "işitme azalması"
+      ]
+    },
+    {
+      "canonical": "tinnitus",
+      "type": "symptom",
+      "variants_tr": [
+        "kulaklarımda çınlama",
+        "kulaklarımda sürekli çınlama",
+        "kulağımda çınlama",
+        "kulağımda sürekli çınlama",
+        "kulak çınlaması",
+        "kulağımda vızıltı",
+        "kulaklarımda vızıltı",
+        "sessiz ortamda kulak çınlaması"
+      ]
+    },
+    {
+      "canonical": "alkol bağımlılığı",
+      "type": "symptom",
+      "variants_tr": [
+        "her gün akşam içiyorum",
+        "bırakmaya çalıştığımda eller titriyor",
+        "alkol bırakınca titreme",
+        "alkol kullanım bozukluğu",
+        "içkiyi bırakamıyorum",
+        "günlük alkol tüketimim yüksek"
+      ]
+    },
+    {
+      "canonical": "bipolar bozukluk",
+      "type": "symptom",
+      "variants_tr": [
+        "bir hafta çok enerjik sonra çöküyorum",
+        "manik dönem depresif dönem",
+        "ruh halim çok dalgalı",
+        "aşırı enerji sonra çöküş",
+        "manik atak",
+        "bipolar döngü"
+      ]
+    },
+    {
+      "canonical": "saç dökülmesi",
+      "type": "symptom",
+      "variants_tr": [
+        "saçlarım dökülüyor",
+        "saçlarım çok dökülüyor",
+        "yastığımda çok fazla saç",
+        "duşta saçlarım dökülüyor",
+        "saç dökülmesi arttı",
+        "alopesi"
+      ]
+    },
+    {
+      "canonical": "böcek ısırığı",
+      "type": "symptom",
+      "variants_tr": [
+        "böcek soktu",
+        "arı soktu",
+        "sivrisinek ısırığı",
+        "cildimde şiş kırmızı sıcak bölge",
+        "ısırık izi",
+        "böcek ısırması"
+      ]
+    },
+    {
+      "canonical": "seboreik dermatit",
+      "type": "symptom",
+      "variants_tr": [
+        "yağlı sarı kepekler",
+        "saç derimde kepekler",
+        "kaşlarımda kepekli kızarıklık",
+        "kış aylarında kötüleşen kepek",
+        "seboreik egzama",
+        "saçlı deride kepek"
+      ]
+    },
+    {
+      "canonical": "kuru göz",
+      "type": "symptom",
+      "variants_tr": [
+        "gözlerim çok kuru",
+        "bilgisayar başında gözlerim batıyor",
+        "gözlerimde yanma ve batma",
+        "kuru göz sendromu",
+        "göz kuruluğu",
+        "ekran karşısında gözlerim yanıyor"
+      ]
+    },
+    {
+      "canonical": "hipotiroidi belirtisi",
+      "type": "symptom",
+      "variants_tr": [
+        "sürekli yorgunluk kilo aldım",
+        "soğuğa karşı hassas halsizim",
+        "hipotiroidi",
+        "tiroid düşük",
+        "troksin kullanıyorum",
+        "tiroid bozukluğu yorgunluk",
+        "guatr yorgunluk"
+      ]
+    },
+    {
+      "canonical": "akne belirtisi",
+      "type": "symptom",
+      "variants_tr": [
+        "yüzümde sivilceler",
+        "sırtımda sivilceler",
+        "uzun süredir sivilce şikayetim",
+        "kistik akne",
+        "ergenlikten kalma sivilce",
+        "akne vulgaris"
+      ]
+    },
+    {
+      "canonical": "mantar enfeksiyonu",
+      "type": "symptom",
+      "variants_tr": [
+        "ayak mantarı",
+        "ayak parmak arası kaşıntı",
+        "tırnak mantarı",
+        "ayak tabanı soyulma",
+        "cilt mantarı"
+      ]
+    },
+    {
+      "canonical": "eklem ağrısı",
+      "type": "symptom",
+      "variants_tr": [
+        "eklem ağrılarım",
+        "eklemlerimde ağrı",
+        "eklem ağrıları",
+        "artrit",
+        "romatoid artrit",
+        "artrit şikayeti"
       ]
     }
   ]
