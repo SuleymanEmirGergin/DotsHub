@@ -164,3 +164,31 @@ jobs:
             --cov-report=term \
             --ignore=tests/test_golden_flows.py \
             --ignore=tests/test_synonym_collisions.py
+
+      - name: Performance benchmarks (advisory)
+        # Runs the pytest-benchmark hot-path suite (T3). Intentionally
+        # non-blocking: CI runners have variable performance so an
+        # absolute threshold would be too flaky. The benchmark output
+        # is archived as an artifact so PR reviewers can eyeball
+        # regressions manually and historical runs can be compared
+        # offline.
+        #
+        # Concrete enforcement (e.g. "fail on mean > baseline × 1.5")
+        # will land once we have enough runner-specific baselines
+        # to separate signal from variance.
+        continue-on-error: true
+        run: |
+          cd backend
+          python -m pytest tests/test_perf_benchmarks.py \
+            --benchmark-only \
+            --benchmark-columns=min,mean,max,stddev,ops \
+            --benchmark-json=bench-output.json
+
+      - name: Upload benchmark JSON (artifact)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-benchmarks-${{ github.run_id }}-${{ github.run_attempt }}
+          path: backend/bench-output.json
+          retention-days: 30
+          if-no-files-found: ignore

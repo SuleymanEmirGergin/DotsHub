@@ -80,3 +80,9 @@ backend/raw_data/*.csv
 
 # Claude Code session state (worktree-local)
 .claude/
+
+# pytest-benchmark machine-specific outputs (lokal only)
+.benchmarks/
+/backend/tests/.benchmarks/
+/backend/tests/benchmark-baseline.json
+/backend/.benchmarks/

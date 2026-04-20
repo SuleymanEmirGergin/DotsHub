@@ -8,3 +8,8 @@ coverage>=7.13
 pytest>=9.0
 pytest-cov>=7.0
 pytest-asyncio>=0.25
+# pytest-benchmark — CI-side perf regression gate for the hot-path
+# modules (canonical_extract, triage_engine, session_pdf). JSON
+# baseline is committed at tests/benchmark-baseline.json; the
+# workflow fails if a subsequent run exceeds it by >20%.
+pytest-benchmark>=5.0
