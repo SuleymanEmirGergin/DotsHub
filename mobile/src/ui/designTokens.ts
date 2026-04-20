@@ -26,6 +26,14 @@ export const tokens: {
     errorBg: string;
     errorBorder: string;
     errorDivider: string;
+    // Info tints — blue-family counterpart to errorBg/Border. Used
+    // by ResultScreen urgency badge + curated condition label.
+    // Keep opaque enough that white text is readable for the
+    // badge variant; currently rendered with a dark text colour
+    // (infoText) inside the light surface.
+    infoBg: string;
+    infoBorder: string;
+    infoText: string;
   };
   spacing: {
     xs: number;
@@ -79,6 +87,9 @@ export const tokens: {
     errorBg: "#FFF8F8",
     errorBorder: "#F1B5B5",
     errorDivider: "#F2D4D4",
+    infoBg: "#E8EEF8",
+    infoBorder: "#D7E2F3",
+    infoText: "#2F4F8F",
   },
   spacing: {
     xs: 6,

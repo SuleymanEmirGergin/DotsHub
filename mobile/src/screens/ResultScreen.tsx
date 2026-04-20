@@ -382,8 +382,8 @@ const styles = StyleSheet.create({
     marginBottom: tokens.spacing.sm,
   },
   urgencyBadge: {
-    backgroundColor: "#E8EEF8",
-    borderColor: "#D7E2F3",
+    backgroundColor: tokens.colors.infoBg,
+    borderColor: tokens.colors.infoBorder,
   },
   urgencyText: {
     color: tokens.colors.textSecondary,
@@ -441,9 +441,9 @@ const styles = StyleSheet.create({
   },
   conditionCuratedBadge: {
     ...tokens.typography.caption,
-    color: "#2F4F8F",
-    backgroundColor: "#E8EEF8",
-    borderColor: "#D7E2F3",
+    color: tokens.colors.infoText,
+    backgroundColor: tokens.colors.infoBg,
+    borderColor: tokens.colors.infoBorder,
     borderWidth: 1,
     borderRadius: 4,
     paddingHorizontal: 6,
