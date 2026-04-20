@@ -8,23 +8,42 @@ export default {
     orientation: "portrait" as const,
     userInterfaceStyle: "light" as const,
     scheme: "triaige",
+    // Icon lives at assets/icon.png (1024×1024 PNG, no alpha for iOS).
+    // The file committed today is a placeholder — a solid brand-blue
+    // square with a white "T" mark — kept small to keep git diffs
+    // readable. Swap with the real brand icon before store submission;
+    // the `assets/` layout + referencing code stay the same.
+    icon: "./assets/icon.png",
     splash: {
+      image: "./assets/splash-icon.png",
+      resizeMode: "contain" as const,
       backgroundColor: "#0A84FF",
     },
     assetBundlePatterns: ["**/*"],
     ios: {
       supportsTablet: true,
       bundleIdentifier: "com.triaige.app",
+      // iOS store submission requires explicit build number separate
+      // from the semver `version` above. EAS auto-increments this
+      // per build via `eas.json::production.autoIncrement`, but we
+      // seed an initial value so local testing + first manual
+      // submission don't error on `null`.
+      buildNumber: "1",
     },
     android: {
       adaptiveIcon: {
+        foregroundImage: "./assets/adaptive-icon.png",
         backgroundColor: "#0A84FF",
       },
       package: "com.triaige.app",
+      // Google Play's equivalent of iOS buildNumber. Same seed
+      // logic — EAS auto-increments on production builds.
+      versionCode: 1,
     },
     web: {
       bundler: "metro",
       output: "static",
+      favicon: "./assets/favicon.png",
     },
     plugins: [
       "expo-router",

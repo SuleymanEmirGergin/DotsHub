@@ -1,30 +1,69 @@
 {
   "cli": {
     "version": ">= 10.0.0",
-    "requireCommit": true
+    "requireCommit": true,
+    "appVersionSource": "local"
   },
   "build": {
     "development": {
       "developmentClient": true,
       "distribution": "internal",
+      "ios": {
+        "simulator": false,
+        "resourceClass": "m-medium"
+      },
+      "android": {
+        "buildType": "apk"
+      },
       "env": {
         "EXPO_PUBLIC_SENTRY_ENVIRONMENT": "development"
-      }
+      },
+      "channel": "development"
     },
     "preview": {
       "distribution": "internal",
+      "ios": {
+        "simulator": false,
+        "resourceClass": "m-medium"
+      },
+      "android": {
+        "buildType": "apk"
+      },
       "env": {
+        "API_BASE": "https://triaige-backend.fly.dev",
+        "EXPO_PUBLIC_PRIVACY_URL": "https://triaige.vercel.app/privacy",
+        "EXPO_PUBLIC_TERMS_URL": "https://triaige.vercel.app/terms",
         "EXPO_PUBLIC_SENTRY_ENVIRONMENT": "staging"
-      }
+      },
+      "channel": "preview"
     },
     "production": {
       "autoIncrement": true,
+      "ios": {
+        "resourceClass": "m-large"
+      },
+      "android": {
+        "buildType": "app-bundle"
+      },
       "env": {
+        "API_BASE": "https://triaige-backend.fly.dev",
+        "EXPO_PUBLIC_PRIVACY_URL": "https://triaige.vercel.app/privacy",
+        "EXPO_PUBLIC_TERMS_URL": "https://triaige.vercel.app/terms",
         "EXPO_PUBLIC_SENTRY_ENVIRONMENT": "production"
-      }
+      },
+      "channel": "production"
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "ios": {
+        "ascAppId": "TBD_APP_STORE_CONNECT_APP_ID",
+        "appleTeamId": "TBD_APPLE_TEAM_ID"
+      },
+      "android": {
+        "track": "internal",
+        "releaseStatus": "draft"
+      }
+    }
   }
 }

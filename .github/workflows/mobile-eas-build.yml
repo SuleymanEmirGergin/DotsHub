@@ -1,0 +1,145 @@
+# Mobile EAS build pipeline.
+#
+# Triggers
+# --------
+# 1. `workflow_dispatch` — manual "Run workflow" button. Pick the
+#    profile (development / preview / production) + platform (all /
+#    ios / android) from the UI. This is the normal path.
+#
+# 2. Git tag push `v*.*.*` (e.g. `v1.0.3`) — automatic PRODUCTION
+#    build for both platforms. Intentionally PRODUCTION-only so
+#    accidental tags don't kick off internal TestFlight builds.
+#
+# What this workflow does NOT do
+# ------------------------------
+# - Auto-submit to store. `eas submit` is a separate, manual step
+#   because store submission usually needs manual review (screenshot
+#   uploads, release notes) anyway. Adding `--auto-submit` here would
+#   race that human loop. See docs/MOBILE_EAS.md for the submit flow.
+#
+# Required secret
+# ---------------
+# EXPO_TOKEN — personal or organization access token from
+#   https://expo.dev/accounts/[owner]/settings/access-tokens
+#   Scope: "Read and write" so EAS can create builds + upload binaries.
+#   Optional but recommended: SENTRY_AUTH_TOKEN so the Sentry plugin
+#   uploads source maps at build time (configured in app.config.ts).
+
+name: Mobile EAS Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: "Build profile"
+        required: true
+        default: "preview"
+        type: choice
+        options: ["development", "preview", "production"]
+      platform:
+        description: "Target platform"
+        required: true
+        default: "all"
+        type: choice
+        options: ["all", "ios", "android"]
+      message:
+        description: "Build note shown in the EAS dashboard (optional)"
+        required: false
+        type: string
+  push:
+    tags:
+      # Semver release tags only. `v1.0.0`, `v2.4.1-beta.1`, etc.
+      - "v[0-9]+.[0-9]+.[0-9]+*"
+
+concurrency:
+  # One build at a time per ref. A second dispatch while a build is
+  # in-flight cancels the earlier one — EAS queue still tracks the
+  # cancelled job but stops consuming our runner minute.
+  group: mobile-eas-build-${{ github.ref }}
+  cancel-in-progress: false  # EAS queue is paid; don't waste it
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+jobs:
+  build:
+    name: EAS build
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: mobile
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Setup EAS CLI
+        # `expo-cli` is legacy; `eas-cli` is the current tool. Pin
+        # to the version that `eas.json` declares in `cli.version`
+        # so local + CI runs always resolve to the same feature set.
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Resolve build parameters
+        id: params
+        run: |
+          # Tag push → force production + all platforms. Manual
+          # dispatch → trust the form inputs. Empty message on
+          # tag push gets a default note so the EAS dashboard
+          # doesn't show "(no message)".
+          if [ "${{ github.event_name }}" = "push" ]; then
+            echo "profile=production" >> "$GITHUB_OUTPUT"
+            echo "platform=all" >> "$GITHUB_OUTPUT"
+            echo "message=Release ${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          else
+            echo "profile=${{ inputs.profile }}" >> "$GITHUB_OUTPUT"
+            echo "platform=${{ inputs.platform }}" >> "$GITHUB_OUTPUT"
+            echo "message=${{ inputs.message || format('Manual build — {0}', inputs.profile) }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: EAS build
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          # Sentry source maps upload — only active when set. Mobile
+          # bundle's runtime Sentry DSN is read from the EXPO_PUBLIC_*
+          # env inside eas.json profile, NOT from here.
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+        run: |
+          eas build \
+            --non-interactive \
+            --no-wait \
+            --profile "${{ steps.params.outputs.profile }}" \
+            --platform "${{ steps.params.outputs.platform }}" \
+            --message "${{ steps.params.outputs.message }}"
+
+      - name: Summary
+        if: always()
+        run: |
+          cat <<EOF >> "$GITHUB_STEP_SUMMARY"
+          ### Mobile EAS build triggered
+
+          - **Profile:** ${{ steps.params.outputs.profile }}
+          - **Platform:** ${{ steps.params.outputs.platform }}
+          - **Message:** ${{ steps.params.outputs.message }}
+
+          The build runs async on EAS; follow progress at
+          https://expo.dev/accounts/triaige/projects/triaige/builds
+
+          > Note: \`--no-wait\` was passed so this workflow finishes
+          > as soon as the build is queued. EAS will email / Slack
+          > when it's done (configure in Expo dashboard).
+          EOF
