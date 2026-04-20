@@ -13,6 +13,8 @@ pnpm dlx shadcn@latest add https://tweakcn.com/r/themes/modern-minimal.json
 
 Etkileşimli olabilir; gerekirse base color vb. seçin. Daha önce `components.json` ve `lib/utils.ts` hazırlandığı için komut çalışacaktır.
 
+**Tamamlandı:** 2026-04-21 — tema uygulandı; `globals.css` içine `--font-sans/serif/mono` eklendi (OKLCH paleti önceden mevcuttu). `pnpm run build` + dev smoke (/, /admin/status, /privacy → 200) yeşil.
+
 ## 2. Build ve görsel kontrol
 
 - `cd dashboard && pnpm run build`
