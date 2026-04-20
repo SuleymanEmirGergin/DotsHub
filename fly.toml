@@ -41,8 +41,8 @@ kill_timeout = "30s"
   LOG_LEVEL = "INFO"
   # Baked-in config tree inside the image (see Dockerfile.fly).
   PRETRIAGE_CONFIG_DIR = "/app/config"
-  # Consumed by the Prometheus external_labels in the agent sidecar
-  # (added in Phase A3) and by app/core/config.py for env-aware
+  # Propagated as external_labels by the Grafana Agent sidecar
+  # (config.river) and used by app/core/config.py for env-aware
   # behaviour (e.g. strict CORS).
   DEPLOYMENT_ENV = "production"
   SENTRY_ENVIRONMENT = "production"
@@ -50,6 +50,18 @@ kill_timeout = "30s"
   # always, 1 in 10 requests fully traced). Bump to 1.0 during an
   # incident via `flyctl secrets set`.
   SENTRY_TRACES_SAMPLE_RATE = "0.1"
+  # ─── Observability sidecar config ───────────────────────────────
+  # Alloy (Grafana Agent Flow) scrapes the backend /metrics endpoint.
+  # Fly multi-process schedules two separate VMs (one per process
+  # group), so the agent reaches the app process via Fly's internal
+  # DNS — not loopback. The `app.process.<app>.internal` hostname
+  # resolves ONLY to machines in the `app` process group, which
+  # excludes the agent machine itself (no accidental self-scrape).
+  #
+  # Traffic stays on Fly's private 6PN mesh — zero public egress,
+  # single-digit-ms latency between ams machines. Same env var is
+  # visible to both processes; only `agent` consumes it.
+  BACKEND_SCRAPE_TARGET = "app.process.triaige-backend.internal:8000"
 
 # ─── HTTP service ──────────────────────────────────────────────────
 #
@@ -98,12 +110,38 @@ kill_timeout = "30s"
 
 # ─── Processes ─────────────────────────────────────────────────────
 #
-# One process for now: `app` runs uvicorn. Phase A3 (observability
-# wiring) adds a second process here for the Grafana Agent sidecar,
-# sharing the machine's localhost so it can scrape 127.0.0.1:8000.
+# Two processes share the same Fly machine:
+#
+#   app   — uvicorn serving the FastAPI backend on :8000. Fly's edge
+#           routes incoming HTTPS to this one (see [http_service]
+#           processes = ["app"]).
+#
+#   agent — Grafana Alloy (Agent Flow). Reads config.river baked into
+#           /etc/alloy/config.river, scrapes localhost:8000/metrics
+#           every 15s, and remote_writes to Grafana Cloud using the
+#           GRAFANA_CLOUD_PROM_* secrets. Not exposed externally;
+#           admin UI stays on loopback 12345 for local debugging
+#           (reachable only via `flyctl ssh console`).
+#
+# Fly requires at least one machine per process group. Since our
+# single backend machine now has two groups, Fly will schedule TWO
+# machines: one running `app`, one running `agent`. Both identical VM
+# size. That's Fly's current multi-process model; there is no
+# "sidecar in same container" primitive.
+#
+# Cost: second machine is the same shared-cpu-1x 512 MB ≈ $3/month.
+# The Alloy process only needs ~30-40 MB RAM so the second VM is
+# mostly idle; acceptable hobby cost for pushing real metrics to
+# Grafana Cloud.
+#
+# If cost becomes a concern later, move the agent to its OWN Fly app
+# (scaled to the smallest VM — shared-cpu-1x 256 MB) and point it at
+# the public triaige-backend.fly.dev/metrics. Internal loopback is
+# nicer latency but public scrape also works over Fly's free egress.
 
 [processes]
   app = "sh -c 'uvicorn app.main:app --host 0.0.0.0 --port ${PORT} --proxy-headers --forwarded-allow-ips=*'"
+  agent = "/usr/local/bin/alloy run /etc/alloy/config.river --server.http.listen-addr=127.0.0.1:12345 --storage.path=/var/lib/alloy"
 
 # ─── Deploy release phase ─────────────────────────────────────────
 #

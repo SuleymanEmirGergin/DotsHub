@@ -49,8 +49,31 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 RUN apt-get update && apt-get install -y --no-install-recommends \
         libpq5 \
         curl \
+        unzip \
+        ca-certificates \
     && rm -rf /var/lib/apt/lists/* \
     && useradd --system --uid 10001 --gid 0 --home /app pretriage
+
+# ── Grafana Alloy (Agent Flow) binary for observability sidecar ────
+#
+# Phase A3: Alloy runs as a second Fly process on the same machine,
+# scrapes localhost:8000/metrics every 15s, and remote_writes to
+# Grafana Cloud. We bake the binary into the image instead of running
+# it as a separate Fly app because:
+#   - Same-machine localhost scrape avoids public-egress cost / latency
+#   - One image, one deploy path, one set of secrets
+#   - Fly hobby plan is single-machine anyway — the sidecar is "free"
+#     (shares the existing 512 MB VM; Alloy footprint ~30-40 MB RAM)
+#
+# Upgrade path: bump ALLOY_VERSION. Grafana follows semver on v1.x
+# with strong backwards compat — in-place swap is usually safe.
+ARG ALLOY_VERSION=v1.4.2
+RUN curl -fsSL "https://github.com/grafana/alloy/releases/download/${ALLOY_VERSION}/alloy-linux-amd64.zip" \
+        -o /tmp/alloy.zip \
+    && unzip -q /tmp/alloy.zip -d /tmp/alloy-extract \
+    && mv /tmp/alloy-extract/alloy-linux-amd64 /usr/local/bin/alloy \
+    && chmod +x /usr/local/bin/alloy \
+    && rm -rf /tmp/alloy.zip /tmp/alloy-extract
 
 COPY --from=builder /install /usr/local
 
@@ -63,8 +86,18 @@ COPY --chown=10001:0 backend/app/ ./app/
 # extended to merge it — not wired today.
 COPY --chown=10001:0 config/ ./config/
 
+# Alloy (Grafana Agent Flow) config for the sidecar process. The River
+# file reads env vars at runtime, so secrets (GRAFANA_CLOUD_*) are
+# injected via `flyctl secrets set` — never baked into this layer.
+COPY --chown=10001:0 config/grafana-agent/config.river /etc/alloy/config.river
+# Storage dir for Alloy's WAL. Must be writable by uid 10001. Only
+# used on the `agent` process; app process ignores it.
+RUN mkdir -p /var/lib/alloy && chown -R 10001:0 /var/lib/alloy
+
 USER 10001
 
+# EXPOSE is documentation only; Fly routes traffic based on fly.toml's
+# [http_service] block. Alloy admin UI (12345) stays loopback-only.
 EXPOSE 8000
 
 # Healthcheck kept identical to backend/Dockerfile so Fly's own
