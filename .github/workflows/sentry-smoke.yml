@@ -1,0 +1,59 @@
+# Weekly smoke test for the mobile Sentry pipeline.
+#
+# What this protects against:
+#   - DSN rotated without updating the EAS secret
+#   - Sentry project archived / renamed
+#   - Free-tier quota silently exhausted (all events dropped)
+#   - Auth key expired
+#
+# What this does NOT cover:
+#   - Source-map upload (that happens at EAS build time, not here)
+#   - Replay masking behaviour (manual Session Replay review still
+#     required — see docs/runbooks/MOBILE_SENTRY_OUTAGE.md "PII
+#     regression check" close-out step)
+#   - Mobile SDK `beforeSend` scrubbing (unit-tested in
+#     mobile/__tests__/observability/sentry.test.ts — covered every
+#     PR)
+#
+# Schedule:
+#   Weekly on Monday 09:00 UTC. If this fails, the Sentry project
+#   is the contact we've been RELYING on for prod visibility — we
+#   want to know within one business day, not after the next real
+#   incident.
+#
+# Secret configuration:
+#   Settings → Secrets → Actions → `MOBILE_SENTRY_DSN` (exact
+#   name — the bash script reads it verbatim). Value is the same
+#   DSN shipped via EAS env to the mobile binary. The DSN is
+#   public-by-design (rate-limited by Sentry), so there's no
+#   leak risk from storing it here vs. embedding it in a client
+#   bundle.
+
+name: Sentry Smoke
+
+on:
+  schedule:
+    # Monday 09:00 UTC. Keep this a CRON that fires during a
+    # weekday working hour in any reasonable TZ so a failure gets
+    # seen on the same day it happens.
+    - cron: "0 9 * * 1"
+  workflow_dispatch: {}
+
+jobs:
+  smoke:
+    name: Ping mobile Sentry DSN
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Send test event to Sentry
+        env:
+          MOBILE_SENTRY_DSN: ${{ secrets.MOBILE_SENTRY_DSN }}
+        run: |
+          if [[ -z "${MOBILE_SENTRY_DSN:-}" ]]; then
+            echo "::warning::MOBILE_SENTRY_DSN secret is not configured — skipping smoke test."
+            echo "To enable: Settings → Secrets → Actions → add MOBILE_SENTRY_DSN."
+            exit 0
+          fi
+          bash scripts/sentry_smoke.sh

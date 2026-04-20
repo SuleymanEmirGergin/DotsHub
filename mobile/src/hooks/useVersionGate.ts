@@ -19,6 +19,7 @@ import { useEffect, useState } from "react";
 import Constants from "expo-constants";
 
 import { fetchFeatures, type ClientVersionPolicy } from "../api/featuresClient";
+import { addVersionGateBreadcrumb } from "../observability/breadcrumb";
 import { isBelow } from "../utils/semver";
 
 export type VersionGateState =
@@ -51,20 +52,41 @@ export function useVersionGate(): VersionGateState {
       // Enforcement off → always pass.
       if (policy.mode === "off") {
         setState({ state: "ok" });
+        // Breadcrumb: gate resolved to ok because policy was off.
+        // Without this, "how did the gate decide?" is only visible
+        // in the backend log — impossible to correlate with a user-
+        // reported crash. The breadcrumb lands in Sentry regardless
+        // of whether an error follows, so the last-seen value is
+        // always available in post-mortems.
+        addVersionGateBreadcrumb("ok", {
+          current,
+          min: policy.min,
+          latest: policy.latest,
+          mode: policy.mode,
+        });
         return;
       }
 
       // Below min → warn or block based on mode.
       if (isBelow(current, policy.min)) {
-        setState({
-          state: policy.mode === "block" ? "block" : "warn",
-          policy,
+        const decision = policy.mode === "block" ? "block" : "warn";
+        setState({ state: decision, policy, current });
+        addVersionGateBreadcrumb(decision, {
           current,
+          min: policy.min,
+          latest: policy.latest,
+          mode: policy.mode,
         });
         return;
       }
 
       setState({ state: "ok" });
+      addVersionGateBreadcrumb("ok", {
+        current,
+        min: policy.min,
+        latest: policy.latest,
+        mode: policy.mode,
+      });
     })();
 
     return () => {
