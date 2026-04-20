@@ -38,6 +38,29 @@ export function getTextDefault(key: string, locale: Locale = defaultLocale): str
 }
 
 /**
+ * Get message as an array of strings for a given locale.
+ *
+ * Useful for rich content (legal/privacy pages) where we want a bullet
+ * list rendered into <ul> without cramming markdown into each string.
+ * JSON shape expected at `key`:
+ *
+ *   { "rightsList": ["You have right to access", "You have right to delete"] }
+ *
+ * Non-array or missing values fall back to `[]` so components can safely
+ * iterate. The `key` argument is a dot path, same as `getText`.
+ */
+export function getTextArray(locale: Locale, key: string): string[] {
+  const parts = key.split(".");
+  let value: unknown = messages[locale] ?? messages[defaultLocale];
+  for (const part of parts) {
+    if (value == null || typeof value !== "object") return [];
+    value = (value as Record<string, unknown>)[part];
+  }
+  if (!Array.isArray(value)) return [];
+  return value.filter((v): v is string => typeof v === "string");
+}
+
+/**
  * Parse locale from Accept-Language or similar (e.g. "tr-TR,en;q=0.9" -> "tr").
  */
 export function parseLocaleFromHeader(header: string | null): Locale {
