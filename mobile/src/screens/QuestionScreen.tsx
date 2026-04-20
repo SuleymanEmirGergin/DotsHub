@@ -84,6 +84,8 @@ export default function QuestionScreen() {
                 style={[styles.freeInput, styles.freeInputMultiline]}
                 multiline
                 textAlignVertical="top"
+                accessibilityLabel={t("question.freeTextInputLabel")}
+                accessibilityHint={t("question.freeTextInputHint")}
               />
               <PrimaryButton
                 style={styles.continueButton}
@@ -103,18 +105,27 @@ export default function QuestionScreen() {
                 placeholderTextColor={tokens.colors.textMuted}
                 keyboardType="numeric"
                 style={styles.freeInput}
+                accessibilityLabel={t("question.numberInputLabel")}
+                accessibilityHint={t("question.numberInputHint")}
               />
               <PrimaryButton
                 style={styles.continueButton}
                 onPress={() => answer(freeText.trim() || "0")}
               >
-                Devam
+                {t("common.continue")}
               </PrimaryButton>
             </View>
           ) : null}
 
           {q.answer_type === "multi_choice" && q.choices_tr ? (
-            <View style={styles.choicesCol}>
+            <View
+              style={styles.choicesCol}
+              // Native "radio group" role helps VoiceOver/TalkBack
+              // navigate choices as a cohesive set rather than
+              // individual buttons scattered on screen.
+              accessibilityRole="radiogroup"
+              accessibilityLabel={t("question.choiceOption")}
+            >
               {q.choices_tr.map((choice) => (
                 <Pressable
                   key={choice}
@@ -123,6 +134,8 @@ export default function QuestionScreen() {
                     styles.choiceButton,
                     pressed ? styles.choiceButtonPressed : null,
                   ]}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${t("question.choiceOption")}: ${choice}`}
                 >
                   <Text style={styles.choiceButtonText}>{choice}</Text>
                 </Pressable>

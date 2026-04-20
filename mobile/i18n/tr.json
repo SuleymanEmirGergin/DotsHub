@@ -36,6 +36,9 @@
     "locationHint": "Konum paylaşırsanız sonuç ekranında yakındaki sağlık kuruluşları listelenir (isteğe bağlı).",
     "history": "📋 Geçmiş",
     "settings": "⚙️ Ayarlar",
+    "bubbleUser": "Siz",
+    "bubbleAssistant": "Yardımcı",
+    "quickChip": "Hızlı cevap",
     "evaluating": "Değerlendiriyorum…",
     "symptomInput": "Belirti girişi",
     "symptomInputHint": "Belirtinizi yazıp gönderin",
@@ -44,7 +47,12 @@
   "question": {
     "whyAsking": "Neden soruyoruz?",
     "freeTextPlaceholder": "Kısa yanıt yaz…",
-    "numberPlaceholder": "Sayı gir…"
+    "numberPlaceholder": "Sayı gir…",
+    "freeTextInputLabel": "Cevap",
+    "freeTextInputHint": "Sorunun cevabını yazın",
+    "numberInputLabel": "Sayısal cevap",
+    "numberInputHint": "Soruya sayı ile cevap verin",
+    "choiceOption": "Seçenek"
   },
   "result": {
     "title": "Sonuç",

@@ -39,12 +39,20 @@
     "evaluating": "Оцениваю…",
     "symptomInput": "Ввод симптома",
     "symptomInputHint": "Введите симптом и отправьте.",
-    "emergencyDisclaimer": "В экстренных случаях звоните по номеру экстренной службы."
+    "emergencyDisclaimer": "В экстренных случаях звоните по номеру экстренной службы.",
+    "bubbleUser": "You",
+    "bubbleAssistant": "Assistant",
+    "quickChip": "Quick reply"
   },
   "question": {
     "whyAsking": "Почему мы спрашиваем?",
     "freeTextPlaceholder": "Напишите краткий ответ…",
-    "numberPlaceholder": "Введите число…"
+    "numberPlaceholder": "Введите число…",
+    "freeTextInputLabel": "Answer",
+    "freeTextInputHint": "Type your answer to the question",
+    "numberInputLabel": "Numeric answer",
+    "numberInputHint": "Answer the question with a number",
+    "choiceOption": "Option"
   },
   "result": {
     "title": "Результат",

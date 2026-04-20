@@ -36,6 +36,9 @@
     "locationHint": "Share your location to see nearby healthcare facilities on the result screen (optional).",
     "history": "📋 History",
     "settings": "⚙️ Settings",
+    "bubbleUser": "You",
+    "bubbleAssistant": "Assistant",
+    "quickChip": "Quick reply",
     "evaluating": "Evaluating…",
     "symptomInput": "Symptom input",
     "symptomInputHint": "Type your symptom and send",
@@ -44,7 +47,12 @@
   "question": {
     "whyAsking": "Why are we asking?",
     "freeTextPlaceholder": "Write a short answer…",
-    "numberPlaceholder": "Enter a number…"
+    "numberPlaceholder": "Enter a number…",
+    "freeTextInputLabel": "Answer",
+    "freeTextInputHint": "Type your answer to the question",
+    "numberInputLabel": "Numeric answer",
+    "numberInputHint": "Answer the question with a number",
+    "choiceOption": "Option"
   },
   "result": {
     "title": "Result",

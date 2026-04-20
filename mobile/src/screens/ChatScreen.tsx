@@ -90,14 +90,27 @@ export default function ChatScreen() {
           style={styles.list}
           contentContainerStyle={styles.listContent}
           onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
+          // Announce new messages to screen readers politely (doesn't
+          // interrupt current speech). The FlatList itself doesn't
+          // need a role — each bubble below is marked as text.
+          accessibilityLiveRegion="polite"
           renderItem={({ item }) => {
             const fromUser = item.role === "user";
+            const speakerLabel = fromUser
+              ? t("chat.bubbleUser")
+              : t("chat.bubbleAssistant");
             return (
               <View
                 style={[
                   styles.bubble,
                   fromUser ? styles.bubbleUser : styles.bubbleAssistant,
                 ]}
+                // "You: Baş ağrım var" / "Assistant: Ne zaman başladı?"
+                // — the screen reader reads this combined string so
+                // the user always knows who just spoke.
+                accessible
+                accessibilityRole="text"
+                accessibilityLabel={`${speakerLabel}: ${item.text}`}
               >
                 <Text
                   style={[
@@ -120,6 +133,8 @@ export default function ChatScreen() {
                   onPress={() => onSend(chip)}
                   style={styles.chipPressable}
                   hitSlop={6}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${t("chat.quickChip")}: ${chip}`}
                 >
                   <Text style={styles.chipText}>{chip}</Text>
                 </Pressable>

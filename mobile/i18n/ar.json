@@ -39,12 +39,20 @@
     "evaluating": "جاري التقييم…",
     "symptomInput": "إدخال الأعراض",
     "symptomInputHint": "اكتب عرضك وأرسله.",
-    "emergencyDisclaimer": "في حالات الطوارئ اتصل برقم الطوارئ المحلي."
+    "emergencyDisclaimer": "في حالات الطوارئ اتصل برقم الطوارئ المحلي.",
+    "bubbleUser": "You",
+    "bubbleAssistant": "Assistant",
+    "quickChip": "Quick reply"
   },
   "question": {
     "whyAsking": "لماذا نسأل؟",
     "freeTextPlaceholder": "اكتب إجابة قصيرة…",
-    "numberPlaceholder": "أدخل رقماً…"
+    "numberPlaceholder": "أدخل رقماً…",
+    "freeTextInputLabel": "Answer",
+    "freeTextInputHint": "Type your answer to the question",
+    "numberInputLabel": "Numeric answer",
+    "numberInputHint": "Answer the question with a number",
+    "choiceOption": "Option"
   },
   "result": {
     "title": "النتيجة",
