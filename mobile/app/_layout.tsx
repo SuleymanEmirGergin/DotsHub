@@ -10,6 +10,14 @@ import { useVersionGate } from "@/src/hooks/useVersionGate";
 import { I18nProvider } from "@/i18n/I18nProvider";
 import { getDefaultLocale } from "@/i18n/defaultLocale";
 import type { Locale } from "@/i18n/index";
+// Sentry must initialise BEFORE the router mounts so any error
+// thrown during bundle eval or the first layout render is captured.
+// `initSentry()` is a no-op when `EXPO_PUBLIC_SENTRY_DSN` is blank,
+// so importing this module is safe in dev / OSS clones that don't
+// have Sentry configured.
+import { initSentry } from "@/src/observability/sentry";
+
+initSentry();
 
 export default function RootLayout() {
   const [ready, setReady] = useState(false);
