@@ -35,6 +35,14 @@ from io import BytesIO
 from typing import Any, Dict, List, Optional
 
 from fpdf import FPDF
+from fpdf.enums import XPos, YPos
+
+# fpdf2 v2.5.2+ deprecated the positional `ln` parameter in favour of
+# explicit `new_x`/`new_y` enums. We use these at every callsite to
+# silence the DeprecationWarning (the repo's pyproject.toml escalates
+# `DeprecationWarning:app.*` to errors so CI would otherwise fail).
+_LN_NEXT = {"new_x": XPos.LMARGIN, "new_y": YPos.NEXT}
+_LN_SAME = {"new_x": XPos.RIGHT, "new_y": YPos.TOP}
 
 
 # ─── Text helpers ───────────────────────────────────────────────────
@@ -104,14 +112,14 @@ class _SessionPDF(FPDF):
 
     def header(self) -> None:  # noqa: D401 - fpdf lifecycle hook
         self.set_font("Helvetica", "B", 14)
-        self.cell(0, 8, _safe_text("Triaige — Session Export"), ln=True)
+        self.cell(0, 8, _safe_text("Triaige — Session Export"), **_LN_NEXT)
         self.set_font("Helvetica", "", 9)
         self.set_text_color(100, 100, 100)
         self.cell(
             0,
             5,
             _safe_text(f"Session: {self._session_id}"),
-            ln=True,
+            **_LN_NEXT,
         )
         self.set_text_color(0, 0, 0)
         self.ln(4)
@@ -154,7 +162,7 @@ def _section_title(pdf: _SessionPDF, text: str) -> None:
     _reset_x(pdf)
     pdf.set_font("Helvetica", "B", 11)
     pdf.set_fill_color(240, 240, 245)
-    pdf.cell(0, 7, _safe_text(text), ln=True, fill=True)
+    pdf.cell(0, 7, _safe_text(text), **_LN_NEXT, fill=True)
     pdf.set_font("Helvetica", "", 10)
     pdf.ln(1.5)
 
@@ -172,7 +180,7 @@ def _kv_row(pdf: _SessionPDF, key: str, value: str) -> None:
     names, long stop_reasons).
     """
     pdf.set_font("Helvetica", "B", 10)
-    pdf.cell(0, 5, _safe_text(key), ln=True)
+    pdf.cell(0, 5, _safe_text(key), **_LN_NEXT)
     pdf.set_font("Helvetica", "", 10)
     # small left indent to visually group with the bold key above
     left_margin = pdf.l_margin
@@ -186,7 +194,7 @@ def _bullet_list(pdf: _SessionPDF, items: List[str]) -> None:
         _reset_x(pdf)
         pdf.set_font("Helvetica", "I", 10)
         pdf.set_text_color(130, 130, 130)
-        pdf.cell(0, 6, _safe_text("— no entries —"), ln=True)
+        pdf.cell(0, 6, _safe_text("— no entries —"), **_LN_NEXT)
         pdf.set_text_color(0, 0, 0)
         return
     pdf.set_font("Helvetica", "", 10)
@@ -242,7 +250,7 @@ def build_session_pdf(detail: Dict[str, Any]) -> bytes:
     if not conds:
         pdf.set_font("Helvetica", "I", 10)
         pdf.set_text_color(130, 130, 130)
-        pdf.cell(0, 6, _safe_text("— no conditions suggested —"), ln=True)
+        pdf.cell(0, 6, _safe_text("— no conditions suggested —"), **_LN_NEXT)
         pdf.set_text_color(0, 0, 0)
     else:
         for c in conds:
@@ -252,7 +260,7 @@ def build_session_pdf(detail: Dict[str, Any]) -> bytes:
             score = c.get("score_0_1")
             score_str = f"{float(score):.2f}" if isinstance(score, (int, float)) else "—"
             pdf.set_font("Helvetica", "B", 10)
-            pdf.cell(0, 6, _safe_text(f"{label}  ({score_str})"), ln=True)
+            pdf.cell(0, 6, _safe_text(f"{label}  ({score_str})"), **_LN_NEXT)
             desc = c.get("disease_description_tr") or c.get("disease_description")
             if desc:
                 pdf.set_font("Helvetica", "", 9)
@@ -265,7 +273,7 @@ def build_session_pdf(detail: Dict[str, Any]) -> bytes:
     if not events:
         pdf.set_font("Helvetica", "I", 10)
         pdf.set_text_color(130, 130, 130)
-        pdf.cell(0, 6, _safe_text("— no events recorded —"), ln=True)
+        pdf.cell(0, 6, _safe_text("— no events recorded —"), **_LN_NEXT)
         pdf.set_text_color(0, 0, 0)
     else:
         for ev in events:
@@ -274,7 +282,7 @@ def build_session_pdf(detail: Dict[str, Any]) -> bytes:
             role = ev.get("role") or ev.get("event_type") or "?"
             content = ev.get("content") or ev.get("question_tr") or ev.get("answer_value") or ""
             pdf.set_font("Helvetica", "B", 9)
-            pdf.cell(0, 5, _safe_text(f"[{role}]"), ln=True)
+            pdf.cell(0, 5, _safe_text(f"[{role}]"), **_LN_NEXT)
             pdf.set_font("Helvetica", "", 10)
             pdf.multi_cell(0, 5, _safe_text(str(content)))
             pdf.ln(0.5)
@@ -285,7 +293,7 @@ def build_session_pdf(detail: Dict[str, Any]) -> bytes:
     if not feedback:
         pdf.set_font("Helvetica", "I", 10)
         pdf.set_text_color(130, 130, 130)
-        pdf.cell(0, 6, _safe_text("— no feedback left —"), ln=True)
+        pdf.cell(0, 6, _safe_text("— no feedback left —"), **_LN_NEXT)
         pdf.set_text_color(0, 0, 0)
     else:
         for fb in feedback:
@@ -294,7 +302,7 @@ def build_session_pdf(detail: Dict[str, Any]) -> bytes:
             rating = fb.get("rating") or fb.get("up_down") or "?"
             comment = fb.get("comment_tr") or fb.get("comment") or ""
             pdf.set_font("Helvetica", "B", 10)
-            pdf.cell(0, 6, _safe_text(f"Rating: {rating}"), ln=True)
+            pdf.cell(0, 6, _safe_text(f"Rating: {rating}"), **_LN_NEXT)
             if comment:
                 pdf.set_font("Helvetica", "", 10)
                 pdf.multi_cell(0, 6, _safe_text(str(comment)))
