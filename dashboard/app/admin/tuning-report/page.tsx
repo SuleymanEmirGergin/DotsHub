@@ -44,16 +44,31 @@ export default async function TuningReportPage({
   const locale = await getLocale();
   const { file } = await searchParams;
 
-  let files: any[] = [];
+  // Supabase storage list entry — we only read `.name` off it in JSX.
+  type StorageFile = { name: string };
+  let files: StorageFile[] = [];
   try {
-    files = await listReports(20);
+    files = (await listReports(20)) as StorageFile[];
   } catch {
     // Storage not configured yet
   }
 
   const selected = file ?? files?.[0]?.name;
 
-  let report: any = null;
+  // Tuning report — produced by the weekly analytics job and read
+  // back as opaque JSON. We render a handful of specific sub-trees
+  // but don't enumerate every field, so leave the slot open with
+  // Record<string, unknown>.
+  type TuningReport = Record<string, unknown> & {
+    synonym_suggestions?: Array<{
+      token?: string;
+      suggested_canonical?: string;
+      support_count?: number;
+    }>;
+    generated_at?: string;
+    window_days?: number;
+  };
+  let report: TuningReport | null = null;
   if (selected) {
     try {
       const url = await getSignedReportUrl(selected);
@@ -133,7 +148,7 @@ export default async function TuningReportPage({
                       </tr>
                     </thead>
                     <tbody>
-                      {report.synonym_suggestions.slice(0, 30).map((s: any, i: number) => (
+                      {(report.synonym_suggestions ?? []).slice(0, 30).map((s, i: number) => (
                         <tr key={i} className="border-b border-border">
                           <td className="p-2 font-semibold">{s.token}</td>
                           <td className="p-2 text-muted-foreground">{s.suggested_canonical ?? "-"}</td>

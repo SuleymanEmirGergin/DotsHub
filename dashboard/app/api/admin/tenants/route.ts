@@ -33,7 +33,8 @@ export async function POST(req: NextRequest) {
     });
     const data = await r.json().catch(() => ({}));
     return NextResponse.json(data, { status: r.status });
-  } catch (e: any) {
-    return NextResponse.json({ error: e?.message ?? "upstream error" }, { status: 502 });
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : "upstream error";
+    return NextResponse.json({ error: msg }, { status: 502 });
   }
 }

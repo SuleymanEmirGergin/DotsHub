@@ -52,7 +52,7 @@ async function globalSetup(_config: FullConfig): Promise<void> {
   // Stale-row sweep — only touches e2e_test=true rows > 60 min old.
   const swept = await sweepStaleRows(sb, 60);
   if (swept > 0) {
-    // eslint-disable-next-line no-console
+     
     console.log(`[e2e setup] swept ${swept} stale rows from prior runs`);
   }
 
@@ -87,7 +87,7 @@ async function globalSetup(_config: FullConfig): Promise<void> {
   };
   writeFileSync(RUN_STATE_FILE, JSON.stringify(state, null, 2), "utf-8");
 
-  // eslint-disable-next-line no-console
+   
   console.log(`[e2e setup] run_id=${runId}, seeded=${seeded.length}, admin=${adminEmail}`);
 }
 

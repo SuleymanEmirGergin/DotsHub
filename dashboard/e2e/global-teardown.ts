@@ -31,7 +31,7 @@ async function globalTeardown(_config: FullConfig): Promise<void> {
     }
   }
   if (!runId) {
-    // eslint-disable-next-line no-console
+     
     console.warn("[e2e teardown] no run_id found; skipping cleanup");
     return;
   }
@@ -39,11 +39,11 @@ async function globalTeardown(_config: FullConfig): Promise<void> {
   try {
     const sb = supabaseAdmin();
     const removed = await cleanupRun(sb, runId);
-    // eslint-disable-next-line no-console
+     
     console.log(`[e2e teardown] removed ${removed} rows for run_id=${runId}`);
   } catch (err) {
     // Teardown failures must not mask test results — log and continue.
-    // eslint-disable-next-line no-console
+     
     console.error(`[e2e teardown] cleanup error: ${(err as Error).message}`);
   } finally {
     if (existsSync(RUN_STATE_FILE)) {

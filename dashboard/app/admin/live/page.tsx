@@ -51,7 +51,15 @@ function timeAgo(iso: string, locale: Locale): string {
 
 export default function LivePage() {
   const locale = getLocaleFromDocument();
-  const t = (key: string) => getText(locale, key);
+  // Wrap `t` in useCallback so it keeps a stable reference across
+  // renders — without this, the sendWebhookTest + fetchLive useCallback
+  // dependencies change every render and the effects re-bind /
+  // re-fetch on every tick (surfaced as a react-hooks/exhaustive-deps
+  // warning in ESLint 9).
+  const t = useCallback(
+    (key: string) => getText(locale, key),
+    [locale],
+  );
 
   const STATUS_CONFIG: Record<string, { bg: string; text: string; label: string }> = {
     active: { bg: "bg-emerald-500/10 text-emerald-500", text: "bg-emerald-500", label: t("live.active") },
@@ -101,8 +109,9 @@ export default function LivePage() {
       setSessions(data.items || []);
       setLastUpdate(new Date());
       setError(null);
-    } catch (err: any) {
-      setError(err.message || t("live.connectionError"));
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : t("live.connectionError");
+      setError(msg);
     } finally {
       setLoading(false);
     }

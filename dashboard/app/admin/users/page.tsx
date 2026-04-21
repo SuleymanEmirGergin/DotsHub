@@ -52,7 +52,14 @@ export default async function AdminUsersPage() {
                 </td>
               </tr>
             )}
-            {(users ?? []).map((u: any) => (
+            {((users ?? []) as Array<{
+              id: string;
+              email: string;
+              role: "super_admin" | "admin" | string;
+              created_at: string;
+              user_id?: string | null;
+              last_sign_in?: string | null;
+            }>).map((u) => (
               <tr key={u.id} className="border-t border-border">
                 <td className="p-3.5"><strong>{u.email}</strong></td>
                 <td className="p-3.5">

@@ -33,8 +33,9 @@ export function CreateTenantForm() {
       }
       router.refresh();
       router.push(`/admin/tenants/${data.tenant_id}`);
-    } catch (e: any) {
-      setError(e?.message ?? "istek başarısız");
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "istek başarısız";
+      setError(msg);
     } finally {
       setBusy(false);
     }

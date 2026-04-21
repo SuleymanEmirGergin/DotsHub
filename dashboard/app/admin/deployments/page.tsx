@@ -17,6 +17,50 @@ type Health = {
   high_risk_rate: number;
 };
 
+// Shape of a guardrails.json file on disk. Kept permissive
+// (everything optional) because the file ships with sane defaults and
+// ops may add new thresholds without bumping this TS type.
+type Guardrails = {
+  thresholds?: {
+    down_rate_max_delta?: number;
+    confidence_decrease_max?: number;
+    avg_questions_increase_max?: number;
+  };
+  min_feedback_after?: number;
+};
+
+// Minimal shape of a deployment row as it appears in Supabase (+ the
+// in-memory annotations this page layers on top). Not exhaustive —
+// JSX accesses additional fields (git_sha, author, etc.) via the
+// index signature rather than forcing us to enumerate every column.
+type DeploymentRow = {
+  id: string;
+  created_at: string;
+  status?: string | null;
+  title?: string | null;
+  [key: string]: unknown;
+};
+
+type DeploymentWithImpact = DeploymentRow & {
+  _impact: ImpactReport | null;
+  _sev: "info" | "ok" | "warning" | "critical" | null;
+};
+
+// Permissive shape for the impact report JSON. Every numeric stat
+// is allowed via index signature so the report generator can add
+// fields without touching this file. `after.total` / `delta.down_rate`
+// accesses below work because we declare those slots as `number`.
+type ImpactStats = {
+  [key: string]: number | undefined;
+};
+
+type ImpactReport = {
+  before?: ImpactStats;
+  after?: ImpactStats;
+  delta?: ImpactStats;
+  [key: string]: unknown;
+};
+
 async function getLocale(): Promise<Locale> {
   const store = await cookies();
   return store.get("NEXT_LOCALE")?.value === "en" ? "en" : "tr";
@@ -30,16 +74,16 @@ function formatText(template: string, params: Record<string, string | number>): 
   return out;
 }
 
-function loadGuardrails() {
+function loadGuardrails(): Guardrails | null {
   try {
     const p = path.join(process.cwd(), "..", "config", "tuning_guardrails.json");
-    return JSON.parse(fs.readFileSync(p, "utf-8"));
+    return JSON.parse(fs.readFileSync(p, "utf-8")) as Guardrails;
   } catch {
     return null;
   }
 }
 
-function findLatestImpactForDeployment(deploymentId: string) {
+function findLatestImpactForDeployment(deploymentId: string): ImpactReport | null {
   try {
     const reportsDir = path.join(process.cwd(), "..", "backend", "reports");
     if (!fs.existsSync(reportsDir)) return null;
@@ -52,13 +96,16 @@ function findLatestImpactForDeployment(deploymentId: string) {
 
     const latest = files[files.length - 1];
     const p = path.join(reportsDir, latest);
-    return JSON.parse(fs.readFileSync(p, "utf-8"));
+    return JSON.parse(fs.readFileSync(p, "utf-8")) as ImpactReport;
   } catch {
     return null;
   }
 }
 
-function computeSeverity(impact: any, guardrails: any): "info" | "ok" | "warning" | "critical" {
+function computeSeverity(
+  impact: ImpactReport,
+  guardrails: Guardrails | null,
+): "info" | "ok" | "warning" | "critical" {
   const g = guardrails ?? { thresholds: {}, min_feedback_after: 30 };
   const t = g.thresholds ?? {};
 
@@ -210,13 +257,13 @@ export default async function DeploymentsPage({
 
   const guardrails = loadGuardrails();
 
-  const rows = (data || [])
-    .map((d: any) => {
+  const rows: DeploymentWithImpact[] = ((data || []) as DeploymentRow[])
+    .map((d): DeploymentWithImpact => {
       const imp = findLatestImpactForDeployment(d.id);
       const sev = imp ? computeSeverity(imp, guardrails) : null;
       return { ...d, _impact: imp, _sev: sev };
     })
-    .filter((d: any) => {
+    .filter((d) => {
       if (onlyProblems) {
         return d.status === "rolled_back_pending" || d._sev === "critical";
       }
@@ -228,7 +275,7 @@ export default async function DeploymentsPage({
 
   const sevRank: Record<string, number> = { critical: 4, warning: 3, info: 2, ok: 1 };
 
-  const sortedRows = [...rows].sort((a: any, b: any) => {
+  const sortedRows = [...rows].sort((a, b) => {
     if (onlyProblems) {
       const ra = sevRank[a._sev ?? "info"] ?? 0;
       const rb = sevRank[b._sev ?? "info"] ?? 0;
@@ -318,7 +365,7 @@ export default async function DeploymentsPage({
               </tr>
             </thead>
             <tbody>
-              {sortedRows.map((d: any) => (
+              {sortedRows.map((d) => (
                 <tr key={d.id} className="border-t border-border">
                   <td className="p-3 text-xs text-muted-foreground">{new Date(d.created_at).toLocaleString(localeTag)}</td>
                   <td className="p-3 text-sm font-bold">{d.title || t("deploymentsPage.untitled")}</td>
@@ -331,7 +378,7 @@ export default async function DeploymentsPage({
                         d.status === "applied" && "bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-300"
                       )}
                     >
-                      {getStatusLabel(d.status, t)}
+                      {getStatusLabel(d.status ?? "", t)}
                     </span>
                   </td>
                   <td className="p-3">
@@ -347,7 +394,9 @@ export default async function DeploymentsPage({
                     )}
                   </td>
                   <td className="p-3 text-[11px] font-mono text-muted-foreground">
-                    {d.git_sha ? d.git_sha.slice(0, 7) : t("deploymentsPage.noGitSha")}
+                    {typeof d.git_sha === "string" && d.git_sha
+                      ? d.git_sha.slice(0, 7)
+                      : t("deploymentsPage.noGitSha")}
                   </td>
                 </tr>
               ))}

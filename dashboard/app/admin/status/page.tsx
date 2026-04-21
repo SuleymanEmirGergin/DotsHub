@@ -37,8 +37,9 @@ async function checkBackendHealth(t: (key: string) => string): Promise<{ status:
     });
     if (r.ok) return { status: "ok", message: t("status.connected") };
     return { status: "error", message: `HTTP ${r.status}` };
-  } catch (e: any) {
-    return { status: "error", message: e?.message ?? t("status.connectionFailed") };
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : t("status.connectionFailed");
+    return { status: "error", message: msg };
   }
 }
 
@@ -48,15 +49,29 @@ async function checkSupabase(t: (key: string) => string): Promise<{ status: Stat
     const { error } = await sb.from("triage_sessions").select("id").limit(1).maybeSingle();
     if (error) return { status: "error", message: error.message };
     return { status: "ok", message: t("status.connected") };
-  } catch (e: any) {
+  } catch (e: unknown) {
     // supabaseAdmin() throws SupabaseEnvMissingError when env vars
     // aren't set — we want the tile to render a friendly "not
     // configured" state rather than propagate the exception.
-    return { status: "error", message: e?.message ?? t("status.connectionFailed") };
+    const msg = e instanceof Error ? e.message : t("status.connectionFailed");
+    return { status: "error", message: msg };
   }
 }
 
-async function checkAdminOverview(t: (key: string) => string): Promise<{ status: Status; message: string; health?: any }> {
+// The `health` slot below mirrors whatever the backend returns from
+// /admin/stats/overview. The JSX renders `samples`, `low_conf_rate`,
+// `high_risk_rate` as numbers — index signature keeps spec
+// additions landing freely while keeping arithmetic + .toFixed()
+// type-safe on the known columns.
+type BackendHealth = {
+  overall?: string;
+  samples?: number;
+  low_conf_rate?: number;
+  high_risk_rate?: number;
+  [key: string]: unknown;
+};
+
+async function checkAdminOverview(t: (key: string) => string): Promise<{ status: Status; message: string; health?: BackendHealth }> {
   const base = process.env.NEXT_PUBLIC_API_BASE;
   const key = process.env.ADMIN_API_KEY;
   if (!base || !key) return { status: "info", message: t("status.apiBaseOrKeyMissing") };
@@ -73,8 +88,9 @@ async function checkAdminOverview(t: (key: string) => string): Promise<{ status:
     const status: Status = overall === "CRIT" ? "crit" : overall === "WARN" ? "warn" : "ok";
     const samples = h?.samples ?? 0;
     return { status, message: formatText(t("status.sessionsState"), { samples, overall }), health: h };
-  } catch (e: any) {
-    return { status: "error", message: e?.message ?? t("status.connectionFailed") };
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : t("status.connectionFailed");
+    return { status: "error", message: msg };
   }
 }
 
@@ -141,7 +157,7 @@ export default async function StatusPage() {
                 <p className="text-muted-foreground text-sm mb-0">{card.message}</p>
                 {card.health && (
                   <div className="mt-3 text-[13px] text-muted-foreground">
-                    {getText(locale, "status.sample")}: {card.health.samples} | {getText(locale, "status.lowConf")}: %{(card.health.low_conf_rate * 100).toFixed(1)} | {getText(locale, "status.highRisk")}: %{(card.health.high_risk_rate * 100).toFixed(1)}
+                    {getText(locale, "status.sample")}: {card.health.samples ?? 0} | {getText(locale, "status.lowConf")}: %{((card.health.low_conf_rate ?? 0) * 100).toFixed(1)} | {getText(locale, "status.highRisk")}: %{((card.health.high_risk_rate ?? 0) * 100).toFixed(1)}
                   </div>
                 )}
               </CardContent>

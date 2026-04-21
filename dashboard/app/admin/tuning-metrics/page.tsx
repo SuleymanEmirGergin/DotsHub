@@ -15,7 +15,21 @@ async function getLocale(): Promise<Locale> {
   return store.get("NEXT_LOCALE")?.value === "en" ? "en" : "tr";
 }
 
-function loadLatestEffectivenessReport() {
+// One row in the question-effectiveness report. `canonical` is the
+// ID; every other column is a numeric metric (counts, rates, gap
+// deltas). Index signature keeps the report generator free to add
+// new metrics without coordinating with TS.
+type QuestionEffectiveness = {
+  canonical: string;
+} & Record<string, number | undefined>;
+
+type EffectivenessReport = {
+  questions?: QuestionEffectiveness[];
+  generated_at?: string;
+  [key: string]: unknown;
+};
+
+function loadLatestEffectivenessReport(): EffectivenessReport | null {
     try {
         const reportsDir = path.join(process.cwd(), "..", "backend", "reports");
         if (!fs.existsSync(reportsDir)) return null;
@@ -29,7 +43,7 @@ function loadLatestEffectivenessReport() {
 
         const latest = files[files.length - 1];
         const p = path.join(reportsDir, latest);
-        return JSON.parse(fs.readFileSync(p, "utf-8"));
+        return JSON.parse(fs.readFileSync(p, "utf-8")) as EffectivenessReport;
     } catch {
         return null;
     }
@@ -80,7 +94,7 @@ export default async function TuningMetricsPage() {
     const questions = effectiveness?.questions ?? [];
 
     // Sort by effectiveness
-    const sortedQuestions = [...questions].sort((a: any, b: any) => (b.effectiveness_0_1 ?? 0) - (a.effectiveness_0_1 ?? 0));
+    const sortedQuestions = [...questions].sort((a, b) => (b.effectiveness_0_1 ?? 0) - (a.effectiveness_0_1 ?? 0));
 
   const effColorClass = (eff: number) =>
     eff >= 0.6 ? "text-teal-800 dark:text-teal-400" : eff >= 0.4 ? "text-amber-800 dark:text-amber-400" : "text-red-800 dark:text-red-400";
@@ -111,7 +125,7 @@ export default async function TuningMetricsPage() {
           <h2 className="text-lg font-black m-0">{getText(locale, "tuningMetrics.questionEffectiveness")}</h2>
           <div className="text-muted-foreground mt-1 text-[13px]">
             {effectiveness
-              ? getText(locale, "tuningMetrics.reportGenerated").replace("{date}", new Date(effectiveness.generated_at).toLocaleString(locale === "en" ? "en-US" : "tr-TR"))
+              ? getText(locale, "tuningMetrics.reportGenerated").replace("{date}", new Date(effectiveness.generated_at ?? Date.now()).toLocaleString(locale === "en" ? "en-US" : "tr-TR"))
               : getText(locale, "tuningMetrics.noReportAvailable")}
           </div>
         </div>
@@ -131,7 +145,7 @@ export default async function TuningMetricsPage() {
                 </tr>
               </thead>
               <tbody>
-                {sortedQuestions.slice(0, 50).map((q: any) => {
+                {sortedQuestions.slice(0, 50).map((q) => {
                   const eff = q.effectiveness_0_1 ?? 0;
                   const trendData = [eff * 0.9, eff * 0.95, eff, eff * 1.02, eff * 1.01];
                   return (
