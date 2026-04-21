@@ -1,5 +1,9 @@
-fastapi
-uvicorn[standard]
+# FastAPI pinned to <0.136 because prometheus-fastapi-instrumentator@7.1.0
+# (latest as of 2026-04) still requires starlette<1.0. Once the
+# instrumentator ships a starlette-1.x-compatible release, we can drop
+# this upper bound and move to fastapi>=0.136 / starlette>=1.0.
+fastapi>=0.135,<0.136
+uvicorn[standard]>=0.44
 pydantic>=2.10
 pydantic-settings>=2.7
 sqlalchemy[asyncio]>=2.0
