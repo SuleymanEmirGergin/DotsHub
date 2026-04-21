@@ -824,7 +824,7 @@ def live_sessions(
     cutoff = (datetime.now(timezone.utc) - timedelta(minutes=minutes)).isoformat()
 
     resp = (
-        supabase()
+        supabase
         .table("triage_sessions")
         .select(
             "id,session_id,envelope_type,turn_index,"
@@ -917,6 +917,29 @@ def trigger_followup_reminders(
     return send_followup_reminders(hours_min=hours_min, hours_max=hours_max)
 
 
+# ── Admin user management ──────────────────────────────────
+#
+# Two valid roles: ``admin`` (read + routine ops) and ``super_admin``
+# (can invite, change roles, remove). The dashboard enforces UI-level
+# gating by reading the requester's role via ``requireAdmin()``; this
+# module only enforces the shared x-admin-key header, so any caller
+# that has the key can hit every endpoint. That's acceptable because
+# the dashboard proxy is the only sanctioned caller and it inherits
+# the Supabase session from the browser.
+
+_VALID_ROLES = {"admin", "super_admin"}
+
+
+def _normalize_role(role: Optional[str]) -> str:
+    r = (role or "admin").strip().lower()
+    if r not in _VALID_ROLES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid role '{role}'. Must be one of: {sorted(_VALID_ROLES)}",
+        )
+    return r
+
+
 @router.get("/users")
 def list_admin_users(
     x_admin_key: Optional[str] = Header(default=None),
@@ -924,8 +947,12 @@ def list_admin_users(
     """List all admin users."""
     require_admin(x_admin_key)
 
+    # NOTE: prior version called ``supabase()`` — the module-level
+    # ``supabase`` is a ``_LazySupabase`` *instance*, not callable, so
+    # that path raised TypeError at request time. Use attribute access
+    # instead (matches every other query in this file).
     resp = (
-        supabase()
+        supabase
         .table("admin_users")
         .select("id,user_id,email,role,created_at")
         .order("created_at", desc=True)
@@ -941,11 +968,17 @@ def add_admin_user(
     user_id: str = Query(...),
     role: str = Query(default="admin"),
 ):
-    """Add a new admin user."""
+    """Add a new admin user (legacy direct-by-user-id path).
+
+    Prefer ``POST /admin/users/invite`` for dashboard-driven adds: it
+    resolves the auth user from email so operators don't need to look
+    up the Supabase user_id manually.
+    """
     require_admin(x_admin_key)
+    role = _normalize_role(role)
 
     resp = (
-        supabase()
+        supabase
         .table("admin_users")
         .upsert(
             {"user_id": user_id, "email": email, "role": role},
@@ -956,15 +989,138 @@ def add_admin_user(
     return {"ok": True, "data": resp.data}
 
 
+@router.post("/users/invite")
+def invite_admin_user(
+    x_admin_key: Optional[str] = Header(default=None),
+    email: str = Query(...),
+    role: str = Query(default="admin"),
+):
+    """Grant admin role to an existing auth user resolved by email.
+
+    Flow:
+      1. Operator supplies the invitee's email.
+      2. We look up the matching ``auth.users`` row via the service-role
+         admin API (``supabase.auth.admin.list_users``). If not found →
+         409 with a hint to sign up via the login magic-link first.
+      3. Upsert into ``admin_users`` keyed by user_id.
+
+    Why not ``auth.admin.invite_user_by_email``: that would send a
+    Supabase-native invite email, which is redundant with our existing
+    magic-link login and mixes auth signup with admin-grant. Requiring
+    the user to exist first keeps the two flows separate and avoids
+    double-inviting someone who's already onboarded.
+    """
+    require_admin(x_admin_key)
+    role = _normalize_role(role)
+    email_norm = (email or "").strip().lower()
+    if not email_norm:
+        raise HTTPException(status_code=400, detail="email is required")
+
+    # supabase-py's auth.admin.list_users() is paginated; the invite
+    # UX is interactive so we cap at a few pages and early-return on
+    # match. 1000 auth users covers most single-tenant deployments.
+    user_id: Optional[str] = None
+    user_email_canonical: Optional[str] = None
+    try:
+        # Newer supabase-py: returns a list or a response-like object.
+        # Defensive attribute access covers both shapes.
+        page = 1
+        while page <= 10 and user_id is None:
+            result = supabase.auth.admin.list_users(page=page, per_page=100)
+            # supabase-py returns either an object with ``.users``, a
+            # plain list, or (older/test shims) a dict with "users".
+            # Handle all three defensively.
+            users = getattr(result, "users", None)
+            if users is None and isinstance(result, dict):
+                users = result.get("users") or []
+            elif users is None and isinstance(result, list):
+                users = result
+            users = users or []
+            if not users:
+                break
+            for u in users:
+                u_email = getattr(u, "email", None) or (
+                    u.get("email") if isinstance(u, dict) else None
+                )
+                if u_email and u_email.lower() == email_norm:
+                    user_id = getattr(u, "id", None) or (
+                        u.get("id") if isinstance(u, dict) else None
+                    )
+                    user_email_canonical = u_email
+                    break
+            # If the page returned fewer than per_page, we're done.
+            if len(users) < 100:
+                break
+            page += 1
+    except Exception as exc:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to query auth users: {exc}",
+        ) from exc
+
+    if not user_id:
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                f"No auth user found for {email_norm}. "
+                "Ask them to sign in via the magic link first, then try again."
+            ),
+        )
+
+    resp = (
+        supabase
+        .table("admin_users")
+        .upsert(
+            {
+                "user_id": user_id,
+                "email": user_email_canonical or email_norm,
+                "role": role,
+            },
+            on_conflict="user_id",
+        )
+        .execute()
+    )
+    return {"ok": True, "data": resp.data}
+
+
+@router.patch("/users/{user_id}")
+def update_admin_user_role(
+    user_id: str,
+    x_admin_key: Optional[str] = Header(default=None),
+    role: str = Query(...),
+):
+    """Update an existing admin user's role (admin ⇄ super_admin)."""
+    require_admin(x_admin_key)
+    role = _normalize_role(role)
+
+    resp = (
+        supabase
+        .table("admin_users")
+        .update({"role": role})
+        .eq("user_id", user_id)
+        .execute()
+    )
+    data = resp.data or []
+    if not data:
+        raise HTTPException(status_code=404, detail="Admin user not found")
+    return {"ok": True, "data": data}
+
+
 @router.delete("/users/{user_id}")
 def remove_admin_user(
     user_id: str,
     x_admin_key: Optional[str] = Header(default=None),
 ):
-    """Remove an admin user."""
+    """Remove an admin user.
+
+    Self-removal protection is enforced on the dashboard side (the UI
+    hides the action for the logged-in row). The backend can't identify
+    the caller from the shared x-admin-key, so a server-side guard
+    would be a no-op.
+    """
     require_admin(x_admin_key)
 
-    supabase().table("admin_users").delete().eq("user_id", user_id).execute()
+    supabase.table("admin_users").delete().eq("user_id", user_id).execute()
     return {"ok": True}
 
 

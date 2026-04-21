@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import unittest
+from typing import Optional
 from unittest.mock import patch
 
 from fastapi.testclient import TestClient
@@ -222,6 +223,263 @@ class AdminV5AuthTests(unittest.TestCase):
         self.assertIn("by_envelope", body)
         self.assertEqual(body["by_envelope"].get("RESULT"), 1)
         self.assertEqual(body["by_envelope"].get("EMERGENCY"), 1)
+
+
+# ─── Admin user management tests ───────────────────────────────────
+#
+# Covers the post-fix invariants for /admin/users*:
+#   - list uses attribute access (prior ``supabase()`` call was a
+#     TypeError at request time)
+#   - invite resolves auth user by email then upserts
+#   - patch updates role (and rejects invalid role)
+#   - delete runs
+# The user-management fake keeps a mutable admin_users table so we
+# can assert the upsert/update/delete mutations.
+
+
+class _UsersFakeQuery:
+    def __init__(self, store: "_UsersFakeSupabase", table_name: str):
+        self._store = store
+        self.table_name = table_name
+        self._mode: Optional[str] = None  # type: ignore[name-defined]
+        self._payload = None
+        self._on_conflict = None
+        self._eq_filters: list = []
+
+    def select(self, *_a, **_kw):
+        self._mode = "select"
+        return self
+
+    def upsert(self, payload, on_conflict=None):
+        self._mode = "upsert"
+        self._payload = payload
+        self._on_conflict = on_conflict
+        return self
+
+    def update(self, payload):
+        self._mode = "update"
+        self._payload = payload
+        return self
+
+    def delete(self):
+        self._mode = "delete"
+        return self
+
+    def eq(self, col, val):
+        self._eq_filters.append((col, val))
+        return self
+
+    def order(self, *_a, **_kw):
+        return self
+
+    def execute(self):
+        rows = self._store.tables.setdefault(self.table_name, [])
+        if self._mode == "select":
+            return _FakeExecute(list(rows))
+        if self._mode == "upsert":
+            assert self._on_conflict == "user_id"
+            key = self._payload["user_id"]
+            existing_idx = next(
+                (i for i, r in enumerate(rows) if r.get("user_id") == key), None
+            )
+            if existing_idx is not None:
+                rows[existing_idx].update(self._payload)
+                return _FakeExecute([rows[existing_idx]])
+            rows.append(dict(self._payload))
+            return _FakeExecute([rows[-1]])
+        if self._mode == "update":
+            updated = []
+            for r in rows:
+                if all(r.get(c) == v for c, v in self._eq_filters):
+                    r.update(self._payload)
+                    updated.append(r)
+            return _FakeExecute(updated)
+        if self._mode == "delete":
+            kept = [r for r in rows if not all(r.get(c) == v for c, v in self._eq_filters)]
+            removed = len(rows) - len(kept)
+            self._store.tables[self.table_name] = kept
+            return _FakeExecute([{"removed": removed}])
+        return _FakeExecute([])
+
+
+class _FakeAuthAdmin:
+    """Minimal stand-in for supabase.auth.admin.list_users().
+
+    Returns the configured auth users on page=1 and an empty list on
+    later pages, matching the "fewer than per_page → stop" guard in
+    invite_admin_user.
+    """
+
+    def __init__(self, users: list[dict]):
+        self._users = users
+
+    def list_users(self, page: int = 1, per_page: int = 100):
+        if page == 1:
+            return {"users": self._users}
+        return {"users": []}
+
+
+class _FakeAuth:
+    def __init__(self, users: list[dict]):
+        self.admin = _FakeAuthAdmin(users)
+
+
+class _UsersFakeSupabase:
+    def __init__(self, admin_users: list[dict], auth_users: list[dict]):
+        self.tables: dict[str, list[dict]] = {"admin_users": list(admin_users)}
+        self.auth = _FakeAuth(auth_users)
+
+    def table(self, name: str):
+        return _UsersFakeQuery(self, name)
+
+
+class AdminUserManagementTests(unittest.TestCase):
+    def _client(self):
+        return TestClient(app)
+
+    def test_list_admin_users_uses_attribute_access(self):
+        """Regression: prior code called supabase() → TypeError."""
+        fake = _UsersFakeSupabase(
+            admin_users=[
+                {
+                    "id": "row-1",
+                    "user_id": "u-1",
+                    "email": "a@ex.com",
+                    "role": "super_admin",
+                    "created_at": "2026-04-20T10:00:00Z",
+                },
+            ],
+            auth_users=[],
+        )
+        with (
+            patch("app.admin_auth.settings.ADMIN_API_KEY", "secret"),
+            patch.object(admin_v5, "supabase", fake),
+        ):
+            resp = self._client().get(
+                "/v1/admin/users", headers={"x-admin-key": "secret"}
+            )
+        self.assertEqual(resp.status_code, 200)
+        body = resp.json()
+        self.assertEqual(len(body["users"]), 1)
+        self.assertEqual(body["users"][0]["email"], "a@ex.com")
+
+    def test_invite_resolves_email_and_upserts(self):
+        fake = _UsersFakeSupabase(
+            admin_users=[],
+            auth_users=[
+                {"id": "auth-99", "email": "Invitee@Example.com"},
+                {"id": "auth-42", "email": "other@example.com"},
+            ],
+        )
+        with (
+            patch("app.admin_auth.settings.ADMIN_API_KEY", "secret"),
+            patch.object(admin_v5, "supabase", fake),
+        ):
+            resp = self._client().post(
+                "/v1/admin/users/invite?email=invitee@example.com&role=admin",
+                headers={"x-admin-key": "secret"},
+            )
+
+        self.assertEqual(resp.status_code, 200)
+        rows = fake.tables["admin_users"]
+        self.assertEqual(len(rows), 1)
+        # Canonical email comes from the auth record (preserves
+        # original case), and user_id is the auth user's id.
+        self.assertEqual(rows[0]["user_id"], "auth-99")
+        self.assertEqual(rows[0]["email"], "Invitee@Example.com")
+        self.assertEqual(rows[0]["role"], "admin")
+
+    def test_invite_returns_409_when_email_not_found(self):
+        fake = _UsersFakeSupabase(
+            admin_users=[],
+            auth_users=[{"id": "auth-1", "email": "someone@else.com"}],
+        )
+        with (
+            patch("app.admin_auth.settings.ADMIN_API_KEY", "secret"),
+            patch.object(admin_v5, "supabase", fake),
+        ):
+            resp = self._client().post(
+                "/v1/admin/users/invite?email=missing@example.com",
+                headers={"x-admin-key": "secret"},
+            )
+
+        self.assertEqual(resp.status_code, 409)
+        self.assertEqual(fake.tables["admin_users"], [])
+
+    def test_invite_rejects_invalid_role(self):
+        fake = _UsersFakeSupabase(
+            admin_users=[],
+            auth_users=[{"id": "auth-1", "email": "a@b.com"}],
+        )
+        with (
+            patch("app.admin_auth.settings.ADMIN_API_KEY", "secret"),
+            patch.object(admin_v5, "supabase", fake),
+        ):
+            resp = self._client().post(
+                "/v1/admin/users/invite?email=a@b.com&role=owner",
+                headers={"x-admin-key": "secret"},
+            )
+        self.assertEqual(resp.status_code, 400)
+
+    def test_patch_user_updates_role(self):
+        fake = _UsersFakeSupabase(
+            admin_users=[
+                {
+                    "id": "row-1",
+                    "user_id": "u-1",
+                    "email": "a@ex.com",
+                    "role": "admin",
+                    "created_at": "2026-04-20T10:00:00Z",
+                },
+            ],
+            auth_users=[],
+        )
+        with (
+            patch("app.admin_auth.settings.ADMIN_API_KEY", "secret"),
+            patch.object(admin_v5, "supabase", fake),
+        ):
+            resp = self._client().patch(
+                "/v1/admin/users/u-1?role=super_admin",
+                headers={"x-admin-key": "secret"},
+            )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(fake.tables["admin_users"][0]["role"], "super_admin")
+
+    def test_patch_user_404_when_missing(self):
+        fake = _UsersFakeSupabase(admin_users=[], auth_users=[])
+        with (
+            patch("app.admin_auth.settings.ADMIN_API_KEY", "secret"),
+            patch.object(admin_v5, "supabase", fake),
+        ):
+            resp = self._client().patch(
+                "/v1/admin/users/nope?role=admin",
+                headers={"x-admin-key": "secret"},
+            )
+        self.assertEqual(resp.status_code, 404)
+
+    def test_delete_user_removes_row(self):
+        fake = _UsersFakeSupabase(
+            admin_users=[
+                {
+                    "id": "row-1",
+                    "user_id": "u-1",
+                    "email": "a@ex.com",
+                    "role": "admin",
+                    "created_at": "2026-04-20T10:00:00Z",
+                },
+            ],
+            auth_users=[],
+        )
+        with (
+            patch("app.admin_auth.settings.ADMIN_API_KEY", "secret"),
+            patch.object(admin_v5, "supabase", fake),
+        ):
+            resp = self._client().delete(
+                "/v1/admin/users/u-1",
+                headers={"x-admin-key": "secret"},
+            )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(fake.tables["admin_users"], [])
 
 
 if __name__ == "__main__":
