@@ -82,6 +82,29 @@ confidence_score = Histogram(
     buckets=(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0),
 )
 
+# Counter — LLM NLU call outcomes. The in-memory rolling window in
+# `services/llm_nlu::_health_monitor_observe` is what drives the
+# webhook alert (latency-critical path). Without a Prometheus-side
+# view we had no long-term success-rate history in Grafana — this
+# counter closes that gap. Webhook remains the low-latency paging
+# channel; Grafana reads from here for trend lines and a formal
+# rule-based alert (see config/grafana/alerts/backend-health.yaml
+# `LLMNluSuccessRateLow`).
+#
+# Label cardinality (bounded):
+#   - `success` ∈ {"true", "false"} — 2 values (stringified bool so
+#     labels stay consistent with Prometheus conventions).
+#   - `error_type` is the short string the LLM client tags on
+#     failures: "timeout" / "rate_limit" / "http_error" /
+#     "schema_error" / "provider_error" / "" (for success). Bounded
+#     to ~6 values by the existing client-side classification in
+#     services/llm_nlu.py.
+llm_nlu_calls_total = Counter(
+    "llm_nlu_calls_total",
+    "LLM NLU call outcomes (success/failure with classified error type).",
+    labelnames=("success", "error_type"),
+)
+
 
 # ─── Setup ─────────────────────────────────────────────────────────
 

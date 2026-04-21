@@ -36,6 +36,7 @@ infinite feedback loop).
 | `triage_envelope_total`                 | Counter   | `envelope_type`               | Same path — one hit per envelope emitted to a reduced-capability client (see "Sampling caveat" below). |
 | `rate_limit_hits_total`                 | Counter   | `bucket` ∈ `{default, admin, send_summary, llm_nlu}`, `outcome` ∈ `{allowed, denied}` | `app.rate_limit.check_*_rate_limit*` — one increment per public rate-limit decision. |
 | `confidence_score`                      | Histogram | — (buckets 0.1…1.0)           | Reserved for the triage engine — call `confidence_score.observe(x)` when a RESULT envelope is emitted. |
+| `llm_nlu_calls_total`                   | Counter   | `success` ∈ `{true, false}`, `error_type` ∈ `{"", timeout, rate_limit, http_error, schema_error, provider_error}` | `app.services.llm_nlu._health_monitor_observe` — once per LLM NLU call. Cross-worker view behind the per-worker in-memory webhook alert. |
 
 ### Sampling caveat — `triage_envelope_total`
 
@@ -82,7 +83,7 @@ Cloud Managed Alertmanager on every `main` push that touches
 | File | Group | Covers |
 | ---- | ----- | ------ |
 | `backend-health.yaml`     | `backend-http`         | 5xx rate, p95 latency regression |
-| `backend-health.yaml`     | `backend-rate-limit`   | Overall denial rate, LLM NLU bucket saturation, **per-bucket denial spike** |
+| `backend-health.yaml`     | `backend-rate-limit`   | Overall denial rate, LLM NLU bucket saturation, **per-bucket denial spike**, **LLM NLU success rate (cross-worker)** |
 | `backend-health.yaml`     | `backend-latency`      | **Triage p95 regression**, **Supabase write latency proxy** |
 | `backend-health.yaml`     | `backend-triage`       | EMERGENCY 3x spike, capability-gate strip ratio |
 | `backend-health.yaml`     | `backend-availability` | `up == 0` (scrape-down) |
@@ -91,42 +92,46 @@ Cloud Managed Alertmanager on every `main` push that touches
 
 Bold items are Session 11 additions.
 
-### LLM NLU health: webhook vs Grafana
+### LLM NLU health: two-layer (webhook + Prometheus)
 
-The LLM NLU success rate is NOT exposed as a Prometheus metric —
-the backend tracks it in an in-memory rolling window inside
-`backend/app/services/llm_nlu.py` (`_HEALTH_EVENTS`) and fires a
-Slack / Discord webhook directly via `notifier.send_llm_health_alert`
-when the success rate drops below the configured threshold
-(`LLM_HEALTH_ALERT_THRESHOLD_PCT`, default 80%).
+LLM NLU success rate is tracked in two parallel channels.
 
-Why webhook-first rather than Prometheus:
+**Layer 1 — in-memory + webhook (low-latency page):**
+`backend/app/services/llm_nlu.py::_HEALTH_EVENTS` maintains a
+20-call rolling window. When the success rate drops below
+`LLM_HEALTH_ALERT_THRESHOLD_PCT` (default 80%),
+`notifier.send_llm_health_alert` fires a Slack / Discord webhook
+directly — no scrape-loop delay. Per-process, so a multi-worker
+deployment may fire from multiple workers during a real outage
+(acceptable given the 15-min cool-down).
 
-1. **Latency.** The webhook fires within a few seconds of the
-   drop; a scrape-then-alertmanager pipeline adds ~1m of
-   inherent delay which is too slow for a triage-quality
-   regression.
-2. **Per-process window.** The in-memory ring avoids a DB
-   round-trip in the request hot path. Multiple workers each
-   track their own ring, which means a genuine provider outage
-   fires from multiple processes — acceptable given the 15-min
-   cool-down.
+**Layer 2 — Prometheus counter + Grafana alert (trend + fallback):**
+`metrics.llm_nlu_calls_total{success, error_type}` is incremented
+on every LLM call inside `_health_monitor_observe`. The
+`LLMNluSuccessRateLow` rule in `backend-health.yaml` aggregates
+across all workers over a 15-min window and fires when the
+cross-worker success rate drops below 80%. This covers two gaps
+in the webhook layer:
 
-**Grafana-side proxy:** `TriageEndpointLatencyRegression` in
-`backend-health.yaml` watches p95 on `/v1/triage/*` handlers. The
-LLM call is in the critical path of session turns, so sustained
-latency regression correlates with LLM degradation (either slow
-responses or the fallback to deterministic taking a detectable
-extra hop). Not a perfect signal — a healthy LLM with a slow
-Supabase write also trips this — but the alert text points ops at
-both `LLM_PROVIDER_DOWN.md` and `SUPABASE_DOWN.md` runbooks so
-triage is one click away.
+1. **Multi-worker blind spots.** Each worker's ring buffer is
+   private. A worker that hit the cool-down may stay quiet while
+   another worker is still flaky — Grafana sees all of them.
+2. **Trend visibility.** The webhook only fires when the rate
+   drops below threshold; trends leading up to that (slow
+   decay) show up on the Grafana dashboard, not in Slack.
 
-If Prometheus-native LLM metrics are needed later, the minimal
-path is adding `llm_nlu_calls_total{success}` + `llm_nlu_latency_seconds`
-counters to `metrics.py` and incrementing them inside
-`_health_monitor_observe`. Deferred from Session 11 because the
-runtime instrumentation change was intentionally out of scope.
+The two layers are redundant on purpose: webhook fires fast but
+per-worker; Grafana fires slower but cross-worker. Together they
+catch both "sudden provider outage" and "slow provider
+degradation across all workers".
+
+**Supplemental Grafana signal:** `TriageEndpointLatencyRegression`
+watches p95 on `/v1/triage/*` handlers. Since LLM calls are in
+the critical path of session turns, sustained latency regression
+often correlates with LLM degradation even when the success-rate
+counter is still green (e.g., LLM responding slow but correctly).
+The alert text points ops at both `LLM_PROVIDER_DOWN.md` and
+`SUPABASE_DOWN.md` so triage is one click away.
 
 ## Option A — Grafana Cloud (production)
 

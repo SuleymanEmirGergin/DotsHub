@@ -166,7 +166,28 @@ _LAST_ALERT_TS: float = 0.0      # monotonic seconds of last webhook fire
 
 
 def _health_monitor_observe(success: bool, error_type: Optional[str]) -> None:
-    """Append one observation and maybe fire a webhook alert."""
+    """Append one observation and maybe fire a webhook alert.
+
+    Also bumps the Prometheus `llm_nlu_calls_total{success,error_type}`
+    counter so Grafana gets trend data + a rule-based alert track
+    (see config/grafana/alerts/backend-health.yaml LLMNluSuccessRateLow).
+    The counter increment is outside the health-window lock because
+    the two paths are independent — the ring buffer drives the
+    low-latency webhook, Prometheus drives dashboards + Grafana-side
+    alerts.
+    """
+    # Prometheus counter — optional dependency, swallow missing-import
+    # so the app keeps running in the (rare) deploy where
+    # prometheus_client isn't installed.
+    try:
+        from app.observability import llm_nlu_calls_total
+        llm_nlu_calls_total.labels(
+            success="true" if success else "false",
+            error_type=error_type or "",
+        ).inc()
+    except ImportError:  # pragma: no cover — prometheus_client optional
+        pass
+
     if not getattr(settings, "LLM_HEALTH_ALERT_ENABLED", True):
         return
     window = int(getattr(settings, "LLM_HEALTH_ALERT_WINDOW", 20))
