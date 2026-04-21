@@ -4,7 +4,24 @@ Tüm önemli değişiklikler bu dosyada listelenir.
 
 ## [Unreleased]
 
-- (Yeni değişiklikler buraya.)
+### Güvenlik & bağımlılık hijyeni (tech-debt sweep, 3 oturum)
+
+- **Next.js CVE (GHSA-4342-x723-ch2f):** Dashboard `next` 15.5.12 → 15.5.15 (^15 aralığında patch-level). Typecheck + contract testleri yeşil. (Session 1 — `86ce0fa`)
+- **Mobil `npm audit`:** 8 açık (1 high + 7 moderate) → **0**. Session 1'de `npm audit fix` 7 tanesini kapattı; Session 3'te `brace-expansion` (GHSA-f886-m6hf-6m8v, ReDoS) de temizlendi. 109/109 test yeşil. (`86ce0fa`, `7f2b82d`)
+- **Dashboard dev-chain:** `pnpm audit` 5 açık (2 high + 2 moderate + 1 low picomatch / `@eslint/plugin-kit`) → **0**. `eslint` 9.19 → 9.39.4 + `eslint-config-next` 15.1 → 15.5.15 + `pnpm.overrides` ile picomatch ağaç-genelinde yamalı versiyonlara zorlandı (eslint-config-next / @typescript-eslint / tailwindcss>sucrase yamalamamış upstream zincirleri için). (Session 3 — `7f2b82d`)
+- **Dashboard dual-lockfile temizliği:** Artık sadece `pnpm-lock.yaml` izleniyor; stray `dashboard/package-lock.json` silindi (package.json'daki `"pnpm": {}` bloğu ile pnpm canonical). Mobile hâlâ npm kullanmaya devam ediyor — CONTRIBUTING.md satır 49. (`7f2b82d`)
+- **Backend bağımlılık tazeleme:** `fastapi` unpinned → `>=0.135,<0.136`, `uvicorn[standard]` → `>=0.44`. Supabase ekosistemi (supabase/postgrest/storage3/realtime) 2.27.3 → 2.28.3. Starlette 1.0 / fastapi 0.136 ise `prometheus-fastapi-instrumentator@7.1.0`'ın `starlette<1.0` pin'i yüzünden ertelendi (requirements.txt'ye yorum düşüldü). (`4f67ddf`, `7f2b82d`)
+
+### Test coverage uplift (+66 test, +1 yeni modül sıfırdan)
+
+- **`app/core/pii.py`:** 0% → **94.59%** — 30 unit test, `mask_for_log` tüm branch'leri (device_id / email / generic) + 3 uzunluk bandı (≤4 / 5–8 / >8). Log-PII leak regresyonları artık CI'da yakalanabiliyor. (`86ce0fa`)
+- **`app/api/routes/data_rights.py`:** ~20% → **100%** — 10 unit test, KVKK/GDPR tombstone UPDATE + derived-row DELETE akışının scope regresyonunu koruyor (filter-aware fake Supabase ile). (`4f67ddf`)
+- **`app/agents/orchestrator.py`:** 8.76% → **45.36%** — 56 unit test, pure/deterministik helpers (`_compute_confidence`, `_should_stop_v4` 4 termination branch'i, `_build_result_payload`, `_format_emergency_message`, `_update_negatives_from_conversation`, SessionState mutable-default izolasyonu). Async LLM yüzeyi (`handle_*`, `_finalize`) integration test alanına bırakıldı. (`4f67ddf`)
+
+### Altyapı notları
+
+- **`pytest-benchmark`:** Zaten `requirements-dev.txt`'de listeliydi; lokal venv'e kuruldu. `tests/test_perf_benchmarks.py` CI-gated baseline olarak korundu. (`4f67ddf`)
+- **Backend regresyon:** 528 → **594 pass** (+66 test), 1572 subtest pass, 0 regresyon.
 
 ## [4.6.0] — 2026-04-21
 
