@@ -121,6 +121,51 @@ If any of the above is violated, the `beforeSend` scrubber has a
 regression — open a P1 security bug; the next EAS build MUST ship a
 fix. This is load-bearing for KVKK compliance.
 
+## Quarterly PII audit
+
+Independent of any specific incident — a standing quarterly audit
+runs the same checks, expanded, over a sample of recent production
+events and replays. See `docs/SENTRY_REPLAY_POLICY.md` §6 for the
+full procedure. Condensed operator flow:
+
+1. Sample **5 distinct issues** from Sentry → Issues, filter to
+   `environment:production`, time range: last 30 days. For each,
+   open the most recent replay and confirm the four masking
+   invariants (text blocks, input blocks, URL collapse, no
+   identifying context) listed in SENTRY_REPLAY_POLICY.md §6.
+2. For the same 5 issues, pull the latest event JSON and run it
+   through the local helper:
+
+   ```bash
+   # Copy the event JSON from Sentry UI → the three-dots menu →
+   # "View as JSON" → raw. Then:
+   python scripts/sentry_event_pii_scan.py < event.json
+   ```
+
+   A PASS means no flagged patterns. A FAIL means one or more of:
+   TCKN (11-digit), phone, email, UUID (session id leak), or
+   Turkish medical free-text keywords that the `beforeSend`
+   scrubber should have stripped. Any FAIL is a P1.
+3. Alternative (if you prefer CLI-first): use the Sentry REST API
+   to pull the last 5 events of an issue as JSON:
+
+   ```bash
+   ORG=triaige
+   PROJECT=triaige-mobile-rn
+   ISSUE_ID=<copy-from-sentry-ui>
+   curl -s -H "Authorization: Bearer $SENTRY_AUTH_TOKEN" \
+     "https://sentry.io/api/0/projects/$ORG/$PROJECT/issues/$ISSUE_ID/events/?limit=5" \
+     > /tmp/events.json
+   # Then iterate through events and pipe each into the scanner:
+   jq -c '.[]' /tmp/events.json | while read -r evt; do
+     echo "$evt" | python scripts/sentry_event_pii_scan.py
+   done
+   ```
+4. Record the audit + any findings in
+   `docs/incidents/` using `TEMPLATE.md` — a passed audit is a
+   zero-finding "incident" for archival purposes (see
+   SENTRY_REPLAY_POLICY.md §6).
+
 ## Escalation
 
 - Sentry quota burned within <24h repeatedly: evaluate paid tier
