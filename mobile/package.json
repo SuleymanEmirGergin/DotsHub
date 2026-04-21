@@ -9,7 +9,8 @@
     "web": "expo start --web",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:smoke-contract": "node scripts/check_mobile_smoke_contract.cjs"
+    "test:smoke-contract": "node scripts/check_mobile_smoke_contract.cjs",
+    "test:i18n-contract": "node scripts/check_mobile_i18n_contract.cjs"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",

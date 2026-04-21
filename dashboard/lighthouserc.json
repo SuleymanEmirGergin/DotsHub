@@ -1,0 +1,36 @@
+{
+  "$schema": "https://unpkg.com/@lhci/cli@0.13.0/lighthouse-assertion-schema.json",
+  "ci": {
+    "_comment_collect": "Start the production build (not dev server) so scores reflect what users see. `next start` on port 3002 matches Playwright + other local tooling. 3 runs per URL to damp noise; the median is what LHCI asserts against. Only public routes are audited — every admin route requires a Supabase session cookie that CI doesn't carry.",
+    "collect": {
+      "_comment_cmd": "Invoke `next start` directly via `pnpm exec` rather than `pnpm run start -- --port 3002` because the nested `--` argument forwarding gets miscounted on pnpm 9: `next start` sees `--port` as the project directory and exits with 'Invalid project directory'. Dropping the indirection makes the port flag unambiguous.",
+      "startServerCommand": "pnpm run build && pnpm exec next start -p 3002",
+      "startServerReadyPattern": "Ready",
+      "startServerReadyTimeout": 60000,
+      "url": [
+        "http://localhost:3002/",
+        "http://localhost:3002/login",
+        "http://localhost:3002/privacy",
+        "http://localhost:3002/terms"
+      ],
+      "numberOfRuns": 3,
+      "settings": {
+        "preset": "desktop",
+        "chromeFlags": "--no-sandbox --disable-dev-shm-usage"
+      }
+    },
+    "_comment_assert": "Thresholds split into two tiers: `error` for load-bearing properties (accessibility, SEO basics) that a regression on is a real user-facing bug; `warn` for scores that move naturally with code size + content additions (performance, best-practices) where a minor dip per PR is acceptable but sustained decay should surface in review. We intentionally do NOT use `lighthouse:recommended` as a base preset — that layer asserts minScore on per-audit signals like `non-composited-animations`, many of which return NaN on static landing pages and trip the gate for the wrong reason. Category-level scores already aggregate the underlying audits, which is the signal we actually care about.",
+    "assert": {
+      "assertions": {
+        "categories:accessibility": ["error", { "minScore": 0.9 }],
+        "categories:best-practices": ["warn", { "minScore": 0.85 }],
+        "categories:performance": ["warn", { "minScore": 0.7 }],
+        "categories:seo": ["error", { "minScore": 0.9 }]
+      }
+    },
+    "upload": {
+      "_comment": "temporary-public-storage uploads the JSON report to a free LHCI CDN with a 7-day TTL. Each PR gets a URL to the full Lighthouse report attached to the job log — no LHCI server to run. Fine for our volume; revisit if we ship an internal dashboard for perf trend lines.",
+      "target": "temporary-public-storage"
+    }
+  }
+}
