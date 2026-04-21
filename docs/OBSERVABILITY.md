@@ -37,6 +37,8 @@ infinite feedback loop).
 | `rate_limit_hits_total`                 | Counter   | `bucket` ∈ `{default, admin, send_summary, llm_nlu}`, `outcome` ∈ `{allowed, denied}` | `app.rate_limit.check_*_rate_limit*` — one increment per public rate-limit decision. |
 | `confidence_score`                      | Histogram | — (buckets 0.1…1.0)           | Reserved for the triage engine — call `confidence_score.observe(x)` when a RESULT envelope is emitted. |
 | `llm_nlu_calls_total`                   | Counter   | `success` ∈ `{true, false}`, `error_type` ∈ `{"", timeout, rate_limit, http_error, schema_error, provider_error}` | `app.services.llm_nlu._health_monitor_observe` — once per LLM NLU call. Cross-worker view behind the per-worker in-memory webhook alert. |
+| `supabase_db_calls_total`               | Counter   | `operation` ∈ `{triage_sessions.upsert, triage_events.insert, triage_feedback.insert}` *(extensible)*, `outcome` ∈ `{success, error}` | `app.db._timed_supabase` — once per Supabase wrapper call. High-volume writes instrumented in Session 15; admin paths pending (see "Further work" below). |
+| `supabase_db_latency_seconds`           | Histogram | `operation` (same as counter) + buckets 50ms…5s | Companion histogram to the counter; p99 drives `SupabaseDbLatencyP99High`. |
 
 ### Sampling caveat — `triage_envelope_total`
 
@@ -84,7 +86,7 @@ Cloud Managed Alertmanager on every `main` push that touches
 | ---- | ----- | ------ |
 | `backend-health.yaml`     | `backend-http`         | 5xx rate, p95 latency regression |
 | `backend-health.yaml`     | `backend-rate-limit`   | Overall denial rate, LLM NLU bucket saturation, **per-bucket denial spike**, **LLM NLU success rate (cross-worker)** |
-| `backend-health.yaml`     | `backend-latency`      | **Triage p95 regression**, **Supabase write latency proxy** |
+| `backend-health.yaml`     | `backend-latency`      | **Triage p95 regression**, Supabase write latency proxy, **Supabase DB error rate (native)**, **Supabase DB p99 (native)** |
 | `backend-health.yaml`     | `backend-triage`       | EMERGENCY 3x spike, capability-gate strip ratio |
 | `backend-health.yaml`     | `backend-availability` | `up == 0` (scrape-down) |
 | `triage-envelope.yaml`    | `triage-envelope-distribution` | **EMERGENCY ratio high (>50% / 30m)**, **EMERGENCY ratio low (<2% / 24h)** |
@@ -469,6 +471,7 @@ leave a DSN in the shell never phone home.
 | `backend/app/observability/__init__.py`      | Re-exports so routes/middleware can `from app.observability import …`. |
 | `backend/app/version_gating.py`              | Increments `capability_gate_*` and `triage_envelope_total`. |
 | `backend/app/rate_limit.py`                  | Increments `rate_limit_hits_total{bucket,outcome}` at each public decision. |
+| `backend/app/db.py`                          | `_timed_supabase` context manager — increments `supabase_db_calls_total` + observes `supabase_db_latency_seconds` on the three high-volume write helpers. Admin call sites opt-in by wrapping their own `.table().execute()` blocks with `with _timed_supabase("...")`. |
 | `backend/tests/test_metrics.py`              | Verifies `/metrics` mounts + custom counters tick. Part of the 100%-branch safety-critical gate. |
 | `config/grafana/dashboard-triaige.json`      | Importable Grafana dashboard (datasource via `${DS_PROMETHEUS}` templating). |
 | `config/grafana/prometheus.yml`              | Local-dev Prometheus scrape config (Grafana Cloud does not read this). |

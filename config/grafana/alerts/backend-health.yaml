@@ -188,13 +188,14 @@ groups:
               - Supabase status: https://status.supabase.com
 
       - alert: SupabaseWriteLatencyProxy
-        # We don't instrument the supabase_client calls directly
-        # (adding Prometheus hooks there was out of scope this
-        # session). The closest available proxy is admin endpoints
-        # that do write-heavy ops — session save, feedback save,
-        # admin edits. p95 >2s sustained 10m on those points
-        # strongly at Supabase write latency; check
-        # https://status.supabase.com + /health `supabase` field.
+        # Superseded for the instrumented operations (upsert_session,
+        # insert_event, insert_feedback) by SupabaseDbLatencyP99High
+        # below. This proxy rule stays active because the admin-path
+        # .table().execute() call sites in admin_api.py + admin_v5.py
+        # are NOT yet routed through `_timed_supabase`, so they
+        # contribute only to HTTP latency. Retire this rule once the
+        # admin paths migrate + the direct DB metric reliably covers
+        # every write surface.
         expr: |
           histogram_quantile(
             0.95,
@@ -211,14 +212,79 @@ groups:
           category: latency
           downstream: supabase
         annotations:
-          summary: "Write-path p95 > 2s (Supabase latency suspected)"
+          summary: "Write-path p95 > 2s (Supabase latency proxy)"
           description: |
             p95 on write-heavy handlers is
             {{ $value | humanizeDuration }}. Typical baseline
             <500ms. Runbook: docs/runbooks/SUPABASE_DOWN.md.
-            If Supabase dashboard is green, also check the
-            connection-pool exhaustion path (SUPABASE_DB_POOLER_URL
-            vs direct).
+            Companion alert `SupabaseDbLatencyP99High` reads the
+            native supabase_db_latency_seconds histogram — cross-
+            check both when triaging.
+
+      - alert: SupabaseDbErrorRateHigh
+        # Native Supabase client error-rate alert. Fires when the
+        # `_timed_supabase` counter observes >2% error outcomes
+        # across all instrumented operations in a 5-minute window,
+        # sustained for 5 minutes. Stricter than the HTTP 5xx alert
+        # because a Supabase error is ALWAYS a real problem — it
+        # means the wrapped `.execute()` raised, which in turn means
+        # either auth is broken, the schema drifted, or Supabase
+        # itself returned a 5xx. Operation label goes in the page
+        # so ops sees which table/verb blew up without a dashboard
+        # trip.
+        expr: |
+          sum by (operation) (rate(supabase_db_calls_total{outcome="error"}[5m]))
+            /
+          clamp_min(sum by (operation) (rate(supabase_db_calls_total[5m])), 0.001)
+            > 0.02
+        for: 5m
+        labels:
+          severity: critical
+          service: backend
+          category: database
+          downstream: supabase
+        annotations:
+          summary: "Supabase error rate >2% on {{ $labels.operation }}"
+          description: |
+            {{ $value | humanizePercentage }} of recent
+            `{{ $labels.operation }}` calls raised. Possible causes
+            in rough priority order: SUPABASE_SERVICE_ROLE_KEY
+            rotated and not redeployed (check /health `supabase`
+            field), schema migration drift, Supabase provider
+            incident (status.supabase.com), connection-pool
+            exhaustion under load. Runbook:
+            docs/runbooks/SUPABASE_DOWN.md.
+
+      - alert: SupabaseDbLatencyP99High
+        # p99 latency alarm on the native client histogram. 2s p99
+        # sustained 10m is the threshold below which a real
+        # session-save regression starts to be visible to users as
+        # a spinner on the chat screen. Tighter than the HTTP-layer
+        # proxy (2s p95) because this reads the direct metric and
+        # we can take the p99 without noise from orthogonal work in
+        # the handler.
+        expr: |
+          histogram_quantile(
+            0.99,
+            sum by (le, operation) (
+              rate(supabase_db_latency_seconds_bucket[5m])
+            )
+          ) > 2
+        for: 10m
+        labels:
+          severity: warning
+          service: backend
+          category: database
+          downstream: supabase
+        annotations:
+          summary: "Supabase p99 > 2s on {{ $labels.operation }}"
+          description: |
+            p99 on `{{ $labels.operation }}` is
+            {{ $value | humanizeDuration }}. Typical baseline
+            <500ms. Connection-pool exhaustion under load is the
+            most frequent cause; swap to SUPABASE_DB_POOLER_URL if
+            not already in use (.env.example documents both).
+            Runbook: docs/runbooks/SUPABASE_DOWN.md.
 
   - name: backend-triage
     interval: 1m

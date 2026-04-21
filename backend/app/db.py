@@ -3,8 +3,10 @@ from __future__ import annotations
 
 import os
 import hashlib
+import time
+from contextlib import contextmanager
 from datetime import datetime, timezone
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Iterator, Optional
 from urllib.parse import urlparse
 
 from supabase import create_client, Client
@@ -43,20 +45,81 @@ def hash_ip(ip: Optional[str]) -> Optional[str]:
     return h
 
 
+@contextmanager
+def _timed_supabase(operation: str) -> Iterator[None]:
+    """Measure a Supabase call's latency + outcome.
+
+    Wraps the `with _timed_supabase("op_name"): supabase.table(...)`
+    pattern so `supabase_db_calls_total` + `supabase_db_latency_seconds`
+    pick up every wrapped invocation. Exceptions re-raise unchanged
+    after the error counter fires — the block is observability only,
+    it MUST NOT change call semantics.
+
+    Prometheus is an optional runtime dep (the app runs fine without
+    it in a local-dev scenario), so metric lookup is wrapped in a
+    defensive import. A missing metrics module means the block is
+    effectively a no-op timer; latency is still measured locally but
+    not recorded.
+
+    Usage:
+
+        with _timed_supabase("triage_sessions.upsert"):
+            supabase.table("triage_sessions").upsert(row).execute()
+
+    Operation naming convention: `<table>.<verb>` (e.g.
+    `triage_events.insert`). Keeps the `operation` label
+    cardinality bounded + readable in the Grafana query.
+    """
+    try:
+        from app.observability import (
+            supabase_db_calls_total,
+            supabase_db_latency_seconds,
+        )
+    except ImportError:  # pragma: no cover — prometheus_client optional
+        supabase_db_calls_total = None  # type: ignore[assignment]
+        supabase_db_latency_seconds = None  # type: ignore[assignment]
+
+    t0 = time.monotonic()
+    try:
+        yield
+    except BaseException:
+        if supabase_db_calls_total is not None:
+            supabase_db_calls_total.labels(
+                operation=operation, outcome="error"
+            ).inc()
+        if supabase_db_latency_seconds is not None:
+            supabase_db_latency_seconds.labels(
+                operation=operation
+            ).observe(time.monotonic() - t0)
+        raise
+    else:
+        if supabase_db_calls_total is not None:
+            supabase_db_calls_total.labels(
+                operation=operation, outcome="success"
+            ).inc()
+        if supabase_db_latency_seconds is not None:
+            supabase_db_latency_seconds.labels(
+                operation=operation
+            ).observe(time.monotonic() - t0)
+
+
 def upsert_session(session_id: str, row: Dict[str, Any]) -> None:
     # updated_at otomatik değilse burada set et
     row["session_id"] = session_id
     row["updated_at"] = datetime.now(timezone.utc).isoformat()
-    supabase.table("triage_sessions").upsert(row).execute()
+    with _timed_supabase("triage_sessions.upsert"):
+        supabase.table("triage_sessions").upsert(row).execute()
 
 
 def insert_event(session_id: str, event: str, data: Optional[Dict[str, Any]] = None) -> None:
-    supabase.table("triage_events").insert({
-        "session_id": session_id,
-        "event": event,
-        "data": data or {},
-    }).execute()
+    with _timed_supabase("triage_events.insert"):
+        supabase.table("triage_events").insert({
+            "session_id": session_id,
+            "event": event,
+            "data": data or {},
+        }).execute()
 
 
 def insert_feedback(row: Dict[str, Any]) -> None:
-    supabase.table("triage_feedback").insert(row).execute()
+    with _timed_supabase("triage_feedback.insert"):
+        supabase.table("triage_feedback").insert(row).execute()
