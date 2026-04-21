@@ -14,7 +14,8 @@
     "test:e2e": "playwright test --project=localhost",
     "test:e2e:ui": "playwright test --project=localhost --ui",
     "test:e2e:staging": "cross-env E2E_MODE=staging playwright test --project=staging",
-    "test:e2e:staging:ui": "cross-env E2E_MODE=staging playwright test --project=staging --ui"
+    "test:e2e:staging:ui": "cross-env E2E_MODE=staging playwright test --project=staging --ui",
+    "test:lighthouse": "lhci autorun --config=./lighthouserc.json"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.1.0",
@@ -29,6 +30,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.5",
+    "@lhci/cli": "^0.14.0",
     "@playwright/test": "^1.49.0",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",

@@ -56,3 +56,19 @@ jobs:
           # + MSW v2 work fine on the default CJS loader given the
           # transformIgnorePatterns in jest.config.js.
           NODE_OPTIONS: "--no-warnings"
+
+      - name: Mobile i18n contract check (5 locales x same keyset)
+        # Pure-Node contract test: every locale file must carry the
+        # same dotted-key set as tr.json (primary). Also checks
+        # {placeholder} parity so a missing interpolation doesn't
+        # silently drop dynamic content in translation. Fails the
+        # job if any locale drifts; see
+        # mobile/scripts/check_mobile_i18n_contract.cjs for the
+        # failure-report format.
+        run: npm run test:i18n-contract
+
+      - name: Mobile smoke contract check
+        # Structural asserts against _layout.tsx + api clients so a
+        # "move fast" refactor doesn't silently break the locale /
+        # device-id / summary contracts the app relies on at launch.
+        run: npm run test:smoke-contract
