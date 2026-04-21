@@ -136,6 +136,10 @@ class AdminV5AuthTests(unittest.TestCase):
         with TestClient(app) as client:
             return client.get("/v1/admin/feedback/list?limit=20", headers=headers or {})
 
+    def _get_daily_summary(self, headers: dict[str, str] | None = None):
+        with TestClient(app) as client:
+            return client.get("/v1/admin/stats/daily-summary?days=30", headers=headers or {})
+
     def test_returns_503_when_admin_key_missing(self):
         with patch("app.admin_auth.settings.ADMIN_API_KEY", ""):
             response = self._get_sessions(headers={"x-admin-key": "anything"})
@@ -189,6 +193,35 @@ class AdminV5AuthTests(unittest.TestCase):
         self.assertEqual(data.get("count"), 2)
         self.assertTrue(data.get("items"))
         self.assertEqual(data["items"][0].get("session_specialty"), "Noroloji")
+
+
+    def test_daily_summary_funnel_counts(self):
+        """Funnel aggregates envelope_type + feedback join correctly.
+
+        Fixture has 2 sessions (RESULT + EMERGENCY) and 2 feedback rows
+        (one per session). Expected funnel:
+          started=2, questioned=2 (cumulative; both resulted passed through
+          Q&A), resulted=2 (RESULT+EMERGENCY+SAME_DAY), feedback=2.
+        Also verifies by_envelope exposes the raw terminal-envelope tally.
+        """
+        with (
+            patch("app.admin_auth.settings.ADMIN_API_KEY", "secret"),
+            patch.object(admin_v5, "supabase", _FakeSupabase()),
+        ):
+            resp = self._get_daily_summary(headers={"x-admin-key": "secret"})
+
+        self.assertEqual(resp.status_code, 200)
+        body = resp.json()
+
+        self.assertIn("funnel", body)
+        self.assertEqual(body["funnel"]["started"], 2)
+        self.assertEqual(body["funnel"]["questioned"], 2)
+        self.assertEqual(body["funnel"]["resulted"], 2)
+        self.assertEqual(body["funnel"]["feedback"], 2)
+
+        self.assertIn("by_envelope", body)
+        self.assertEqual(body["by_envelope"].get("RESULT"), 1)
+        self.assertEqual(body["by_envelope"].get("EMERGENCY"), 1)
 
 
 if __name__ == "__main__":

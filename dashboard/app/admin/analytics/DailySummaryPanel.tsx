@@ -48,11 +48,20 @@ type DailySummary = {
   total: number;
   daily_totals: Array<{ day: string; count: number }>;
   by_urgency: Record<string, number>;
+  by_envelope?: Record<string, number>;
+  funnel?: {
+    started: number;
+    questioned: number;
+    resulted: number;
+    feedback: number;
+  };
   top_specialties: Array<{ name: string; count: number }>;
   avg_confidence_by_day: Array<{ day: string; avg: number | null }>;
   low_confidence_count: number;
   low_confidence_pct: number;
 };
+
+type WindowDays = 7 | 14 | 30;
 
 // Urgency severity colour mapping. Aligned with the mobile
 // result-screen palette so the user-facing green/amber/red matches
@@ -83,13 +92,17 @@ function formatDayTR(isoDay: string): string {
 export default function DailySummaryPanel() {
   const [data, setData] = useState<DailySummary | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Window selector — 7 default to keep the first render tight (fewer
+  // bars in the daily-throughput chart). 14/30 surface weekly/monthly
+  // trend without requiring a separate endpoint; backend clamps at 30.
+  const [windowDays, setWindowDays] = useState<WindowDays>(7);
 
   useEffect(() => {
     let cancelled = false;
 
     async function load() {
       try {
-        const r = await fetch("/api/admin/daily-summary?days=7", {
+        const r = await fetch(`/api/admin/daily-summary?days=${windowDays}`, {
           cache: "no-store",
         });
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
@@ -106,20 +119,47 @@ export default function DailySummaryPanel() {
       cancelled = true;
       clearInterval(id);
     };
-  }, []);
+  }, [windowDays]);
+
+  const windowSelector = (
+    <div className="flex gap-1 mb-4" role="group" aria-label="Zaman aralığı">
+      {([7, 14, 30] as const).map((n) => (
+        <button
+          key={n}
+          type="button"
+          onClick={() => setWindowDays(n)}
+          className={
+            "px-3 py-1 text-xs rounded-md border transition-colors " +
+            (windowDays === n
+              ? "border-primary bg-primary text-primary-foreground"
+              : "border-border bg-card text-muted-foreground hover:bg-muted")
+          }
+          aria-pressed={windowDays === n}
+        >
+          {n === 7 ? "7 gün" : n === 14 ? "14 gün" : "30 gün"}
+        </button>
+      ))}
+    </div>
+  );
 
   if (error) {
     return (
-      <div className="p-4 rounded-xl border border-border bg-card text-sm text-red-500">
-        Analitik yüklenemedi: {error}
+      <div>
+        {windowSelector}
+        <div className="p-4 rounded-xl border border-border bg-card text-sm text-red-500">
+          Analitik yüklenemedi: {error}
+        </div>
       </div>
     );
   }
 
   if (!data) {
     return (
-      <div className="p-4 rounded-xl border border-border bg-card text-sm text-muted-foreground animate-pulse">
-        Son 7 gün yükleniyor…
+      <div>
+        {windowSelector}
+        <div className="p-4 rounded-xl border border-border bg-card text-sm text-muted-foreground animate-pulse">
+          Son {windowDays} gün yükleniyor…
+        </div>
       </div>
     );
   }
@@ -146,7 +186,24 @@ export default function DailySummaryPanel() {
     .map((d) => ({ day: formatDayTR(d.day), avg: d.avg }))
     .filter((d) => d.avg !== null) as Array<{ day: string; avg: number }>;
 
+  // ─── Funnel stages ──────────────────────────────────────────────
+  // Each step's conversion rate is relative to the *previous* step.
+  // The first step anchors at 100% as the baseline. "No data" degrades
+  // to hiding the card so we don't render an empty funnel.
+  const funnel = data.funnel;
+  const funnelStages = funnel
+    ? [
+        { key: "started", label: "Semptom girildi", count: funnel.started },
+        { key: "questioned", label: "Soru-cevap", count: funnel.questioned },
+        { key: "resulted", label: "Sonuç alındı", count: funnel.resulted },
+        { key: "feedback", label: "Geri bildirim", count: funnel.feedback },
+      ]
+    : [];
+  const maxFunnel = funnelStages.reduce((m, s) => Math.max(m, s.count), 0);
+
   return (
+    <div>
+      {windowSelector}
     <div className="grid gap-4 grid-cols-1 md:grid-cols-3 mb-6">
       {/* ───── Card 1: Total + confidence trend ───── */}
       <div className="p-4 rounded-xl border border-border bg-card text-card-foreground md:col-span-1">
@@ -312,6 +369,53 @@ export default function DailySummaryPanel() {
           </div>
         )}
       </div>
+    </div>
+
+    {/* ───── Funnel card (full-width) ─────
+        Shows the drop-off between: symptom → Q&A → result → feedback.
+        Horizontal bar widths are relative to the first stage (max), so
+        the "funnel" shape reads left-to-right as diminishing width.
+        Conversion % labels use stage-over-previous-stage ratio, which
+        is the operational metric — how many users kept going at each
+        step. Zero-total windows hide the card entirely. */}
+    {funnelStages.length > 0 && maxFunnel > 0 && (
+      <div className="p-4 rounded-xl border border-border bg-card text-card-foreground mb-6">
+        <div className="text-xs text-muted-foreground mb-3">
+          Dönüşüm hunisi · son {data.window_days} gün
+        </div>
+        <div className="flex flex-col gap-3">
+          {funnelStages.map((stage, i) => {
+            const widthPct = (stage.count / maxFunnel) * 100;
+            const prev = i > 0 ? funnelStages[i - 1].count : null;
+            const conv =
+              prev !== null && prev > 0
+                ? (stage.count / prev) * 100
+                : null;
+            return (
+              <div key={stage.key} className="flex flex-col gap-1">
+                <div className="flex justify-between text-[13px]">
+                  <span className="font-semibold">{stage.label}</span>
+                  <span className="text-muted-foreground tabular-nums">
+                    {stage.count.toLocaleString("tr-TR")}
+                    {conv !== null && (
+                      <span className="ml-2 text-xs">
+                        ({conv.toFixed(1)}%)
+                      </span>
+                    )}
+                  </span>
+                </div>
+                <div className="h-2.5 rounded bg-border overflow-hidden">
+                  <div
+                    className="h-full rounded bg-indigo-500 dark:bg-indigo-400 min-w-[2px] transition-all"
+                    style={{ width: `${Math.max(widthPct, 1)}%` }}
+                  />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    )}
     </div>
   );
 }

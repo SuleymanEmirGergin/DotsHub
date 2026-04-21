@@ -398,7 +398,15 @@ def daily_summary(
     daily_conf_n: Dict[str, int] = {}
 
     by_urgency: Dict[str, int] = {}
+    by_envelope: Dict[str, int] = {}
     specialty_counts: Dict[str, int] = {}
+
+    # Track session_ids per terminal envelope for the funnel. We only
+    # count a session once per bucket — a session's row carries the
+    # *last* envelope state, so set-semantics are already implied by the
+    # one-row-per-session shape, but we keep the set explicit so the
+    # feedback join below is unambiguous.
+    session_ids_in_window: set[str] = set()
 
     low_conf_total = 0
 
@@ -432,9 +440,17 @@ def daily_summary(
         urg = r.get("urgency") or "UNKNOWN"
         by_urgency[urg] = by_urgency.get(urg, 0) + 1
 
+        # Envelope type breakdown — powers the funnel. Bounded set
+        # (RESULT / EMERGENCY / SAME_DAY / QUESTION / ERROR / null).
+        env = r.get("envelope_type") or "NONE"
+        by_envelope[env] = by_envelope.get(env, 0) + 1
+
+        sid = r.get("session_id")
+        if isinstance(sid, str):
+            session_ids_in_window.add(sid)
+
         # Top specialties — only count RESULT envelopes so EMERGENCY
         # reroutes (which overwrite specialty) don't skew the list.
-        env = r.get("envelope_type")
         spec = r.get("recommended_specialty_tr")
         if env == "RESULT" and spec:
             specialty_counts[spec] = specialty_counts.get(spec, 0) + 1
@@ -460,11 +476,66 @@ def daily_summary(
     ]
 
     total = len(rows)
+
+    # ─── Funnel: symptom → result → feedback ───────────────────────
+    # Stages:
+    #   1. "started"    — any row in window (symptom was entered)
+    #   2. "questioned" — reached the QUESTION phase (Q&A started)
+    #   3. "resulted"   — terminal envelope RESULT / EMERGENCY / SAME_DAY
+    #   4. "feedback"   — session received at least one feedback row
+    #
+    # QUESTION vs resulted is mutually exclusive at the row level
+    # (envelope_type is the *last* state) — so "questioned" here means
+    # sessions that stalled in Q&A and never completed. For a proper
+    # funnel we want cumulative counts: a resulted session *did* pass
+    # through questioning, so the questioned stage count = questioned +
+    # resulted. We fold that here.
+    resulted_terminal = (
+        by_envelope.get("RESULT", 0)
+        + by_envelope.get("EMERGENCY", 0)
+        + by_envelope.get("SAME_DAY", 0)
+    )
+    questioned_stalled = by_envelope.get("QUESTION", 0)
+    questioned_cum = questioned_stalled + resulted_terminal
+
+    # Feedback join — count distinct sessions (in this window) that
+    # have a feedback row. Supabase `in_` filter has a ~1000 URL-length
+    # cap in practice; chunk session_id list to stay safe at the 10k
+    # session limit this endpoint queries.
+    feedback_session_count = 0
+    if session_ids_in_window:
+        sid_list = list(session_ids_in_window)
+        seen: set[str] = set()
+        for i in range(0, len(sid_list), 500):
+            chunk = sid_list[i : i + 500]
+            fb_rows = (
+                supabase.table("triage_feedback")
+                .select("session_id")
+                .in_("session_id", chunk)
+                .execute()
+                .data
+                or []
+            )
+            for fb in fb_rows:
+                s = fb.get("session_id")
+                if isinstance(s, str):
+                    seen.add(s)
+        feedback_session_count = len(seen)
+
+    funnel = {
+        "started": total,
+        "questioned": questioned_cum,
+        "resulted": resulted_terminal,
+        "feedback": feedback_session_count,
+    }
+
     return {
         "window_days": days,
         "total": total,
         "daily_totals": daily_totals,
         "by_urgency": by_urgency,
+        "by_envelope": by_envelope,
+        "funnel": funnel,
         "top_specialties": top_specialties,
         "avg_confidence_by_day": avg_confidence_by_day,
         "low_confidence_count": low_conf_total,
