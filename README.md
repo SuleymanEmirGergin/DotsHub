@@ -223,6 +223,27 @@ Run ESLint (requires network access in environments with offline npm cache polic
 cd dashboard && npm run lint:eslint
 ```
 
+Run the Lighthouse CI budget check (production build + 4 public URLs × 3 runs each;
+asserts against thresholds in `dashboard/lighthouserc.json`):
+
+```bash
+cd dashboard && pnpm run test:lighthouse
+```
+
+## Local Mobile Quality
+
+Run Jest + contract checks:
+
+```bash
+cd mobile && npm test
+cd mobile && npm run test:smoke-contract    # structural asserts on _layout + API clients
+cd mobile && npm run test:i18n-contract     # 5 locales × same key set + placeholder parity
+```
+
+The i18n contract fails the CI job if any locale drifts from `tr.json`
+(primary). Same pattern as the dashboard's `test:i18n-contract` for
+deployment-page strings — adopted across mobile in Session 12.
+
 ## What This Is Not
 
 - Not a diagnosis engine

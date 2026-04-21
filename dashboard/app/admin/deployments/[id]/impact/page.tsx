@@ -17,6 +17,34 @@ type Commentary = {
   actions: string[];
 };
 
+// Permissive shape for the impact report JSON. Ops adds stat
+// columns to the report generator without coordinating with this
+// TS layer — the index signature keeps every scalar slot typed as
+// `number | undefined`, which keeps arithmetic + `.toFixed` + JSX
+// rendering type-safe. `daily_series` is the sole array-valued
+// slot; we layer it on via intersection so the narrower type wins
+// at the property access site.
+type DailyPoint = { down_rate?: number; confidence?: number };
+type ImpactStats = Record<string, number | undefined> & {
+  daily_series?: DailyPoint[];
+};
+
+type ImpactReport = {
+  before?: ImpactStats;
+  after?: ImpactStats;
+  delta?: Record<string, number | null | undefined>;
+  [key: string]: unknown;
+};
+
+type Guardrails = {
+  thresholds?: {
+    down_rate_max_delta?: number;
+    confidence_decrease_max?: number;
+    avg_questions_increase_max?: number;
+  };
+  min_feedback_after?: number;
+};
+
 async function getLocale(): Promise<Locale> {
   const store = await cookies();
   return store.get("NEXT_LOCALE")?.value === "en" ? "en" : "tr";
@@ -30,18 +58,18 @@ function formatText(template: string, params: Record<string, string | number>): 
   return out;
 }
 
-function loadGuardrails() {
+function loadGuardrails(): Guardrails | null {
   try {
     const p = path.join(process.cwd(), "..", "config", "tuning_guardrails.json");
-    return JSON.parse(fs.readFileSync(p, "utf-8"));
+    return JSON.parse(fs.readFileSync(p, "utf-8")) as Guardrails;
   } catch {
     return null;
   }
 }
 
 function buildImpactCommentary(
-  impact: any,
-  guardrails: any,
+  impact: ImpactReport,
+  guardrails: Guardrails | null,
   t: (key: string) => string,
 ): Commentary {
   const g = guardrails ?? { thresholds: {}, min_feedback_after: 30 };
@@ -228,7 +256,7 @@ export default async function DeploymentImpactPage({
   const t = (key: string) => getText(locale, key);
   const { id } = await params;
 
-  let impact = null;
+  let impact: ImpactReport | null = null;
   try {
     const reportsDir = path.join(process.cwd(), "..", "backend", "reports");
     const files = fs
@@ -239,7 +267,7 @@ export default async function DeploymentImpactPage({
     if (files.length > 0) {
       const latest = files[files.length - 1];
       const p = path.join(reportsDir, latest);
-      impact = JSON.parse(fs.readFileSync(p, "utf-8"));
+      impact = JSON.parse(fs.readFileSync(p, "utf-8")) as ImpactReport;
     }
   } catch (e) {
     console.error("Failed to load impact:", e);
@@ -271,8 +299,8 @@ export default async function DeploymentImpactPage({
   const delta = impact.delta ?? {};
 
   const dailySeries = after.daily_series || [];
-  const downRateSeries = dailySeries.map((d: any) => d.down_rate ?? 0);
-  const confSeries = dailySeries.map((d: any) => d.confidence ?? 0);
+  const downRateSeries = dailySeries.map((d) => d.down_rate ?? 0);
+  const confSeries = dailySeries.map((d) => d.confidence ?? 0);
 
   return (
     <div className="p-6 font-sans bg-background text-foreground min-h-screen">

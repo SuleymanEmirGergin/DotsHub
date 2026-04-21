@@ -132,10 +132,10 @@ export default async function FeedbackPage({
     .order("created_at", { ascending: true });
 
   const dailyMap: Record<string, { up: number; down: number }> = {};
-  (trendRaw ?? []).forEach((r: any) => {
+  ((trendRaw ?? []) as Array<{ created_at: string; rating: "up" | "down" }>).forEach((r) => {
     const day = new Date(r.created_at).toISOString().slice(0, 10);
     if (!dailyMap[day]) dailyMap[day] = { up: 0, down: 0 };
-    dailyMap[day][r.rating as "up" | "down"] += 1;
+    dailyMap[day][r.rating] += 1;
   });
   const trend = Object.entries(dailyMap)
     .sort((a, b) => a[0].localeCompare(b[0]))
@@ -156,8 +156,24 @@ export default async function FeedbackPage({
   const { data: feedbackRows } = await fbQuery;
   const fbList = feedbackRows ?? [];
 
-  const sessionIds = [...new Set(fbList.map((r: any) => r.session_id).filter(Boolean))];
-  const sessMap: Record<string, any> = {};
+  // Typed session-detail lookup. Keeping fields optional mirrors
+  // the Supabase row shape (nullable columns) without forcing us
+  // to case-split on every access site; undefined on a missing
+  // key degrades gracefully to an em-dash in the JSX below.
+  type FeedbackSession = {
+    id: string;
+    envelope_type?: string | null;
+    recommended_specialty_tr?: string | null;
+    confidence_0_1?: number | null;
+  };
+  const sessionIds = [
+    ...new Set(
+      (fbList as Array<{ session_id: string | null }>)
+        .map((r) => r.session_id)
+        .filter((id): id is string => Boolean(id)),
+    ),
+  ];
+  const sessMap: Record<string, FeedbackSession> = {};
 
   if (sessionIds.length > 0) {
     const { data: sessions } = await sb
@@ -165,7 +181,7 @@ export default async function FeedbackPage({
       .select("id,envelope_type,recommended_specialty_tr,confidence_0_1")
       .in("id", sessionIds.slice(0, 200));
 
-    (sessions ?? []).forEach((s: any) => {
+    ((sessions ?? []) as FeedbackSession[]).forEach((s) => {
       sessMap[s.id] = s;
     });
   }
@@ -177,7 +193,13 @@ export default async function FeedbackPage({
     .order("created_at", { ascending: false })
     .limit(500);
 
-  const downSessionIds = [...new Set((downFb ?? []).map((r: any) => r.session_id).filter(Boolean))];
+  const downSessionIds = [
+    ...new Set(
+      ((downFb ?? []) as Array<{ session_id: string | null }>)
+        .map((r) => r.session_id)
+        .filter((id): id is string => Boolean(id)),
+    ),
+  ];
   const specDownCounts: Record<string, number> = {};
 
   if (downSessionIds.length > 0) {
@@ -187,7 +209,7 @@ export default async function FeedbackPage({
       .in("id", downSessionIds.slice(0, 200));
 
     const dMap: Record<string, string> = {};
-    (downSessions ?? []).forEach((s: any) => {
+    ((downSessions ?? []) as Array<{ id: string; recommended_specialty_tr?: string | null }>).forEach((s) => {
       dMap[s.id] = s.recommended_specialty_tr ?? getText(locale, "analytics.unknown");
     });
 
@@ -319,8 +341,18 @@ export default async function FeedbackPage({
             </tr>
           </thead>
           <tbody>
-            {fbList.map((row: any) => {
-              const sess = sessMap[row.session_id] || {};
+            {(fbList as Array<{
+              id: string;
+              session_id: string;
+              rating: string;
+              comment?: string | null;
+              user_selected_specialty_id?: string | null;
+              created_at: string;
+              acknowledged_at?: string | null;
+              acknowledged_by?: string | null;
+              ack_note?: string | null;
+            }>).map((row) => {
+              const sess = sessMap[row.session_id] || ({} as FeedbackSession);
               return (
                 <tr key={row.id} className="border-b border-border transition-colors hover:bg-muted/20">
                   <td className="p-3.5 text-[13px]">

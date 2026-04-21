@@ -1,7 +1,20 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Breadcrumb } from "@/app/components/Breadcrumb";
+
+// Nested JSON blob the backend writes into `triage_sessions.meta`.
+// Shape is deliberately loose — new keys land here without coordinating
+// with this TS layer. The paths we actually READ are `risk_level`
+// (+ legacy `risk.level`), `risk_score_0_1` (+ legacy nested), and
+// `duration_days` (shown in the detail drawer). Other keys pass
+// through unchecked via the index signature.
+type SessionMeta = Record<string, unknown> & {
+  risk_level?: string;
+  risk_score_0_1?: number;
+  risk?: { level?: string; score_0_1?: number };
+  duration_days?: number;
+};
 
 type SessionRow = {
   session_id: string;
@@ -12,7 +25,7 @@ type SessionRow = {
   confidence_0_1: number | null;
   recommended_specialty_id: number | null;
   extracted_canonicals: string[];
-  meta: any;
+  meta: SessionMeta | null;
 };
 
 type SessionsResp = { items: SessionRow[] };
@@ -43,14 +56,14 @@ type Overview = {
     high_risk_rate: number;
     low_conf_status: HealthStatus;
     high_risk_status: HealthStatus;
-    thresholds: any;
+    thresholds: Record<string, unknown>;
   };
 };
 
 type SessionDetail = {
-  session: any;
-  events: any[];
-  feedback: any[];
+  session: (Record<string, unknown> & { meta?: SessionMeta | null }) | null;
+  events: Array<Record<string, unknown>>;
+  feedback: Array<Record<string, unknown>>;
 };
 
 function pillClass(kind: HealthStatus) {
@@ -70,19 +83,19 @@ function riskBadge(level?: string) {
   return `${base} border-slate-300 text-slate-500`;
 }
 
-function getRiskLevel(meta: any): string | undefined {
+function getRiskLevel(meta: SessionMeta | null | undefined): string | undefined {
   if (!meta || typeof meta !== "object") return undefined;
-  const direct = meta?.risk_level;
+  const direct = meta.risk_level;
   if (typeof direct === "string" && direct) return direct.toUpperCase();
-  const nested = meta?.risk?.level;
+  const nested = meta.risk?.level;
   if (typeof nested === "string" && nested) return nested.toUpperCase();
   return undefined;
 }
 
-function getRiskScore(meta: any): number | undefined {
+function getRiskScore(meta: SessionMeta | null | undefined): number | undefined {
   if (!meta || typeof meta !== "object") return undefined;
-  if (typeof meta?.risk_score_0_1 === "number") return meta.risk_score_0_1;
-  if (typeof meta?.risk?.score_0_1 === "number") return meta.risk.score_0_1;
+  if (typeof meta.risk_score_0_1 === "number") return meta.risk_score_0_1;
+  if (typeof meta.risk?.score_0_1 === "number") return meta.risk.score_0_1;
   return undefined;
 }
 
@@ -181,7 +194,7 @@ export default function SessionsPageV5() {
     return p.toString();
   }, [onlyProblems, limit, envelopeType, stopReason]);
 
-  async function load() {
+  const load = useCallback(async () => {
     const [s, o, lc, rh] = await Promise.all([
       fetch(`/api/admin/sessions?${query}`, { cache: "no-store" }).then((r) => r.json()),
       fetch(`/api/admin/stats?lookback_limit=800`, { cache: "no-store" }).then((r) => r.json()),
@@ -191,13 +204,21 @@ export default function SessionsPageV5() {
 
     setItems((s as SessionsResp).items ?? []);
     setOverview(o as Overview);
-    setSeries((lc?.points ?? []).map((p: any) => Number(p.low_conf_rate) || 0));
-    setRiskHighSeries((rh?.points ?? []).map((p: any) => Number(p.high_risk_rate) || 0));
-  }
+    setSeries(
+      ((lc?.points ?? []) as Array<{ low_conf_rate?: number | string }>).map(
+        (p) => Number(p.low_conf_rate) || 0,
+      ),
+    );
+    setRiskHighSeries(
+      ((rh?.points ?? []) as Array<{ high_risk_rate?: number | string }>).map(
+        (p) => Number(p.high_risk_rate) || 0,
+      ),
+    );
+  }, [query]);
 
   useEffect(() => {
     load();
-  }, [query]);
+  }, [load]);
 
   const high = overview?.by_risk_level?.HIGH ?? 0;
   const total = overview?.total ?? 0;

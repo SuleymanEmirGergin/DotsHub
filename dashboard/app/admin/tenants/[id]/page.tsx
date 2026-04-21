@@ -7,7 +7,20 @@ import { CatalogEditor } from "./CatalogEditor";
 
 export const dynamic = "force-dynamic";
 
-async function fetchCatalog(id: string): Promise<{ ok: boolean; data?: any; error?: string }> {
+// Shape of the curated catalog JSON we proxy from the backend. Each
+// `conditions[disease_label]` entry is an object whose shape varies
+// over time (new per-tenant metadata fields land here freely), so
+// we keep its value as Record<string, unknown> and let the editor
+// handle rendering + validation.
+type CatalogPayload = {
+  version?: string;
+  language?: string;
+  disclaimer_tr?: string;
+  tenant_scope?: string;
+  conditions?: Record<string, Record<string, unknown>>;
+};
+
+async function fetchCatalog(id: string): Promise<{ ok: boolean; data?: CatalogPayload; error?: string }> {
   const base = process.env.NEXT_PUBLIC_API_BASE;
   const key = process.env.ADMIN_API_KEY;
   if (!base || !key) return { ok: false, error: "NEXT_PUBLIC_API_BASE veya ADMIN_API_KEY tanımlı değil." };
@@ -17,9 +30,10 @@ async function fetchCatalog(id: string): Promise<{ ok: boolean; data?: any; erro
       { headers: { "x-admin-key": key }, cache: "no-store", signal: AbortSignal.timeout(10000) },
     );
     if (!r.ok) return { ok: false, error: `HTTP ${r.status}` };
-    return { ok: true, data: await r.json() };
-  } catch (e: any) {
-    return { ok: false, error: e?.message ?? "fetch failed" };
+    return { ok: true, data: (await r.json()) as CatalogPayload };
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : "fetch failed";
+    return { ok: false, error: msg };
   }
 }
 

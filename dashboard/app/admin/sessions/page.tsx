@@ -69,7 +69,11 @@ export default async function SessionsPage({
       .limit(500);
 
     sessionIds = Array.from(
-      new Set((fb ?? []).map((x: any) => x.session_id).filter(Boolean)),
+      new Set(
+        ((fb ?? []) as Array<{ session_id: string | null }>)
+          .map((x) => x.session_id)
+          .filter((id): id is string => Boolean(id)),
+      ),
     );
     if (sessionIds.length === 0) {
       sessionIds = ["00000000-0000-0000-0000-000000000000"];

@@ -91,6 +91,45 @@ jobs:
             exit 0
           )
 
+      - name: Smoke — /health endpoint returns 200 over HTTP
+        # Beyond the import check above, spin the image with the
+        # real uvicorn entrypoint and hit /health to prove the
+        # FastAPI router actually mounts. The route itself is
+        # permissive: it returns 200 with `supabase: "not_configured"`
+        # when SUPABASE_URL is unset, so we don't need any real env
+        # for a serving smoke. Catches:
+        #   - Router wiring regression (app.include_router typo)
+        #   - Middleware crash-on-request (e.g. capability-gate
+        #     raises before returning the response)
+        #   - Port binding regression (entrypoint runs on wrong port)
+        #
+        # If the container doesn't come up within 15s, we print
+        # logs + fail the step — a stuck boot is a real deploy
+        # blocker we want to catch at PR time.
+        run: |
+          set -euo pipefail
+          docker run -d --name pretriage-smoke -p 18000:8000 pretriage-backend:ci
+          # Poll /health for up to 15s. Uvicorn typically boots in
+          # <3s on GHA runners; the ceiling handles a cold Docker
+          # network attach.
+          for i in $(seq 1 15); do
+            if curl -fsS -o /tmp/health.json -w "%{http_code}" http://localhost:18000/health > /tmp/health.code; then
+              break
+            fi
+            sleep 1
+          done
+          STATUS=$(cat /tmp/health.code 2>/dev/null || echo "000")
+          if [[ "$STATUS" != "200" ]]; then
+            echo "::error::/health returned HTTP $STATUS — container failed to serve."
+            docker logs pretriage-smoke || true
+            docker rm -f pretriage-smoke || true
+            exit 1
+          fi
+          echo "OK: /health returned 200"
+          cat /tmp/health.json
+          echo
+          docker rm -f pretriage-smoke
+
   safety-critical-coverage:
     # Gate: blocks merge if branch coverage of safety-critical modules
     # (emergency_router, safety_guard, version_gating) drops below 100%.

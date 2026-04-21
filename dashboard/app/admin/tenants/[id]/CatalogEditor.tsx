@@ -4,9 +4,18 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 
+// Catalog payload is a free-shape JSON object rendered in a textarea
+// and round-tripped through JSON.parse. We don't need to enumerate
+// its contents — the editor treats it as opaque and only the save
+// path does a minimal conditions-count preview.
+type CatalogShape = { conditions?: Record<string, unknown> } & Record<
+  string,
+  unknown
+>;
+
 type Props = {
   tenantId: string;
-  initial: any;
+  initial: CatalogShape | null | undefined;
 };
 
 // Minimal but complete catalog editor: JSON textarea with a pre-save
@@ -34,9 +43,14 @@ export function CatalogEditor({ tenantId, initial }: Props) {
   // as you type without triggering a save.
   const parsed = useMemo(() => {
     try {
-      return { ok: true, data: JSON.parse(text), error: null as null | string };
-    } catch (e: any) {
-      return { ok: false, data: null, error: String(e?.message ?? e) };
+      return {
+        ok: true,
+        data: JSON.parse(text) as CatalogShape,
+        error: null as null | string,
+      };
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      return { ok: false, data: null, error: msg };
     }
   }, [text]);
 
@@ -68,8 +82,9 @@ export function CatalogEditor({ tenantId, initial }: Props) {
         type: "success",
         msg: `Kaydedildi — ${data.condition_count ?? 0} hastalık.`,
       });
-    } catch (e: any) {
-      setNotice({ type: "error", msg: e?.message ?? "istek başarısız" });
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "istek başarısız";
+      setNotice({ type: "error", msg });
     } finally {
       setBusy(false);
     }
@@ -108,8 +123,9 @@ export function CatalogEditor({ tenantId, initial }: Props) {
       // doesn't keep rendering in the header breadcrumb.
       router.refresh();
       router.push("/admin/tenants");
-    } catch (e: any) {
-      setNotice({ type: "error", msg: e?.message ?? "istek başarısız" });
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "istek başarısız";
+      setNotice({ type: "error", msg });
     } finally {
       setBusy(false);
     }

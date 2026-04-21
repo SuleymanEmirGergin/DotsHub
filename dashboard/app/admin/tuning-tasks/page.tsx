@@ -57,7 +57,9 @@ export default async function TuningTasksPage({
     const params = await searchParams;
     const statusFilter = params.status ?? "all";
     const typeFilter = params.type ?? "all";
-    const sortCol: (typeof TUNING_SORT_COLUMNS)[number] = TUNING_SORT_COLUMNS.includes(params.sort as any)
+    const sortCol: (typeof TUNING_SORT_COLUMNS)[number] = TUNING_SORT_COLUMNS.includes(
+        params.sort as (typeof TUNING_SORT_COLUMNS)[number],
+    )
         ? (params.sort as (typeof TUNING_SORT_COLUMNS)[number])
         : "created_at";
     const ascending = params.order === "asc";

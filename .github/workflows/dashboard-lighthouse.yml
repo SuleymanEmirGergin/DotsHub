@@ -1,0 +1,107 @@
+# Dashboard Lighthouse CI — perf + a11y + SEO budget gate.
+#
+# Runs on PRs that touch dashboard/** so a regression on the public
+# pages (/, /login, /privacy, /terms) surfaces at review time
+# instead of after deploy.
+#
+# Why a separate workflow from dashboard-quality.yml / dashboard-tests.yml:
+#   - Lighthouse needs the full production build (`next build` +
+#     `next start`) to produce numbers that match what a real user
+#     sees. Both other workflows run against the dev server. Shoving
+#     a `next build` into dashboard-tests.yml just for lhci adds 30s
+#     to every test run; keeping it separate means Lighthouse is on
+#     its own budget.
+#   - The LHCI CLI has its own retry/settle logic that doesn't play
+#     well inside a matrix with other test types.
+#
+# Budgets live in dashboard/lighthouserc.json. Update there, not in
+# this workflow.
+#
+# What this DOES NOT cover:
+#   - Admin routes (/admin/**) — every one requires an auth
+#     cookie that CI doesn't carry. The e2e/staging suite exercises
+#     those under the real Supabase.
+#   - Mobile app scores — covered by Expo's own bundler output +
+#     the maestro-smoke workflow's device run, not Lighthouse.
+
+name: Dashboard Lighthouse
+
+on:
+  pull_request:
+    paths:
+      - "dashboard/**"
+      - "!dashboard/**/*.md"
+      - ".github/workflows/dashboard-lighthouse.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "dashboard/**"
+      - "!dashboard/**/*.md"
+      - ".github/workflows/dashboard-lighthouse.yml"
+  workflow_dispatch: {}
+
+concurrency:
+  group: dashboard-lighthouse-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+jobs:
+  lighthouse:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: dashboard
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "pnpm"
+          cache-dependency-path: dashboard/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run Lighthouse CI
+        # `lhci autorun` handles the full dance:
+        #   1. Runs the startServerCommand from lighthouserc.json
+        #      (`next build && next start --port 3002`)
+        #   2. Waits for "Ready" on stdout (startServerReadyPattern)
+        #   3. Hits each URL 3 times with the bundled puppeteer
+        #      chromium
+        #   4. Compares against the assertions in lighthouserc.json
+        #      — error-level misses fail the job, warn-level print
+        #      but don't fail
+        #   5. Uploads the full HTML reports to temporary-public-storage
+        #      (7-day TTL) and prints a URL per URL audited
+        #
+        # Using `npx --yes @lhci/cli@0.14.x` rather than committing
+        # @lhci/cli as a devDep so (a) Vercel's `pnpm install
+        # --frozen-lockfile` stays tight without regenerating the
+        # lockfile just for an audit tool, and (b) the version pin
+        # lives in the package.json script + this workflow so
+        # upgrades are one find-and-replace.
+        run: pnpm run test:lighthouse
+        env:
+          # Some Next.js static generation needs NEXT_PUBLIC_* env
+          # vars at build time. We inject safe placeholders so the
+          # build succeeds on a CI runner without Supabase creds —
+          # the pages we audit (/, /login, /privacy, /terms) don't
+          # call any secret-gated endpoints, so placeholders are
+          # enough.
+          NEXT_PUBLIC_SUPABASE_URL: "http://stub.local.test/supabase"
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: "lhci-placeholder"
+          # Suppress Node 22's experimental-vm-modules spam from
+          # LHCI's internals.
+          NODE_OPTIONS: "--no-warnings"

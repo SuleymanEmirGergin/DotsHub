@@ -29,7 +29,7 @@ export default function AdminError({
   reset: () => void;
 }) {
   useEffect(() => {
-    // eslint-disable-next-line no-console
+     
     console.error("[admin error boundary]", error);
   }, [error]);
 
