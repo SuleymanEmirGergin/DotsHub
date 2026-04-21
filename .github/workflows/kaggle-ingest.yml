@@ -1,5 +1,33 @@
 name: Kaggle Ingest
 
+# What this workflow does (and doesn't)
+# --------------------------------------
+# DOES:
+#   - Weekly (Mon 03:00 UTC) pulls the configured Kaggle dataset, runs
+#     preprocess_kaggle.py, and regenerates the 4 cache files under
+#     backend/app/data/kaggle_cache/.
+#   - Runs the mapping guardrail (validate_kaggle_mapping.py) and the
+#     full golden flow suite against the NEW cache. Both must be green
+#     or the workflow fails hard — we do NOT open a PR with broken
+#     safety-critical tests. The same gate keeps a bad upstream Kaggle
+#     revision from landing in main silently.
+#   - Captures a real_corpus pass-rate baseline BEFORE the refresh and
+#     a new value AFTER, then reports the delta in the PR body so
+#     reviewers can see at a glance whether the upstream data shifted
+#     coverage measurably.
+#   - Produces a markdown diff of the 4 cache files (added / removed
+#     diseases, symptoms, canonical remappings) and pastes it into
+#     the PR body.
+#   - Skips opening a PR entirely if the cache didn't actually change
+#     byte-wise. Idempotent under identical Kaggle revisions.
+#
+# DOES NOT:
+#   - Auto-merge. Reviewer still confirms the PR by hand. The
+#     guardrails + golden flows + delta report give enough signal to
+#     merge confidently but auto-merging medical data ingests without
+#     a human in the loop is not a tradeoff we want to make.
+#   - Touch production runtime code. Only the cache files change.
+
 on:
   schedule:
     # Every Monday at 03:00 UTC
@@ -26,7 +54,7 @@ env:
 jobs:
   refresh-kaggle-cache:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     permissions:
       contents: write
       pull-requests: write
@@ -70,6 +98,34 @@ jobs:
           echo "dataset_slug=$DATASET_SLUG" >> "$GITHUB_OUTPUT"
           echo "Using dataset slug: $DATASET_SLUG"
 
+      # ── Stash the OLD cache before any mutation ───────────────────
+      # diff_kaggle_cache.py compares `before` vs `after`. We capture
+      # the current on-disk cache here; the preprocess step below
+      # overwrites it in place.
+      - name: Snapshot pre-refresh cache
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/kaggle_cache_pre
+          cp -f backend/app/data/kaggle_cache/*.json /tmp/kaggle_cache_pre/ 2>/dev/null || true
+          echo "Snapshotted pre-refresh cache files:"
+          ls -l /tmp/kaggle_cache_pre
+
+      # ── Baseline real_corpus pass rate on the OLD cache ───────────
+      # test_real_corpus.py reads the cache via app.runtime; we grep
+      # the "Real corpus pass-rate" line from its stdout and stash
+      # the numeric value for later comparison.
+      - name: Capture real_corpus baseline (old cache)
+        id: baseline
+        working-directory: backend
+        run: |
+          set -euo pipefail
+          # Force in-memory rate limit so the test doesn't need Redis.
+          REDIS_URL="" python -m unittest tests.test_real_corpus -v 2>&1 \
+            | tee /tmp/real_corpus_before.log || true
+          BEFORE_RATE=$(grep -oE "Real corpus pass-rate: [0-9]+/[0-9]+ = [0-9.]+%" /tmp/real_corpus_before.log | tail -1 || echo "Real corpus pass-rate: 0/0 = 0.0%")
+          echo "before_rate=$BEFORE_RATE" >> "$GITHUB_OUTPUT"
+          echo "Baseline captured: $BEFORE_RATE"
+
       - name: Fetch Kaggle dataset and rebuild cache
         env:
           KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
@@ -80,18 +136,107 @@ jobs:
           python scripts/fetch_kaggle_dataset.py --dataset-slug "${{ steps.dataset.outputs.dataset_slug }}"
           python scripts/preprocess_kaggle.py
 
+      # ── Idempotency gate ──────────────────────────────────────────
+      # If none of the 4 cache files actually changed byte-wise, there
+      # is nothing to PR. `git diff --quiet` returns 0 when clean and
+      # 1 when dirty — we invert that into a clear boolean output so
+      # the later steps can `if:` gate on it cleanly.
+      - name: Check for cache changes
+        id: check_changes
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- backend/app/data/kaggle_cache/; then
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+            echo "Cache is byte-identical to prior snapshot — nothing to PR."
+          else
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+            echo "Cache changed:"
+            git diff --stat -- backend/app/data/kaggle_cache/
+          fi
+
+      # ── Guardrail: structural validation ──────────────────────────
+      # validate_kaggle_mapping.py enforces min coverage ratios,
+      # canonical reachability, and disallowed collapses. It writes a
+      # report JSON + exits non-zero on critical violations. We only
+      # run it when the cache changed (no point re-validating an
+      # unchanged file set).
+      - name: Validate kaggle mapping quality
+        if: steps.check_changes.outputs.has_changes == 'true'
+        working-directory: backend
+        run: |
+          python scripts/validate_kaggle_mapping.py
+
+      # ── Safety-critical gate: golden flows must stay green ────────
+      # Any upstream Kaggle revision that breaks a golden flow is a
+      # no-go: we fail the workflow instead of opening a PR. The
+      # reviewer still sees why (workflow run link in the alert) and
+      # can triage the failure manually.
+      - name: Run golden flow suite against new cache
+        if: steps.check_changes.outputs.has_changes == 'true'
+        working-directory: backend
+        env:
+          REDIS_URL: ""
+        run: |
+          python -m unittest tests.test_golden_flows -v
+
+      # ── Post-refresh real_corpus pass rate ────────────────────────
+      - name: Capture real_corpus value (new cache)
+        if: steps.check_changes.outputs.has_changes == 'true'
+        id: new_value
+        working-directory: backend
+        env:
+          REDIS_URL: ""
+        run: |
+          set -euo pipefail
+          python -m unittest tests.test_real_corpus -v 2>&1 \
+            | tee /tmp/real_corpus_after.log || true
+          AFTER_RATE=$(grep -oE "Real corpus pass-rate: [0-9]+/[0-9]+ = [0-9.]+%" /tmp/real_corpus_after.log | tail -1 || echo "Real corpus pass-rate: 0/0 = 0.0%")
+          echo "after_rate=$AFTER_RATE" >> "$GITHUB_OUTPUT"
+          echo "New value: $AFTER_RATE"
+
+      # ── Build the PR body ─────────────────────────────────────────
+      - name: Build PR body
+        if: steps.check_changes.outputs.has_changes == 'true'
+        id: pr_body
+        run: |
+          set -euo pipefail
+          python backend/scripts/diff_kaggle_cache.py \
+            --before /tmp/kaggle_cache_pre \
+            --after  backend/app/data/kaggle_cache \
+            --out    /tmp/cache_diff.md
+          {
+            echo "Automated Kaggle ingest refreshed the deterministic triage cache files."
+            echo ""
+            echo "- **Dataset:** \`${{ steps.dataset.outputs.dataset_slug }}\`"
+            echo "- **Trigger:** \`${{ github.event_name }}\`"
+            echo "- **Workflow run:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            echo ""
+            echo "## Real-corpus pass rate"
+            echo ""
+            echo "- Before: \`${{ steps.baseline.outputs.before_rate }}\`"
+            echo "- After:  \`${{ steps.new_value.outputs.after_rate }}\`"
+            echo ""
+            echo "Golden flows: ✅ PASS (the workflow would have failed otherwise)."
+            echo "Mapping guardrails: ✅ PASS."
+            echo ""
+            echo "## Cache diff"
+            echo ""
+            cat /tmp/cache_diff.md
+          } > /tmp/pr_body.md
+          # Expose the body path as an output rather than multiline
+          # env interpolation — peter-evans/create-pull-request's
+          # `body` input accepts the literal string (< 64KB safe).
+          echo "path=/tmp/pr_body.md" >> "$GITHUB_OUTPUT"
+
+      # ── Open PR ───────────────────────────────────────────────────
       - name: Create pull request for cache updates
+        if: steps.check_changes.outputs.has_changes == 'true'
         uses: peter-evans/create-pull-request@v6
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           commit-message: "chore(data): refresh kaggle cache"
           title: "chore(data): refresh kaggle cache"
-          body: |
-            Automated Kaggle ingest refreshed deterministic triage cache files.
-
-            - Dataset: `${{ steps.dataset.outputs.dataset_slug }}`
-            - Trigger: `${{ github.event_name }}`
-            - Workflow run: `${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}`
+          body-path: ${{ steps.pr_body.outputs.path }}
           branch: "automation/kaggle-cache-refresh"
           delete-branch: true
           labels: |
@@ -102,3 +247,8 @@ jobs:
             backend/app/data/kaggle_cache/symptom_severity.json
             backend/app/data/kaggle_cache/disease_descriptions.json
             backend/app/data/kaggle_cache/kaggle_to_canonical.json
+
+      - name: Summary (no-op)
+        if: steps.check_changes.outputs.has_changes == 'false'
+        run: |
+          echo "::notice title=Kaggle Ingest::Cache is byte-identical to the previous snapshot — no PR opened."
