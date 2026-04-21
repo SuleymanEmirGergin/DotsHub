@@ -1,0 +1,120 @@
+# Triage envelope distribution alerts — Prometheus / Mimir rules.
+#
+# Uploaded to Grafana Cloud Managed Alertmanager via
+# `.github/workflows/observability-sync.yml` on pushes to main that
+# touch config/grafana/alerts/**.
+#
+# Why this file is separate from backend-health.yaml:
+#   backend-health covers infrastructure signals (5xx rate, scrape
+#   liveness, latency, rate-limit). This file watches the SHAPE of
+#   what the triage engine emits — a different reasoning path for
+#   on-call ("is the serving path slow?" vs "is triage behaviour
+#   drifting?"). Separate files let us rotate ownership cleanly:
+#   infra team owns backend-health, product/clinical-eng owns the
+#   envelope rules here.
+#
+# Source metric: `triage_envelope_total{envelope_type}` from
+# backend/app/observability/metrics.py. Incremented once per
+# response that passes through the capability-gate middleware on a
+# reduced-capability client. It under-reports absolute volume
+# (fully-capable clients are not decoded) but the RATIO between
+# envelope types is accurate because the same sampling applies to
+# every envelope.
+#
+# Severity conventions (shared with backend-health.yaml):
+#   critical — wake someone up
+#   warning  — next-business-day; Slack #alerts
+#   info     — passive dashboard signal; no paging
+
+groups:
+  - name: triage-envelope-distribution
+    interval: 1m
+    rules:
+      - alert: EmergencyEnvelopeRateHigh
+        # Healthy steady-state fires EMERGENCY on roughly 10-25% of
+        # reduced-cap triage turns (curated-meta clients = mobile
+        # app). Sustained >50% for 30 minutes almost always means
+        # an emergency rule is over-firing — see
+        # docs/runbooks/BAD_TENANT_CATALOG.md Flow B for the
+        # anaphylaxis softener precedent. Page because a spurious
+        # ER routing can send a real patient to the wrong care
+        # setting.
+        expr: |
+          sum(rate(triage_envelope_total{envelope_type="EMERGENCY"}[5m]))
+            /
+          clamp_min(sum(rate(triage_envelope_total[5m])), 0.001)
+            > 0.5
+        for: 30m
+        labels:
+          severity: critical
+          service: backend
+          category: triage-behaviour
+        annotations:
+          summary: "EMERGENCY envelope rate >50% for 30+ minutes"
+          description: |
+            {{ $value | humanizePercentage }} of sampled triage
+            envelopes are EMERGENCY. Historical band is 10-25%.
+            Likely cause: an emergency rule is firing on a common
+            benign phrase (check last synonym/rule deploy).
+            Runbook: docs/runbooks/BAD_TENANT_CATALOG.md — same
+            structural pattern applies to over-firing rules.
+
+      - alert: EmergencyEnvelopeRateLow
+        # The inverse — EMERGENCY dropping below 2% of sampled
+        # envelopes for a full day is either a real clinical-traffic
+        # lull (weekend on a small tenant) or evidence that a
+        # softener is over-suppressing real emergencies. Info-only
+        # because we don't want to page on a genuinely quiet day;
+        # we DO want ops to notice the second cause.
+        expr: |
+          sum(rate(triage_envelope_total{envelope_type="EMERGENCY"}[1h]))
+            /
+          clamp_min(sum(rate(triage_envelope_total[1h])), 0.001)
+            < 0.02
+        for: 24h
+        labels:
+          severity: info
+          service: backend
+          category: triage-behaviour
+        annotations:
+          summary: "EMERGENCY envelope rate <2% for 24+ hours"
+          description: |
+            Only {{ $value | humanizePercentage }} of sampled
+            envelopes fired EMERGENCY in the last hour (sustained
+            24h). Sanity-check one of the safety-critical fixtures
+            (`backend/tests/test_golden_flows.py`) against a
+            production request to confirm the emergency rules
+            still fire end-to-end.
+
+  - name: triage-confidence-drift
+    interval: 5m
+    rules:
+      - alert: ConfidenceDistributionTooFlat
+        # confidence_score histogram peaking at the middle buckets
+        # (0.4-0.6) for a sustained period indicates the scoring
+        # engine is stuck in a low-confidence plateau — every RESULT
+        # looks like a coin flip. Catches scoring_v2 regressions
+        # that don't surface as golden-flow failures.
+        # Heuristic: if 80%+ of the probability mass is inside
+        # the 0.4-0.6 buckets for 1h, flag it.
+        expr: |
+          (
+            sum(rate(confidence_score_bucket{le="0.6"}[1h]))
+              -
+            sum(rate(confidence_score_bucket{le="0.4"}[1h]))
+          )
+            /
+          clamp_min(sum(rate(confidence_score_count[1h])), 0.001)
+            > 0.8
+        for: 1h
+        labels:
+          severity: warning
+          service: backend
+          category: triage-behaviour
+        annotations:
+          summary: "Confidence score plateauing in the 0.4-0.6 band"
+          description: |
+            {{ $value | humanizePercentage }} of the last-hour
+            confidence mass sits between 0.4 and 0.6. Scoring is
+            likely not differentiating. Check recent synonym /
+            specialty keyword changes.

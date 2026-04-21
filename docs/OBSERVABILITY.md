@@ -62,6 +62,72 @@ Every label value set is bounded:
 Total series count across custom metrics is on the order of ~30, which
 is trivial for any scraper.
 
+## Alert catalog
+
+All alerts live under `config/grafana/alerts/` in Prometheus /
+Mimir rules format. `observability-sync.yml` pushes them to Grafana
+Cloud Managed Alertmanager on every `main` push that touches
+`config/grafana/**`.
+
+### Severity conventions
+
+| Severity   | Expected action                  | Notification target |
+| ---------- | -------------------------------- | ------------------- |
+| `critical` | Wake someone up                  | PagerDuty / phone   |
+| `warning`  | Next-business-day triage         | Slack #alerts       |
+| `info`     | Dashboard signal, no paging      | Grafana UI only     |
+
+### Rules by file
+
+| File | Group | Covers |
+| ---- | ----- | ------ |
+| `backend-health.yaml`     | `backend-http`         | 5xx rate, p95 latency regression |
+| `backend-health.yaml`     | `backend-rate-limit`   | Overall denial rate, LLM NLU bucket saturation, **per-bucket denial spike** |
+| `backend-health.yaml`     | `backend-latency`      | **Triage p95 regression**, **Supabase write latency proxy** |
+| `backend-health.yaml`     | `backend-triage`       | EMERGENCY 3x spike, capability-gate strip ratio |
+| `backend-health.yaml`     | `backend-availability` | `up == 0` (scrape-down) |
+| `triage-envelope.yaml`    | `triage-envelope-distribution` | **EMERGENCY ratio high (>50% / 30m)**, **EMERGENCY ratio low (<2% / 24h)** |
+| `triage-envelope.yaml`    | `triage-confidence-drift` | **Confidence plateau (0.4-0.6 band > 80% / 1h)** |
+
+Bold items are Session 11 additions.
+
+### LLM NLU health: webhook vs Grafana
+
+The LLM NLU success rate is NOT exposed as a Prometheus metric —
+the backend tracks it in an in-memory rolling window inside
+`backend/app/services/llm_nlu.py` (`_HEALTH_EVENTS`) and fires a
+Slack / Discord webhook directly via `notifier.send_llm_health_alert`
+when the success rate drops below the configured threshold
+(`LLM_HEALTH_ALERT_THRESHOLD_PCT`, default 80%).
+
+Why webhook-first rather than Prometheus:
+
+1. **Latency.** The webhook fires within a few seconds of the
+   drop; a scrape-then-alertmanager pipeline adds ~1m of
+   inherent delay which is too slow for a triage-quality
+   regression.
+2. **Per-process window.** The in-memory ring avoids a DB
+   round-trip in the request hot path. Multiple workers each
+   track their own ring, which means a genuine provider outage
+   fires from multiple processes — acceptable given the 15-min
+   cool-down.
+
+**Grafana-side proxy:** `TriageEndpointLatencyRegression` in
+`backend-health.yaml` watches p95 on `/v1/triage/*` handlers. The
+LLM call is in the critical path of session turns, so sustained
+latency regression correlates with LLM degradation (either slow
+responses or the fallback to deterministic taking a detectable
+extra hop). Not a perfect signal — a healthy LLM with a slow
+Supabase write also trips this — but the alert text points ops at
+both `LLM_PROVIDER_DOWN.md` and `SUPABASE_DOWN.md` runbooks so
+triage is one click away.
+
+If Prometheus-native LLM metrics are needed later, the minimal
+path is adding `llm_nlu_calls_total{success}` + `llm_nlu_latency_seconds`
+counters to `metrics.py` and incrementing them inside
+`_health_monitor_observe`. Deferred from Session 11 because the
+runtime instrumentation change was intentionally out of scope.
+
 ## Option A — Grafana Cloud (production)
 
 **Free tier:** 10k active series, 50 GB logs, 14-day retention. More
@@ -401,7 +467,8 @@ leave a DSN in the shell never phone home.
 | `docker-compose.observability.yml`           | Production Grafana Agent sidecar (overlay on main compose). |
 | `config/grafana-agent/config.river`          | Alloy / Grafana Agent Flow scrape + remote_write config (env-driven). |
 | `config/grafana-agent/Dockerfile`            | Sidecar image that bakes the River config. |
-| `config/grafana/alerts/*.yaml`               | Alert rules as code (Prometheus/Mimir format). |
+| `config/grafana/alerts/backend-health.yaml`  | Alert rules: 5xx, latency, rate-limit, triage envelope spike, capability-gate strip, scrape liveness, **triage p95 regression**, **Supabase write latency proxy**, **per-bucket denial spike**. |
+| `config/grafana/alerts/triage-envelope.yaml` | Alert rules: **EMERGENCY ratio out-of-band (high / low)**, **confidence plateau drift**. |
 | `scripts/grafana_sync.sh`                    | Idempotent push of dashboards + alerts to Grafana Cloud. |
 | `scripts/verify_observability.sh`            | Post-deploy health check for `/metrics` + cloud scrape + Sentry. |
 | `.github/workflows/observability-sync.yml`   | PR lint + main-push auto-sync to Grafana Cloud. |
