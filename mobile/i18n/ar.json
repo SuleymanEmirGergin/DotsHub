@@ -132,7 +132,8 @@
     "emergency": "🚨 طوارئ",
     "result": "✅ نتيجة",
     "sameDay": "⚡ اذهب اليوم",
-    "confidence": "الثقة"
+    "confidence": "الثقة",
+    "offlineCacheNotice": "غير متصل — يتم عرض آخر النتائج المخزنة على هذا الجهاز."
   },
   "settings": {
     "title": "الإعدادات",

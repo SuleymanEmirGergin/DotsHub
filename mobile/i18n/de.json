@@ -132,7 +132,8 @@
     "emergency": "🚨 NOTFALL",
     "result": "✅ ERGEBNIS",
     "sameDay": "⚡ HEUTE GEHEN",
-    "confidence": "Vertrauen"
+    "confidence": "Vertrauen",
+    "offlineCacheNotice": "Offline — angezeigt werden die auf diesem Gerät zwischengespeicherten Ergebnisse."
   },
   "settings": {
     "title": "Einstellungen",

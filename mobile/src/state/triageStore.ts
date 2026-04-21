@@ -7,6 +7,7 @@ import type {
   Msg,
   TriageTurnRequest,
 } from "./types";
+import { saveResult } from "./offlineCache";
 
 type TriageState = {
   sessionId: string | null;
@@ -100,6 +101,10 @@ export const useTriageStore = create<TriageState>((set, get) => ({
         role: "assistant",
         text: `Önerilen branş: ${r.recommended_specialty.name_tr}`,
       });
+      // Fire-and-forget offline cache write — never blocks the UI and
+      // swallows its own errors so a storage outage can't interrupt
+      // the triage flow.
+      void saveResult(env);
       return;
     }
 
@@ -107,6 +112,7 @@ export const useTriageStore = create<TriageState>((set, get) => ({
       const e = env.payload as EmergencyPayload;
       set({ emergency: e, pendingQuestion: null, result: null, error: null, lastRequest: null });
       get().appendMessage({ role: "assistant", text: e.reason_tr });
+      void saveResult(env);
       return;
     }
 

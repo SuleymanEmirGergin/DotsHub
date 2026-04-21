@@ -20,6 +20,7 @@ import { SessionCardSkeleton, SkeletonList } from "@/src/ui/Skeleton";
 import { API_BASE } from "@/constants";
 import { getDeviceId } from "@/utils/deviceId";
 import { useI18n } from "@/i18n/I18nProvider";
+import { getCachedResults } from "@/src/state/offlineCache";
 
 type SessionItem = {
   id: string;
@@ -46,6 +47,10 @@ export default function HistoryScreen({ onBack, onViewSession }: Props) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // When true the list is being served from the AsyncStorage fallback,
+  // not the backend. Shown as a subtle banner so the user understands
+  // why the list might be shorter than normal and isn't auto-updating.
+  const [fromCache, setFromCache] = useState(false);
 
   const fetchSessions = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
@@ -68,13 +73,24 @@ export default function HistoryScreen({ onBack, onViewSession }: Props) {
 
       const data = await res.json();
       setSessions(data.items ?? []);
+      setFromCache(false);
     } catch (err: any) {
-      setError(t("history.errorLoading"));
+      // Backend unreachable → try the offline cache. We only surface
+      // the hard error state if we have literally nothing to show.
+      const cached = await getCachedResults();
+      if (cached.length > 0) {
+        setSessions(cached as SessionItem[]);
+        setFromCache(true);
+        setError(null);
+      } else {
+        setError(t("history.errorLoading"));
+        setFromCache(false);
+      }
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     fetchSessions();
@@ -180,6 +196,16 @@ export default function HistoryScreen({ onBack, onViewSession }: Props) {
         <Text style={styles.title}>{t("history.title")}</Text>
         <View style={styles.backBtn} />
       </View>
+
+      {/* Offline banner — only when we're serving cached data. */}
+      {fromCache && !loading && !refreshing ? (
+        <View style={styles.offlineBanner} accessibilityRole="alert">
+          <Text style={styles.offlineIcon}>📡</Text>
+          <Text style={styles.offlineText}>
+            {t("history.offlineCacheNotice")}
+          </Text>
+        </View>
+      ) : null}
 
       {/* Content */}
       {loading && !refreshing ? (
@@ -357,5 +383,24 @@ const styles = StyleSheet.create({
   footer: {
     textAlign: "center",
     paddingVertical: tokens.spacing.lg,
+  },
+  offlineBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: tokens.spacing.sm,
+    paddingHorizontal: screenPadding,
+    paddingVertical: tokens.spacing.sm,
+    backgroundColor: "#FFF8E1",
+    borderBottomWidth: 1,
+    borderBottomColor: tokens.colors.border,
+  },
+  offlineIcon: {
+    fontSize: 16,
+  },
+  offlineText: {
+    ...tokens.typography.caption,
+    color: tokens.colors.textSecondary,
+    flex: 1,
+    fontWeight: "500",
   },
 });

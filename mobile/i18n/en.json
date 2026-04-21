@@ -132,7 +132,8 @@
     "emergency": "🚨 EMERGENCY",
     "result": "✅ RESULT",
     "sameDay": "⚡ SAME DAY",
-    "confidence": "Confidence"
+    "confidence": "Confidence",
+    "offlineCacheNotice": "Offline — showing your most recent results cached on this device."
   },
   "settings": {
     "title": "Settings",

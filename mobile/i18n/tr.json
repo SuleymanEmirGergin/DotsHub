@@ -132,7 +132,8 @@
     "emergency": "🚨 ACİL",
     "result": "✅ SONUÇ",
     "sameDay": "⚡ BUGÜN GİT",
-    "confidence": "Güven"
+    "confidence": "Güven",
+    "offlineCacheNotice": "Çevrimdışı — bu liste cihazınızdaki son sonuçlardan yüklendi."
   },
   "settings": {
     "title": "Ayarlar",
