@@ -230,6 +230,14 @@ asserts against thresholds in `dashboard/lighthouserc.json`):
 cd dashboard && pnpm run test:lighthouse
 ```
 
+Run the axe-core accessibility audit (4 public URLs × light + dark
+themes via `e2e/localhost/accessibility.spec.ts`; blocks on
+`serious` / `critical` WCAG 2.1 AA violations):
+
+```bash
+cd dashboard && pnpm run test:e2e -- accessibility.spec.ts
+```
+
 ## Local Mobile Quality
 
 Run Jest + contract checks:

@@ -29,12 +29,14 @@
     "tailwind-merge": "^3.5.0"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.11.2",
     "@eslint/eslintrc": "^3.3.5",
     "@playwright/test": "^1.49.0",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "autoprefixer": "^10.4.24",
+    "axe-core": "^4.11.3",
     "class-variance-authority": "^0.7.0",
     "cross-env": "^10.1.0",
     "dotenv": "^17.4.2",
