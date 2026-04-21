@@ -348,6 +348,12 @@ docker compose -f docker-compose.monitoring.yml down
 
 ## Mobile Sentry — client-side crash + replay capture
 
+> **Policy doc:** `docs/SENTRY_REPLAY_POLICY.md` is the canonical
+> decision record for what Session Replay captures, what it masks,
+> and the KVKK/HIPAA alignment behind each setting. Point privacy
+> reviewers + Sentry-SDK-upgrade PRs at that doc first; the summary
+> below stays synced but doesn't replace it.
+
 Separate Sentry project (`triaige-mobile-rn`) in the same org, wired
 via the Expo config plugin at `mobile/src/observability/sentry.ts`.
 Blank `EXPO_PUBLIC_SENTRY_DSN` = full no-op (the mobile app runs
@@ -488,6 +494,8 @@ leave a DSN in the shell never phone home.
 | `mobile/__tests__/observability/breadcrumb.test.ts` | Unit tests for each breadcrumb category (api / navigation / version_gate / push). |
 | `scripts/sentry_smoke.sh`                    | Bash smoke — POSTs a synthetic event to the Sentry store API to verify the DSN pipe is open. |
 | `.github/workflows/sentry-smoke.yml`         | Weekly cron (Mon 09:00 UTC) + manual trigger running the smoke script. |
+| `docs/SENTRY_REPLAY_POLICY.md`               | Canonical DR for Session Replay masking + KVKK/HIPAA alignment + quarterly audit procedure. |
+| `scripts/sentry_event_pii_scan.py`           | Local PII scanner — pipe a Sentry event JSON in, get a pattern-match report. Used during the quarterly audit (see MOBILE_SENTRY_OUTAGE.md). |
 
 ## Gotchas
 
