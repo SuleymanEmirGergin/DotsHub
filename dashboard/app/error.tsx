@@ -51,7 +51,7 @@ export default function Error({
           padding: "10px 20px",
           borderRadius: 8,
           border: "1px solid var(--dash-border)",
-          background: "var(--dash-primary, #0A84FF)",
+          background: "var(--dash-primary, #1D4ED8)",
           color: "#fff",
           cursor: "pointer",
           fontSize: 14,
