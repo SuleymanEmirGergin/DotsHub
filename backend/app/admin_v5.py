@@ -398,7 +398,15 @@ def daily_summary(
     daily_conf_n: Dict[str, int] = {}
 
     by_urgency: Dict[str, int] = {}
+    by_envelope: Dict[str, int] = {}
     specialty_counts: Dict[str, int] = {}
+
+    # Track session_ids per terminal envelope for the funnel. We only
+    # count a session once per bucket — a session's row carries the
+    # *last* envelope state, so set-semantics are already implied by the
+    # one-row-per-session shape, but we keep the set explicit so the
+    # feedback join below is unambiguous.
+    session_ids_in_window: set[str] = set()
 
     low_conf_total = 0
 
@@ -432,9 +440,17 @@ def daily_summary(
         urg = r.get("urgency") or "UNKNOWN"
         by_urgency[urg] = by_urgency.get(urg, 0) + 1
 
+        # Envelope type breakdown — powers the funnel. Bounded set
+        # (RESULT / EMERGENCY / SAME_DAY / QUESTION / ERROR / null).
+        env = r.get("envelope_type") or "NONE"
+        by_envelope[env] = by_envelope.get(env, 0) + 1
+
+        sid = r.get("session_id")
+        if isinstance(sid, str):
+            session_ids_in_window.add(sid)
+
         # Top specialties — only count RESULT envelopes so EMERGENCY
         # reroutes (which overwrite specialty) don't skew the list.
-        env = r.get("envelope_type")
         spec = r.get("recommended_specialty_tr")
         if env == "RESULT" and spec:
             specialty_counts[spec] = specialty_counts.get(spec, 0) + 1
@@ -460,11 +476,66 @@ def daily_summary(
     ]
 
     total = len(rows)
+
+    # ─── Funnel: symptom → result → feedback ───────────────────────
+    # Stages:
+    #   1. "started"    — any row in window (symptom was entered)
+    #   2. "questioned" — reached the QUESTION phase (Q&A started)
+    #   3. "resulted"   — terminal envelope RESULT / EMERGENCY / SAME_DAY
+    #   4. "feedback"   — session received at least one feedback row
+    #
+    # QUESTION vs resulted is mutually exclusive at the row level
+    # (envelope_type is the *last* state) — so "questioned" here means
+    # sessions that stalled in Q&A and never completed. For a proper
+    # funnel we want cumulative counts: a resulted session *did* pass
+    # through questioning, so the questioned stage count = questioned +
+    # resulted. We fold that here.
+    resulted_terminal = (
+        by_envelope.get("RESULT", 0)
+        + by_envelope.get("EMERGENCY", 0)
+        + by_envelope.get("SAME_DAY", 0)
+    )
+    questioned_stalled = by_envelope.get("QUESTION", 0)
+    questioned_cum = questioned_stalled + resulted_terminal
+
+    # Feedback join — count distinct sessions (in this window) that
+    # have a feedback row. Supabase `in_` filter has a ~1000 URL-length
+    # cap in practice; chunk session_id list to stay safe at the 10k
+    # session limit this endpoint queries.
+    feedback_session_count = 0
+    if session_ids_in_window:
+        sid_list = list(session_ids_in_window)
+        seen: set[str] = set()
+        for i in range(0, len(sid_list), 500):
+            chunk = sid_list[i : i + 500]
+            fb_rows = (
+                supabase.table("triage_feedback")
+                .select("session_id")
+                .in_("session_id", chunk)
+                .execute()
+                .data
+                or []
+            )
+            for fb in fb_rows:
+                s = fb.get("session_id")
+                if isinstance(s, str):
+                    seen.add(s)
+        feedback_session_count = len(seen)
+
+    funnel = {
+        "started": total,
+        "questioned": questioned_cum,
+        "resulted": resulted_terminal,
+        "feedback": feedback_session_count,
+    }
+
     return {
         "window_days": days,
         "total": total,
         "daily_totals": daily_totals,
         "by_urgency": by_urgency,
+        "by_envelope": by_envelope,
+        "funnel": funnel,
         "top_specialties": top_specialties,
         "avg_confidence_by_day": avg_confidence_by_day,
         "low_confidence_count": low_conf_total,
@@ -753,7 +824,7 @@ def live_sessions(
     cutoff = (datetime.now(timezone.utc) - timedelta(minutes=minutes)).isoformat()
 
     resp = (
-        supabase()
+        supabase
         .table("triage_sessions")
         .select(
             "id,session_id,envelope_type,turn_index,"
@@ -820,6 +891,55 @@ def webhook_test(
     return {"results": results}
 
 
+@router.post("/push/followup-reminders")
+def trigger_followup_reminders(
+    x_admin_key: Optional[str] = Header(default=None),
+    hours_min: int = Query(default=20, ge=1, le=72),
+    hours_max: int = Query(default=48, ge=2, le=168),
+):
+    """Manually trigger the follow-up reminder push batch.
+
+    Admin-only. Also callable from a scheduled cron (GitHub Actions) so
+    the ops team can nudge yesterday's users for feedback without
+    writing a separate endpoint. Returns counters so the caller can
+    show "Sent N / skipped M" feedback — useful in the dashboard.
+
+    Query params map to ``send_followup_reminders`` args; the default
+    20–48h window covers "yesterday-ish" without double-pinging on a
+    daily cron.
+    """
+    require_admin(x_admin_key)
+    if hours_min >= hours_max:
+        return {"error": "hours_min must be less than hours_max"}, 400
+
+    from app.push import send_followup_reminders
+
+    return send_followup_reminders(hours_min=hours_min, hours_max=hours_max)
+
+
+# ── Admin user management ──────────────────────────────────
+#
+# Two valid roles: ``admin`` (read + routine ops) and ``super_admin``
+# (can invite, change roles, remove). The dashboard enforces UI-level
+# gating by reading the requester's role via ``requireAdmin()``; this
+# module only enforces the shared x-admin-key header, so any caller
+# that has the key can hit every endpoint. That's acceptable because
+# the dashboard proxy is the only sanctioned caller and it inherits
+# the Supabase session from the browser.
+
+_VALID_ROLES = {"admin", "super_admin"}
+
+
+def _normalize_role(role: Optional[str]) -> str:
+    r = (role or "admin").strip().lower()
+    if r not in _VALID_ROLES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid role '{role}'. Must be one of: {sorted(_VALID_ROLES)}",
+        )
+    return r
+
+
 @router.get("/users")
 def list_admin_users(
     x_admin_key: Optional[str] = Header(default=None),
@@ -827,8 +947,12 @@ def list_admin_users(
     """List all admin users."""
     require_admin(x_admin_key)
 
+    # NOTE: prior version called ``supabase()`` — the module-level
+    # ``supabase`` is a ``_LazySupabase`` *instance*, not callable, so
+    # that path raised TypeError at request time. Use attribute access
+    # instead (matches every other query in this file).
     resp = (
-        supabase()
+        supabase
         .table("admin_users")
         .select("id,user_id,email,role,created_at")
         .order("created_at", desc=True)
@@ -844,11 +968,17 @@ def add_admin_user(
     user_id: str = Query(...),
     role: str = Query(default="admin"),
 ):
-    """Add a new admin user."""
+    """Add a new admin user (legacy direct-by-user-id path).
+
+    Prefer ``POST /admin/users/invite`` for dashboard-driven adds: it
+    resolves the auth user from email so operators don't need to look
+    up the Supabase user_id manually.
+    """
     require_admin(x_admin_key)
+    role = _normalize_role(role)
 
     resp = (
-        supabase()
+        supabase
         .table("admin_users")
         .upsert(
             {"user_id": user_id, "email": email, "role": role},
@@ -859,15 +989,138 @@ def add_admin_user(
     return {"ok": True, "data": resp.data}
 
 
+@router.post("/users/invite")
+def invite_admin_user(
+    x_admin_key: Optional[str] = Header(default=None),
+    email: str = Query(...),
+    role: str = Query(default="admin"),
+):
+    """Grant admin role to an existing auth user resolved by email.
+
+    Flow:
+      1. Operator supplies the invitee's email.
+      2. We look up the matching ``auth.users`` row via the service-role
+         admin API (``supabase.auth.admin.list_users``). If not found →
+         409 with a hint to sign up via the login magic-link first.
+      3. Upsert into ``admin_users`` keyed by user_id.
+
+    Why not ``auth.admin.invite_user_by_email``: that would send a
+    Supabase-native invite email, which is redundant with our existing
+    magic-link login and mixes auth signup with admin-grant. Requiring
+    the user to exist first keeps the two flows separate and avoids
+    double-inviting someone who's already onboarded.
+    """
+    require_admin(x_admin_key)
+    role = _normalize_role(role)
+    email_norm = (email or "").strip().lower()
+    if not email_norm:
+        raise HTTPException(status_code=400, detail="email is required")
+
+    # supabase-py's auth.admin.list_users() is paginated; the invite
+    # UX is interactive so we cap at a few pages and early-return on
+    # match. 1000 auth users covers most single-tenant deployments.
+    user_id: Optional[str] = None
+    user_email_canonical: Optional[str] = None
+    try:
+        # Newer supabase-py: returns a list or a response-like object.
+        # Defensive attribute access covers both shapes.
+        page = 1
+        while page <= 10 and user_id is None:
+            result = supabase.auth.admin.list_users(page=page, per_page=100)
+            # supabase-py returns either an object with ``.users``, a
+            # plain list, or (older/test shims) a dict with "users".
+            # Handle all three defensively.
+            users = getattr(result, "users", None)
+            if users is None and isinstance(result, dict):
+                users = result.get("users") or []
+            elif users is None and isinstance(result, list):
+                users = result
+            users = users or []
+            if not users:
+                break
+            for u in users:
+                u_email = getattr(u, "email", None) or (
+                    u.get("email") if isinstance(u, dict) else None
+                )
+                if u_email and u_email.lower() == email_norm:
+                    user_id = getattr(u, "id", None) or (
+                        u.get("id") if isinstance(u, dict) else None
+                    )
+                    user_email_canonical = u_email
+                    break
+            # If the page returned fewer than per_page, we're done.
+            if len(users) < 100:
+                break
+            page += 1
+    except Exception as exc:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to query auth users: {exc}",
+        ) from exc
+
+    if not user_id:
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                f"No auth user found for {email_norm}. "
+                "Ask them to sign in via the magic link first, then try again."
+            ),
+        )
+
+    resp = (
+        supabase
+        .table("admin_users")
+        .upsert(
+            {
+                "user_id": user_id,
+                "email": user_email_canonical or email_norm,
+                "role": role,
+            },
+            on_conflict="user_id",
+        )
+        .execute()
+    )
+    return {"ok": True, "data": resp.data}
+
+
+@router.patch("/users/{user_id}")
+def update_admin_user_role(
+    user_id: str,
+    x_admin_key: Optional[str] = Header(default=None),
+    role: str = Query(...),
+):
+    """Update an existing admin user's role (admin ⇄ super_admin)."""
+    require_admin(x_admin_key)
+    role = _normalize_role(role)
+
+    resp = (
+        supabase
+        .table("admin_users")
+        .update({"role": role})
+        .eq("user_id", user_id)
+        .execute()
+    )
+    data = resp.data or []
+    if not data:
+        raise HTTPException(status_code=404, detail="Admin user not found")
+    return {"ok": True, "data": data}
+
+
 @router.delete("/users/{user_id}")
 def remove_admin_user(
     user_id: str,
     x_admin_key: Optional[str] = Header(default=None),
 ):
-    """Remove an admin user."""
+    """Remove an admin user.
+
+    Self-removal protection is enforced on the dashboard side (the UI
+    hides the action for the logged-in row). The backend can't identify
+    the caller from the shared x-admin-key, so a server-side guard
+    would be a no-op.
+    """
     require_admin(x_admin_key)
 
-    supabase().table("admin_users").delete().eq("user_id", user_id).execute()
+    supabase.table("admin_users").delete().eq("user_id", user_id).execute()
     return {"ok": True}
 
 
