@@ -3,7 +3,8 @@
   "ci": {
     "_comment_collect": "Start the production build (not dev server) so scores reflect what users see. `next start` on port 3002 matches Playwright + other local tooling. 3 runs per URL to damp noise; the median is what LHCI asserts against. Only public routes are audited — every admin route requires a Supabase session cookie that CI doesn't carry.",
     "collect": {
-      "startServerCommand": "pnpm run build && pnpm run start -- --port 3002",
+      "_comment_cmd": "Invoke `next start` directly via `pnpm exec` rather than `pnpm run start -- --port 3002` because the nested `--` argument forwarding gets miscounted on pnpm 9: `next start` sees `--port` as the project directory and exits with 'Invalid project directory'. Dropping the indirection makes the port flag unambiguous.",
+      "startServerCommand": "pnpm run build && pnpm exec next start -p 3002",
       "startServerReadyPattern": "Ready",
       "startServerReadyTimeout": 60000,
       "url": [
