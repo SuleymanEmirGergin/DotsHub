@@ -86,6 +86,108 @@ groups:
             Either the Wiro quota is genuinely exhausted, or
             LLM_NLU_RATE_LIMIT_MAX_REQ is too tight for current traffic.
 
+      - alert: RateLimitDenialSpikePerBucket
+        # Sudden denial-rate spike inside a single bucket (not just
+        # overall). Normal steady-state is <1% denial for every
+        # bucket except `llm_nlu` (noisier by design). >10% denial
+        # sustained 15m on any bucket signals either an abuse
+        # campaign on that specific endpoint or a traffic surge
+        # overflowing the cap.
+        # Using `sum by (bucket)` so the alert's label carries WHICH
+        # bucket is hot — on-call can triage straight from the page
+        # without a dashboard round-trip.
+        expr: |
+          sum by (bucket) (rate(rate_limit_hits_total{outcome="denied"}[5m]))
+            /
+          clamp_min(sum by (bucket) (rate(rate_limit_hits_total[5m])), 0.001)
+            > 0.10
+        for: 15m
+        labels:
+          severity: warning
+          service: backend
+        annotations:
+          summary: "Rate-limit denial spike on bucket {{ $labels.bucket }}"
+          description: |
+            {{ $value | humanizePercentage }} of last-5m requests to
+            the `{{ $labels.bucket }}` bucket are being denied.
+            Steady-state should be <1% on every bucket except
+            `llm_nlu`. If this is `admin` → check for credential
+            brute-force; if `default` → legit traffic surge or an
+            abuse campaign hitting /v1/triage/turn.
+
+  - name: backend-latency
+    interval: 1m
+    rules:
+      - alert: TriageEndpointLatencyRegression
+        # p95 latency on triage routes reflects the downstream chain:
+        # canonical extraction + scoring + (optionally) LLM NLU +
+        # Supabase write. Baseline p95 sits around 800ms-1.2s. A
+        # sustained 10-minute p95 >3s on any `/v1/triage/*` handler
+        # implicates one of the downstreams. When this fires,
+        # correlate with the LLM health webhook + Supabase `/health`
+        # response to identify which one regressed.
+        # This alert is the GRAFANA-SIDE PROXY for the LLM NLU
+        # health signal. The canonical LLM-success alert fires via
+        # notifier.send_llm_health_alert() (Slack/Discord webhook)
+        # because there's no Prometheus counter for LLM success.
+        # See docs/OBSERVABILITY.md "LLM NLU health" section.
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum by (le, handler) (
+              rate(http_request_duration_seconds_bucket{handler=~"/v1/triage.*"}[5m])
+            )
+          ) > 3
+        for: 10m
+        labels:
+          severity: warning
+          service: backend
+          category: latency
+        annotations:
+          summary: "Triage endpoint p95 > 3s (handler={{ $labels.handler }})"
+          description: |
+            p95 on `{{ $labels.handler }}` is
+            {{ $value | humanizeDuration }}. Typical baseline is
+            800ms-1.2s. Likely cause: downstream degradation
+            (Supabase write / LLM provider latency). Check:
+              - Admin LLM Health card: /admin/analytics
+              - docs/runbooks/LLM_PROVIDER_DOWN.md
+              - docs/runbooks/SUPABASE_DOWN.md
+              - Supabase status: https://status.supabase.com
+
+      - alert: SupabaseWriteLatencyProxy
+        # We don't instrument the supabase_client calls directly
+        # (adding Prometheus hooks there was out of scope this
+        # session). The closest available proxy is admin endpoints
+        # that do write-heavy ops — session save, feedback save,
+        # admin edits. p95 >2s sustained 10m on those points
+        # strongly at Supabase write latency; check
+        # https://status.supabase.com + /health `supabase` field.
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum by (le) (
+              rate(http_request_duration_seconds_bucket{
+                handler=~"/v1/(triage|admin/feedback).*"
+              }[5m])
+            )
+          ) > 2
+        for: 10m
+        labels:
+          severity: warning
+          service: backend
+          category: latency
+          downstream: supabase
+        annotations:
+          summary: "Write-path p95 > 2s (Supabase latency suspected)"
+          description: |
+            p95 on write-heavy handlers is
+            {{ $value | humanizeDuration }}. Typical baseline
+            <500ms. Runbook: docs/runbooks/SUPABASE_DOWN.md.
+            If Supabase dashboard is green, also check the
+            connection-pool exhaustion path (SUPABASE_DB_POOLER_URL
+            vs direct).
+
   - name: backend-triage
     interval: 1m
     rules:
