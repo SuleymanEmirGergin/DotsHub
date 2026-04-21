@@ -6,6 +6,8 @@ from app.observability.metrics import (
     llm_nlu_calls_total,
     rate_limit_hits_total,
     setup_metrics,
+    supabase_db_calls_total,
+    supabase_db_latency_seconds,
     triage_envelope_total,
 )
 from app.observability.sentry_init import before_send, init_sentry
@@ -19,5 +21,7 @@ __all__ = [
     "llm_nlu_calls_total",
     "rate_limit_hits_total",
     "setup_metrics",
+    "supabase_db_calls_total",
+    "supabase_db_latency_seconds",
     "triage_envelope_total",
 ]

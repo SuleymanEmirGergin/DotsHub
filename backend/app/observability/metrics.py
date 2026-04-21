@@ -105,6 +105,39 @@ llm_nlu_calls_total = Counter(
     labelnames=("success", "error_type"),
 )
 
+# Counter — Supabase DB call outcomes. Counts each invocation of a
+# Supabase wrapper in app/db.py + opt-in callers via
+# `_timed_supabase`. Closes the gap called out in Session 11's
+# OBSERVABILITY.md "latency proxy" commentary — `TriageEndpointLatencyRegression`
+# has been a stand-in for Supabase health since we lacked native
+# DB metrics. This counter + the histogram below replace the proxy
+# for the high-volume write paths (session upsert, event insert,
+# feedback insert). Admin / read paths stay on the proxy for now
+# and can migrate incrementally without a schema change.
+#
+# Label cardinality (bounded):
+#   - `operation` ∈ a small enumerated set of names we wrap with
+#     `_timed_supabase`. Adding a new operation is additive and
+#     visible in the code diff — no unbounded label risk.
+#   - `outcome` ∈ {"success", "error"} — 2 values.
+supabase_db_calls_total = Counter(
+    "supabase_db_calls_total",
+    "Supabase client call outcomes (success / error) keyed by operation name.",
+    labelnames=("operation", "outcome"),
+)
+
+# Histogram — Supabase DB call latency. Bucket layout covers the
+# realistic range (sub-second happy path, multi-second degradation,
+# 5s+ incident territory). Tail beyond 5s is truncated into the
+# implicit `+Inf` bucket — if that bucket fills, Supabase is dead
+# and the rate / error alerts have already fired.
+supabase_db_latency_seconds = Histogram(
+    "supabase_db_latency_seconds",
+    "Supabase client call latency (seconds) keyed by operation name.",
+    labelnames=("operation",),
+    buckets=(0.05, 0.1, 0.25, 0.5, 1.0, 2.0, 5.0),
+)
+
 
 # ─── Setup ─────────────────────────────────────────────────────────
 
