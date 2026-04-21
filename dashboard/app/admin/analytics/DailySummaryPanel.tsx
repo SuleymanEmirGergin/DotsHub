@@ -89,6 +89,13 @@ function formatDayTR(isoDay: string): string {
   return `${d}/${m}`;
 }
 
+type FollowupResult = {
+  sent: number;
+  skipped_feedback: number;
+  skipped_no_token: number;
+  candidates: number;
+};
+
 export default function DailySummaryPanel() {
   const [data, setData] = useState<DailySummary | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -96,6 +103,16 @@ export default function DailySummaryPanel() {
   // bars in the daily-throughput chart). 14/30 surface weekly/monthly
   // trend without requiring a separate endpoint; backend clamps at 30.
   const [windowDays, setWindowDays] = useState<WindowDays>(7);
+
+  // ── Follow-up reminder button state ───────────────────────────
+  // Admin-only action. Sits next to the funnel card because the drop
+  // between "resulted" and "feedback" is exactly what this endpoint
+  // targets — it nudges yesterday's users who never rated. Result
+  // counters stay on screen for ~10s so the operator can read them
+  // before they auto-dismiss; errors stick until next click.
+  const [followupRunning, setFollowupRunning] = useState(false);
+  const [followupResult, setFollowupResult] = useState<FollowupResult | null>(null);
+  const [followupError, setFollowupError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -120,6 +137,39 @@ export default function DailySummaryPanel() {
       clearInterval(id);
     };
   }, [windowDays]);
+
+  async function triggerFollowup() {
+    if (followupRunning) return;
+    setFollowupRunning(true);
+    setFollowupError(null);
+    setFollowupResult(null);
+    try {
+      // Uses default 20–48h window from the backend. A custom window
+      // could be wired in later; for now the admin UX is a single
+      // button to avoid misconfiguration (too-narrow ranges send zero).
+      const r = await fetch("/api/admin/push/followup-reminders", {
+        method: "POST",
+      });
+      const body = (await r.json().catch(() => ({}))) as
+        | FollowupResult
+        | { error?: string };
+      if (!r.ok) {
+        const msg =
+          (body as { error?: string }).error ??
+          `HTTP ${r.status}`;
+        setFollowupError(msg);
+        return;
+      }
+      setFollowupResult(body as FollowupResult);
+      // Auto-clear result after 10s so the card returns to its neutral
+      // state; errors stay until the next click so ops can copy them.
+      setTimeout(() => setFollowupResult(null), 10_000);
+    } catch (e) {
+      setFollowupError(e instanceof Error ? e.message : "fetch failed");
+    } finally {
+      setFollowupRunning(false);
+    }
+  }
 
   const windowSelector = (
     <div className="flex gap-1 mb-4" role="group" aria-label="Zaman aralığı">
@@ -416,6 +466,64 @@ export default function DailySummaryPanel() {
         </div>
       </div>
     )}
+
+    {/* ───── Ops · Follow-up reminders ─────
+        Manual trigger for the push-batch that nudges yesterday's
+        RESULT/SAME_DAY users who never submitted feedback. Colocated
+        with the funnel because that's where the "resulted → feedback"
+        gap is visible — clicking closes the gap on next render. Result
+        counters show sent / skipped (by feedback + no-token) /
+        candidates so the operator can sanity-check. */}
+    <div className="p-4 rounded-xl border border-border bg-card text-card-foreground mb-6">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex-1 min-w-[200px]">
+          <div className="text-sm font-semibold mb-1">
+            Geri bildirim hatırlatıcısı
+          </div>
+          <div className="text-xs text-muted-foreground">
+            Dün sonuç alıp geri bildirim bırakmayan kullanıcılara push
+            gönderir (varsayılan 20–48 saat penceresi).
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={triggerFollowup}
+          disabled={followupRunning}
+          className={
+            "px-3 py-1.5 text-sm rounded-md border transition-colors " +
+            (followupRunning
+              ? "border-border bg-muted text-muted-foreground cursor-not-allowed"
+              : "border-primary bg-primary text-primary-foreground hover:opacity-90")
+          }
+          aria-busy={followupRunning}
+        >
+          {followupRunning ? "Gönderiliyor…" : "Hatırlatıcıları gönder"}
+        </button>
+      </div>
+      {followupResult && (
+        <div className="mt-3 text-xs text-muted-foreground flex flex-wrap gap-x-4 gap-y-1 tabular-nums">
+          <span>
+            Gönderildi: <b className="text-foreground">{followupResult.sent}</b>
+          </span>
+          <span>
+            Aday: <b className="text-foreground">{followupResult.candidates}</b>
+          </span>
+          <span>
+            Geri bildirim var (atlandı):{" "}
+            <b className="text-foreground">{followupResult.skipped_feedback}</b>
+          </span>
+          <span>
+            Token yok (atlandı):{" "}
+            <b className="text-foreground">{followupResult.skipped_no_token}</b>
+          </span>
+        </div>
+      )}
+      {followupError && (
+        <div className="mt-3 text-xs text-red-500">
+          Hata: {followupError}
+        </div>
+      )}
+    </div>
     </div>
   );
 }

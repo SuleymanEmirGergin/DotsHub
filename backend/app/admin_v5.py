@@ -891,6 +891,32 @@ def webhook_test(
     return {"results": results}
 
 
+@router.post("/push/followup-reminders")
+def trigger_followup_reminders(
+    x_admin_key: Optional[str] = Header(default=None),
+    hours_min: int = Query(default=20, ge=1, le=72),
+    hours_max: int = Query(default=48, ge=2, le=168),
+):
+    """Manually trigger the follow-up reminder push batch.
+
+    Admin-only. Also callable from a scheduled cron (GitHub Actions) so
+    the ops team can nudge yesterday's users for feedback without
+    writing a separate endpoint. Returns counters so the caller can
+    show "Sent N / skipped M" feedback — useful in the dashboard.
+
+    Query params map to ``send_followup_reminders`` args; the default
+    20–48h window covers "yesterday-ish" without double-pinging on a
+    daily cron.
+    """
+    require_admin(x_admin_key)
+    if hours_min >= hours_max:
+        return {"error": "hours_min must be less than hours_max"}, 400
+
+    from app.push import send_followup_reminders
+
+    return send_followup_reminders(hours_min=hours_min, hours_max=hours_max)
+
+
 @router.get("/users")
 def list_admin_users(
     x_admin_key: Optional[str] = Header(default=None),

@@ -132,7 +132,11 @@ def _handle_turn_supabase(request: TriageTurnRequest) -> Envelope:
 
     # 1) Session load/create
     if session_id_uuid is None:
-        sid = create_session(request.locale or "tr-TR", user_msg_redacted)
+        sid = create_session(
+            request.locale or "tr-TR",
+            user_msg_redacted,
+            device_id=request.device_id,
+        )
         session = get_session(sid)
         turn_index = 0
         answers: dict = {}

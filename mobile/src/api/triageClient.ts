@@ -10,7 +10,11 @@ export async function triageTurn(req: TriageTurnRequest): Promise<Envelope> {
 
   try {
     const location = req.lat != null && req.lon != null ? { lat: req.lat, lon: req.lon } : await getCurrentLocation();
-    const body = { ...req };
+    const deviceId = getDeviceId();
+    // Send device_id both as body field (backend pydantic schema reads
+    // it to persist on the session row for follow-up reminders) and
+    // as header (still consumed by observability + rate-limit paths).
+    const body: TriageTurnRequest & { device_id?: string } = { ...req, device_id: deviceId };
     if (location) {
       body.lat = location.lat;
       body.lon = location.lon;
@@ -21,7 +25,7 @@ export async function triageTurn(req: TriageTurnRequest): Promise<Envelope> {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-device-id": getDeviceId(),
+          "x-device-id": deviceId,
         },
         body: JSON.stringify(body),
       },

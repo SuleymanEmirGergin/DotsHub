@@ -13,15 +13,31 @@ from uuid import UUID
 from app.supabase_client import get_supabase
 
 
-def create_session(locale: str, input_text: str) -> UUID:
-    """Create a new triage session and return its UUID."""
+def create_session(
+    locale: str,
+    input_text: str,
+    device_id: Optional[str] = None,
+) -> UUID:
+    """Create a new triage session and return its UUID.
+
+    ``device_id`` is the stable per-install identifier sent by the mobile
+    client (also persisted in push_tokens). Storing it on the session row
+    enables follow-up reminder pushes — we join sessions → push_tokens
+    by device_id and target only sessions that originated from a device
+    we know how to notify.
+    """
     sb = get_supabase()
-    ins = sb.table("triage_sessions").insert({
+    row: Dict[str, Any] = {
         "locale": locale,
         "input_text": input_text,
         "envelope_type": "QUESTION",
         "turn_index": 0,
-    }).execute()
+    }
+    if device_id:
+        # Backend-side trim + length cap as defense-in-depth; Pydantic
+        # already enforces max_length=128 at the route boundary.
+        row["device_id"] = device_id.strip()[:128]
+    ins = sb.table("triage_sessions").insert(row).execute()
 
     if not ins.data:
         raise RuntimeError("Failed to create session")

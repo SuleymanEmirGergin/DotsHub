@@ -11,6 +11,11 @@ export type TriageTurnRequest = {
   answer?: { canonical: string; value: string } | null;
   lat?: number | null;
   lon?: number | null;
+  // Stable per-install identifier used for device-targeted push
+  // notifications (follow-up reminders). Also sent via x-device-id
+  // header; duplicated here so the backend can persist it on the
+  // session row without touching header-parsing logic.
+  device_id?: string | null;
 };
 
 export type QuestionPayload = {

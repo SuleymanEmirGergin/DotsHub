@@ -31,6 +31,15 @@ class TriageTurnRequest(BaseModel):
     answer: Optional[TriageAnswer] = Field(None, description="User answer to the last question")
     lat: Optional[float] = Field(None, description="User latitude for facility discovery (optional)")
     lon: Optional[float] = Field(None, description="User longitude for facility discovery (optional)")
+    device_id: Optional[str] = Field(
+        None,
+        description=(
+            "Stable per-install device identifier. Links the session to a "
+            "push_tokens row so the backend can send follow-up reminders. "
+            "Optional — old clients don't send it."
+        ),
+        max_length=128,
+    )
 
 
 # Legacy request schemas (kept for backward compat)
