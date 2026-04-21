@@ -307,7 +307,17 @@ export default async function SessionDetail({
               </tr>
             </thead>
             <tbody>
-              {llmCalls.map((c: any, i: number) => {
+              {(llmCalls as Array<{
+                success?: boolean | null;
+                created_at?: string | null;
+                provider?: string | null;
+                model?: string | null;
+                error_type?: string | null;
+                nlu_source?: string | null;
+                latency_ms?: number | null;
+                input_tokens?: number | null;
+                output_tokens?: number | null;
+              }>).map((c, i: number) => {
                 const ok = c.success === true;
                 const ts = c.created_at
                   ? new Date(c.created_at).toLocaleTimeString("tr-TR")

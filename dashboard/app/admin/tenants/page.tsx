@@ -30,8 +30,9 @@ async function listTenants(): Promise<{ ok: boolean; tenants: TenantEntry[]; err
     if (!r.ok) return { ok: false, tenants: [], error: `HTTP ${r.status}` };
     const data = await r.json();
     return { ok: true, tenants: data.tenants ?? [] };
-  } catch (e: any) {
-    return { ok: false, tenants: [], error: e?.message ?? "fetch failed" };
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : "fetch failed";
+    return { ok: false, tenants: [], error: msg };
   }
 }
 

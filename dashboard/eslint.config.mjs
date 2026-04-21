@@ -17,19 +17,25 @@ const __dirname = dirname(__filename);
 
 const compat = new FlatCompat({ baseDirectory: __dirname });
 
-export default [
+// Named export then default so `import/no-anonymous-default-export`
+// stays happy — the old `export default [...]` was flagged as an
+// anonymous array export, which hurt tooling that introspects the
+// config.
+const eslintConfig = [
   // Next.js shared presets (translated from legacy `extends`).
   ...compat.extends("next/core-web-vitals", "next/typescript"),
 
-  // Codebase-wide rule adjustments. The legacy `.eslintrc.json` never
-  // actually ran in CI (workflow YAML + ESLint-9-on-legacy-config
-  // blockers), so the presets' defaults surface a pile of pre-
-  // existing tech-debt findings the moment lint starts working.
-  // Keep them visible as warnings (humans notice), don't block CI.
+  // Codebase-wide rule adjustments. As of Session 9 all `no-explicit-any`
+  // usages were cleaned up to proper types (`unknown`, `Record<…>`, or
+  // inline interfaces), so the rule is now "warn" by default and the
+  // `lint:eslint` script enforces `--max-warnings=0` — any new `any`
+  // surfaces as a PR-blocking warning. Revisit this posture only if
+  // a new integration brings back large amounts of untyped data.
   {
     rules: {
-      // ~100 existing `any` usages in dashboard pages — marked as
-      // warning so lint passes, but every new `any` still surfaces.
+      // Keep as warning (not error) so contributors iterating locally
+      // aren't blocked mid-edit; `--max-warnings=0` in the script
+      // makes CI strict without making the editor hostile.
       "@typescript-eslint/no-explicit-any": "warn",
       // A handful of admin navigation uses `<a href="/admin/…">` for
       // legit reasons (preserves cross-origin behaviour when embedded,
@@ -72,3 +78,5 @@ export default [
     ],
   },
 ];
+
+export default eslintConfig;

@@ -153,7 +153,7 @@ export default async function AnalyticsPage() {
     .limit(500);
 
   const specCounts: Record<string, number> = {};
-  (specDist ?? []).forEach((s: any) => {
+  ((specDist ?? []) as Array<{ recommended_specialty_tr?: string | null }>).forEach((s) => {
     const name = s.recommended_specialty_tr || unknown;
     specCounts[name] = (specCounts[name] || 0) + 1;
   });
@@ -169,7 +169,7 @@ export default async function AnalyticsPage() {
     .limit(500);
 
   const confCounts: Record<string, number> = {};
-  (confDist ?? []).forEach((s: any) => {
+  ((confDist ?? []) as Array<{ confidence_label_tr?: string | null }>).forEach((s) => {
     const label = s.confidence_label_tr || unknown;
     confCounts[label] = (confCounts[label] || 0) + 1;
   });
@@ -258,7 +258,7 @@ export default async function AnalyticsPage() {
 
   const dailyResult: Record<string, { total: number; lowConf: number }> = {};
   for (const k of dayKeys) dailyResult[k] = { total: 0, lowConf: 0 };
-  for (const row of (resultRows7d ?? []) as any[]) {
+  for (const row of (resultRows7d ?? []) as Array<{ created_at: string; confidence_0_1?: number | null }>) {
     const k = dayKey(row.created_at);
     if (dailyResult[k] === undefined) continue;
     dailyResult[k].total += 1;
@@ -270,7 +270,11 @@ export default async function AnalyticsPage() {
 
   const dailyFeedback: Record<string, { total: number; overrides: number; downWithOverride: number }> = {};
   for (const k of dayKeys) dailyFeedback[k] = { total: 0, overrides: 0, downWithOverride: 0 };
-  for (const row of (feedbackRows7d ?? []) as any[]) {
+  for (const row of (feedbackRows7d ?? []) as Array<{
+    created_at: string;
+    user_selected_specialty_id?: string | null;
+    rating?: string | null;
+  }>) {
     const k = dayKey(row.created_at);
     if (dailyFeedback[k] === undefined) continue;
     dailyFeedback[k].total += 1;
@@ -341,7 +345,7 @@ export default async function AnalyticsPage() {
         : "warn";
 
   const dailyCounts: Record<string, number> = {};
-  (dailySessions ?? []).forEach((s: any) => {
+  ((dailySessions ?? []) as Array<{ created_at: string }>).forEach((s) => {
     const day = new Date(s.created_at).toISOString().slice(0, 10);
     dailyCounts[day] = (dailyCounts[day] || 0) + 1;
   });
@@ -355,7 +359,7 @@ export default async function AnalyticsPage() {
     .order("created_at", { ascending: false })
     .limit(200);
 
-  const confusionSessionIds = (confusionRaw ?? []).map((f: any) => f.session_id);
+  const confusionSessionIds = ((confusionRaw ?? []) as Array<{ session_id: string }>).map((f) => f.session_id);
   let confusionRows: { predicted: string; actual: string; cnt: number }[] = [];
 
   if (confusionSessionIds.length > 0) {
@@ -365,12 +369,12 @@ export default async function AnalyticsPage() {
       .in("id", confusionSessionIds.slice(0, 100));
 
     const sessionSpec: Record<string, string> = {};
-    (confSessions ?? []).forEach((s: any) => {
+    ((confSessions ?? []) as Array<{ id: string; recommended_specialty_tr?: string | null }>).forEach((s) => {
       sessionSpec[s.id] = s.recommended_specialty_tr ?? unknown;
     });
 
     const confPairs: Record<string, number> = {};
-    (confusionRaw ?? []).forEach((f: any) => {
+    ((confusionRaw ?? []) as Array<{ session_id: string; user_selected_specialty_id?: string | null }>).forEach((f) => {
       const predicted = sessionSpec[f.session_id] ?? unknown;
       const actual = f.user_selected_specialty_id ?? unknown;
       const key = `${predicted}|||${actual}`;

@@ -21,7 +21,7 @@ export async function GET() {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   const headers = ["id", "created_at", "task_type", "severity", "title", "description", "status", "session_id"];
-  const rows = (data ?? []).map((r: any) =>
+  const rows = ((data ?? []) as Array<Record<string, unknown>>).map((r) =>
     headers.map((h) => escapeCsvCell(r[h])).join(",")
   );
   const csv = [headers.join(","), ...rows].join("\n");

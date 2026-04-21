@@ -115,7 +115,7 @@ export async function sweepStaleRows(
     .select("id");
   if (error) {
     // Non-fatal — log only, don't fail setup.
-    // eslint-disable-next-line no-console
+     
     console.warn(`sweepStaleRows soft-failed: ${error.message}`);
     return 0;
   }

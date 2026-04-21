@@ -49,8 +49,9 @@ export function AckButton({
         return;
       }
       router.refresh();
-    } catch (e: any) {
-      alert(`İstek başarısız: ${e?.message ?? "network"}`);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "network";
+      alert(`İstek başarısız: ${msg}`);
     } finally {
       setBusy(false);
     }
