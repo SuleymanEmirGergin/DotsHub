@@ -86,6 +86,38 @@ groups:
             Either the Wiro quota is genuinely exhausted, or
             LLM_NLU_RATE_LIMIT_MAX_REQ is too tight for current traffic.
 
+      - alert: LLMNluSuccessRateLow
+        # Grafana-side companion to the in-memory webhook alert in
+        # `backend/app/services/llm_nlu.py::_health_monitor_observe`.
+        # The webhook pages on a 20-call rolling window at 80% — that's
+        # low-latency incident-response. This rule aggregates across all
+        # workers + the last 15 minutes and alerts when Wiro + the
+        # deterministic fallback pipeline as a whole drops below 80%
+        # success. Handles the case where a single worker's webhook
+        # already fired hours ago (cool-down) but the provider is still
+        # flaky; this rule re-fires every 15m until clear.
+        expr: |
+          sum(rate(llm_nlu_calls_total{success="true"}[15m]))
+            /
+          clamp_min(sum(rate(llm_nlu_calls_total[15m])), 0.001)
+            < 0.80
+        for: 15m
+        labels:
+          severity: warning
+          service: backend
+          category: llm-health
+        annotations:
+          summary: "LLM NLU success rate < 80% for 15m (cross-worker)"
+          description: |
+            Success rate {{ $value | humanizePercentage }} over the
+            last 15 minutes of LLM NLU calls (aggregated across all
+            workers). The webhook alert fires per-worker on a 20-call
+            window; this rule catches sustained provider degradation
+            that crosses the cool-down and covers multi-worker
+            deployments where a single process' ring buffer stays
+            under quota. Runbook:
+            docs/runbooks/LLM_PROVIDER_DOWN.md.
+
       - alert: RateLimitDenialSpikePerBucket
         # Sudden denial-rate spike inside a single bucket (not just
         # overall). Normal steady-state is <1% denial for every

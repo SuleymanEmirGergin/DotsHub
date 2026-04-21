@@ -6,6 +6,7 @@ import type { Locale } from "@/i18n";
 import { SUPPORTED_LOCALES } from "@/i18n";
 import { tokens, screenPadding } from "@/src/ui/designTokens";
 import { Card, MutedText, ScreenContainer } from "@/src/ui/primitives";
+import { addBreadcrumb } from "@/src/observability/breadcrumb";
 
 /**
  * SettingsScreen — consolidates app-level user controls into one
@@ -112,7 +113,23 @@ export default function SettingsScreen({ onBack }: Props) {
             return (
               <Pressable
                 key={code}
-                onPress={() => setLocale(code as Locale)}
+                onPress={() => {
+                  // Record the locale transition before applying it
+                  // so post-crash breadcrumb trails show "user was
+                  // on tr, switched to ar, then crashed" rather than
+                  // just the post-switch state. Helps ops correlate
+                  // RTL / text-expansion edge cases with the click
+                  // that provoked them.
+                  if (locale !== code) {
+                    addBreadcrumb(
+                      "settings",
+                      `locale ${locale} -> ${code}`,
+                      { from: locale, to: code },
+                      "info",
+                    );
+                  }
+                  setLocale(code as Locale);
+                }}
                 style={({ pressed }) => [
                   styles.row,
                   !isLast && styles.rowBorder,

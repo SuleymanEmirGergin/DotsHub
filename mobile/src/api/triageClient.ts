@@ -4,10 +4,18 @@ import { mockTurn } from "./mock/mockEngine";
 import { fetchWithTimeout } from "./fetchWithTimeout";
 import { getDeviceId } from "../../utils/deviceId";
 import { getCurrentLocation } from "../../utils/location";
+import { addApiBreadcrumb } from "@/src/observability/breadcrumb";
 
 export async function triageTurn(req: TriageTurnRequest): Promise<Envelope> {
   if (USE_MOCK) return mockTurn(req);
 
+  // We emit Sentry breadcrumbs at the client level (rather than
+  // generically in services/api.ts) because triageClient uses its
+  // own fetch path + carries domain meaning: when a triage error
+  // lands, ops want to see "triage.turn succeeded twice then
+  // returned 429" not "POST /v1/triage/turn ×N" in the breadcrumb
+  // trail.
+  const startedAt = Date.now();
   try {
     const location = req.lat != null && req.lon != null ? { lat: req.lat, lon: req.lon } : await getCurrentLocation();
     const deviceId = getDeviceId();
@@ -33,6 +41,13 @@ export async function triageTurn(req: TriageTurnRequest): Promise<Envelope> {
     );
 
     if (!res.ok) {
+      addApiBreadcrumb({
+        endpoint: "/v1/triage/turn",
+        method: "POST",
+        status: res.status,
+        durationMs: Date.now() - startedAt,
+        level: res.status === 429 ? "warning" : "error",
+      });
       if (res.status === 429) {
         let resetSec = 60;
         try {
@@ -66,8 +81,23 @@ export async function triageTurn(req: TriageTurnRequest): Promise<Envelope> {
       };
     }
 
+    addApiBreadcrumb({
+      endpoint: "/v1/triage/turn",
+      method: "POST",
+      status: res.status,
+      durationMs: Date.now() - startedAt,
+      level: "info",
+    });
     return (await res.json()) as Envelope;
   } catch (err: any) {
+    addApiBreadcrumb({
+      endpoint: "/v1/triage/turn",
+      method: "POST",
+      status: 0,
+      durationMs: Date.now() - startedAt,
+      level: "error",
+      note: err?.name ?? "network",
+    });
     return {
       type: "ERROR",
       session_id: req.session_id ?? "unknown",
