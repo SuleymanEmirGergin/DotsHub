@@ -7,6 +7,13 @@ python_functions = ["test_*"]
 # Treat unhandled warnings strictly so masked test leaks surface fast.
 filterwarnings = [
     "error::DeprecationWarning:app.*",
+    # pyiceberg 0.9.x (transitive via supabase → storage3) emits
+    # PyparsingDeprecationWarning at import time. Suppress these
+    # third-party warnings so CI log noise doesn't hide real issues.
+    # Match the concrete class path — PyparsingDeprecationWarning
+    # multi-inherits UserWarning AND DeprecationWarning, so a generic
+    # DeprecationWarning filter doesn't reliably catch it.
+    "ignore::pyparsing.warnings.PyparsingDeprecationWarning",
 ]
 
 [tool.coverage.run]
