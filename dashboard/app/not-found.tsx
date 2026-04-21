@@ -38,7 +38,7 @@ export default async function NotFound() {
           padding: "10px 20px",
           borderRadius: 8,
           border: "1px solid var(--dash-border)",
-          background: "var(--dash-primary, #0A84FF)",
+          background: "var(--dash-primary, #1D4ED8)",
           color: "#fff",
           textDecoration: "none",
           fontSize: 14,
