@@ -85,6 +85,13 @@ jobs:
         #      but don't fail
         #   5. Uploads the full HTML reports to temporary-public-storage
         #      (7-day TTL) and prints a URL per URL audited
+        #
+        # Using `npx --yes @lhci/cli@0.14.x` rather than committing
+        # @lhci/cli as a devDep so (a) Vercel's `pnpm install
+        # --frozen-lockfile` stays tight without regenerating the
+        # lockfile just for an audit tool, and (b) the version pin
+        # lives in the package.json script + this workflow so
+        # upgrades are one find-and-replace.
         run: pnpm run test:lighthouse
         env:
           # Some Next.js static generation needs NEXT_PUBLIC_* env
