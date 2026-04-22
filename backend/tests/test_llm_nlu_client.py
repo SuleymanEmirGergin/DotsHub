@@ -140,25 +140,33 @@ class WiroSubmitTests(unittest.TestCase):
 
 
 class WiroPollTests(unittest.TestCase):
-    def _ctx(self):
-        return (
+    """All tests share the same Wiro-settings patches. The previous
+    pattern built a tuple of `patch.object(...)` twice per test (once
+    to `__enter__`, once to `__exit__`) which works on Python 3.14
+    but fails on 3.11 (CI) with
+    `AttributeError: '_patch' object has no attribute 'is_local'` —
+    `__exit__` was being called on newly-constructed, never-entered
+    patch objects. Use setUp + addCleanup to tie each patch's
+    lifecycle to the test runner correctly.
+    """
+
+    def setUp(self):
+        for patcher in (
             patch.object(mod.settings, "WIRO_BASE_URL", "https://api.wiro.ai"),
             patch.object(mod.settings, "LLM_NLU_POLL_INTERVAL_SECONDS", 0.001),
             patch.object(mod.settings, "LLM_NLU_TIMEOUT_SECONDS", 5),
             patch.object(mod.settings, "LLM_API_KEY", "k"),
             patch.object(mod.settings, "WIRO_API_SECRET", ""),
-        )
+        ):
+            patcher.start()
+            self.addCleanup(patcher.stop)
 
     def test_returns_task_when_status_terminal_success(self):
         client = MagicMock()
         client.post.return_value = _ok_resp({
             "tasklist": [{"status": "task_end", "debugoutput": "done"}],
         })
-        for p in self._ctx(): p.__enter__()
-        try:
-            task = mod._wiro_poll(client, "tok", deadline=time.monotonic() + 10)
-        finally:
-            for p in self._ctx(): p.__exit__(None, None, None)
+        task = mod._wiro_poll(client, "tok", deadline=time.monotonic() + 10)
         self.assertEqual(task["status"], "task_end")
 
     def test_raises_runtime_error_on_terminal_error(self):
@@ -166,12 +174,8 @@ class WiroPollTests(unittest.TestCase):
         client.post.return_value = _ok_resp({
             "tasklist": [{"status": "task_error", "debugerror": "upstream 500"}],
         })
-        for p in self._ctx(): p.__enter__()
-        try:
-            with self.assertRaises(RuntimeError) as cm:
-                mod._wiro_poll(client, "tok", deadline=time.monotonic() + 10)
-        finally:
-            for p in self._ctx(): p.__exit__(None, None, None)
+        with self.assertRaises(RuntimeError) as cm:
+            mod._wiro_poll(client, "tok", deadline=time.monotonic() + 10)
         self.assertIn("Wiro task failed", str(cm.exception))
         self.assertIn("upstream 500", str(cm.exception))
 
@@ -180,22 +184,14 @@ class WiroPollTests(unittest.TestCase):
         client.post.return_value = _ok_resp({
             "tasklist": [{"status": "running"}],
         })
-        for p in self._ctx(): p.__enter__()
-        try:
-            with self.assertRaises(TimeoutError):
-                mod._wiro_poll(client, "tok", deadline=time.monotonic() - 1)
-        finally:
-            for p in self._ctx(): p.__exit__(None, None, None)
+        with self.assertRaises(TimeoutError):
+            mod._wiro_poll(client, "tok", deadline=time.monotonic() - 1)
 
     def test_raises_runtime_error_on_empty_tasklist(self):
         client = MagicMock()
         client.post.return_value = _ok_resp({"tasklist": []})
-        for p in self._ctx(): p.__enter__()
-        try:
-            with self.assertRaises(RuntimeError) as cm:
-                mod._wiro_poll(client, "tok", deadline=time.monotonic() + 10)
-        finally:
-            for p in self._ctx(): p.__exit__(None, None, None)
+        with self.assertRaises(RuntimeError) as cm:
+            mod._wiro_poll(client, "tok", deadline=time.monotonic() + 10)
         self.assertIn("empty tasklist", str(cm.exception))
 
     def test_poll_retries_until_success(self):
@@ -206,11 +202,7 @@ class WiroPollTests(unittest.TestCase):
             _ok_resp({"tasklist": [{"status": "running"}]}),
             _ok_resp({"tasklist": [{"status": "task_postprocess_end", "debugoutput": "ok"}]}),
         ]
-        for p in self._ctx(): p.__enter__()
-        try:
-            task = mod._wiro_poll(client, "tok", deadline=time.monotonic() + 10)
-        finally:
-            for p in self._ctx(): p.__exit__(None, None, None)
+        task = mod._wiro_poll(client, "tok", deadline=time.monotonic() + 10)
         self.assertEqual(task["debugoutput"], "ok")
         self.assertEqual(client.post.call_count, 3)
 
