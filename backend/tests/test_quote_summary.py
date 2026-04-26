@@ -28,10 +28,14 @@ from app.services import quote_summary
 
 @pytest.fixture(autouse=True)
 def _reset_cache():
-    """Module-level cache is process-global; clear before each test."""
+    """Module-level cache is process-global; clear before each test.
+    Also resets the Redis client init state so each test re-evaluates
+    REDIS_URL from settings (mocked or not)."""
     quote_summary._cache_clear()
+    quote_summary._reset_redis_state_for_tests()
     yield
     quote_summary._cache_clear()
+    quote_summary._reset_redis_state_for_tests()
 
 
 def _enable(monkeypatch, *, providers: str = "qwen,gpt5_mini"):
@@ -326,6 +330,146 @@ def test_locale_changes_cache_key(monkeypatch):
     tr = quote_summary.lookup_cached(**{**_LOOKUP_INPUTS, "locale": "tr"})
     en = quote_summary.lookup_cached(**{**_LOOKUP_INPUTS, "locale": "en"})
     assert tr is not None and en is not None
+
+
+# ─── Redis cache backend ────────────────────────────────────────────
+
+
+from unittest.mock import MagicMock  # noqa: E402
+
+
+def test_redis_disabled_when_url_blank(monkeypatch):
+    """REDIS_URL blank/missing -> _redis_client returns None and the
+    in-memory backing is used (covered by every other unit test)."""
+    monkeypatch.setattr(quote_summary.settings, "REDIS_URL", "")
+    assert quote_summary._redis_client() is None
+
+
+def test_redis_disabled_when_url_not_redis_scheme(monkeypatch):
+    """A non-redis:// URL (e.g. an accidental http:// paste) must NOT
+    initialise — same fail-safe as rate_limit."""
+    monkeypatch.setattr(
+        quote_summary.settings, "REDIS_URL", "http://not-redis"
+    )
+    assert quote_summary._redis_client() is None
+
+
+def test_redis_disabled_when_ping_fails(monkeypatch):
+    """REDIS_URL set + redis-py available + ping raises -> client
+    cached as None, in-memory used. Failure is logged once at startup,
+    not on every cache call."""
+    monkeypatch.setattr(
+        quote_summary.settings, "REDIS_URL", "redis://localhost:6379/0"
+    )
+    fake_redis_module = MagicMock()
+    fake_client = MagicMock()
+    fake_client.ping.side_effect = ConnectionError("redis down")
+    fake_redis_module.from_url.return_value = fake_client
+    with patch.dict("sys.modules", {"redis": fake_redis_module}):
+        assert quote_summary._redis_client() is None
+    # And subsequent calls don't re-try (cached).
+    with patch.dict("sys.modules", {"redis": fake_redis_module}):
+        quote_summary._redis_client()
+    fake_redis_module.from_url.assert_called_once()
+
+
+def test_redis_used_when_available(monkeypatch):
+    """REDIS_URL set + ping ok -> get/setex hit Redis, NOT in-memory."""
+    _enable(monkeypatch)
+    monkeypatch.setattr(
+        quote_summary.settings, "REDIS_URL", "redis://localhost:6379/0"
+    )
+    fake_redis_module = MagicMock()
+    fake_client = MagicMock()
+    fake_client.ping.return_value = True
+    fake_client.get.return_value = None  # cache miss first
+    fake_redis_module.from_url.return_value = fake_client
+
+    with patch.dict("sys.modules", {"redis": fake_redis_module}), patch.object(
+        quote_summary.qwen_llm, "is_enabled", return_value=True,
+    ), patch.object(
+        quote_summary.qwen_llm, "generate", return_value="redis-cached blurb",
+    ):
+        out = quote_summary.generate_and_cache(**_FIXED_INPUTS)
+    assert out == "redis-cached blurb"
+    # setex called with prefixed key + TTL + value
+    fake_client.setex.assert_called_once()
+    args = fake_client.setex.call_args
+    key_arg = args.args[0] if args.args else args.kwargs.get("name")
+    ttl_arg = args.args[1] if len(args.args) > 1 else args.kwargs.get("time")
+    val_arg = args.args[2] if len(args.args) > 2 else args.kwargs.get("value")
+    assert key_arg.startswith("tri:quote_summary:")
+    assert ttl_arg == 86400  # default
+    assert val_arg == "redis-cached blurb"
+
+
+def test_redis_get_value_skips_provider_call(monkeypatch):
+    """Redis returns a cached value -> generate_and_cache short-
+    circuits without invoking any provider."""
+    _enable(monkeypatch)
+    monkeypatch.setattr(
+        quote_summary.settings, "REDIS_URL", "redis://localhost:6379/0"
+    )
+    fake_redis_module = MagicMock()
+    fake_client = MagicMock()
+    fake_client.ping.return_value = True
+    fake_client.get.return_value = "redis warmed"
+    fake_redis_module.from_url.return_value = fake_client
+
+    with patch.dict("sys.modules", {"redis": fake_redis_module}), patch.object(
+        quote_summary.qwen_llm, "is_enabled", return_value=True,
+    ), patch.object(
+        quote_summary.qwen_llm,
+        "generate",
+        side_effect=AssertionError("provider must not be called on cache hit"),
+    ):
+        out = quote_summary.generate_and_cache(**_FIXED_INPUTS)
+    assert out == "redis warmed"
+
+
+def test_redis_get_failure_degrades_to_memory(monkeypatch):
+    """Mid-run Redis flake on .get() -> in-memory backing serves the
+    request. Provider still runs (cache was actually empty)."""
+    _enable(monkeypatch)
+    monkeypatch.setattr(
+        quote_summary.settings, "REDIS_URL", "redis://localhost:6379/0"
+    )
+    fake_redis_module = MagicMock()
+    fake_client = MagicMock()
+    fake_client.ping.return_value = True
+    fake_client.get.side_effect = ConnectionError("redis flake")
+    # setex also fails (degraded path) — wrapper still must succeed
+    fake_client.setex.side_effect = ConnectionError("still flaky")
+    fake_redis_module.from_url.return_value = fake_client
+
+    with patch.dict("sys.modules", {"redis": fake_redis_module}), patch.object(
+        quote_summary.qwen_llm, "is_enabled", return_value=True,
+    ), patch.object(
+        quote_summary.qwen_llm, "generate", return_value="generated despite redis",
+    ):
+        out = quote_summary.generate_and_cache(**_FIXED_INPUTS)
+    assert out == "generated despite redis"
+    # In-memory fallback was used for the write — observable via lookup.
+    assert quote_summary.lookup_cached(**_LOOKUP_INPUTS) is not None
+
+
+def test_redis_lookup_cached_hits_redis_directly(monkeypatch):
+    """lookup_cached (called inline from /v1/quote) must read from
+    Redis when configured — that's the multi-instance hot path."""
+    _enable(monkeypatch)
+    monkeypatch.setattr(
+        quote_summary.settings, "REDIS_URL", "redis://localhost:6379/0"
+    )
+    fake_redis_module = MagicMock()
+    fake_client = MagicMock()
+    fake_client.ping.return_value = True
+    fake_client.get.return_value = "from redis only"
+    fake_redis_module.from_url.return_value = fake_client
+
+    with patch.dict("sys.modules", {"redis": fake_redis_module}):
+        result = quote_summary.lookup_cached(**_LOOKUP_INPUTS)
+    assert result == "from redis only"
+    fake_client.get.assert_called_once()
 
 
 # ─── /v1/quote integration ──────────────────────────────────────────

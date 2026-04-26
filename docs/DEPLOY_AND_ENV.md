@@ -25,7 +25,7 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 | `SUPABASE_URL` | Supabase proje URL | `https://xxx.supabase.co` |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key | — |
 | `CORS_ORIGINS` | İzin verilen origin’ler (virgülle ayrılmış) | `http://localhost:3000,https://app.example.com` |
-| `REDIS_URL` | Rate limit için Redis (opsiyonel). **Çok instance:** Birden fazla API worker/pod kullanıyorsanız paylaşılan limit için tanımlayın; yoksa her instance kendi in-memory limitine sahip olur. | `redis://localhost:6379` |
+| `REDIS_URL` | Rate limit + idempotency + **quote_summary cache** için Redis (opsiyonel). **Çok instance:** Birden fazla API worker/pod kullanıyorsanız paylaşılan state için tanımlayın; yoksa her instance kendi in-memory limit/cache'ine sahip olur. quote_summary cache `tri:quote_summary:` prefix'i kullanır; transient Redis hatası in-memory fallback'e degrade eder, mid-run auto-reconnect yok (process restart gerekir). | `redis://localhost:6379` |
 | `RATE_LIMIT_WINDOW_SEC` | IP/device rate limit penceresi (sn) | `60` |
 | `RATE_LIMIT_MAX_REQ` | IP/device rate limit — pencere başına istek | `20` |
 | `SESSION_RATE_LIMIT_WINDOW_SEC` | Session bazlı rate limit penceresi (sn). NAT arkasında adil paylaşım için IP bucket'ına ek olarak çalışır; `X-Session-Id` header'ı ile aktif olur. | `3600` |
@@ -61,8 +61,8 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 | `QUOTE_SUMMARY_LLM_ENABLED` | `1` ise `/v1/quote` cevabında `payload.summary_tr` LLM-üretimi 2-3 cümlelik Türkçe özet alanı doldurulur. **Cold-start UX**: yeni (procedure × clinic × locale) kombinasyonunda **ilk istek** `summary_tr=null` döner ve background task LLM'e generate gönderir; sonraki istek (cache hit) doluyu döner. Cache TTL aşıldığında tekrar yenilenir. Frontend null'ı boşluk veya "Özet hazırlanıyor" chip'i olarak göstermeli. | `0` |
 | `QUOTE_SUMMARY_LLM_PROVIDERS` | Provider zinciri (virgülle ayrılmış, primary first). İlk dolu cevap döndüren kullanılır. Disabled olan provider atlanır. Geçerli adlar: `qwen`, `gpt5_mini`, `gemini`, `grok`. Default sıra: Türkçe-tuned `qwen` primary → 262K-context multimodal `gemini` orta tier → cheaper `gpt5_mini` son tier. | `qwen,gemini,gpt5_mini` |
 | `QUOTE_SUMMARY_LLM_TIMEOUT_SECONDS` | Tek bir provider için submit+poll budget'ı (sn). Worst-case full chain: `len(providers) × timeout`. Background task'ta çalıştığı için kullanıcı latency'sine yansımaz; cost/capacity dial'ı. | `30.0` |
-| `QUOTE_SUMMARY_CACHE_TTL_SECONDS` | LRU cache entry TTL (sn). Aşıldığında entry düşer, sonraki istekte regenerate. Klinik / fiyat değişimleri buraya doğal olarak yansır. | `86400` |
-| `QUOTE_SUMMARY_CACHE_MAX_ENTRIES` | LRU cache azami giriş sayısı. Aşıldığında en eski entry düşer. | `256` |
+| `QUOTE_SUMMARY_CACHE_TTL_SECONDS` | Cache entry TTL (sn). Aşıldığında entry düşer, sonraki istekte regenerate. Klinik / fiyat değişimleri buraya doğal olarak yansır. **Backend**: `REDIS_URL` set ise Redis (`SETEX` ile server-side expiry), aksi halde in-memory LRU. | `86400` |
+| `QUOTE_SUMMARY_CACHE_MAX_ENTRIES` | In-memory LRU cache azami giriş sayısı (sadece in-memory backend kullanıldığında etkili — Redis'te entry sayısı sınırı yok, TTL ile yönetilir). | `256` |
 | `LEAD_WEBHOOK_URL` | `/v1/quote/lead` kabul edildiğinde JSON POST gönderilen URL. Slack incoming webhook, Make/Zapier veya generic CRM olabilir. Boşsa lead webhook devre dışı; route 200 dönmeye devam eder ama payload `webhook_configured: false` olur. | — |
 | `LEAD_WEBHOOK_AUTH_TOKEN` | Set edilirse `Authorization: Bearer <token>` header'ı gönderilir. | — |
 | `LEAD_WEBHOOK_TIMEOUT_SECONDS` | Tek istek için timeout. | `5.0` |
