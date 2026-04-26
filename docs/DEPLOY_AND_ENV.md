@@ -35,6 +35,12 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 | `IDEMPOTENCY_MEMORY_MAX` | In-memory idempotency cache azami giriş sayısı (LRU). Redis yoksa kullanılır. | `1024` |
 | `LLM_PROCEDURE_INTENT_ENABLED` | `1` ise sağlık turizmi `/v1/quote` deterministik sinonim eşleyici düşük confidence ya da miss verdiğinde LLM fallback'i çağırır. | `0` |
 | `LLM_PROCEDURE_INTENT_MIN_CONFIDENCE` | Deterministik match'in altında LLM tetiklendiği eşik (0.0–1.0). | `0.40` |
+| `WIRO_QWEN_LLM_ENABLED` | `1` ise Qwen3.6-27B text generation servisi etkin (`app/services/ai/qwen_llm.py`). Quote summary, doctor-Q&A, multi-language clinic comparison için. WIRO_API_KEY/SECRET aynı kimlik ile auth. | `0` |
+| `WIRO_QWEN_LLM_MODEL` | Wiro model slug; rebrand olursa env ile değiştirilir, kod release gerekmez. | `qwen/qwen3-6-27b` |
+| `WIRO_WHISPER_STT_ENABLED` | `1` ise Whisper-large-v3-turbo-turkish ASR etkin (`app/services/ai/whisper_stt.py`). Hasta sesli mesajının metne dönüşümü. PII redaksiyonu transcript'te uygulanır. | `0` |
+| `WIRO_WHISPER_STT_MODEL` | Wiro model slug. | `openai/whisper-large-v3-turbo-turkish` |
+| `WIRO_COGVLM_CAPTION_ENABLED` | `1` ise CogVLM2 video-to-text caption etkin (`app/services/ai/cogvlm_caption.py`). Hasta video klip → klinik açıklama. Domain-tuned prompt presets `HEALTH_TOURISM_PROMPTS` içinde. | `0` |
+| `WIRO_COGVLM_CAPTION_MODEL` | Wiro model slug. | `thudm/cogvlm2-llama3-caption` |
 | `LEAD_WEBHOOK_URL` | `/v1/quote/lead` kabul edildiğinde JSON POST gönderilen URL. Slack incoming webhook, Make/Zapier veya generic CRM olabilir. Boşsa lead webhook devre dışı; route 200 dönmeye devam eder ama payload `webhook_configured: false` olur. | — |
 | `LEAD_WEBHOOK_AUTH_TOKEN` | Set edilirse `Authorization: Bearer <token>` header'ı gönderilir. | — |
 | `LEAD_WEBHOOK_TIMEOUT_SECONDS` | Tek istek için timeout. | `5.0` |

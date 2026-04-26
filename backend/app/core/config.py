@@ -120,6 +120,29 @@ class Settings(BaseSettings):
     LLM_PROCEDURE_INTENT_ENABLED: bool = False
     LLM_PROCEDURE_INTENT_MIN_CONFIDENCE: float = 0.40
 
+    # ── Wiro AI services (health-tourism extensions) ────────────────────
+    # Each service is a thin wrapper around the existing Wiro
+    # submit+poll pattern (HMAC auth from llm_nlu_client). Feature
+    # flags default off — operators opt-in once the credentials are
+    # in env. Models are env-overridable so a Wiro slug change
+    # ("qwen3-6-27b" → "qwen3-7b" etc.) doesn't need a code release.
+
+    # Qwen3.6-27B — text generation (quote summary, doctor-Q&A drafts).
+    WIRO_QWEN_LLM_ENABLED: bool = False
+    WIRO_QWEN_LLM_MODEL: str = "qwen/qwen3-6-27b"
+
+    # Whisper-large-v3-turbo-turkish — speech-to-text (multilingual
+    # patient voice intake). Optimised for Turkish; auto-detects
+    # 50+ languages.
+    WIRO_WHISPER_STT_ENABLED: bool = False
+    WIRO_WHISPER_STT_MODEL: str = "openai/whisper-large-v3-turbo-turkish"
+
+    # CogVLM2-LLaMA3 — video-to-text caption (visual assessment of
+    # hair / smile / skin clips). Domain-tuned prompt presets in
+    # services/ai/cogvlm_caption.py::HEALTH_TOURISM_PROMPTS.
+    WIRO_COGVLM_CAPTION_ENABLED: bool = False
+    WIRO_COGVLM_CAPTION_MODEL: str = "thudm/cogvlm2-llama3-caption"
+
     # ── Health-tourism: lead conversion webhook ──────────────────────────
     # When LEAD_WEBHOOK_URL is set, /v1/quote/lead dispatches a JSON
     # POST after accepting the lead. Compatible with Slack incoming
