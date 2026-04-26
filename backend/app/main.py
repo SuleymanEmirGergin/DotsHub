@@ -2,7 +2,7 @@
 
 import logging
 from contextlib import asynccontextmanager
-from typing import Optional
+from typing import NamedTuple, Optional
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -279,47 +279,112 @@ async def http_5xx_monitor_middleware(request, call_next):
         raise
 
 
+# ─── Rate-limit dispatch table ──────────────────────────────────────
+#
+# Adding a new rate-limited endpoint used to mean editing an elif
+# chain inside the middleware below. The dispatch table moves each
+# bucket's policy out of code-flow and into data — adding an endpoint
+# is now a single-line entry. Bucket name, key builder, sync/async
+# check funcs, and limit constant ride together so a row is the whole
+# story.
+#
+# `also_session` toggles the per-session fairness layer documented in
+# rate_limit.py — kept on for triage + quote (multi-turn flows where
+# NAT users share an IP) and off for one-shot endpoints (send-summary,
+# admin) where session granularity adds nothing.
+
+class _RLBucket(NamedTuple):
+    name: str
+    key_builder: "Callable[[object], str]"
+    sync_check: "Callable[[str], tuple]"
+    async_check: "Callable[[object, str], object]"
+    limit: int
+    also_session: bool
+
+
+def _ip_of(request) -> Optional[str]:
+    return request.client.host if request.client else None
+
+
+def _send_summary_key(request) -> str:
+    return build_send_summary_rl_key(_ip_of(request))
+
+
+def _default_key(request) -> str:
+    return build_rl_key(_ip_of(request), request.headers.get("x-device-id"))
+
+
+_RATE_LIMITS: dict[str, _RLBucket] = {
+    "/v1/triage/send-summary": _RLBucket(
+        "send_summary", _send_summary_key,
+        check_send_summary_rate_limit, check_send_summary_rate_limit_redis,
+        SEND_SUMMARY_MAX_REQ, also_session=False,
+    ),
+    "/v1/triage/export-summary": _RLBucket(
+        "send_summary", _send_summary_key,
+        check_send_summary_rate_limit, check_send_summary_rate_limit_redis,
+        SEND_SUMMARY_MAX_REQ, also_session=False,
+    ),
+    "/v1/triage/turn": _RLBucket(
+        "default", _default_key,
+        check_rate_limit, check_rate_limit_redis,
+        MAX_REQ, also_session=True,
+    ),
+    "/v1/triage/stream": _RLBucket(
+        "default", _default_key,
+        check_rate_limit, check_rate_limit_redis,
+        MAX_REQ, also_session=True,
+    ),
+    "/v1/triage/feedback": _RLBucket(
+        "default", _default_key,
+        check_rate_limit, check_rate_limit_redis,
+        MAX_REQ, also_session=True,
+    ),
+    "/v1/quote": _RLBucket(
+        "default", _default_key,
+        check_rate_limit, check_rate_limit_redis,
+        MAX_REQ, also_session=True,
+    ),
+    "/v1/quote/itinerary": _RLBucket(
+        "default", _default_key,
+        check_rate_limit, check_rate_limit_redis,
+        MAX_REQ, also_session=True,
+    ),
+    "/v1/quote/lead": _RLBucket(
+        "default", _default_key,
+        check_rate_limit, check_rate_limit_redis,
+        MAX_REQ, also_session=True,
+    ),
+}
+
+
 @app.middleware("http")
 async def rate_limit_middleware(request, call_next):
-    """Apply rate limit to triage turn, feedback, send-summary, and export-summary; add X-RateLimit-* headers."""
+    """Apply rate limit per-path via the _RATE_LIMITS dispatch table.
+
+    Each entry knows its bucket name, how to build the cache key from
+    the request, which check function to use (sync vs Redis), the
+    limit constant for X-RateLimit-Limit, and whether to enforce the
+    per-session fairness layer on top.
+    """
     path = request.scope.get("path", "")
-    ip = request.client.host if request.client else None
+    cfg = _RATE_LIMITS.get(path)
+    if cfg is None:
+        return await call_next(request)
 
-    bucket: Optional[str] = None
-    if path in ("/v1/triage/send-summary", "/v1/triage/export-summary"):
-        bucket = "send_summary"
-        key = build_send_summary_rl_key(ip)
-        redis = getattr(request.app.state, "redis", None)
-        if redis:
-            allowed, remaining, reset_in = await check_send_summary_rate_limit_redis(redis, key)
-        else:
-            allowed, remaining, reset_in = check_send_summary_rate_limit(key)
-        limit_header = SEND_SUMMARY_MAX_REQ
-    elif path in (
-        "/v1/triage/turn",
-        "/v1/triage/stream",
-        "/v1/triage/feedback",
-        "/v1/quote",
-        "/v1/quote/itinerary",
-        "/v1/quote/lead",
-    ):
-        bucket = "default"
-        device_id = request.headers.get("x-device-id")
-        key = build_rl_key(ip, device_id)
-        redis = getattr(request.app.state, "redis", None)
-        if redis:
-            allowed, remaining, reset_in = await check_rate_limit_redis(redis, key)
-        else:
-            allowed, remaining, reset_in = check_rate_limit(key)
-        limit_header = MAX_REQ
+    redis = getattr(request.app.state, "redis", None)
+    key = cfg.key_builder(request)
+    if redis:
+        allowed, remaining, reset_in = await cfg.async_check(redis, key)
+    else:
+        allowed, remaining, reset_in = cfg.sync_check(key)
 
-        # Session bucket — fairness behind shared NAT. Continuing turns
-        # carry X-Session-Id; if present we additionally enforce a
-        # per-session quota so one session's loop can't starve another
-        # user on the same IP. First-turn (no session) requests skip
-        # this layer and rely on the IP/device bucket alone.
+    # Optional session bucket — additive AND. Continuing-turn requests
+    # carry X-Session-Id; one runaway loop can't starve other users on
+    # the same NAT IP because each session has its own quota.
+    if allowed and cfg.also_session:
         session_id = request.headers.get("x-session-id")
-        if allowed and session_id:
+        if session_id:
             session_key = build_session_rl_key(session_id)
             if redis:
                 s_allowed, s_remaining, s_reset_in = (
@@ -331,11 +396,6 @@ async def rate_limit_middleware(request, call_next):
                 )
             _rate_limit_observe("session", session_key, s_allowed)
             if not s_allowed:
-                # Session bucket denied — surface the session reset
-                # window so the client can show a useful "wait N
-                # minutes" message (typically 30/hour, so reset_in is
-                # in minutes-to-hour range, very different from the
-                # IP/device 60s window).
                 return JSONResponse(
                     status_code=429,
                     content={
@@ -350,26 +410,21 @@ async def rate_limit_middleware(request, call_next):
                         "X-RateLimit-Bucket": "session",
                     },
                 )
-    else:
-        return await call_next(request)
 
-    # Record the decision before returning — rate-limit observer feeds
-    # the rejection-rate alert.
-    _rate_limit_observe(bucket, key, allowed)
-
+    _rate_limit_observe(cfg.name, key, allowed)
     if not allowed:
         return JSONResponse(
             status_code=429,
             content={"detail": "Rate limit exceeded", "reset_in_sec": reset_in},
             headers={
-                "X-RateLimit-Limit": str(limit_header),
+                "X-RateLimit-Limit": str(cfg.limit),
                 "X-RateLimit-Remaining": "0",
                 "X-RateLimit-Reset": str(reset_in),
             },
         )
 
     response = await call_next(request)
-    response.headers["X-RateLimit-Limit"] = str(limit_header)
+    response.headers["X-RateLimit-Limit"] = str(cfg.limit)
     response.headers["X-RateLimit-Remaining"] = str(remaining)
     response.headers["X-RateLimit-Reset"] = str(reset_in)
     return response
