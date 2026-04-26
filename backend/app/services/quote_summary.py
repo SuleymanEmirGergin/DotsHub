@@ -188,6 +188,41 @@ def _build_prompt(
 # ─── Supabase log ───────────────────────────────────────────────────
 
 
+def _sentry_breadcrumb(
+    *,
+    provider: str,
+    outcome: str,
+    latency_ms: int,
+    error_type: Optional[str] = None,
+) -> None:
+    """Attach a Sentry breadcrumb for the provider attempt.
+
+    Background tasks DON'T inherit the request scope, so any unhandled
+    exception in ``generate_and_cache`` shows up as a generic
+    background event without context. Breadcrumbs added here surface
+    the provider-by-provider attempts on the same trail when an
+    exception eventually does fire (e.g. ``Exception`` clause caught
+    one provider but the next raised something we missed).
+
+    Wrapped in try/except so an observability hiccup never crashes
+    the BG task — same convention the Supabase log uses."""
+    try:
+        import sentry_sdk
+        sentry_sdk.add_breadcrumb(
+            category="quote_summary",
+            message=f"provider={provider} outcome={outcome}",
+            level="info" if outcome == "success" else "warning",
+            data={
+                "provider": provider,
+                "outcome": outcome,
+                "latency_ms": latency_ms,
+                "error_type": error_type,
+            },
+        )
+    except Exception:  # noqa: BLE001 — observability must not raise
+        pass
+
+
 def _log_llm_call(
     *,
     provider: str,
@@ -339,6 +374,12 @@ def generate_and_cache(
                 latency_ms=elapsed_ms,
                 error_type=error_type,
             )
+            _sentry_breadcrumb(
+                provider=provider_name,
+                outcome="error",
+                latency_ms=elapsed_ms,
+                error_type=error_type,
+            )
             logger.warning(
                 "quote_summary.provider_failed provider=%s: %s",
                 provider_name, exc,
@@ -360,6 +401,11 @@ def generate_and_cache(
                 latency_ms=elapsed_ms,
                 error_type=None,
             )
+            _sentry_breadcrumb(
+                provider=provider_name,
+                outcome="success",
+                latency_ms=elapsed_ms,
+            )
             cleaned = text.strip()
             _cache_set(key, cleaned)
             return cleaned
@@ -370,6 +416,12 @@ def generate_and_cache(
         _log_llm_call(
             provider=provider_name,
             success=False,
+            latency_ms=elapsed_ms,
+            error_type="empty",
+        )
+        _sentry_breadcrumb(
+            provider=provider_name,
+            outcome="empty",
             latency_ms=elapsed_ms,
             error_type="empty",
         )

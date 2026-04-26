@@ -334,6 +334,127 @@ groups:
             CLIENT_VERSION_ENFORCEMENT from warn → block on stale
             versions (see docs/OPS_VERSION_GATE_ROLLOUT.md).
 
+  - name: backend-quote-summary
+    interval: 1m
+    rules:
+      - alert: QuoteSummaryHighEmptyRate
+        # Background-task LLM run that produced no usable text. A few %
+        # is normal (network blips, rate-limit retries); >30% sustained
+        # means the prompt or a provider degraded — the cache stays
+        # empty and patient-facing summary_tr stays None across requests.
+        expr: |
+          sum(rate(quote_summary_total{outcome="empty"}[10m]))
+            /
+          clamp_min(
+            sum(rate(quote_summary_total{outcome=~"success|empty|error"}[10m])),
+            0.001
+          )
+            > 0.30
+        for: 15m
+        labels:
+          severity: warning
+          service: backend
+          category: llm-health
+        annotations:
+          summary: "quote_summary empty-rate >30% for 15m"
+          description: |
+            {{ $value | humanizePercentage }} of quote_summary
+            generation attempts returned an empty body. Likely causes
+            in priority order: (1) primary provider rate-limited or
+            credentials rotated and not redeployed, (2) prompt drift
+            from recent edits to services/quote_summary.py, (3) Wiro
+            outage — check status. Fallback provider should kick in
+            but is also returning empty if this fires for both.
+            Runbook: docs/runbooks/WIRO_CREDENTIAL_ROTATION.md (auth
+            issues) + status.wiro.ai. Patient impact: bounded —
+            QUOTE envelope still returns ranked clinics, summary_tr
+            just stays None.
+
+      - alert: QuoteSummaryHighErrorRate
+        # Provider raised (HTTP 5xx, timeout, network). Less benign
+        # than empty — indicates an actual outage path. We alert
+        # earlier (10% / 10m) than empty-rate.
+        expr: |
+          sum(rate(quote_summary_total{outcome="error"}[5m]))
+            /
+          clamp_min(
+            sum(rate(quote_summary_total{outcome=~"success|empty|error"}[5m])),
+            0.001
+          )
+            > 0.10
+        for: 10m
+        labels:
+          severity: warning
+          service: backend
+          category: llm-health
+        annotations:
+          summary: "quote_summary error-rate >10% on at least one provider"
+          description: |
+            {{ $value | humanizePercentage }} of quote_summary calls
+            raised an exception during the last 5m. Drill into
+            ``quote_summary_total`` by ``provider`` label to find which
+            tier is failing. Common causes: WIRO_API_SECRET expired,
+            Wiro upstream incident, network partition. The fallback
+            chain mitigates but does NOT mask — both tiers can fail
+            on the same root cause (auth, network).
+
+      - alert: QuoteSummaryLatencyHigh
+        # p95 generation wall-clock >30s sustained 15m. Background
+        # task so this is NOT a user-facing latency, it's a cost +
+        # cache-warmup signal: long generations mean the cache stays
+        # cold longer and patients get summary_tr=None for more
+        # consecutive QUOTE responses than designed.
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum by (le, provider) (
+              rate(quote_summary_latency_seconds_bucket[5m])
+            )
+          ) > 30
+        for: 15m
+        labels:
+          severity: info
+          service: backend
+          category: llm-health
+        annotations:
+          summary: "quote_summary p95 >30s on {{ $labels.provider }}"
+          description: |
+            Background generation p95 on `{{ $labels.provider }}` is
+            {{ $value | humanizeDuration }}. Typical Qwen / GPT-5-mini
+            falls in 5-15s range. Sustained >30s means Wiro is queue-
+            saturated; consider raising QUOTE_SUMMARY_LLM_TIMEOUT_SECONDS
+            ONLY if cost is acceptable, or swap provider order via
+            QUOTE_SUMMARY_LLM_PROVIDERS. Patient impact: low — the
+            cache eventually warms; new requests for cached combos
+            still get the blurb.
+
+      - alert: QuoteSummaryCacheHitRateLow
+        # Hit rate is the cache health signal. After warmup, hit rate
+        # should be 80%+ (most patients query a small set of popular
+        # procedure-clinic-locale combos). Sustained <40% means either
+        # (a) very high-cardinality traffic, or (b) cache TTL too tight
+        # for the read pattern.
+        expr: |
+          sum(rate(quote_summary_cache_total{result="hit"}[30m]))
+            /
+          clamp_min(sum(rate(quote_summary_cache_total[30m])), 0.001)
+            < 0.40
+        for: 1h
+        labels:
+          severity: info
+          service: backend
+          category: cache-health
+        annotations:
+          summary: "quote_summary cache hit-rate <40% for 1h"
+          description: |
+            Hit rate {{ $value | humanizePercentage }} across the last
+            30 minutes, sustained 1h. Likely (a) traffic skew toward
+            new procedure-clinic combos (post-launch, post clinic
+            expansion), or (b) QUOTE_SUMMARY_CACHE_TTL_SECONDS too
+            short for the read frequency. Bumping cache size /
+            TTL is a per-process tweak; multi-instance deployments
+            need Redis (deferred).
+
   - name: backend-availability
     interval: 30s
     rules:
