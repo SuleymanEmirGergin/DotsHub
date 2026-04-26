@@ -26,8 +26,12 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key | — |
 | `CORS_ORIGINS` | İzin verilen origin’ler (virgülle ayrılmış) | `http://localhost:3000,https://app.example.com` |
 | `REDIS_URL` | Rate limit için Redis (opsiyonel). **Çok instance:** Birden fazla API worker/pod kullanıyorsanız paylaşılan limit için tanımlayın; yoksa her instance kendi in-memory limitine sahip olur. | `redis://localhost:6379` |
-| `RATE_LIMIT_WINDOW_SEC` | Rate limit penceresi (sn) | `60` |
-| `RATE_LIMIT_MAX_REQ` | Pencere başına istek | `20` |
+| `RATE_LIMIT_WINDOW_SEC` | IP/device rate limit penceresi (sn) | `60` |
+| `RATE_LIMIT_MAX_REQ` | IP/device rate limit — pencere başına istek | `20` |
+| `SESSION_RATE_LIMIT_WINDOW_SEC` | Session bazlı rate limit penceresi (sn). NAT arkasında adil paylaşım için IP bucket'ına ek olarak çalışır; `X-Session-Id` header'ı ile aktif olur. | `3600` |
+| `SESSION_RATE_LIMIT_MAX_REQ` | Session başına pencere başına istek | `30` |
+| `IDEMPOTENCY_TTL_SEC` | `Idempotency-Key` cache TTL (sn). Aynı key+gövde ile gelen retry isteğinde cached envelope döner; engine yeniden çalışmaz. Redis varsa orada, yoksa LRU in-memory. | `300` |
+| `IDEMPOTENCY_MEMORY_MAX` | In-memory idempotency cache azami giriş sayısı (LRU). Redis yoksa kullanılır. | `1024` |
 | `SEND_SUMMARY_RATE_LIMIT_MAX_REQ` | send-summary ve export-summary limiti (örn. 5/dk) | `5` |
 | `SEND_SUMMARY_EMAIL` | `1` ise özet e-postası açık | `0` veya `1` |
 | `RESEND_API_KEY` | Resend API anahtarı (e-posta için) | — |

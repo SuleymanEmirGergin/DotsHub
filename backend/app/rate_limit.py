@@ -322,3 +322,85 @@ async def check_llm_nlu_rate_limit_redis(
         _warn_redis_degraded_once(f"llm_nlu:{key}", exc)
         # NOTE: fallback inc'd inside check_llm_nlu_rate_limit().
         return check_llm_nlu_rate_limit(key)
+
+
+# ---------------------------------------------------------------------------
+# Session-based rate limit — fairness layer behind shared NAT
+# ---------------------------------------------------------------------------
+#
+# IP-only buckets punish multi-user NAT (cafés, university Wi-Fi, mobile
+# carrier CG-NAT): one heavy user can starve everyone else's quota.
+# Solution: keep the IP bucket for abuse defence (creating sessions) but
+# add a per-session bucket so each ongoing triage gets its own quota
+# regardless of how many users share the egress IP.
+#
+# Both buckets must allow for a request to pass:
+#   - first turn (no session_id) → only IP bucket applies
+#   - continuing turn (X-Session-Id header) → both IP + session apply
+# This keeps the IP cap as a session-creation throttle and stops a single
+# session from looping infinitely (e.g. broken client retry).
+#
+# Default window is intentionally longer than the IP window (1 h vs 1 m)
+# because a real triage spans many turns over minutes; a per-minute
+# session cap would deny legitimate slow users.
+
+SESSION_WINDOW_SEC = int(os.getenv("SESSION_RATE_LIMIT_WINDOW_SEC", "3600"))
+SESSION_MAX_REQ = int(os.getenv("SESSION_RATE_LIMIT_MAX_REQ", "30"))
+SESSION_REDIS_KEY_PREFIX = "rl_session:"
+
+_SESSION_BUCKETS: Dict[str, Deque[float]] = {}
+
+
+def build_session_rl_key(session_id: Optional[str]) -> str:
+    """Session rate-limit key. Returns 'sid:<id>' or 'anon' for None.
+
+    Callers should only invoke session rate limiting when a session_id
+    is present — the 'anon' fallback exists so the function is total
+    (always returns a string), but enforcing on it would lump every
+    sessionless request into one shared bucket.
+    """
+    return f"sid:{session_id}" if session_id else "anon"
+
+
+def check_session_rate_limit(key: str) -> Tuple[bool, int, int]:
+    """In-memory session rate limit. Returns (allowed, remaining, reset_in_sec)."""
+    now = time.time()
+    q = _SESSION_BUCKETS.get(key)
+    if q is None:
+        q = deque()
+        _SESSION_BUCKETS[key] = q
+    cutoff = now - SESSION_WINDOW_SEC
+    while q and q[0] < cutoff:
+        q.popleft()
+    if len(q) >= SESSION_MAX_REQ:
+        reset_in = int(SESSION_WINDOW_SEC - (now - q[0])) if q else SESSION_WINDOW_SEC
+        _inc_rate_limit("session", "denied")
+        return False, 0, max(reset_in, 1)
+    q.append(now)
+    remaining = SESSION_MAX_REQ - len(q)
+    reset_in = int(SESSION_WINDOW_SEC - (now - q[0])) if q else SESSION_WINDOW_SEC
+    _inc_rate_limit("session", "allowed")
+    return True, remaining, max(reset_in, 1)
+
+
+async def check_session_rate_limit_redis(
+    redis: "Redis", key: str
+) -> Tuple[bool, int, int]:
+    """Redis-backed session rate limit. Returns (allowed, remaining, reset_in_sec)."""
+    rkey = f"{SESSION_REDIS_KEY_PREFIX}{key}"
+    try:
+        count = await redis.incr(rkey)
+        if count == 1:
+            await redis.expire(rkey, SESSION_WINDOW_SEC)
+        ttl = await redis.ttl(rkey)
+        reset_in = max(ttl, 1) if ttl > 0 else SESSION_WINDOW_SEC
+        if count > SESSION_MAX_REQ:
+            await redis.decr(rkey)
+            _inc_rate_limit("session", "denied")
+            return False, 0, reset_in
+        _inc_rate_limit("session", "allowed")
+        return True, SESSION_MAX_REQ - count, reset_in
+    except Exception as exc:
+        _warn_redis_degraded_once(f"session:{key}", exc)
+        # NOTE: fallback inc'd inside check_session_rate_limit().
+        return check_session_rate_limit(key)

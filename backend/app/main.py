@@ -3,7 +3,7 @@
 import logging
 from contextlib import asynccontextmanager
 from typing import Optional
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
@@ -46,9 +46,13 @@ from app.rate_limit import (
     build_admin_rl_key,
     check_admin_rate_limit,
     check_admin_rate_limit_redis,
+    build_session_rl_key,
+    check_session_rate_limit,
+    check_session_rate_limit_redis,
     MAX_REQ,
     SEND_SUMMARY_MAX_REQ,
     ADMIN_MAX_REQ,
+    SESSION_MAX_REQ,
 )
 
 
@@ -266,7 +270,7 @@ async def rate_limit_middleware(request, call_next):
         else:
             allowed, remaining, reset_in = check_send_summary_rate_limit(key)
         limit_header = SEND_SUMMARY_MAX_REQ
-    elif path in ("/v1/triage/turn", "/v1/triage/feedback"):
+    elif path in ("/v1/triage/turn", "/v1/triage/stream", "/v1/triage/feedback"):
         bucket = "default"
         device_id = request.headers.get("x-device-id")
         key = build_rl_key(ip, device_id)
@@ -276,6 +280,44 @@ async def rate_limit_middleware(request, call_next):
         else:
             allowed, remaining, reset_in = check_rate_limit(key)
         limit_header = MAX_REQ
+
+        # Session bucket — fairness behind shared NAT. Continuing turns
+        # carry X-Session-Id; if present we additionally enforce a
+        # per-session quota so one session's loop can't starve another
+        # user on the same IP. First-turn (no session) requests skip
+        # this layer and rely on the IP/device bucket alone.
+        session_id = request.headers.get("x-session-id")
+        if allowed and session_id:
+            session_key = build_session_rl_key(session_id)
+            if redis:
+                s_allowed, s_remaining, s_reset_in = (
+                    await check_session_rate_limit_redis(redis, session_key)
+                )
+            else:
+                s_allowed, s_remaining, s_reset_in = check_session_rate_limit(
+                    session_key
+                )
+            _rate_limit_observe("session", session_key, s_allowed)
+            if not s_allowed:
+                # Session bucket denied — surface the session reset
+                # window so the client can show a useful "wait N
+                # minutes" message (typically 30/hour, so reset_in is
+                # in minutes-to-hour range, very different from the
+                # IP/device 60s window).
+                return JSONResponse(
+                    status_code=429,
+                    content={
+                        "detail": "Rate limit exceeded (session)",
+                        "reset_in_sec": s_reset_in,
+                        "bucket": "session",
+                    },
+                    headers={
+                        "X-RateLimit-Limit": str(SESSION_MAX_REQ),
+                        "X-RateLimit-Remaining": "0",
+                        "X-RateLimit-Reset": str(s_reset_in),
+                        "X-RateLimit-Bucket": "session",
+                    },
+                )
     else:
         return await call_next(request)
 
@@ -358,22 +400,83 @@ app.include_router(admin_v5_router, prefix="/v1", tags=["Admin V5"])
 # spinning up the whole FastAPI app. Router is included below.
 
 
+# /health latency thresholds (ms). Anything above SLOW gets a "slow"
+# tag so dashboards can alert on degraded backends without parsing the
+# numeric latency themselves. Tuned to be loose enough that intra-region
+# hops don't trip it but tight enough to surface a pegged Supabase or
+# Redis instance before users notice.
+_HEALTH_SLOW_MS = 200
+
+
+def _tag_latency(ms: float | None) -> str:
+    """Bucket a latency reading into ok/slow. None → 'unknown'."""
+    if ms is None:
+        return "unknown"
+    return "slow" if ms > _HEALTH_SLOW_MS else "ok"
+
+
 @app.get("/health")
-async def health_check():
-    """Basic liveness; includes Supabase reachability when configured."""
+async def health_check(request: Request):
+    """Liveness + Supabase + Redis reachability with latency.
+
+    Each subsystem reports a status string and (when reachable) a
+    `latency_ms` reading so monitoring can alert on degraded — not just
+    down — dependencies. Threshold lives in `_HEALTH_SLOW_MS`.
+
+    The endpoint never fails the request: a probe failure is recorded
+    in the response body, not in the HTTP status. Liveness is the
+    process answering at all.
+    """
+    import time
+
     out = {"status": "ok", "service": "dotshub-api", "version": "4.0.0"}
+
+    # ─── Supabase probe ─────────────────────────────────────────────
     if settings.SUPABASE_URL and "xxxx" not in settings.SUPABASE_URL:
         try:
             import httpx
+            t0 = time.perf_counter()
             r = httpx.get(
                 f"{settings.SUPABASE_URL.rstrip('/')}/rest/v1/",
                 headers={"apikey": settings.SUPABASE_SERVICE_ROLE_KEY or ""},
                 timeout=2.0,
             )
-            out["supabase"] = "ok" if r.status_code in (200, 401) else f"status_{r.status_code}"
+            elapsed_ms = (time.perf_counter() - t0) * 1000.0
+            reachable = r.status_code in (200, 401)
+            out["supabase"] = (
+                "ok" if reachable else f"status_{r.status_code}"
+            )
+            out["supabase_latency_ms"] = round(elapsed_ms, 1)
+            if reachable:
+                out["supabase_latency_tag"] = _tag_latency(elapsed_ms)
         except Exception as e:
             out["supabase"] = "error"
             out["supabase_error"] = str(e)[:200]
     else:
         out["supabase"] = "not_configured"
+
+    # ─── Redis probe ────────────────────────────────────────────────
+    # Only meaningful when REDIS_URL was configured at startup; we
+    # read the cached client from app.state instead of re-dialling so
+    # /health stays cheap (one PING) and shares the production
+    # connection pool's health.
+    redis_client = getattr(request.app.state, "redis", None)
+    if redis_client is not None:
+        try:
+            t0 = time.perf_counter()
+            await redis_client.ping()
+            elapsed_ms = (time.perf_counter() - t0) * 1000.0
+            out["redis"] = "ok"
+            out["redis_latency_ms"] = round(elapsed_ms, 1)
+            out["redis_latency_tag"] = _tag_latency(elapsed_ms)
+        except Exception as e:
+            out["redis"] = "error"
+            out["redis_error"] = str(e)[:200]
+    elif getattr(settings, "REDIS_URL", None):
+        # URL was set but the startup ping failed — surface that the
+        # rate-limit layer is on the in-memory fallback.
+        out["redis"] = "unavailable"
+    else:
+        out["redis"] = "not_configured"
+
     return out

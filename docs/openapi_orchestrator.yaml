@@ -26,6 +26,11 @@ paths:
     post:
       summary: Run one triage turn (single endpoint, single envelope)
       operationId: triageTurn
+      parameters:
+        - $ref: "#/components/parameters/ClientCapabilitiesHeader"
+        - $ref: "#/components/parameters/ClientVersionHeader"
+        - $ref: "#/components/parameters/IdempotencyKeyHeader"
+        - $ref: "#/components/parameters/SessionIdHeader"
       requestBody:
         required: true
         content:
@@ -461,9 +466,45 @@ components:
         Known tokens (see docs/client_versioning.md):
           - `curated_meta`        — unlocks `Envelope.payload.top_conditions[*]` curated fields (icd10, disease_description_tr, self_care_tr, …).
           - `emergency_specialty` — unlocks `Envelope.payload.recommended_specialty` on EMERGENCY envelopes.
+          - `streaming_envelope`  — transport-mode advertisement for `/v1/triage/stream` (Server-Sent Events).
 
         Unknown tokens are silently ignored (forward-compatible).
-      example: "curated_meta,emergency_specialty"
+      example: "curated_meta,emergency_specialty,streaming_envelope"
+    IdempotencyKeyHeader:
+      name: Idempotency-Key
+      in: header
+      required: false
+      schema:
+        type: string
+      description: |
+        Opaque client-generated identifier that makes `/v1/triage/turn`
+        retry-safe. The server caches the response for
+        `IDEMPOTENCY_TTL_SEC` (default 5 minutes). A retry with the
+        same key + same body returns the cached envelope without
+        re-running the triage engine. Reusing the key with a different
+        body returns an `ERROR` envelope with code
+        `IDEMPOTENCY_KEY_REUSED` — that's a client bug.
+
+        Recommended generation: UUIDv4 per logical user action,
+        persisted on the client until the response is acknowledged so
+        retries reuse it.
+      example: "550e8400-e29b-41d4-a716-446655440000"
+    SessionIdHeader:
+      name: X-Session-Id
+      in: header
+      required: false
+      schema:
+        type: string
+      description: |
+        Per-session rate-limit hint. When present, the server applies
+        an additional per-session bucket on top of the IP/device
+        bucket so users behind shared NAT (cafés, university Wi-Fi,
+        carrier CG-NAT) don't share each other's quota. First-turn
+        requests omit this header and rely on the IP bucket alone.
+
+        Default: 30 turns/hour per session. Override with
+        `SESSION_RATE_LIMIT_MAX_REQ` env var.
+      example: "c2c6e2d3-8d39-4b3d-8e5a-0f2a6e9c8d11"
 
   schemas:
     ConfigFeaturesResponse:
