@@ -235,6 +235,14 @@ class Settings(BaseSettings):
     QUOTE_SUMMARY_CACHE_TTL_SECONDS: int = 86400  # 24 h
     QUOTE_SUMMARY_CACHE_MAX_ENTRIES: int = 256
 
+    # ── Dashboard operators: per-user API key + rate limit ──────────────
+    # Operators authenticate with x-operator-key (sha256-hashed at the
+    # operator_users table). Each operator has its own bucket so a
+    # noisy operator can't deny others. ADMIN_API_KEY (super-admin)
+    # bypasses the operator bucket and uses the existing admin bucket.
+    OPERATOR_RATE_LIMIT_WINDOW_SEC: int = 60
+    OPERATOR_RATE_LIMIT_MAX_REQ: int = 60
+
     # ── Health-tourism: patient upload + AI dispatcher ───────────────────
     # Master flag for /v1/patient/upload — when False the route returns
     # 503; lets operators turn off the entire upload surface during

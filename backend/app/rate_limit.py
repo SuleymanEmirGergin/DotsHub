@@ -88,6 +88,14 @@ ADMIN_WINDOW_SEC = int(os.getenv("ADMIN_RATE_LIMIT_WINDOW_SEC", "60"))
 ADMIN_MAX_REQ = int(os.getenv("ADMIN_RATE_LIMIT_MAX_REQ", "60"))
 ADMIN_REDIS_KEY_PREFIX = "admin_rl:"
 
+# Operator API (dashboard per-user): keyed by operator_id (NOT IP) so
+# a noisy operator can't exhaust quota for the rest of the team. The
+# super-admin (ADMIN_API_KEY) bypasses this bucket and uses the
+# admin bucket above.
+OPERATOR_WINDOW_SEC = int(os.getenv("OPERATOR_RATE_LIMIT_WINDOW_SEC", "60"))
+OPERATOR_MAX_REQ = int(os.getenv("OPERATOR_RATE_LIMIT_MAX_REQ", "60"))
+OPERATOR_REDIS_KEY_PREFIX = "operator_rl:"
+
 # Send-summary + export-summary: shared per-IP limit (5/min)
 SEND_SUMMARY_WINDOW_SEC = int(os.getenv("SEND_SUMMARY_RATE_LIMIT_WINDOW_SEC", "60"))
 SEND_SUMMARY_MAX_REQ = int(os.getenv("SEND_SUMMARY_RATE_LIMIT_MAX_REQ", "5"))
@@ -257,6 +265,67 @@ async def check_admin_rate_limit_redis(redis: "Redis", key: str) -> Tuple[bool, 
         _warn_redis_degraded_once(f"admin:{key}", exc)
         # NOTE: fallback inc'd inside check_admin_rate_limit().
         return check_admin_rate_limit(key)
+
+
+# ---------------------------------------------------------------------------
+# Operator (dashboard per-user) rate limit
+# Keyed by operator_id (NOT IP) so each operator has its own quota.
+# Super-admin (ADMIN_API_KEY) skips this bucket — see admin_auth.
+# ---------------------------------------------------------------------------
+
+
+def build_operator_rl_key(operator_id: str | None) -> str:
+    """Operator rate limit key. Falls back to "anon" when somehow
+    invoked without an operator id (defensive — middleware shouldn't
+    reach this path without one)."""
+    return f"op:{operator_id}" if operator_id else "anon"
+
+
+def check_operator_rate_limit(key: str) -> Tuple[bool, int, int]:
+    """In-memory operator rate limit. Returns (allowed, remaining, reset_in_sec)."""
+    now = time.time()
+    q = _BUCKETS.get(key)
+    if q is None:
+        q = deque()
+        _BUCKETS[key] = q
+    cutoff = now - OPERATOR_WINDOW_SEC
+    while q and q[0] < cutoff:
+        q.popleft()
+    if len(q) >= OPERATOR_MAX_REQ:
+        reset_in = (
+            int(OPERATOR_WINDOW_SEC - (now - q[0])) if q else OPERATOR_WINDOW_SEC
+        )
+        _inc_rate_limit("operator", "denied")
+        return False, 0, max(reset_in, 1)
+    q.append(now)
+    remaining = OPERATOR_MAX_REQ - len(q)
+    reset_in = (
+        int(OPERATOR_WINDOW_SEC - (now - q[0])) if q else OPERATOR_WINDOW_SEC
+    )
+    _inc_rate_limit("operator", "allowed")
+    return True, remaining, max(reset_in, 1)
+
+
+async def check_operator_rate_limit_redis(
+    redis: "Redis", key: str
+) -> Tuple[bool, int, int]:
+    """Redis-backed operator rate limit."""
+    rkey = f"{OPERATOR_REDIS_KEY_PREFIX}{key}"
+    try:
+        count = await redis.incr(rkey)
+        if count == 1:
+            await redis.expire(rkey, OPERATOR_WINDOW_SEC)
+        ttl = await redis.ttl(rkey)
+        reset_in = max(ttl, 1) if ttl > 0 else OPERATOR_WINDOW_SEC
+        if count > OPERATOR_MAX_REQ:
+            await redis.decr(rkey)
+            _inc_rate_limit("operator", "denied")
+            return False, 0, reset_in
+        _inc_rate_limit("operator", "allowed")
+        return True, OPERATOR_MAX_REQ - count, reset_in
+    except Exception as exc:
+        _warn_redis_degraded_once(f"operator:{key}", exc)
+        return check_operator_rate_limit(key)
 
 
 # ---------------------------------------------------------------------------
