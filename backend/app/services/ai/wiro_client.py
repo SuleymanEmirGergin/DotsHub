@@ -34,7 +34,10 @@ Public API
     submit(model, fields, files=None, *, client=None) -> (task_id, token)
     poll(task_id, timeout=30.0, *, client=None) -> WiroTaskResult
     run(model, fields, files=None, *, timeout=30.0) -> WiroTaskResult
+    run_with_repeated_inputs(model, *, fields, multipart_files,
+                             repeated_text, timeout) -> WiroTaskResult
     fetch_output_text(url, *, timeout=10.0) -> str
+    extract_output_urls(result) -> list[str]
 """
 from __future__ import annotations
 
@@ -278,6 +281,60 @@ def run(
         return poll(task_id, timeout=timeout, client=c)
 
 
+# ─── run_with_repeated_inputs ────────────────────────────────────────
+
+
+def run_with_repeated_inputs(
+    model: str,
+    *,
+    fields: Optional[dict[str, Any]] = None,
+    multipart_files: Optional[list[tuple[str, tuple[str, bytes, str]]]] = None,
+    repeated_text: Optional[list[tuple[str, str]]] = None,
+    timeout: float = 30.0,
+) -> WiroTaskResult:
+    """Submit + poll for models that need repeated multipart keys.
+
+    Wiro's ``multifileinput`` (e.g. dots-ocr's ``inputDocumentMultiple``)
+    and ``combinefileinputmultiple`` (e.g. gemini's ``inputAll``) types
+    serialise as multiple form parts under the same field name. httpx's
+    ``files=`` dict cannot represent that, so this helper accepts:
+
+      - ``multipart_files``: list of ``(field_name, (filename, bytes,
+        content_type))`` — each entry becomes a file part. Duplicate
+        ``field_name`` allowed.
+      - ``repeated_text``: list of ``(field_name, value)`` — each entry
+        becomes a text field part. Duplicate keys allowed; httpx
+        serialises a list-of-tuples for ``data`` as repeated form parts.
+
+    Used by gemini_llm (``inputAll``: mixed files + URLs) and dots_ocr
+    (``inputDocumentMultiple``: files only).
+    """
+    require_signature_auth()
+    url = f"{_wiro_base()}/v1/Run/{model}"
+    headers = _wiro_auth_headers()
+
+    data: list[tuple[str, str]] = list((fields or {}).items())
+    data.extend(repeated_text or [])
+    data = [(k, "" if v is None else str(v)) for k, v in data]
+
+    with httpx.Client(
+        timeout=httpx.Timeout(min(timeout, 5.0)), trust_env=False
+    ) as c:
+        resp = c.post(
+            url, headers=headers, data=data, files=multipart_files or []
+        )
+        resp.raise_for_status()
+        body = resp.json()
+        if not body.get("result", False):
+            raise WiroTaskError(
+                f"submit returned result=false: errors={body.get('errors')!r}"
+            )
+        task_id = body.get("taskid")
+        if not task_id:
+            raise WiroTaskError(f"submit missing taskid: {body}")
+        return poll(str(task_id), timeout=timeout, client=c)
+
+
 # ─── output fetch ────────────────────────────────────────────────────
 
 
@@ -295,6 +352,21 @@ def fetch_output_text(url: str, *, timeout: float = 10.0) -> str:
         resp = c.get(url)
         resp.raise_for_status()
         return resp.text
+
+
+def extract_output_urls(result: WiroTaskResult) -> list[str]:
+    """Collect non-empty CDN URLs from result.outputs[].url.
+
+    Used by image-gen wrappers (nano-banana, gpt-image-2) where the
+    output is a list of generated image URLs rather than inline text.
+    Text-output models still use the per-module ``_extract_text``
+    pattern (probe inline parameter keys, fall back to fetching the
+    first output URL as text)."""
+    return [
+        o["url"]
+        for o in result.outputs
+        if isinstance(o.get("url"), str) and o["url"].strip()
+    ]
 
 
 # ─── private helpers ─────────────────────────────────────────────────

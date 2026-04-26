@@ -45,6 +45,16 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 | `WIRO_GEMINI_LLM_MODEL` | Wiro model slug. | `google/gemini-3-pro` |
 | `WIRO_MOONDREAM_VLM_ENABLED` | `1` ise Moondream3-Preview image Q&A etkin (`app/services/ai/moondream_vlm.py`). Tek görsel + soru → JSON cevap; Norwood / smile-line / dermatology preset'leri `HEALTH_TOURISM_PROMPTS` içinde. | `0` |
 | `WIRO_MOONDREAM_VLM_MODEL` | Wiro model slug. | `moondream3-preview/query` |
+| `WIRO_NANO_BANANA_IMAGE_ENABLED` | `1` ise Google nano-banana-pro image gen/edit etkin (`app/services/ai/nano_banana_image.py`). `generate()` CDN URL listesi döner. Pazarlama / klinik karşılaştırma için; **hasta-yüzü tıbbi mockup için kullanma** (KVKK + sağlık reklam mevzuatı). | `0` |
+| `WIRO_NANO_BANANA_IMAGE_MODEL` | Wiro model slug. | `google/nano-banana-pro` |
+| `WIRO_GPT_IMAGE_ENABLED` | `1` ise OpenAI gpt-image-2 etkin (`app/services/ai/gpt_image.py`). nano-banana ile aynı kullanım + inpainting (image + mask) — bölgesel kozmetik mockup için kullanışlı. | `0` |
+| `WIRO_GPT_IMAGE_MODEL` | Wiro model slug. | `openai/gpt-image-2` |
+| `WIRO_GPT5_MINI_LLM_ENABLED` | `1` ise gpt-5-mini multimodal LLM etkin (`app/services/ai/gpt5_mini_llm.py`). Daha ucuz; kısa özet + Q&A drafts. **Temperature/topP/maxTokens YOK** — `reasoning` (minimal/low/medium/high) ve `verbosity` ile cost/quality kontrolü. | `0` |
+| `WIRO_GPT5_MINI_LLM_MODEL` | Wiro model slug. | `openai/gpt-5-mini` |
+| `WIRO_GROK_LLM_ENABLED` | `1` ise xAI grok-4-20 multimodal LLM etkin (`app/services/ai/grok_llm.py`). Gemini-3-Pro alternatifi (vendor-redundancy). Tam sampling controls (`temperature`, `topP`, `maxOutputTokens`). | `0` |
+| `WIRO_GROK_LLM_MODEL` | Wiro model slug. | `xai/grok-4-20` |
+| `WIRO_DOTS_OCR_ENABLED` | `1` ise dots-ocr-1-5 multi-document OCR etkin (`app/services/ai/dots_ocr.py`). Hasta lab sonucu / reçete / panoramik görüntü gibi belgelerin metin/layout çıkarımı. `promptMode` enum'ı ile çıktı şekli (plain OCR vs. layout JSON) seçilir. | `0` |
+| `WIRO_DOTS_OCR_MODEL` | Wiro model slug. | `kristaller486/dots-ocr-1-5` |
 | `WIRO_API_KEY` | Wiro API key. Tüm `app/services/ai/*` ve legacy `llm_nlu_client` kullanır. | — |
 | `WIRO_API_SECRET` | Wiro HMAC signature secret. **`app/services/ai/*` (qwen, whisper, cogvlm, gemini, moondream) için zorunlu** — boşsa `WiroAuthError` ile fail-loud, servis wrapper'ı `None` döner. Legacy `llm_nlu_client` boşsa API-key-only moda düşer (eski Wiro projeleri için). | — |
 | `LEAD_WEBHOOK_URL` | `/v1/quote/lead` kabul edildiğinde JSON POST gönderilen URL. Slack incoming webhook, Make/Zapier veya generic CRM olabilir. Boşsa lead webhook devre dışı; route 200 dönmeye devam eder ama payload `webhook_configured: false` olur. | — |

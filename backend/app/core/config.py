@@ -162,6 +162,41 @@ class Settings(BaseSettings):
     WIRO_MOONDREAM_VLM_ENABLED: bool = False
     WIRO_MOONDREAM_VLM_MODEL: str = "moondream3-preview/query"
 
+    # nano-banana-pro — Google's text-to-image / image-edit model.
+    # Output: list of CDN URLs (PNG). Use case: marketing collateral,
+    # before/after illustrations for clinic comparison flows. NOT for
+    # patient-facing medical visualizations (legal liability).
+    WIRO_NANO_BANANA_IMAGE_ENABLED: bool = False
+    WIRO_NANO_BANANA_IMAGE_MODEL: str = "google/nano-banana-pro"
+
+    # gpt-image-2 — OpenAI's image gen/edit with optional inpaint mask.
+    # Output: list of CDN URLs. Use case: same as nano-banana but with
+    # inpainting (fill a masked region while keeping the rest of the
+    # image identical) — handy for "subtle whitening" or localised
+    # cosmetic edit mockups.
+    WIRO_GPT_IMAGE_ENABLED: bool = False
+    WIRO_GPT_IMAGE_MODEL: str = "openai/gpt-image-2"
+
+    # gpt-5-mini — cheaper text+image LLM. Use case: short summaries,
+    # routine clinic Q&A drafts. No temperature/topP/maxOutputTokens
+    # knobs (per Wiro schema); reasoning + verbosity instead.
+    WIRO_GPT5_MINI_LLM_ENABLED: bool = False
+    WIRO_GPT5_MINI_LLM_MODEL: str = "openai/gpt-5-mini"
+
+    # grok-4-20 — xAI's text+image LLM with full sampling controls
+    # (temperature, topP, maxOutputTokens). Use case: long-form quote
+    # summary alternative to Gemini-3-Pro when a different vendor's
+    # tone is preferred or for vendor-redundancy in production.
+    WIRO_GROK_LLM_ENABLED: bool = False
+    WIRO_GROK_LLM_MODEL: str = "xai/grok-4-20"
+
+    # dots-ocr-1-5 — multi-document OCR / layout extraction. Use case:
+    # patient lab results / prescriptions / prior surgery records. The
+    # ``promptMode`` enum picks layout style (full, layout-only, plain
+    # OCR, web parsing, scene text). Output is JSON-structured layout.
+    WIRO_DOTS_OCR_ENABLED: bool = False
+    WIRO_DOTS_OCR_MODEL: str = "kristaller486/dots-ocr-1-5"
+
     # ── Health-tourism: lead conversion webhook ──────────────────────────
     # When LEAD_WEBHOOK_URL is set, /v1/quote/lead dispatches a JSON
     # POST after accepting the lead. Compatible with Slack incoming

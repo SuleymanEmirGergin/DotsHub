@@ -40,7 +40,7 @@ from app.services.ai.wiro_client import (
     WiroTaskResult,
     WiroTimeout,
     fetch_output_text,
-    run,
+    run_with_repeated_inputs,
 )
 
 logger = logging.getLogger(__name__)
@@ -143,31 +143,20 @@ def generate(
 
     # Wiro's multipart shape for ``inputAll``: each entry is its own
     # form-field with the same name. httpx's ``files=`` dict can't
-    # repeat keys, so we use a list of (name, filespec) tuples — httpx
-    # accepts that form for repeated multipart parts.
-    multipart_files: list[tuple[str, tuple[str, bytes, str]]] = []
-    for filename, content, content_type in files_list:
-        multipart_files.append(
-            ("inputAll", (filename, content, content_type))
-        )
-    # URL inputs are sent in the same field as plain text values. To
-    # preserve repetition with httpx we set them as additional list
-    # entries — httpx supports passing a list under ``data=``.
-    if urls_list:
-        # When URLs are present alongside files, the form needs
-        # ``inputAll`` repeated as both file parts AND text parts.
-        # httpx accepts a list-of-tuples for ``data`` to allow
-        # repeated keys; combine with the files list above.
-        url_data = [("inputAll", url) for url in urls_list]
-    else:
-        url_data = []
+    # repeat keys, and URLs go through the ``inputAll`` text-field with
+    # the same repetition. ``run_with_repeated_inputs`` handles both.
+    multipart_files: list[tuple[str, tuple[str, bytes, str]]] = [
+        ("inputAll", (filename, content, content_type))
+        for filename, content, content_type in files_list
+    ]
+    repeated_text: list[tuple[str, str]] = [("inputAll", url) for url in urls_list]
 
     try:
-        result = _run_with_repeated_inputs(
+        result = run_with_repeated_inputs(
             settings.WIRO_GEMINI_LLM_MODEL,
             fields=fields,
             multipart_files=multipart_files,
-            url_data=url_data,
+            repeated_text=repeated_text,
             timeout=timeout,
         )
     except WiroAuthError as exc:
@@ -181,58 +170,6 @@ def generate(
         return None
 
     return _extract_text(result)
-
-
-def _run_with_repeated_inputs(
-    model: str,
-    *,
-    fields: dict,
-    multipart_files: list,
-    url_data: list,
-    timeout: float,
-) -> WiroTaskResult:
-    """Submit a Gemini task with the repeated-key ``inputAll`` shape,
-    then poll. The generic ``wiro_client.run()`` only handles a flat
-    fields dict, which can't represent ``inputAll=A&inputAll=B``;
-    Gemini-3-Pro is the only model in our catalog that needs this
-    repetition, so the small wrapper lives here instead of bloating
-    the generic client API."""
-    import httpx
-
-    from app.services.ai.wiro_client import (
-        _build_result,
-        poll,
-        require_signature_auth,
-    )
-    from app.services.llm_nlu_client import _wiro_auth_headers, _wiro_base
-
-    require_signature_auth()
-
-    url = f"{_wiro_base()}/v1/Run/{model}"
-    headers = _wiro_auth_headers()
-
-    # Combine flat fields + repeated URL entries into a list-of-pairs
-    # that httpx serialises as a multipart form with repeated keys.
-    data: list[tuple[str, str]] = list(fields.items())
-    data.extend(url_data)
-    data = [(k, "" if v is None else str(v)) for k, v in data]
-
-    with httpx.Client(
-        timeout=httpx.Timeout(min(timeout, 5.0)), trust_env=False
-    ) as c:
-        resp = c.post(
-            url, headers=headers, data=data, files=multipart_files
-        )
-        resp.raise_for_status()
-        body = resp.json()
-        if not body.get("result", False):
-            raise WiroTaskError(
-                f"submit returned result=false: errors={body.get('errors')!r}"
-            )
-        task_id = body.get("taskid")
-        if not task_id:
-            raise WiroTaskError(f"submit missing taskid: {body}")
-        return poll(str(task_id), timeout=timeout, client=c)
 
 
 def _extract_text(result: WiroTaskResult) -> Optional[str]:
