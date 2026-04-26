@@ -187,3 +187,133 @@ async def store_response(
         await _redis_store(redis, key, body_hash, envelope)
     else:
         _memory_store(key, body_hash, envelope)
+
+
+# ─── Route-level helper ──────────────────────────────────────────────
+#
+# Every health-tourism + triage-turn endpoint repeats the same 30
+# lines of plumbing (read header, hash body, lookup, mismatch error,
+# store after success). A FastAPI decorator can't wrap the route
+# cleanly — the framework introspects parameters at registration time
+# and a generic wrapper either loses the signature or has to manually
+# replay it. A helper class is the next-cleanest abstraction: 3 line
+# call site (init / check / store) and identical semantics across
+# endpoints.
+#
+# Usage:
+#     idem = IdempotencyHelper(http_request, request, _make_meta, session_id)
+#     early = await idem.check()
+#     if early is not None:
+#         return early
+#     envelope = ...build envelope...
+#     await idem.store(envelope)
+#     return envelope
+
+
+class IdempotencyHelper:
+    """Encapsulate the Idempotency-Key cache lookup + store cycle.
+
+    Hashes the body once (lazily) so lookup + store don't double-hash.
+    Caller decides what envelope to return on mismatch by passing a
+    ``meta_factory`` and ``session_id`` — keeping the helper agnostic
+    of the endpoint-specific disclaimer text.
+    """
+
+    def __init__(
+        self,
+        http_request,  # fastapi.Request — left untyped to avoid import here
+        body_model,
+        meta_factory,
+        session_id: str,
+        mismatch_message_tr: str = (
+            "Idempotency-Key aynı ama istek gövdesi farklı."
+        ),
+    ):
+        self._http_request = http_request
+        self._body_model = body_model
+        self._meta_factory = meta_factory
+        self._session_id = session_id
+        self._mismatch_message_tr = mismatch_message_tr
+        self.idempotency_key: Optional[str] = http_request.headers.get(
+            "idempotency-key"
+        )
+        self._redis = getattr(http_request.app.state, "redis", None)
+        self._body_hash_cache: Optional[str] = None
+
+    @property
+    def _body_hash(self) -> Optional[str]:
+        """Compute the body hash once. Returns None when there's no
+        idempotency-key (no point hashing) or when serialisation fails
+        (caller should not cache)."""
+        if self.idempotency_key is None:
+            return None
+        if self._body_hash_cache is not None:
+            return self._body_hash_cache
+        try:
+            self._body_hash_cache = compute_body_hash(
+                self._body_model.model_dump(mode="json")
+            )
+        except Exception:  # noqa: BLE001 — hash failure is recoverable
+            return None
+        return self._body_hash_cache
+
+    def _build_mismatch_envelope(self):
+        """Late import of Envelope — avoids a top-level cycle since
+        this module is imported by routes that import schemas."""
+        from app.models.schemas import Envelope
+
+        return Envelope(
+            type="ERROR",
+            session_id=self._session_id,
+            turn_index=0,
+            payload={
+                "code": "IDEMPOTENCY_KEY_REUSED",
+                "message_tr": self._mismatch_message_tr,
+                "retryable": False,
+            },
+            meta=self._meta_factory(),
+        )
+
+    async def check(self):
+        """Return an Envelope to short-circuit the route, or None
+        to continue. Two short-circuit cases:
+          - cache hit on (key, body_hash) → return the cached Envelope
+          - cache hit on key with DIFFERENT body → IDEMPOTENCY_KEY_REUSED
+            error envelope (client bug)
+
+        Lookup failures (Redis down, etc.) are logged WARN and treated
+        as a miss — the route runs as if no idempotency was requested.
+        """
+        if self.idempotency_key is None or self._body_hash is None:
+            return None
+        try:
+            cached = await lookup_cached(
+                self._redis, self.idempotency_key, self._body_hash
+            )
+        except IdempotencyMismatch:
+            return self._build_mismatch_envelope()
+        except Exception as exc:  # noqa: BLE001 — degrade to miss
+            logger.warning(
+                "idempotency.lookup_failed: %s; proceeding without cache", exc
+            )
+            return None
+        if cached is None:
+            return None
+        from app.models.schemas import Envelope
+        return Envelope.model_validate(cached)
+
+    async def store(self, envelope) -> None:
+        """Cache the envelope for next-attempt retrieval. Cache write
+        failures are non-fatal — the response has already been built;
+        a missed cache only costs a re-run on the next retry."""
+        if self.idempotency_key is None or self._body_hash is None:
+            return
+        try:
+            await store_response(
+                self._redis,
+                self.idempotency_key,
+                self._body_hash,
+                envelope.model_dump(mode="json"),
+            )
+        except Exception as exc:  # noqa: BLE001 — non-fatal
+            logger.warning("idempotency.store_failed: %s", exc)

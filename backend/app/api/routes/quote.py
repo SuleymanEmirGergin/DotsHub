@@ -32,12 +32,7 @@ from typing import Optional
 
 from fastapi import APIRouter, BackgroundTasks, Request
 
-from app.idempotency import (
-    IdempotencyMismatch,
-    compute_body_hash,
-    lookup_cached,
-    store_response,
-)
+from app.idempotency import IdempotencyHelper
 from app.models.schemas import (
     Envelope,
     ItineraryRequest,
@@ -181,36 +176,10 @@ async def quote(http_request: Request, request: QuoteRequest):
     """Generate a non-binding quote for a health-tourism procedure."""
     session_id = http_request.headers.get("x-session-id") or str(uuid.uuid4())
 
-    # ─── Idempotency check (mirrors /v1/triage/turn pattern) ───
-    idempotency_key = http_request.headers.get("idempotency-key")
-    body_hash: Optional[str] = None
-    redis_client = getattr(http_request.app.state, "redis", None)
-    if idempotency_key:
-        try:
-            body_hash = compute_body_hash(request.model_dump(mode="json"))
-            cached = await lookup_cached(redis_client, idempotency_key, body_hash)
-            if cached is not None:
-                return Envelope.model_validate(cached)
-        except IdempotencyMismatch:
-            return Envelope(
-                type="ERROR",
-                session_id=session_id,
-                turn_index=0,
-                payload={
-                    "code": "IDEMPOTENCY_KEY_REUSED",
-                    "message_tr": (
-                        "Idempotency-Key aynı ama istek gövdesi farklı."
-                    ),
-                    "retryable": False,
-                },
-                meta=_make_meta(),
-            )
-        except Exception as exc:
-            logger.warning(
-                "quote.idempotency_lookup_failed: %s; proceeding without cache",
-                exc,
-            )
-            body_hash = None
+    idem = IdempotencyHelper(http_request, request, _make_meta, session_id)
+    early = await idem.check()
+    if early is not None:
+        return early
 
     # ─── 1. Resolve procedure_id ─────────────────────────────────────
     resolved = _resolve_procedure_id(request)
@@ -318,20 +287,7 @@ async def quote(http_request: Request, request: QuoteRequest):
         meta=_make_meta(),
     )
 
-    # ─── 5. Cache for idempotency ────────────────────────────────────
-    if idempotency_key and body_hash is not None:
-        try:
-            await store_response(
-                redis_client,
-                idempotency_key,
-                body_hash,
-                envelope.model_dump(mode="json"),
-            )
-        except Exception as exc:
-            logger.warning(
-                "quote.idempotency_store_failed: %s", exc
-            )
-
+    await idem.store(envelope)
     _bump_quote_metric("QUOTE", procedure)
     return envelope
 
@@ -371,33 +327,12 @@ async def quote_itinerary(http_request: Request, request: ItineraryRequest):
     """Generate a day-by-day itinerary for a chosen procedure + clinic + date."""
     session_id = http_request.headers.get("x-session-id") or str(uuid.uuid4())
 
-    # Idempotency mirror of /v1/quote — same retry-safety guarantees.
-    idempotency_key = http_request.headers.get("idempotency-key")
-    body_hash: Optional[str] = None
-    redis_client = getattr(http_request.app.state, "redis", None)
-    if idempotency_key:
-        try:
-            body_hash = compute_body_hash(request.model_dump(mode="json"))
-            cached = await lookup_cached(redis_client, idempotency_key, body_hash)
-            if cached is not None:
-                return Envelope.model_validate(cached)
-        except IdempotencyMismatch:
-            return Envelope(
-                type="ERROR",
-                session_id=session_id,
-                turn_index=0,
-                payload={
-                    "code": "IDEMPOTENCY_KEY_REUSED",
-                    "message_tr": "Idempotency-Key aynı ama istek gövdesi farklı.",
-                    "retryable": False,
-                },
-                meta=_make_itinerary_meta(),
-            )
-        except Exception as exc:
-            logger.warning(
-                "itinerary.idempotency_lookup_failed: %s; proceeding", exc
-            )
-            body_hash = None
+    idem = IdempotencyHelper(
+        http_request, request, _make_itinerary_meta, session_id
+    )
+    early = await idem.check()
+    if early is not None:
+        return early
 
     # ─── 1. Validate procedure / clinic / date ────────────────────────
     procedure = procedure_catalog.get_procedure(request.procedure_id)
@@ -521,17 +456,7 @@ async def quote_itinerary(http_request: Request, request: ItineraryRequest):
         meta=_make_itinerary_meta(),
     )
 
-    if idempotency_key and body_hash is not None:
-        try:
-            await store_response(
-                redis_client,
-                idempotency_key,
-                body_hash,
-                envelope.model_dump(mode="json"),
-            )
-        except Exception as exc:
-            logger.warning("itinerary.idempotency_store_failed: %s", exc)
-
+    await idem.store(envelope)
     _bump_itinerary_metric("ITINERARY", procedure)
     return envelope
 
@@ -604,6 +529,15 @@ async def quote_lead(
     """
     session_id = http_request.headers.get("x-session-id") or str(uuid.uuid4())
     lead_id = str(uuid.uuid4())
+
+    # Idempotency: a retry with the same key returns the cached
+    # "scheduled" envelope. Critical here — without it, two retries
+    # would write two DB rows AND fire two webhooks, producing
+    # duplicate leads in the operator's CRM.
+    idem = IdempotencyHelper(http_request, request, _make_lead_meta, session_id)
+    early = await idem.check()
+    if early is not None:
+        return early
 
     procedure = procedure_catalog.get_procedure(request.procedure_id)
     clinic = clinic_registry.get_clinic(request.clinic_id)
@@ -685,7 +619,7 @@ async def quote_lead(
             lead_repository.record_outcome(lead_id, "not_configured")
         _bump_lead_metric("not_configured", request.consent_to_share)
 
-    return Envelope(
+    envelope = Envelope(
         type="RESULT",
         session_id=session_id,
         turn_index=0,
@@ -712,3 +646,5 @@ async def quote_lead(
         },
         meta=_make_lead_meta(),
     )
+    await idem.store(envelope)
+    return envelope

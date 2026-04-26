@@ -267,5 +267,168 @@ class IdempotencyRouteIntegrationTests(unittest.TestCase):
         self.assertEqual(len(engine_calls), 2)
 
 
+class IdempotencyHelperTests(unittest.TestCase):
+    """The route-level helper that the 4 idempotent endpoints share.
+    These tests exercise the helper in isolation so a regression in
+    the helper surfaces without touching every endpoint test."""
+
+    def setUp(self):
+        from datetime import datetime, timezone
+
+        from app.models.schemas import Meta
+
+        # Minimal http_request stub: just need .headers and .app.state.redis.
+        class _StubReq:
+            def __init__(self, headers, redis=None):
+                self.headers = headers
+                self.app = type("A", (), {"state": type("S", (), {"redis": redis})()})()
+
+        self._StubReq = _StubReq
+
+        # Pydantic-ish body with model_dump(mode="json") signature.
+        class _Body:
+            def __init__(self, payload):
+                self._payload = payload
+
+            def model_dump(self, mode="json"):
+                return self._payload
+
+        self._Body = _Body
+
+        def _meta():
+            return Meta(
+                disclaimer_tr="x",
+                timestamp=datetime.now(timezone.utc),
+            )
+
+        self._meta = _meta
+
+    def _make(self, headers, body_payload, redis=None):
+        return idem.IdempotencyHelper(
+            self._StubReq(headers, redis=redis),
+            self._Body(body_payload),
+            self._meta,
+            session_id="sess-1",
+        )
+
+    def test_no_header_skips_lookup(self):
+        async def _run():
+            helper = self._make({}, {"x": 1})
+            return await helper.check()
+
+        out = asyncio.run(_run())
+        self.assertIsNone(out)
+        # Body hash must NOT be computed when there's no idempotency
+        # key — saves a JSON serialise on every non-idempotent request.
+        helper = self._make({}, {"x": 1})
+        self.assertIsNone(helper._body_hash)
+
+    def test_cache_hit_returns_cached_envelope(self):
+        async def _run():
+            # Pre-populate the in-memory cache.
+            payload = {"x": 1}
+            from app.idempotency import compute_body_hash
+            h = compute_body_hash(payload)
+            await idem.store_response(
+                None,
+                "k1",
+                h,
+                {"type": "RESULT", "session_id": "s", "payload": {}, "meta": {}},
+            )
+            helper = self._make(
+                {"idempotency-key": "k1"}, payload
+            )
+            return await helper.check()
+
+        out = asyncio.run(_run())
+        self.assertIsNotNone(out)
+        self.assertEqual(out.type, "RESULT")
+
+    def test_cache_miss_returns_none(self):
+        async def _run():
+            helper = self._make(
+                {"idempotency-key": "k-fresh"}, {"x": 99}
+            )
+            return await helper.check()
+
+        out = asyncio.run(_run())
+        self.assertIsNone(out)
+
+    def test_mismatch_returns_error_envelope(self):
+        async def _run():
+            from app.idempotency import compute_body_hash
+            # Cache under hash for body A.
+            await idem.store_response(
+                None,
+                "k-mismatch",
+                compute_body_hash({"a": 1}),
+                {"type": "RESULT", "session_id": "s", "payload": {}, "meta": {}},
+            )
+            # Look up with body B → hash differs → IdempotencyMismatch
+            # → helper returns the error envelope.
+            helper = self._make(
+                {"idempotency-key": "k-mismatch"}, {"a": 2}
+            )
+            return await helper.check()
+
+        out = asyncio.run(_run())
+        self.assertIsNotNone(out)
+        self.assertEqual(out.type, "ERROR")
+        self.assertEqual(out.payload["code"], "IDEMPOTENCY_KEY_REUSED")
+
+    def test_store_writes_envelope_for_later_retrieval(self):
+        async def _run():
+            from app.idempotency import compute_body_hash
+
+            from app.models.schemas import Envelope, Meta
+            from datetime import datetime, timezone
+
+            envelope = Envelope(
+                type="QUOTE",
+                session_id="s",
+                turn_index=0,
+                payload={"clinics": []},
+                meta=Meta(
+                    disclaimer_tr="x",
+                    timestamp=datetime.now(timezone.utc),
+                ),
+            )
+            payload = {"a": 1}
+            helper = self._make(
+                {"idempotency-key": "k-store"}, payload
+            )
+            await helper.store(envelope)
+            # Verify lookup now returns the cached envelope.
+            cached = await idem.lookup_cached(
+                None, "k-store", compute_body_hash(payload)
+            )
+            return cached
+
+        cached = asyncio.run(_run())
+        self.assertIsNotNone(cached)
+        self.assertEqual(cached["type"], "QUOTE")
+
+    def test_store_without_key_is_noop(self):
+        async def _run():
+            from app.models.schemas import Envelope, Meta
+            from datetime import datetime, timezone
+
+            envelope = Envelope(
+                type="QUOTE",
+                session_id="s",
+                turn_index=0,
+                payload={},
+                meta=Meta(
+                    disclaimer_tr="x",
+                    timestamp=datetime.now(timezone.utc),
+                ),
+            )
+            helper = self._make({}, {"x": 1})
+            # Must not raise even with no idempotency-key.
+            await helper.store(envelope)
+
+        asyncio.run(_run())
+
+
 if __name__ == "__main__":
     unittest.main()

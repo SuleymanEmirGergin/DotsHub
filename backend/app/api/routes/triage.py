@@ -26,12 +26,7 @@ from app.models.schemas import (
 from app.services.facility_discovery import discover_facilities, DEFAULT_CITY
 from app.core.config import settings
 from app.core.i18n import get_text
-from app.idempotency import (
-    IdempotencyMismatch,
-    compute_body_hash,
-    lookup_cached,
-    store_response,
-)
+from app.idempotency import IdempotencyHelper
 from app.version_gating import (
     KNOWN_CAPABILITIES,
     filter_envelope,
@@ -356,45 +351,19 @@ async def triage_turn(http_request: Request, request: TriageTurnRequest):
         client bug. See ``app/idempotency.py``.
     """
     # ─── Idempotency check (best-effort: never fails the request) ──
-    idempotency_key = http_request.headers.get("idempotency-key")
-    body_hash: Optional[str] = None
-    redis_client = getattr(http_request.app.state, "redis", None)
-    if idempotency_key:
-        try:
-            body_hash = compute_body_hash(request.model_dump(mode="json"))
-            cached = await lookup_cached(redis_client, idempotency_key, body_hash)
-            if cached is not None:
-                logger.info(
-                    "idempotency.hit",
-                    extra={
-                        "key": idempotency_key,
-                        "session_id": request.session_id,
-                    },
-                )
-                return Envelope.model_validate(cached)
-        except IdempotencyMismatch:
-            return Envelope(
-                type="ERROR",
-                session_id=request.session_id or "unknown",
-                turn_index=0,
-                payload={
-                    "code": "IDEMPOTENCY_KEY_REUSED",
-                    "message_tr": (
-                        "Idempotency-Key aynı ama istek gövdesi farklı — "
-                        "aynı anahtarı farklı bir istekle kullandınız."
-                    ),
-                    "retryable": False,
-                },
-                meta=_make_meta(),
-            )
-        except Exception as exc:
-            # Cache layer failure must not break the request — log
-            # and proceed as if no idempotency was requested.
-            logger.warning(
-                "idempotency.lookup_failed: %s; proceeding without cache",
-                exc,
-            )
-            body_hash = None
+    idem = IdempotencyHelper(
+        http_request,
+        request,
+        _make_meta,
+        request.session_id or "unknown",
+        mismatch_message_tr=(
+            "Idempotency-Key aynı ama istek gövdesi farklı — "
+            "aynı anahtarı farklı bir istekle kullandınız."
+        ),
+    )
+    early = await idem.check()
+    if early is not None:
+        return early
 
     try:
         # Validate: need at least user_message or answer
@@ -431,21 +400,8 @@ async def triage_turn(http_request: Request, request: TriageTurnRequest):
             envelope = await _handle_turn_legacy(request)
 
         # Cache the envelope so retries with the same key return the
-        # same response. Best-effort — a cache write failure must not
-        # break the response we're about to return.
-        if idempotency_key and body_hash is not None:
-            try:
-                await store_response(
-                    redis_client,
-                    idempotency_key,
-                    body_hash,
-                    envelope.model_dump(mode="json"),
-                )
-            except Exception as exc:
-                logger.warning(
-                    "idempotency.store_failed: %s; envelope already returned",
-                    exc,
-                )
+        # same response. Best-effort — failures logged inside the helper.
+        await idem.store(envelope)
         return envelope
 
     except HTTPException:
