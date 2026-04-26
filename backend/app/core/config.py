@@ -197,6 +197,29 @@ class Settings(BaseSettings):
     WIRO_DOTS_OCR_ENABLED: bool = False
     WIRO_DOTS_OCR_MODEL: str = "kristaller486/dots-ocr-1-5"
 
+    # ── Health-tourism: LLM-generated quote summary ──────────────────────
+    # Optional patient-facing 2-3 sentence Turkish blurb explaining why
+    # the top-1 clinic ranked first. Generated **out-of-band** via
+    # FastAPI BackgroundTasks because Wiro task latency (5-30s) is too
+    # long to inline in the /v1/quote response without blowing the p95
+    # SLO. UX contract: first request returns ``summary_tr=None``;
+    # subsequent /v1/quote calls (same procedure / city / locale) hit
+    # the in-memory LRU cache and surface the generated text.
+    #
+    # Provider chain is comma-separated, primary first. Each provider's
+    # ``is_enabled()`` is checked at call site — disabled providers
+    # are skipped, the chain advances. If all providers fail / are
+    # disabled, the field stays ``None``.
+    QUOTE_SUMMARY_LLM_ENABLED: bool = False
+    QUOTE_SUMMARY_LLM_PROVIDERS: str = "qwen,gpt5_mini"
+    # Wall-clock budget for ONE provider's submit+poll. The full chain
+    # may take up to len(providers) * timeout in the worst case — but
+    # since this runs in a background task, that's a cost concern, not
+    # a UX one.
+    QUOTE_SUMMARY_LLM_TIMEOUT_SECONDS: float = 30.0
+    QUOTE_SUMMARY_CACHE_TTL_SECONDS: int = 86400  # 24 h
+    QUOTE_SUMMARY_CACHE_MAX_ENTRIES: int = 256
+
     # ── Health-tourism: lead conversion webhook ──────────────────────────
     # When LEAD_WEBHOOK_URL is set, /v1/quote/lead dispatches a JSON
     # POST after accepting the lead. Compatible with Slack incoming

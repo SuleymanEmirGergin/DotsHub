@@ -190,6 +190,44 @@ lead_webhook_dispatch_total = Counter(
     labelnames=("outcome",),
 )
 
+# Counter — quote-summary LLM generation outcomes. Drives the
+# operator dashboard for the (optional) /v1/quote summary_tr field.
+# Cardinality is bounded:
+#   - `provider` ∈ {"qwen", "gpt5_mini", "gemini", "grok"} (matches
+#     the provider chain in services/quote_summary.py). Adding a new
+#     provider is a deliberate code change.
+#   - `outcome` ∈ {"success", "empty", "error", "disabled"} — 4 values.
+#     "disabled" fires when the provider is in the chain but
+#     ``is_enabled()`` is False; "empty" fires when the provider
+#     returned None / empty string (e.g. flag flips off mid-run).
+quote_summary_total = Counter(
+    "quote_summary_total",
+    "Quote-summary LLM generation outcomes per provider in the fallback chain.",
+    labelnames=("provider", "outcome"),
+)
+
+# Histogram — quote-summary generation wall-clock latency. Background
+# task path, so this is NOT a user-facing latency; it's the cost /
+# capacity dial. Bucket layout matches the realistic Wiro range
+# (sub-5s happy path, 5-30s typical, 60s+ pathological).
+quote_summary_latency_seconds = Histogram(
+    "quote_summary_latency_seconds",
+    "Quote-summary LLM generation latency (seconds) by provider.",
+    labelnames=("provider",),
+    buckets=(1.0, 2.5, 5.0, 10.0, 15.0, 30.0, 60.0),
+)
+
+# Counter — quote-summary cache hit/miss. Hit fraction tells the
+# operator whether the cache is doing its job. Cold-start / low
+# cache-hit + summary_tr=None on first quote → expected and
+# documented; persistent low hit means the cache key is too narrow.
+quote_summary_cache_total = Counter(
+    "quote_summary_cache_total",
+    "Quote-summary in-memory LRU cache lookups by result.",
+    labelnames=("result",),  # "hit" | "miss"
+)
+
+
 # Counter — procedure-intent extraction outcomes by resolution path.
 # Drives the LLM fallback ROI dashboard:
 #   - "explicit" — caller passed procedure_id, no NLU work done

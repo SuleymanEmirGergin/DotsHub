@@ -57,6 +57,11 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 | `WIRO_DOTS_OCR_MODEL` | Wiro model slug. | `kristaller486/dots-ocr-1-5` |
 | `WIRO_API_KEY` | Wiro API key. Tüm `app/services/ai/*` ve legacy `llm_nlu_client` kullanır. | — |
 | `WIRO_API_SECRET` | Wiro HMAC signature secret. **`app/services/ai/*` (qwen, whisper, cogvlm, gemini, moondream) için zorunlu** — boşsa `WiroAuthError` ile fail-loud, servis wrapper'ı `None` döner. Legacy `llm_nlu_client` boşsa API-key-only moda düşer (eski Wiro projeleri için). | — |
+| `QUOTE_SUMMARY_LLM_ENABLED` | `1` ise `/v1/quote` cevabında `payload.summary_tr` LLM-üretimi 2-3 cümlelik Türkçe özet alanı doldurulur. **Cold-start UX**: yeni (procedure × clinic × locale) kombinasyonunda **ilk istek** `summary_tr=null` döner ve background task LLM'e generate gönderir; sonraki istek (cache hit) doluyu döner. Cache TTL aşıldığında tekrar yenilenir. Frontend null'ı boşluk veya "Özet hazırlanıyor" chip'i olarak göstermeli. | `0` |
+| `QUOTE_SUMMARY_LLM_PROVIDERS` | Provider zinciri (virgülle ayrılmış, primary first). İlk dolu cevap döndüren kullanılır. Disabled olan provider atlanır. Geçerli adlar: `qwen`, `gpt5_mini`, `gemini`, `grok`. | `qwen,gpt5_mini` |
+| `QUOTE_SUMMARY_LLM_TIMEOUT_SECONDS` | Tek bir provider için submit+poll budget'ı (sn). Worst-case full chain: `len(providers) × timeout`. Background task'ta çalıştığı için kullanıcı latency'sine yansımaz; cost/capacity dial'ı. | `30.0` |
+| `QUOTE_SUMMARY_CACHE_TTL_SECONDS` | LRU cache entry TTL (sn). Aşıldığında entry düşer, sonraki istekte regenerate. Klinik / fiyat değişimleri buraya doğal olarak yansır. | `86400` |
+| `QUOTE_SUMMARY_CACHE_MAX_ENTRIES` | LRU cache azami giriş sayısı. Aşıldığında en eski entry düşer. | `256` |
 | `LEAD_WEBHOOK_URL` | `/v1/quote/lead` kabul edildiğinde JSON POST gönderilen URL. Slack incoming webhook, Make/Zapier veya generic CRM olabilir. Boşsa lead webhook devre dışı; route 200 dönmeye devam eder ama payload `webhook_configured: false` olur. | — |
 | `LEAD_WEBHOOK_AUTH_TOKEN` | Set edilirse `Authorization: Bearer <token>` header'ı gönderilir. | — |
 | `LEAD_WEBHOOK_TIMEOUT_SECONDS` | Tek istek için timeout. | `5.0` |

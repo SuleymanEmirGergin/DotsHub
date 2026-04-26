@@ -4,7 +4,7 @@ from __future__ import annotations
 import logging
 import uuid
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, BackgroundTasks, Request
 
 from app.idempotency import IDEMPOTENCY_QUOTE_TTL_SEC, IdempotencyHelper
 from app.models.schemas import Envelope, QuoteRequest
@@ -12,6 +12,7 @@ from app.services import (
     fit_to_travel,
     procedure_catalog,
     quote_engine,
+    quote_summary,
 )
 
 from ._shared import (
@@ -30,7 +31,11 @@ def _meta_factory():
 
 
 @router.post("/quote", response_model=Envelope)
-async def quote(http_request: Request, request: QuoteRequest):
+async def quote(
+    http_request: Request,
+    request: QuoteRequest,
+    background_tasks: BackgroundTasks,
+):
     """Generate a non-binding quote for a health-tourism procedure.
 
     Pipeline:
@@ -38,6 +43,9 @@ async def quote(http_request: Request, request: QuoteRequest):
         2. Run fit-to-travel rules; ``block`` → EMERGENCY envelope.
         3. Rank clinics; empty → NO_PARTNER_CLINIC error.
         4. Build QUOTE envelope with quote_id (UUID — operator audit handle).
+        5. Optional ``summary_tr`` LLM-generated blurb (cache hit only;
+           cache miss schedules a background generate so the next
+           request gets it).
 
     Idempotency: same retry-safety contract as /v1/triage/turn — caller
     sends `Idempotency-Key`, retry returns the cached envelope.
@@ -135,6 +143,37 @@ async def quote(http_request: Request, request: QuoteRequest):
     # (procedure_id, profile, target_city, locale, top_n), so we don't
     # need a database round-trip; the id is the audit handle.
     quote_id = str(uuid.uuid4())
+
+    # ─── 4a. Optional LLM summary (cache-first) ──────────────────────
+    # ``summary_tr`` is opt-in via QUOTE_SUMMARY_LLM_ENABLED. Cache
+    # hits surface inline (~0ms); cache misses schedule a background
+    # generate so the next request for this (procedure, clinic, locale)
+    # combo returns the blurb. The first request for any new combo
+    # therefore returns ``summary_tr=None`` — the frontend renders the
+    # QUOTE skeleton without the blurb and re-fetches to fill it. This
+    # keeps Wiro's 5-30s polling latency off the request path.
+    procedure_name_tr = procedure_catalog.name(procedure_id, request.locale)
+    top_clinic = clinics[0]
+    summary_tr = quote_summary.lookup_cached(
+        procedure_id=procedure_id,
+        top_clinic_id=top_clinic.clinic_id,
+        locale=request.locale,
+    )
+    if summary_tr is None and quote_summary.is_enabled():
+        background_tasks.add_task(
+            quote_summary.generate_and_cache,
+            procedure_id=procedure_id,
+            procedure_name_tr=procedure_name_tr,
+            complexity=procedure.get("complexity") or "",
+            duration_days=procedure.get("duration_days"),
+            top_clinic_id=top_clinic.clinic_id,
+            clinic_name=top_clinic.clinic_name,
+            clinic_city=top_clinic.city,
+            price_amount=top_clinic.price_eur,
+            price_currency="EUR",
+            locale=request.locale,
+        )
+
     envelope = Envelope(
         type="QUOTE",
         session_id=session_id,
@@ -143,7 +182,7 @@ async def quote(http_request: Request, request: QuoteRequest):
             "quote_id": quote_id,
             "procedure": {
                 "id": procedure_id,
-                "name_tr": procedure_catalog.name(procedure_id, request.locale),
+                "name_tr": procedure_name_tr,
                 "category": procedure.get("category"),
                 "duration_days": procedure.get("duration_days"),
                 "post_op_no_fly_days": procedure.get("post_op_no_fly_days"),
@@ -154,6 +193,7 @@ async def quote(http_request: Request, request: QuoteRequest):
             "fit_to_travel_warnings": [w.model_dump() for w in warnings],
             "intent_resolution": intent_debug,
             "currency": "EUR",
+            "summary_tr": summary_tr,
         },
         meta=_meta_factory(),
     )
