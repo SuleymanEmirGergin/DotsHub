@@ -455,6 +455,94 @@ groups:
             TTL is a per-process tweak; multi-instance deployments
             need Redis (deferred).
 
+  - name: backend-patient-upload
+    interval: 1m
+    rules:
+      - alert: PatientUploadHighErrorRate
+        # Provider raised an exception during AI dispatch. Less benign
+        # than empty (auth gate). >10% / 10m = upstream Wiro outage,
+        # network partition, or a regression in the wrapper layer.
+        expr: |
+          sum by (kind) (rate(patient_upload_total{outcome="error"}[5m]))
+            /
+          clamp_min(
+            sum by (kind) (rate(patient_upload_total{outcome=~"success|empty|error"}[5m])),
+            0.001
+          )
+            > 0.10
+        for: 10m
+        labels:
+          severity: warning
+          service: backend
+          category: ai-dispatch
+        annotations:
+          summary: "patient_upload error-rate >10% on kind={{ $labels.kind }}"
+          description: |
+            {{ $value | humanizePercentage }} of patient uploads on
+            kind=`{{ $labels.kind }}` raised in the last 5m. Drill
+            into Sentry for the breadcrumb trail (asset_id +
+            provider). Common causes: WIRO_API_SECRET expired
+            (runbook: docs/runbooks/WIRO_CREDENTIAL_ROTATION.md),
+            Wiro upstream incident, or a wrapper-layer regression
+            after a recent deploy.
+
+      - alert: PatientUploadHighEmptyRate
+        # Provider returned None / empty — typically an auth or
+        # feature-flag misconfiguration: the wrapper hit
+        # WiroAuthError or had its WIRO_*_ENABLED flag off and
+        # surfaced None. >30% / 15m means the operator hasn't
+        # finished onboarding the credentials for that kind's
+        # service.
+        expr: |
+          sum by (kind) (rate(patient_upload_total{outcome="empty"}[10m]))
+            /
+          clamp_min(
+            sum by (kind) (rate(patient_upload_total{outcome=~"success|empty|error"}[10m])),
+            0.001
+          )
+            > 0.30
+        for: 15m
+        labels:
+          severity: warning
+          service: backend
+          category: ai-dispatch
+        annotations:
+          summary: "patient_upload empty-rate >30% on kind={{ $labels.kind }}"
+          description: |
+            {{ $value | humanizePercentage }} of patient uploads on
+            kind=`{{ $labels.kind }}` returned an empty result. Most
+            likely WIRO_*_ENABLED off for the bound service or
+            WIRO_API_SECRET missing. Patient impact: row stays in
+            "failed" state, ai_error column carries the human-readable
+            cause.
+
+      - alert: PatientUploadLatencyHigh
+        # p95 dispatch latency by kind. Different kinds have different
+        # baselines: image/moondream ~5-15s, video/cogvlm 30-60s,
+        # audio/whisper 5-30s. Single threshold (60s) catches video
+        # tail bloating + image regression simultaneously without
+        # per-kind tuning.
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum by (le, kind) (
+              rate(patient_upload_latency_seconds_bucket[5m])
+            )
+          ) > 60
+        for: 15m
+        labels:
+          severity: info
+          service: backend
+          category: ai-dispatch
+        annotations:
+          summary: "patient_upload p95 >60s on kind={{ $labels.kind }}"
+          description: |
+            Background dispatch p95 on kind=`{{ $labels.kind }}` is
+            {{ $value | humanizeDuration }}. NOT a user-facing
+            latency (BG task), but cache stays cold longer than
+            designed. Wiro queue saturation or a regressed prompt;
+            check llm_calls + Wiro task dashboards.
+
   - name: backend-availability
     interval: 30s
     rules:

@@ -228,6 +228,39 @@ quote_summary_cache_total = Counter(
 )
 
 
+# Counter — patient upload AI dispatch outcomes. The BG task that
+# follows POST /v1/patient/upload increments one of:
+#   - "success"  — provider returned non-empty result text
+#   - "empty"    — provider returned None / empty (auth missing,
+#                  feature flag off, schema_error inside provider)
+#   - "error"    — provider raised an exception
+#   - "skipped"  — kind not in the handler map (defensive; route
+#                  validation should already exclude this)
+#
+# Cardinality bounded:
+#   - kind ∈ {image, audio, video, document} — 4 values.
+#   - outcome ∈ {success, empty, error, skipped} — 4 values.
+# 16 series total.
+patient_upload_total = Counter(
+    "patient_upload_total",
+    "Patient upload AI dispatch outcomes by kind.",
+    labelnames=("kind", "outcome"),
+)
+
+# Histogram — patient upload AI wall-clock latency. Per-kind so the
+# operator dashboard can compare moondream-image (5-15s) vs
+# whisper-audio (10-30s for long memos) vs cogvlm-video (30-60s)
+# without averaging them into one signal. Buckets cover the realistic
+# Wiro range; >60s is timeout territory and lands in the +Inf
+# bucket as a tail signal.
+patient_upload_latency_seconds = Histogram(
+    "patient_upload_latency_seconds",
+    "Patient upload AI dispatch latency (seconds) by kind.",
+    labelnames=("kind",),
+    buckets=(2.0, 5.0, 10.0, 20.0, 30.0, 60.0, 120.0),
+)
+
+
 # Counter — procedure-intent extraction outcomes by resolution path.
 # Drives the LLM fallback ROI dashboard:
 #   - "explicit" — caller passed procedure_id, no NLU work done
