@@ -143,6 +143,25 @@ class Settings(BaseSettings):
     WIRO_COGVLM_CAPTION_ENABLED: bool = False
     WIRO_COGVLM_CAPTION_MODEL: str = "thudm/cogvlm2-llama3-caption"
 
+    # Google Gemini-3-Pro — multimodal LLM (text + up to 50 mixed
+    # files: images / videos / audio in one call). Different from
+    # Qwen LLM: native multimodal, thinking_level dial. Use for
+    # quote summaries that consume profile + procedure + clinic +
+    # patient-uploaded files in one shot. NOTE: every service in
+    # app/services/ai/* requires WIRO_API_SECRET (HMAC signature
+    # auth) — the wiro_client.require_signature_auth() guard will
+    # fail-loud at submit time if it's empty.
+    WIRO_GEMINI_LLM_ENABLED: bool = False
+    WIRO_GEMINI_LLM_MODEL: str = "google/gemini-3-pro"
+
+    # Moondream3-Preview — visual Q&A on a single image with
+    # optional reasoning trace. Faster + cheaper than CogVLM2 video
+    # caption when motion isn't needed (selfie / smile / scalp
+    # photos). Domain-tuned prompt presets in
+    # services/ai/moondream_vlm.py::HEALTH_TOURISM_PROMPTS.
+    WIRO_MOONDREAM_VLM_ENABLED: bool = False
+    WIRO_MOONDREAM_VLM_MODEL: str = "moondream3-preview/query"
+
     # ── Health-tourism: lead conversion webhook ──────────────────────────
     # When LEAD_WEBHOOK_URL is set, /v1/quote/lead dispatches a JSON
     # POST after accepting the lead. Compatible with Slack incoming

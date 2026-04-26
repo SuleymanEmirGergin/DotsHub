@@ -41,6 +41,12 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 | `WIRO_WHISPER_STT_MODEL` | Wiro model slug. | `openai/whisper-large-v3-turbo-turkish` |
 | `WIRO_COGVLM_CAPTION_ENABLED` | `1` ise CogVLM2 video-to-text caption etkin (`app/services/ai/cogvlm_caption.py`). Hasta video klip → klinik açıklama. Domain-tuned prompt presets `HEALTH_TOURISM_PROMPTS` içinde. | `0` |
 | `WIRO_COGVLM_CAPTION_MODEL` | Wiro model slug. | `thudm/cogvlm2-llama3-caption` |
+| `WIRO_GEMINI_LLM_ENABLED` | `1` ise Gemini-3-Pro multimodal LLM etkin (`app/services/ai/gemini_llm.py`). Tek çağrıda metin + 50 dosya (image/video/audio) işler; quote summary + multi-file medical record interpretation için. | `0` |
+| `WIRO_GEMINI_LLM_MODEL` | Wiro model slug. | `google/gemini-3-pro` |
+| `WIRO_MOONDREAM_VLM_ENABLED` | `1` ise Moondream3-Preview image Q&A etkin (`app/services/ai/moondream_vlm.py`). Tek görsel + soru → JSON cevap; Norwood / smile-line / dermatology preset'leri `HEALTH_TOURISM_PROMPTS` içinde. | `0` |
+| `WIRO_MOONDREAM_VLM_MODEL` | Wiro model slug. | `moondream3-preview/query` |
+| `WIRO_API_KEY` | Wiro API key. Tüm `app/services/ai/*` ve legacy `llm_nlu_client` kullanır. | — |
+| `WIRO_API_SECRET` | Wiro HMAC signature secret. **`app/services/ai/*` (qwen, whisper, cogvlm, gemini, moondream) için zorunlu** — boşsa `WiroAuthError` ile fail-loud, servis wrapper'ı `None` döner. Legacy `llm_nlu_client` boşsa API-key-only moda düşer (eski Wiro projeleri için). | — |
 | `LEAD_WEBHOOK_URL` | `/v1/quote/lead` kabul edildiğinde JSON POST gönderilen URL. Slack incoming webhook, Make/Zapier veya generic CRM olabilir. Boşsa lead webhook devre dışı; route 200 dönmeye devam eder ama payload `webhook_configured: false` olur. | — |
 | `LEAD_WEBHOOK_AUTH_TOKEN` | Set edilirse `Authorization: Bearer <token>` header'ı gönderilir. | — |
 | `LEAD_WEBHOOK_TIMEOUT_SECONDS` | Tek istek için timeout. | `5.0` |

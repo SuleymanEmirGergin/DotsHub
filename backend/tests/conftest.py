@@ -36,6 +36,11 @@ _STUB_ENV = {
     "IP_HASH_SALT": "test-salt",
     "ADMIN_API_KEY": "test-admin-key",
     "WIRO_API_KEY": "",
+    # Stub secret so app.services.ai.wiro_client.require_signature_auth()
+    # accepts test calls. Tests that explicitly want the unset path
+    # (test_ai_wiro_client.test_submit_raises_when_signature_unset)
+    # use monkeypatch.delenv() to override.
+    "WIRO_API_SECRET": "stub-wiro-secret",
     "LLM_API_KEY": "",
     "LLM_NLU_ENABLED": "false",
     "FACILITY_DISCOVERY_ENABLED": "false",

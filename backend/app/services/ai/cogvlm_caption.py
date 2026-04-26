@@ -27,6 +27,7 @@ from typing import Optional
 from app.core.config import settings
 from app.pii import redact_pii
 from app.services.ai.wiro_client import (
+    WiroAuthError,
     WiroTaskError,
     WiroTaskResult,
     WiroTimeout,
@@ -131,6 +132,9 @@ def caption(
             files=files,
             timeout=timeout,
         )
+    except WiroAuthError as exc:
+        logger.error("cogvlm_caption.auth_missing: %s", exc)
+        return None
     except (WiroTaskError, WiroTimeout) as exc:
         logger.warning("cogvlm_caption.task_failed: %s", exc)
         return None

@@ -2,8 +2,9 @@
 
 Wraps the lower-level HMAC auth helpers from ``llm_nlu_client`` so the
 existing NLU integration's auth path is reused 1:1. Each AI service
-(Qwen LLM, Whisper STT, CogVLM caption) calls ``run()`` with its own
-multipart fields/files; this module handles submit/poll/output uniformly.
+under ``app.services.ai`` (Qwen LLM, Whisper STT, CogVLM caption,
+Gemini-3-Pro, Moondream3 VLM) calls ``run()`` with its own multipart
+fields/files; this module handles submit/poll/output uniformly.
 
 Why a separate module
     ``llm_nlu_client.NLUDirectClient`` is hard-coded for the legacy
@@ -17,7 +18,19 @@ Why a separate module
     Refactoring the existing NLU client to fit was higher risk than
     a parallel runner; both call the same ``_wiro_*`` HMAC helpers.
 
+Authentication contract
+    Every Wiro AI service in this package REQUIRES signature auth —
+    the OpenAPI definitions Wiro shipped for these models all list
+    HMAC-SHA256 signature as the auth scheme, and Wiro will 401 on
+    plain x-api-key for the new model surface. ``submit()`` calls
+    ``require_signature_auth()`` first and raises ``WiroAuthError``
+    when ``WIRO_API_SECRET`` is unset; the legacy ``llm_nlu_client``
+    integration is left untouched (it falls back to API-key-only when
+    secret is missing — that's needed for older Wiro projects that
+    haven't migrated to signature auth yet).
+
 Public API
+    require_signature_auth() -> None       (raises WiroAuthError)
     submit(model, fields, files=None, *, client=None) -> (task_id, token)
     poll(task_id, timeout=30.0, *, client=None) -> WiroTaskResult
     run(model, fields, files=None, *, timeout=30.0) -> WiroTaskResult
@@ -79,6 +92,47 @@ class WiroTimeout(Exception):
     decides whether to cancel via /Task/Cancel."""
 
 
+class WiroAuthError(Exception):
+    """Raised when ``WIRO_API_SECRET`` is unset and a service in this
+    package tried to submit. Fail-loud is the right call here: every
+    Wiro AI model the health-tourism platform consumes ships with
+    signature auth, and a missing secret would otherwise show up as a
+    generic 401 buried in the dispatch retry log. The exception is
+    caught by service wrappers and surfaced as a None return — same
+    shape as a feature-flag-off path — so callers don't see this type
+    directly. See ``app/services/ai/qwen_llm.py`` for the pattern."""
+
+
+# ─── auth guard ──────────────────────────────────────────────────────
+
+
+def require_signature_auth() -> None:
+    """Raise WiroAuthError if WIRO_API_SECRET is unset.
+
+    The legacy llm_nlu_client.NLUDirectClient supports a degraded
+    API-key-only mode for older Wiro projects. The new AI services
+    here MUST use HMAC signature auth — without it the secret is the
+    one credential Wiro accepts on the new model surface. Calling
+    this guard at the top of submit() turns a confusing 401-on-Wiro
+    into a clear local error.
+
+    Lazy import of settings keeps this module importable in tooling
+    contexts that don't load the full app.core.config (e.g. ad-hoc
+    schema generation scripts).
+    """
+    from app.core.config import settings
+
+    secret = getattr(settings, "WIRO_API_SECRET", "") or ""
+    if not secret:
+        raise WiroAuthError(
+            "WIRO_API_SECRET is empty — Wiro AI services require HMAC "
+            "signature auth. Set WIRO_API_SECRET in the env to enable. "
+            "(The legacy llm_nlu integration still tolerates "
+            "API-key-only mode; this guard only applies to "
+            "app.services.ai.* callers.)"
+        )
+
+
 # ─── submit ──────────────────────────────────────────────────────────
 
 
@@ -101,9 +155,11 @@ def submit(
             per call when omitted.
 
     Raises:
+        WiroAuthError when WIRO_API_SECRET is missing.
         WiroTaskError when the response indicates submit failure.
         httpx.HTTPStatusError on non-2xx HTTP status.
     """
+    require_signature_auth()
     url = f"{_wiro_base()}/v1/Run/{model}"
     headers = _wiro_auth_headers()
     multipart_files = files or {}

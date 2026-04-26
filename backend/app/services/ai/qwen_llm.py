@@ -19,6 +19,7 @@ from typing import Optional
 from app.core.config import settings
 from app.pii import redact_pii
 from app.services.ai.wiro_client import (
+    WiroAuthError,
     WiroTaskError,
     WiroTaskResult,
     WiroTimeout,
@@ -97,6 +98,12 @@ def generate(
             fields=fields,
             timeout=timeout,
         )
+    except WiroAuthError as exc:
+        # Loud-fail at the operator layer (set WIRO_API_SECRET) but
+        # quiet at the user layer — same shape as the feature-flag-off
+        # path, so the caller's None-handling branch already covers it.
+        logger.error("qwen_llm.auth_missing: %s", exc)
+        return None
     except (WiroTaskError, WiroTimeout) as exc:
         logger.warning("qwen_llm.task_failed: %s", exc)
         return None
