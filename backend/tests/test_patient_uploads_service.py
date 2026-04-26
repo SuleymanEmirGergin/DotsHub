@@ -355,6 +355,86 @@ def test_tombstone_returns_minus_one_on_db_failure(fake_supabase):
         assert patient_uploads.tombstone_uploads_for_session("sess-1") == -1
 
 
+# ─── Set review state (A2) ──────────────────────────────────────────
+
+
+def test_set_review_state_invalid_status_raises():
+    with pytest.raises(ValueError):
+        patient_uploads.set_review_state(
+            "A1",
+            review_status="archived",
+            reviewer_notes=None,
+            reviewed_by="admin",
+        )
+
+
+def test_set_review_state_excludes_tombstoned(fake_supabase):
+    """Tombstoned rows MUST NOT receive review updates — KVKK contract:
+    deleted means deleted, no further mutations."""
+    sb, chain = fake_supabase
+    chain.execute.return_value = MagicMock(data=[])
+    with patch("app.db.supabase", sb):
+        out = patient_uploads.set_review_state(
+            "A1",
+            review_status="approved",
+            reviewer_notes=None,
+            reviewed_by="admin",
+        )
+    assert out is None
+    chain.is_.assert_called_with("deleted_at", "null")
+
+
+def test_set_review_state_writes_full_patch(fake_supabase):
+    sb, chain = fake_supabase
+    chain.execute.return_value = MagicMock(
+        data=[{
+            "asset_id": "A1",
+            "review_status": "needs_followup",
+            "reviewed_by": "ops@x.tr",
+        }]
+    )
+    with patch("app.db.supabase", sb):
+        out = patient_uploads.set_review_state(
+            "A1",
+            review_status="needs_followup",
+            reviewer_notes="please re-upload",
+            reviewed_by="ops@x.tr",
+        )
+    assert out is not None
+    patch_arg = chain.update.call_args.args[0]
+    assert patch_arg["review_status"] == "needs_followup"
+    assert patch_arg["reviewer_notes"] == "please re-upload"
+    assert patch_arg["reviewed_by"] == "ops@x.tr"
+    assert "reviewed_at" in patch_arg
+
+
+def test_set_review_state_returns_none_on_db_blip(fake_supabase):
+    sb, chain = fake_supabase
+    chain.execute.side_effect = ConnectionError("supabase down")
+    with patch("app.db.supabase", sb):
+        assert patient_uploads.set_review_state(
+            "A1",
+            review_status="approved",
+            reviewer_notes=None,
+            reviewed_by="admin",
+        ) is None
+
+
+def test_set_review_state_all_valid_statuses_accepted(fake_supabase):
+    sb, chain = fake_supabase
+    chain.execute.return_value = MagicMock(
+        data=[{"asset_id": "A1"}]
+    )
+    with patch("app.db.supabase", sb):
+        for status in patient_uploads.VALID_REVIEW_STATUSES:
+            assert patient_uploads.set_review_state(
+                "A1",
+                review_status=status,
+                reviewer_notes=None,
+                reviewed_by="admin",
+            ) is not None
+
+
 # ─── List for review (operator queue) ───────────────────────────────
 
 

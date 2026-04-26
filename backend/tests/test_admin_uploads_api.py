@@ -179,6 +179,129 @@ def test_response_has_pagination_envelope(client):
     assert len(body["items"]) == 3
 
 
+# ─── PATCH /v1/admin/uploads/{asset_id}/review ──────────────────────
+
+
+def test_review_no_auth_returns_401(client):
+    resp = client.patch(
+        "/v1/admin/uploads/A1/review",
+        json={"review_status": "approved"},
+    )
+    assert resp.status_code == 401
+
+
+def test_review_invalid_status_returns_422(client):
+    resp = client.patch(
+        "/v1/admin/uploads/A1/review",
+        headers={"x-admin-key": _ADMIN_KEY},
+        json={"review_status": "later_maybe"},
+    )
+    assert resp.status_code == 422
+
+
+def test_review_notes_over_cap_returns_422(client):
+    resp = client.patch(
+        "/v1/admin/uploads/A1/review",
+        headers={"x-admin-key": _ADMIN_KEY},
+        json={
+            "review_status": "approved",
+            "reviewer_notes": "x" * 5000,  # cap is 2000
+        },
+    )
+    assert resp.status_code == 422
+
+
+def test_review_unknown_asset_returns_404(client):
+    with patch.object(
+        patient_uploads, "set_review_state", return_value=None,
+    ):
+        resp = client.patch(
+            "/v1/admin/uploads/missing/review",
+            headers={"x-admin-key": _ADMIN_KEY},
+            json={"review_status": "approved"},
+        )
+    assert resp.status_code == 404
+
+
+def test_review_super_admin_writes_admin_as_reviewer(client):
+    captured = {}
+
+    def _capture(asset_id, **kwargs):
+        captured["asset_id"] = asset_id
+        captured.update(kwargs)
+        return _row(
+            review_status=kwargs["review_status"],
+            reviewed_by=kwargs["reviewed_by"],
+            reviewer_notes=kwargs["reviewer_notes"],
+        )
+
+    with patch.object(
+        patient_uploads, "set_review_state", side_effect=_capture,
+    ):
+        resp = client.patch(
+            "/v1/admin/uploads/A1/review",
+            headers={"x-admin-key": _ADMIN_KEY},
+            json={"review_status": "approved", "reviewer_notes": "looks good"},
+        )
+    assert resp.status_code == 200
+    assert captured["reviewed_by"] == "admin"
+    assert captured["review_status"] == "approved"
+    assert captured["reviewer_notes"] == "looks good"
+
+
+def test_review_operator_writes_email_as_reviewer(client):
+    """Operator-tier auth — reviewed_by gets the operator's email so
+    the audit trail names the human reviewer (not just 'admin')."""
+    op = {
+        "id": "OP-1", "email": "doctor@clinic.tr",
+        "full_name": "Dr Sample", "role": "reviewer",
+    }
+    captured = {}
+
+    def _capture(asset_id, **kwargs):
+        captured.update(kwargs)
+        return _row(reviewed_by=kwargs["reviewed_by"])
+
+    with patch.object(
+        operator_users, "lookup_by_key", return_value=op,
+    ), patch.object(
+        patient_uploads, "set_review_state", side_effect=_capture,
+    ):
+        resp = client.patch(
+            "/v1/admin/uploads/A1/review",
+            headers={"x-operator-key": "a" * 64},
+            json={"review_status": "rejected"},
+        )
+    assert resp.status_code == 200
+    assert captured["reviewed_by"] == "doctor@clinic.tr"
+
+
+def test_review_state_reversible_through_endpoint(client):
+    """Operator can move pending_review -> approved -> rejected ->
+    needs_followup -> pending_review without 4xx. Each call is
+    independent; the service decides nothing about which transition
+    is allowed."""
+    state_history = []
+
+    def _capture(asset_id, **kwargs):
+        state_history.append(kwargs["review_status"])
+        return _row(review_status=kwargs["review_status"])
+
+    with patch.object(
+        patient_uploads, "set_review_state", side_effect=_capture,
+    ):
+        for status in ("approved", "rejected", "needs_followup", "pending_review"):
+            resp = client.patch(
+                "/v1/admin/uploads/A1/review",
+                headers={"x-admin-key": _ADMIN_KEY},
+                json={"review_status": status},
+            )
+            assert resp.status_code == 200
+    assert state_history == [
+        "approved", "rejected", "needs_followup", "pending_review",
+    ]
+
+
 def test_total_falls_back_to_len_when_count_missing(client):
     """If supabase doesn't return a count (older client / wrapped
     response), the route falls back to len(rows) so the dashboard

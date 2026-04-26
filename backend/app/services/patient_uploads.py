@@ -326,6 +326,69 @@ def get_upload(asset_id: str) -> Optional[dict]:
 # ─── Tombstone (KVKK) ────────────────────────────────────────────────
 
 
+VALID_REVIEW_STATUSES = frozenset(
+    {"pending_review", "approved", "rejected", "needs_followup"}
+)
+
+
+def set_review_state(
+    asset_id: str,
+    *,
+    review_status: str,
+    reviewer_notes: Optional[str],
+    reviewed_by: str,
+) -> Optional[dict]:
+    """Update the operator review state on a patient_uploads row.
+
+    State machine is REVERSIBLE: any valid review_status can transition
+    to any other (operator hata düzeltebilir). The DB column is plain
+    text, no CHECK constraint, so the state set is enforced application-
+    side here + at the route Pydantic Literal.
+
+    Returns the updated row (single dict), or None when the row doesn't
+    exist OR is tombstoned (the .is_("deleted_at", "null") filter
+    excludes deleted rows so a KVKK-deleted asset is treated like a
+    not-found by the operator dashboard).
+
+    ``reviewed_by`` is the operator's email (or "admin" for super-
+    admin) — the route handler resolves the auth context and passes
+    a stable identifier; this service does NOT know about the auth
+    layer.
+    """
+    if review_status not in VALID_REVIEW_STATUSES:
+        raise ValueError(
+            f"invalid review_status={review_status!r}; "
+            f"valid: {sorted(VALID_REVIEW_STATUSES)}"
+        )
+
+    from app.db import supabase
+
+    now_iso = datetime.now(timezone.utc).isoformat()
+    patch = {
+        "review_status": review_status,
+        "reviewer_notes": reviewer_notes,
+        "reviewed_at": now_iso,
+        "reviewed_by": reviewed_by,
+    }
+    try:
+        resp = (
+            supabase.table("patient_uploads")
+            .update(patch)
+            .eq("asset_id", asset_id)
+            .is_("deleted_at", "null")
+            .execute()
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.warning(
+            "patient_uploads.review_state_failed asset_id=%s: %s",
+            asset_id, exc,
+        )
+        return None
+    if not resp.data:
+        return None
+    return resp.data[0]
+
+
 def list_for_review(
     *,
     ai_status: Optional[str] = None,
@@ -409,6 +472,7 @@ def tombstone_expired_uploads(*, reason: str = "scheduled_retention") -> int:
                     "ai_result_text": None,
                     "ai_error": None,
                     "consent_text": None,
+                    "reviewer_notes": None,
                     "deleted_at": now_iso,
                     "deleted_reason": reason,
                 }
@@ -454,6 +518,7 @@ def tombstone_uploads_for_session(
                     "ai_result_text": None,
                     "ai_error": None,
                     "consent_text": None,
+                    "reviewer_notes": None,
                     "deleted_at": datetime.now(timezone.utc).isoformat(),
                     "deleted_reason": reason,
                 }

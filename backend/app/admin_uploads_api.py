@@ -14,9 +14,9 @@ import logging
 from typing import Literal, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
-from app.admin_auth import require_admin_or_operator
+from app.admin_auth import require_admin_or_operator, require_min_role
 from app.services import patient_uploads
 
 logger = logging.getLogger(__name__)
@@ -89,3 +89,72 @@ def list_uploads(
     return UploadListResponse(
         items=rows, total=total, limit=limit, offset=offset
     )
+
+
+# ─── PATCH /v1/admin/uploads/{asset_id}/review ──────────────────────
+
+
+ReviewStatus = Literal[
+    "pending_review", "approved", "rejected", "needs_followup"
+]
+
+
+class ReviewRequest(BaseModel):
+    """Operator review action body."""
+
+    review_status: ReviewStatus
+    reviewer_notes: Optional[str] = Field(default=None, max_length=2000)
+
+
+@router.patch("/{asset_id}/review")
+def review_upload(
+    asset_id: str,
+    body: ReviewRequest,
+    auth: dict = Depends(require_admin_or_operator),
+):
+    """Set the review state on a single upload row.
+
+    Auth: super-admin OR operator with role >= reviewer (any tier).
+    State machine is reversible — any valid review_status can move
+    to any other.
+
+    ``reviewed_by`` is set to the operator's email (preferred) or
+    display name; super-admin authed requests record "admin".
+
+    Status codes:
+      - 200: row updated, returns the new row
+      - 401: missing / unknown credentials
+      - 403: operator below reviewer (currently no role is below
+        reviewer, so this is defensive against a future role
+        addition)
+      - 404: asset not found OR tombstoned
+      - 422: invalid review_status (Pydantic) OR reviewer_notes
+        too long
+    """
+    require_min_role(auth, "reviewer")
+
+    # Choose the most stable identifier available; super-admin lacks
+    # an email so we fall back to the literal "admin" string (matches
+    # the column COMMENT on patient_uploads.reviewed_by).
+    if auth.get("is_super_admin"):
+        reviewed_by = "admin"
+    else:
+        reviewed_by = auth.get("email") or auth.get("name") or auth.get("id")
+
+    try:
+        row = patient_uploads.set_review_state(
+            asset_id,
+            review_status=body.review_status,
+            reviewer_notes=body.reviewer_notes,
+            reviewed_by=reviewed_by,
+        )
+    except ValueError as exc:
+        # Pydantic Literal already 422s bad statuses; this branch
+        # only fires if a future caller bypasses the route.
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    if row is None:
+        raise HTTPException(
+            status_code=404, detail="asset not found or tombstoned"
+        )
+    return row
