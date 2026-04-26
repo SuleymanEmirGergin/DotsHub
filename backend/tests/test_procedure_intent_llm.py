@@ -189,13 +189,7 @@ def test_extract_via_llm_caps_confidence_at_0_95():
 
 
 class QuoteRouteWithLLMFallbackTests(unittest.TestCase):
-    def setUp(self):
-        from app import idempotency as idem
-        from app import rate_limit as rl
-
-        idem._memory_clear()
-        rl._BUCKETS.clear()
-        rl._SESSION_BUCKETS.clear()
+    # setUp removed — autouse fixture in conftest.py.
 
     def test_flag_off_does_not_invoke_llm(self):
         # With the flag off, even gibberish input must not call the LLM.

@@ -25,13 +25,8 @@ from app import rate_limit as rl
 from app.main import app
 
 
-@pytest.fixture(autouse=True)
-def _clear_buckets():
-    rl._BUCKETS.clear()
-    rl._SESSION_BUCKETS.clear()
-    yield
-    rl._BUCKETS.clear()
-    rl._SESSION_BUCKETS.clear()
+# Cache clearing handled by `_reset_process_caches` autouse fixture in
+# conftest.py — no per-file fixture needed.
 
 
 # ─── build_session_rl_key ────────────────────────────────────────────

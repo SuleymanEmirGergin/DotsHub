@@ -49,21 +49,8 @@ def test_compute_body_hash_returns_hex_digest_length():
 # ─── In-memory cache ─────────────────────────────────────────────────
 
 
-@pytest.fixture(autouse=True)
-def _clear_idem_cache():
-    # Also clear rate-limit buckets — prior tests in the suite hit
-    # /v1/triage/turn 20+ times via TestClient under IP 127.0.0.1, so
-    # without this we get 429-back pressure that masks idempotency
-    # behavior.
-    from app import rate_limit as _rl
-
-    idem._memory_clear()
-    _rl._BUCKETS.clear()
-    _rl._SESSION_BUCKETS.clear()
-    yield
-    idem._memory_clear()
-    _rl._BUCKETS.clear()
-    _rl._SESSION_BUCKETS.clear()
+# Cache clearing is handled by `_reset_process_caches` autouse fixture
+# in conftest.py — no per-file teardown needed.
 
 
 @pytest.mark.asyncio
@@ -188,19 +175,9 @@ def _post_turn(client, headers=None, body=None):
 
 
 class IdempotencyRouteIntegrationTests(unittest.TestCase):
-    def setUp(self):
-        from app import rate_limit as _rl
-
-        idem._memory_clear()
-        _rl._BUCKETS.clear()
-        _rl._SESSION_BUCKETS.clear()
-
-    def tearDown(self):
-        from app import rate_limit as _rl
-
-        idem._memory_clear()
-        _rl._BUCKETS.clear()
-        _rl._SESSION_BUCKETS.clear()
+    # Cache clearing is handled by the autouse `_reset_process_caches`
+    # fixture in conftest.py; pytest applies autouse fixtures to
+    # unittest.TestCase methods too.
 
     def test_no_header_runs_engine_normally(self):
         """No Idempotency-Key → no cache lookup, no cache store."""

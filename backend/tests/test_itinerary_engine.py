@@ -104,12 +104,7 @@ def _post(client, body, headers=None):
 
 
 class ItineraryRouteTests(unittest.TestCase):
-    def setUp(self):
-        from app import idempotency as idem
-        from app import rate_limit as rl
-        idem._memory_clear()
-        rl._BUCKETS.clear()
-        rl._SESSION_BUCKETS.clear()
+    # setUp removed — autouse fixture in conftest.py.
 
     def test_happy_path_returns_itinerary_envelope(self):
         with TestClient(app) as client:

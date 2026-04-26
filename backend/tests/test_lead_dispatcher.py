@@ -235,12 +235,7 @@ async def test_dispatch_handles_network_exception_with_retry():
 
 
 class LeadRouteTests(unittest.TestCase):
-    def setUp(self):
-        from app import idempotency as idem
-        from app import rate_limit as rl
-        idem._memory_clear()
-        rl._BUCKETS.clear()
-        rl._SESSION_BUCKETS.clear()
+    # setUp removed — autouse fixture in conftest.py.
 
     def test_lead_with_consent_returns_lead_accepted(self):
         with patch.object(

@@ -20,12 +20,7 @@ def _post(client, body, headers=None):
 
 
 class QuoteHappyPathTests(unittest.TestCase):
-    def setUp(self):
-        # Clear rate-limit buckets so the suite-wide IP cap doesn't
-        # 429 these tests under heavy parallel runs.
-        from app import rate_limit as rl
-        rl._BUCKETS.clear()
-        rl._SESSION_BUCKETS.clear()
+    # setUp removed — caches cleared by autouse fixture in conftest.py.
 
     def test_explicit_procedure_id_returns_quote_envelope(self):
         with TestClient(app) as client:
@@ -74,10 +69,7 @@ class QuoteHappyPathTests(unittest.TestCase):
 
 
 class QuoteFitToTravelTests(unittest.TestCase):
-    def setUp(self):
-        from app import rate_limit as rl
-        rl._BUCKETS.clear()
-        rl._SESSION_BUCKETS.clear()
+    # setUp removed — autouse fixture in conftest.py.
 
     def test_recent_mi_returns_emergency_envelope_no_clinics(self):
         with TestClient(app) as client:
@@ -120,10 +112,7 @@ class QuoteFitToTravelTests(unittest.TestCase):
 
 
 class QuoteErrorPathsTests(unittest.TestCase):
-    def setUp(self):
-        from app import rate_limit as rl
-        rl._BUCKETS.clear()
-        rl._SESSION_BUCKETS.clear()
+    # setUp removed — autouse fixture in conftest.py.
 
     def test_no_procedure_id_no_user_message_returns_unresolved(self):
         with TestClient(app) as client:
@@ -154,17 +143,7 @@ class QuoteErrorPathsTests(unittest.TestCase):
 
 
 class QuoteIdempotencyTests(unittest.TestCase):
-    def setUp(self):
-        from app import idempotency as idem
-        from app import rate_limit as rl
-
-        idem._memory_clear()
-        rl._BUCKETS.clear()
-        rl._SESSION_BUCKETS.clear()
-
-    def tearDown(self):
-        from app import idempotency as idem
-        idem._memory_clear()
+    # setUp / tearDown removed — autouse fixture in conftest.py.
 
     def test_repeat_with_same_key_and_body_returns_cached(self):
         # Call once, mutate the catalog cache so a second call would
@@ -204,10 +183,7 @@ class QuoteIdempotencyTests(unittest.TestCase):
 
 
 class QuoteSessionRateLimitTests(unittest.TestCase):
-    def setUp(self):
-        from app import rate_limit as rl
-        rl._BUCKETS.clear()
-        rl._SESSION_BUCKETS.clear()
+    # setUp removed — autouse fixture in conftest.py.
 
     def test_session_bucket_consumed_when_header_present(self):
         from app import rate_limit as rl

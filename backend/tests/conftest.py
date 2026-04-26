@@ -55,3 +55,48 @@ def runtime():
     from app.runtime import load_runtime
 
     return load_runtime(data_dir="app/data")
+
+
+# ─── Process-state cleanup between tests ─────────────────────────────
+#
+# Several modules keep mutable in-memory caches at the module level:
+#   - app.rate_limit._BUCKETS / _SESSION_BUCKETS / _SEND_SUMMARY_BUCKETS /
+#     _LLM_NLU_BUCKETS — rate-limit deques per ip / device / session.
+#   - app.idempotency._MEMORY_CACHE — request-replay LRU.
+#   - app.services.clinic_registry._JSON_CACHE / _SUPABASE_CACHE — clinic
+#     registry; Supabase fixtures must not bleed into the next test.
+#
+# Without a teardown, IP "127.0.0.1" fills its bucket within a few
+# tests and every later TestClient call to /v1/triage/* or /v1/quote*
+# trips a 429 — masking the actual behaviour the test was asserting.
+# Eight test files used to repeat this cleanup in setUp/tearDown; now
+# it lives in one autouse fixture so future tests get it for free.
+
+@pytest.fixture(autouse=True)
+def _reset_process_caches():
+    """Wipe rate-limit, idempotency, and registry caches before each
+    test. Imports are local so `conftest.py` import doesn't pull the
+    full app graph (some unit-test runs deliberately use a narrow
+    subset of modules)."""
+    try:
+        from app import idempotency as _idem
+        from app import rate_limit as _rl
+        from app.services import clinic_registry as _cr
+    except Exception:  # pragma: no cover — defensive
+        yield
+        return
+
+    def _clear() -> None:
+        _idem._memory_clear()
+        _rl._BUCKETS.clear()
+        _rl._SESSION_BUCKETS.clear()
+        _rl._SEND_SUMMARY_BUCKETS.clear()
+        _rl._LLM_NLU_BUCKETS.clear()
+        # Dedup-warn set: one warning per process per bucket key. Tests
+        # that exercise the Redis-degraded path expect a fresh slate.
+        _rl._REDIS_DEGRADED_WARNED.clear()
+        _cr.clear_cache()
+
+    _clear()
+    yield
+    _clear()

@@ -35,17 +35,8 @@ import pytest
 from app import rate_limit as rl
 
 
-# ─── Helper: clear in-memory buckets between tests ──────────────────
-
-@pytest.fixture(autouse=True)
-def _clear_buckets():
-    rl._BUCKETS.clear()
-    rl._SEND_SUMMARY_BUCKETS.clear()
-    rl._LLM_NLU_BUCKETS.clear()
-    yield
-    rl._BUCKETS.clear()
-    rl._SEND_SUMMARY_BUCKETS.clear()
-    rl._LLM_NLU_BUCKETS.clear()
+# Bucket clearing handled by `_reset_process_caches` autouse fixture
+# in conftest.py.
 
 
 # ─── Key builders ───────────────────────────────────────────────────
