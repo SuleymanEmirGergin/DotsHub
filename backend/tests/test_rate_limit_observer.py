@@ -1,4 +1,4 @@
-"""Tests for the rate-limit rejection observer in app.main.
+"""Tests for the rate-limit rejection observer in app.setup.middleware.
 
 Same design as LLM health / HTTP 5xx observer tests: mock
 send_rate_limit_alert and assert it fires / stays silent under
@@ -14,7 +14,9 @@ from __future__ import annotations
 import unittest
 from unittest.mock import patch
 
-from app import main as app_main
+# Observer state lives in app.setup.middleware after the R6 split.
+# Tests still bind it as `app_main` for readable assertions.
+from app.setup import middleware as app_main
 
 
 class ObserverStateMixin:

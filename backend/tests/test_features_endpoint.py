@@ -35,8 +35,11 @@ class FeaturesEndpointTests(unittest.TestCase):
 
     def test_honors_enforcement_mode_override(self):
         """A settings flip to 'block' surfaces through the endpoint."""
-        with patch("app.main.settings.CLIENT_VERSION_ENFORCEMENT", "block"):
-            with patch("app.main.settings.MIN_CLIENT_VERSION", "1.2.0"):
+        # After R6 main.py split, settings lives at
+        # app.api.routes.features (where the route reads it). Patching
+        # there gates the endpoint's view directly.
+        with patch("app.api.routes.features.settings.CLIENT_VERSION_ENFORCEMENT", "block"):
+            with patch("app.api.routes.features.settings.MIN_CLIENT_VERSION", "1.2.0"):
                 with TestClient(app) as client:
                     res = client.get("/v1/config/features")
         data = res.json()
@@ -48,8 +51,8 @@ class FeaturesEndpointTests(unittest.TestCase):
         The mobile client checks `url != null` to decide whether to
         show the store link — an empty string would render a broken
         'Güncelle' button linking nowhere."""
-        with patch("app.main.settings.CLIENT_VERSION_UPDATE_URL_IOS", ""):
-            with patch("app.main.settings.CLIENT_VERSION_UPDATE_URL_ANDROID", ""):
+        with patch("app.api.routes.features.settings.CLIENT_VERSION_UPDATE_URL_IOS", ""):
+            with patch("app.api.routes.features.settings.CLIENT_VERSION_UPDATE_URL_ANDROID", ""):
                 with TestClient(app) as client:
                     res = client.get("/v1/config/features")
         data = res.json()
