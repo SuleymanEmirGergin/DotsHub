@@ -109,6 +109,16 @@ def delete_my_session(session_id: str) -> Dict[str, Any]:
             logger.warning("data_rights: delete from %s failed: %s", table, exc)
             deleted_counts[table] = -1  # signal "attempted, failed"
 
+    # patient_uploads: tombstone (NOT delete) — the schema's
+    # ON DELETE SET NULL would orphan the row's audit trail, and
+    # KVKK contract is "content gone, ID kept for cross-reference".
+    # The tombstone helper handles idempotency (skips already-
+    # tombstoned rows) so calling on a re-deletion is a no-op.
+    from app.services.patient_uploads import tombstone_uploads_for_session
+    deleted_counts["patient_uploads"] = tombstone_uploads_for_session(
+        session_id, reason="user_request"
+    )
+
     # Tombstone the session row. Clear all content columns we might
     # conceivably hold PII in; keep id + timestamps + deletion
     # metadata for referential integrity with any remaining joins.

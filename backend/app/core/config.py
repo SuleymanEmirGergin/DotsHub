@@ -235,6 +235,33 @@ class Settings(BaseSettings):
     QUOTE_SUMMARY_CACHE_TTL_SECONDS: int = 86400  # 24 h
     QUOTE_SUMMARY_CACHE_MAX_ENTRIES: int = 256
 
+    # ── Health-tourism: patient upload + AI dispatcher ───────────────────
+    # Master flag for /v1/patient/upload — when False the route returns
+    # 503; lets operators turn off the entire upload surface during
+    # incident response without redeploying.
+    PATIENT_UPLOAD_ENABLED: bool = False
+
+    # Retention. After this many days, a nightly cron (future) will
+    # tombstone the row in the same shape data_rights uses. AI result
+    # text is the only patient-derivable content held; cleared on
+    # tombstone.
+    PATIENT_UPLOAD_RETENTION_DAYS: int = 30
+
+    # Per-kind size caps (bytes). Selfie / dental / scalp photos sit
+    # comfortably under 10MB; voice memos under 25MB; clinical clips
+    # need headroom for 4K/30s; lab scans rarely exceed 10MB. The
+    # route validates kind + content_type + size before hashing so
+    # malicious 1GB uploads bail at the boundary.
+    PATIENT_UPLOAD_MAX_IMAGE_BYTES: int = 10 * 1024 * 1024
+    PATIENT_UPLOAD_MAX_AUDIO_BYTES: int = 25 * 1024 * 1024
+    PATIENT_UPLOAD_MAX_VIDEO_BYTES: int = 100 * 1024 * 1024
+    PATIENT_UPLOAD_MAX_DOCUMENT_BYTES: int = 10 * 1024 * 1024
+
+    # Polling: how long between status checks the client should wait.
+    # Surfaces in GET /v1/patient/upload/{asset_id} as a hint header
+    # so naive clients don't hammer the endpoint.
+    PATIENT_UPLOAD_POLL_INTERVAL_SECONDS: int = 5
+
     # ── Health-tourism: lead conversion webhook ──────────────────────────
     # When LEAD_WEBHOOK_URL is set, /v1/quote/lead dispatches a JSON
     # POST after accepting the lead. Compatible with Slack incoming

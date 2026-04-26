@@ -63,6 +63,13 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 | `QUOTE_SUMMARY_LLM_TIMEOUT_SECONDS` | Tek bir provider için submit+poll budget'ı (sn). Worst-case full chain: `len(providers) × timeout`. Background task'ta çalıştığı için kullanıcı latency'sine yansımaz; cost/capacity dial'ı. | `30.0` |
 | `QUOTE_SUMMARY_CACHE_TTL_SECONDS` | Cache entry TTL (sn). Aşıldığında entry düşer, sonraki istekte regenerate. Klinik / fiyat değişimleri buraya doğal olarak yansır. **Backend**: `REDIS_URL` set ise Redis (`SETEX` ile server-side expiry), aksi halde in-memory LRU. | `86400` |
 | `QUOTE_SUMMARY_CACHE_MAX_ENTRIES` | In-memory LRU cache azami giriş sayısı (sadece in-memory backend kullanıldığında etkili — Redis'te entry sayısı sınırı yok, TTL ile yönetilir). | `256` |
+| `PATIENT_UPLOAD_ENABLED` | `1` ise `POST /v1/patient/upload` aktif. Hasta selfie/voice memo/lab scan/video clip'i AI servislere yönlendirir (moondream/whisper/dots-ocr/cogvlm). **Bytes persisted değil** — backend hash + dispatch yapar, sonuç `patient_uploads` tablosunda. `WIRO_*_ENABLED` flag'lerinin de açık olması gerek (kind → servis map'i için). **SQL migration**: `sql/20260427_patient_uploads.sql` uygulanmalı. | `0` |
+| `PATIENT_UPLOAD_RETENTION_DAYS` | Asset row için retention süresi (gün). Aşıldığında nightly cron (gelecek session) tombstone yapar. AI sonucu hasta retrieve edebilsin diye tutulur; KVKK silme isteğinde derhal tombstone. | `30` |
+| `PATIENT_UPLOAD_MAX_IMAGE_BYTES` | Image (jpeg/png/webp) için size cap. Selfie/scalp/dental fotoğrafları için makul. | `10485760` (10MB) |
+| `PATIENT_UPLOAD_MAX_AUDIO_BYTES` | Audio (wav/mp3/mp4/m4a) için size cap. Whisper voice memo için. | `26214400` (25MB) |
+| `PATIENT_UPLOAD_MAX_VIDEO_BYTES` | Video (mp4/webm) için size cap. CogVLM klinik klip için (4K/30s headroom'u). | `104857600` (100MB) |
+| `PATIENT_UPLOAD_MAX_DOCUMENT_BYTES` | Document (pdf/jpeg-scan/png-scan) için size cap. Lab sonucu / reçete fotoğrafı için. | `10485760` (10MB) |
+| `PATIENT_UPLOAD_POLL_INTERVAL_SECONDS` | Client polling interval ipucu (`Retry-After` header). | `5` |
 | `LEAD_WEBHOOK_URL` | `/v1/quote/lead` kabul edildiğinde JSON POST gönderilen URL. Slack incoming webhook, Make/Zapier veya generic CRM olabilir. Boşsa lead webhook devre dışı; route 200 dönmeye devam eder ama payload `webhook_configured: false` olur. | — |
 | `LEAD_WEBHOOK_AUTH_TOKEN` | Set edilirse `Authorization: Bearer <token>` header'ı gönderilir. | — |
 | `LEAD_WEBHOOK_TIMEOUT_SECONDS` | Tek istek için timeout. | `5.0` |
