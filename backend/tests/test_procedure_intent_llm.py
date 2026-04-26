@@ -188,6 +188,111 @@ def test_extract_via_llm_caps_confidence_at_0_95():
 # ─── Route integration ───────────────────────────────────────────────
 
 
+# ─── Supabase audit logging ──────────────────────────────────────────
+
+
+class ProcedureIntentLlmSupabaseLogTests(unittest.TestCase):
+    """Each extract_via_llm call writes a row to llm_calls when the
+    LLM_NLU_LOG_TO_SUPABASE feature flag is on. Mirrors the existing
+    llm_nlu logging path (same table, same shape, same fire-and-forget
+    daemon thread)."""
+
+    def _patch_log_capture(self, captured):
+        """Capture _log_llm_call(**kwargs) instead of writing to DB."""
+        return patch.object(
+            procedure_intent_llm,
+            "_log_llm_call",
+            side_effect=lambda **kw: captured.append(kw),
+        )
+
+    def test_log_runs_when_flag_on_success_path(self):
+        captured = []
+        fake = _FakeClient(
+            '{"procedure_id": "lasik", "confidence_0_1": 0.7}'
+        )
+        with patch.object(
+            procedure_intent_llm.settings, "LLM_NLU_LOG_TO_SUPABASE", True
+        ), patch(
+            "app.services.llm_nlu_client.get_nlu_client", return_value=fake
+        ), self._patch_log_capture(captured):
+            procedure_intent_llm.extract_via_llm("eye", "en-US")
+        self.assertEqual(len(captured), 1)
+        self.assertTrue(captured[0]["success"])
+        self.assertIsNone(captured[0]["error_type"])
+
+    def test_log_runs_with_schema_error_on_unparseable_response(self):
+        captured = []
+        fake = _FakeClient("not JSON at all, no braces")
+        with patch.object(
+            procedure_intent_llm.settings, "LLM_NLU_LOG_TO_SUPABASE", True
+        ), patch(
+            "app.services.llm_nlu_client.get_nlu_client", return_value=fake
+        ), self._patch_log_capture(captured):
+            out = procedure_intent_llm.extract_via_llm("x", "en-US")
+        self.assertIsNone(out)
+        self.assertEqual(len(captured), 1)
+        self.assertFalse(captured[0]["success"])
+        self.assertEqual(captured[0]["error_type"], "schema_error")
+
+    def test_log_runs_with_error_type_on_client_exception(self):
+        captured = []
+
+        class _Boom:
+            def call(self, system, user):  # noqa: ARG002
+                raise RuntimeError("network down")
+
+        with patch.object(
+            procedure_intent_llm.settings, "LLM_NLU_LOG_TO_SUPABASE", True
+        ), patch(
+            "app.services.llm_nlu_client.get_nlu_client", return_value=_Boom()
+        ), self._patch_log_capture(captured):
+            procedure_intent_llm.extract_via_llm("x", "en-US")
+        self.assertEqual(len(captured), 1)
+        self.assertFalse(captured[0]["success"])
+        # Generic RuntimeError → "error" bucket.
+        self.assertEqual(captured[0]["error_type"], "error")
+
+    def test_log_runs_for_unknown_procedure_as_success(self):
+        """If the model returns a real-looking but unknown id, that's
+        a model-level NO MATCH not an infra error — log with success=
+        True so the failure-rate dashboard isn't polluted."""
+        captured = []
+        fake = _FakeClient(
+            '{"procedure_id": "magic_pill", "confidence_0_1": 0.99}'
+        )
+        with patch.object(
+            procedure_intent_llm.settings, "LLM_NLU_LOG_TO_SUPABASE", True
+        ), patch(
+            "app.services.llm_nlu_client.get_nlu_client", return_value=fake
+        ), self._patch_log_capture(captured):
+            out = procedure_intent_llm.extract_via_llm("x", "en-US")
+        self.assertIsNone(out)
+        self.assertEqual(len(captured), 1)
+        self.assertTrue(captured[0]["success"])
+
+    def test_log_skipped_when_flag_off_real_path(self):
+        """Verify the flag-off short-circuit at the actual production
+        boundary — no Supabase insert executed."""
+        captured_inserts = []
+
+        # Patch app.db.supabase to capture any insert attempts.
+        from unittest.mock import MagicMock
+        sb = MagicMock()
+        sb.table.return_value.insert.side_effect = lambda row: captured_inserts.append(row) or MagicMock()
+
+        fake = _FakeClient(
+            '{"procedure_id": "lasik", "confidence_0_1": 0.7}'
+        )
+        with patch.object(
+            procedure_intent_llm.settings, "LLM_NLU_LOG_TO_SUPABASE", False
+        ), patch(
+            "app.services.llm_nlu_client.get_nlu_client", return_value=fake
+        ), patch("app.db.supabase", sb):
+            procedure_intent_llm.extract_via_llm("eye", "en-US")
+        # No insert attempted because the flag short-circuits.
+        self.assertEqual(captured_inserts, [])
+
+
 class QuoteRouteWithLLMFallbackTests(unittest.TestCase):
     # setUp removed — autouse fixture in conftest.py.
 
