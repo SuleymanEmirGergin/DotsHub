@@ -1,20 +1,23 @@
-"""KVKK / GDPR data rights endpoint.
+"""KVKK / GDPR data rights endpoints.
 
-User-facing (not admin): deletes one triage session and all of its
-derived rows (events, LLM calls, feedback). The session row itself
-is replaced with a tombstone — we keep the ID + deletion timestamp
-so analytics totals don't silently drop and so we can honor
-cross-reference audits ("was this session ever here?").
+User-facing (not admin): deletes one triage session OR one
+health-tourism lead and all of its derived rows. The row itself is
+replaced with a tombstone — we keep the ID + deletion timestamp so
+analytics totals don't silently drop and so we can honor
+cross-reference audits ("was this session ever here?"). For
+health-tourism leads, the regulator (Sağlık Turizmi Yönetmeliği
+Madde 10) requires 5-year retention, so the tombstone is mandatory.
 
-Endpoint:
-    DELETE /v1/me/sessions/{session_id}
+Endpoints:
+    DELETE /v1/me/sessions/{session_id}   — triage data wipe
+    DELETE /v1/me/leads/{lead_id}         — health-tourism lead wipe
 
 Contract:
     - Public (no admin_key required) because the user is exercising
       their own rights. Authentication is via possession of the
-      session_id — triage sessions are unguessable UUIDs and the
-      mobile app is the only thing that holds them.
-    - Idempotent: deleting an already-tombstoned session is a
+      session_id / lead_id — both are unguessable UUIDs and only the
+      mobile app holds them.
+    - Idempotent: deleting an already-tombstoned record is a
       200-no-op.
     - Returns a short receipt with what was deleted.
 
@@ -144,4 +147,79 @@ def delete_my_session(session_id: str) -> Dict[str, Any]:
         "ok": True,
         "session_id": session_id,
         "derived_deleted": deleted_counts,
+    }
+
+
+# ──────────────────────────────────────────────────────────
+# DELETE /v1/me/leads/{lead_id}  — health-tourism lead silme
+# ──────────────────────────────────────────────────────────
+#
+# Why a separate endpoint from /sessions:
+#   - Different table, different schema, different retention rule.
+#   - The session tombstone clears triage payloads; the lead
+#     tombstone clears contact PII while preserving the row for the
+#     5-year retention requirement (Sağlık Turizmi Yönetmeliği
+#     Madde 10). Operators must be able to prove "we received this
+#     lead and handled it" if questioned by the regulator — the
+#     tombstone keeps that audit trail intact.
+#   - Reusing /sessions/{id} would be wrong both semantically (lead
+#     IDs are not session IDs) and operationally (different
+#     deletion semantics per regulator).
+
+
+@router.delete("/leads/{lead_id}")
+def delete_my_lead(lead_id: str) -> Dict[str, Any]:
+    """KVKK silme: tombstone one health-tourism lead.
+
+    Soft-delete via lead_repository.soft_delete():
+        - is_deleted = true
+        - contact JSONB nulled
+        - notes cleared
+        - deleted_at stamped
+        - row preserved for 5-year retention
+
+    Returns:
+        - 200 with `ok: true` on success (or already-deleted no-op)
+        - 404 when the lead_id doesn't exist
+        - 500 when Supabase is unreachable
+
+    Authentication is by possession of the unguessable lead_id —
+    same model as the session endpoint above. No admin_key.
+    """
+    from app.services import lead_repository
+
+    if len(lead_id) < 32 or len(lead_id) > 40:
+        raise HTTPException(status_code=400, detail="malformed lead_id")
+
+    # Idempotent: if the row is already deleted, return a no-op
+    # success rather than 404, so retries don't surprise the caller.
+    existing = lead_repository.get(lead_id)
+    if existing is None:
+        # Could be 'never existed' OR 'Supabase unreachable'.
+        # Distinguish only via Supabase env probe — the get() helper
+        # already returned None for both. Treat as 404 to match the
+        # session endpoint's behaviour: an unfindable record is a
+        # not-found from the user's perspective.
+        raise HTTPException(status_code=404, detail="lead not found")
+    if existing.get("is_deleted"):
+        return {
+            "ok": True,
+            "lead_id": lead_id,
+            "already_deleted": True,
+        }
+
+    success = lead_repository.soft_delete(lead_id)
+    if not success:
+        # The get() above succeeded so the row exists — a False here
+        # means Supabase failed on the update path (transient). Tell
+        # the user to retry rather than silently 200'ing.
+        raise HTTPException(
+            status_code=500, detail="lead deletion failed; try again"
+        )
+
+    logger.info("data_rights: lead %s tombstoned (KVKK silme)", lead_id)
+    return {
+        "ok": True,
+        "lead_id": lead_id,
+        "tombstoned": True,
     }

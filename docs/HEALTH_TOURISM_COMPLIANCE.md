@@ -131,7 +131,7 @@ Hasta Türkiye'de iken acil tıbbi durum yaşarsa:
 | 2 | KVKK VERBİS kaydı | Operatör tüzel kişiliği | **BOŞLUK** |
 | 3 | DPO ataması (GDPR + büyük ölçek KVKK) | Operatör | **BOŞLUK** |
 | 4 | Mobile UI'da açık rıza onay ekranı (özel nitelikli sağlık verisi + iletişim verisi paylaşımı için ayrı ayrı) | Frontend ekibi | **BOŞLUK** |
-| 5 | `DELETE /v1/me/leads/{lead_id}` endpoint'i (KVKK silme hakkı için lead-spesifik) | Backend ekibi | **BOŞLUK** |
+| 5 | ~~`DELETE /v1/me/leads/{lead_id}` endpoint'i (KVKK silme hakkı için lead-spesifik)~~ | Backend ekibi | ✅ [backend/app/api/routes/data_rights.py](backend/app/api/routes/data_rights.py) `delete_my_lead` — soft-delete via lead_repository, contact + notes nulled, deleted_at stamped, 5-yr retention için row preserved |
 | 6 | ~~`health_tourism_leads` Supabase tablosu + 5 yıl retention politikası~~ | Backend ekibi | ✅ Tablo: [backend/sql/20260426_health_tourism_leads.sql](backend/sql/20260426_health_tourism_leads.sql); persistence: [backend/app/services/lead_repository.py](backend/app/services/lead_repository.py); soft-delete = is_deleted=true (5 yıl retention için row korunur, contact + notes nulled) |
 | 7 | Her klinik partneri için yazılı sözleşme + `metadata.contract_id` | Operatör + Hukuk | **BOŞLUK** |
 | 8 | Acil durum müdahale prosedürü (24/7 hat, konsolosluk bildirimi) | Operasyon ekibi | **BOŞLUK** |

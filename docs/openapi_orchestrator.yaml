@@ -647,6 +647,50 @@ paths:
         "500":
           description: Tombstone write failed — retryable
 
+  /v1/me/leads/{lead_id}:
+    delete:
+      summary: KVKK silme — tombstone one health-tourism lead
+      operationId: deleteMyLead
+      description: |
+        Soft-delete a health-tourism lead. Required by KVKK Madde 11
+        (silme hakkı); the row itself is **kept** for the 5-year
+        retention window (Sağlık Turizmi Yönetmeliği Madde 10) but
+        contact PII and notes are erased.
+
+        Differs from `/me/sessions/{id}`: triage data uses a 90-day
+        purge after tombstone; lead data must persist 5 years for
+        regulator audits ("we received this lead and handled it"),
+        with PII nulled the moment the user exercises silme.
+
+        - Idempotent: already-deleted lead returns
+          `{ok: true, already_deleted: true}`.
+        - Authentication: possession of the unguessable lead UUID
+          (same model as session delete).
+      parameters:
+        - name: lead_id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Receipt of the soft-delete operation
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, lead_id]
+                properties:
+                  ok: { type: boolean }
+                  lead_id: { type: string }
+                  already_deleted: { type: boolean }
+                  tombstoned: { type: boolean }
+        "400":
+          description: Malformed lead_id
+        "404":
+          description: Lead not found
+        "500":
+          description: Tombstone write failed — retryable
+
   /health:
     get:
       summary: Health check

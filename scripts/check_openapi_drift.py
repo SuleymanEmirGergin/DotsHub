@@ -42,7 +42,6 @@ SPEC_PATH = REPO_ROOT / "docs" / "openapi_orchestrator.yaml"
 # is silently dropped from the FastAPI side of the diff.
 INTERNAL_PATH_PREFIXES = (
     "/v1/admin/",
-    "/v1/me/sessions",  # KVKK data-rights — intentionally unadvertised
     "/v1/session",  # legacy multi-step endpoints; superseded by /v1/triage/turn
     "/health",
     "/metrics",
@@ -50,6 +49,10 @@ INTERNAL_PATH_PREFIXES = (
     "/docs",
     "/redoc",
 )
+# Note: /v1/me/* (KVKK silme endpoints) are public — they're documented
+# in openapi_orchestrator.yaml so partner integrations and the mobile
+# client use them directly. Keeping them OUT of INTERNAL_PATH_PREFIXES
+# means the drift gate verifies parity between spec and code.
 # Exact-match internal paths. The root "/" is handled here, not as a
 # prefix, because a startswith("/") check would swallow every API path.
 INTERNAL_EXACT_PATHS = frozenset({"/"})
