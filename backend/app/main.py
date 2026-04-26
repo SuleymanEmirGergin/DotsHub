@@ -29,7 +29,7 @@ from app.api.routes.facilities import router as facilities_router
 from app.api.routes.summary_email import router as summary_email_router
 from app.api.routes.push_token import router as push_token_router
 from app.api.routes.features import router as features_router
-from app.api.routes.quote import router as quote_router
+from app.api.routes.health_tourism import router as health_tourism_router
 from app.admin_api import router as admin_router
 from app.admin_tenants_api import router as admin_tenants_router
 from app.admin_feedback_api import router as admin_feedback_router
@@ -389,7 +389,7 @@ app.include_router(facilities_router, prefix="/v1", tags=["Facilities"])
 app.include_router(summary_email_router, prefix="/v1", tags=["Summary Email"])
 app.include_router(push_token_router, prefix="/v1", tags=["Push Token"])
 app.include_router(features_router, prefix="/v1", tags=["Config"])
-app.include_router(quote_router, prefix="/v1", tags=["Health Tourism"])
+app.include_router(health_tourism_router, prefix="/v1", tags=["Health Tourism"])
 app.include_router(session_router, prefix="/v1", tags=["Session (legacy)"])
 app.include_router(message_router, prefix="/v1", tags=["Message (legacy)"])
 app.include_router(admin_router, prefix="/v1", tags=["Admin"])
