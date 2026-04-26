@@ -372,6 +372,38 @@ class ItineraryRequest(BaseModel):
     locale: str = "tr-TR"
 
 
+class LeadContact(BaseModel):
+    """Contact details a patient supplies when accepting a quote.
+
+    Every field optional — the route doesn't enforce shape because
+    different operators ask for different details. The webhook
+    receiver should validate against its own CRM schema.
+    """
+
+    name: str = ""
+    email: str = ""
+    phone: str = ""
+    preferred_contact: Literal["email", "phone", "whatsapp", "any"] = "any"
+    best_time: str = ""
+
+
+class LeadRequest(BaseModel):
+    """Body for `POST /v1/quote/lead` — patient accepts a quote.
+
+    ``consent_to_share`` is the KVKK/GDPR gate. Without it, the
+    backend still records the lead and dispatches a redacted webhook
+    so the operator knows interest exists, but no PII leaves the
+    system. With it, the full contact block is forwarded.
+    """
+
+    procedure_id: str
+    clinic_id: str
+    contact: LeadContact = Field(default_factory=LeadContact)
+    consent_to_share: bool = False
+    locale: str = "tr-TR"
+    notes: str = ""
+
+
 # ─── Legacy compat / internal helpers ───
 
 class ChatMessage(BaseModel):

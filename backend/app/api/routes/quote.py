@@ -41,6 +41,7 @@ from app.idempotency import (
 from app.models.schemas import (
     Envelope,
     ItineraryRequest,
+    LeadRequest,
     Meta,
     QuoteRequest,
 )
@@ -48,6 +49,7 @@ from app.services import (
     clinic_registry,
     fit_to_travel,
     itinerary_engine,
+    lead_dispatcher,
     procedure_catalog,
     procedure_intent,
     procedure_intent_llm,
@@ -474,3 +476,110 @@ async def quote_itinerary(http_request: Request, request: ItineraryRequest):
             logger.warning("itinerary.idempotency_store_failed: %s", exc)
 
     return envelope
+
+
+# ──────────────────────────────────────────────────────────
+# POST /v1/quote/lead  — patient accepts a quote, lead goes to CRM
+# ──────────────────────────────────────────────────────────
+
+
+_LEAD_DISCLAIMER_TR = (
+    "Talebiniz alındı. Klinik temsilcisi en kısa sürede sizinle iletişime "
+    "geçecektir. Sağlık turizmi aracılık hizmetidir, tıbbi tavsiye değildir."
+)
+_LEAD_DISCLAIMER_NO_CONSENT_TR = (
+    "Talebiniz iletişim onayı verilmediğinden anonim olarak alındı. "
+    "İletişim için bir sonraki başvuruda KVKK onayı vermeniz gerekir."
+)
+
+
+def _make_lead_meta() -> Meta:
+    return Meta(
+        disclaimer_tr=_LEAD_DISCLAIMER_TR,
+        timestamp=datetime.now(timezone.utc),
+    )
+
+
+@router.post("/quote/lead", response_model=Envelope)
+async def quote_lead(http_request: Request, request: LeadRequest):
+    """Accept a quote, hand the lead off to the configured webhook.
+
+    Returns a RESULT envelope with a ``LEAD_ACCEPTED`` code so the
+    client UI can show a confirmation. The webhook dispatch happens
+    inside this handler (await), but the dispatcher's failure is
+    swallowed — the patient sees success either way; the operator
+    sees the failure in logs/metrics.
+    """
+    session_id = http_request.headers.get("x-session-id") or str(uuid.uuid4())
+    lead_id = str(uuid.uuid4())
+
+    procedure = procedure_catalog.get_procedure(request.procedure_id)
+    clinic = clinic_registry.get_clinic(request.clinic_id)
+    if procedure is None or clinic is None or request.procedure_id not in clinic.get(
+        "procedures_offered", []
+    ):
+        return Envelope(
+            type="ERROR",
+            session_id=session_id,
+            turn_index=0,
+            payload={
+                "code": "CLINIC_PROCEDURE_MISMATCH",
+                "message_tr": (
+                    "Seçtiğiniz klinik bu prosedürü sunmuyor."
+                ),
+                "procedure_id": request.procedure_id,
+                "clinic_id": request.clinic_id,
+                "retryable": True,
+            },
+            meta=_make_lead_meta(),
+        )
+
+    quoted_price = None
+    base = (procedure.get("price_band_eur") or {}).get("mid")
+    if base is not None:
+        quoted_price = int(round(base * float(clinic.get("price_modifier", 1.0))))
+
+    payload = lead_dispatcher.build_payload(
+        lead_id=lead_id,
+        session_id=session_id,
+        procedure=procedure,
+        clinic=clinic,
+        contact=request.contact.model_dump(),
+        consent_to_share=request.consent_to_share,
+        locale=request.locale,
+        notes=request.notes,
+        quoted_price_eur=quoted_price,
+    )
+
+    delivered = False
+    if lead_dispatcher.is_configured():
+        try:
+            delivered = await lead_dispatcher.dispatch(payload)
+        except Exception as exc:
+            logger.warning("lead.dispatch_unexpected: %s", exc)
+
+    return Envelope(
+        type="RESULT",
+        session_id=session_id,
+        turn_index=0,
+        payload={
+            "code": "LEAD_ACCEPTED",
+            "lead_id": lead_id,
+            "consent_to_share": bool(request.consent_to_share),
+            "webhook_delivered": delivered,
+            "webhook_configured": lead_dispatcher.is_configured(),
+            "next_steps_tr": (
+                "Klinik temsilcisi 24 saat içinde sizinle iletişime geçecektir."
+                if request.consent_to_share
+                else _LEAD_DISCLAIMER_NO_CONSENT_TR
+            ),
+            "procedure_id": request.procedure_id,
+            "procedure_name_tr": procedure_catalog.name(
+                request.procedure_id, request.locale
+            ),
+            "clinic_id": request.clinic_id,
+            "clinic_name": clinic["name"],
+            "quoted_price_eur": quoted_price,
+        },
+        meta=_make_lead_meta(),
+    )

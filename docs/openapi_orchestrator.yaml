@@ -441,6 +441,69 @@ paths:
               schema:
                 $ref: "#/components/schemas/Envelope"
 
+  /v1/quote/lead:
+    post:
+      summary: Patient accepts a quote — lead routed to configured CRM
+      operationId: quoteLead
+      description: |
+        After picking a clinic, the patient submits this request to
+        accept the quote and request follow-up. The backend:
+          - Validates the procedure/clinic pair
+          - Builds a lead payload (with PII gated by `consent_to_share`)
+          - Dispatches the payload to `LEAD_WEBHOOK_URL` (any
+            JSON-accepting receiver: Slack, Make, Zapier, generic CRM)
+          - Returns a `RESULT` envelope with code `LEAD_ACCEPTED`
+
+        Without `consent_to_share=true`, contact details are stripped
+        from the webhook payload before transmission. The lead is
+        still recorded so the operator knows interest exists, but no
+        personal data leaves the backend until consent is recorded.
+        See `docs/HEALTH_TOURISM_COMPLIANCE.md` for the KVKK rationale.
+
+        Webhook delivery is best-effort: a failed dispatch does NOT
+        cause the response to fail. The operator monitors delivery
+        via `lead_webhook_dispatch_total` Prometheus counter.
+      parameters:
+        - $ref: "#/components/parameters/SessionIdHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [procedure_id, clinic_id]
+              properties:
+                procedure_id:
+                  type: string
+                clinic_id:
+                  type: string
+                contact:
+                  type: object
+                  properties:
+                    name: { type: string }
+                    email: { type: string, format: email }
+                    phone: { type: string }
+                    preferred_contact:
+                      type: string
+                      enum: [email, phone, whatsapp, any]
+                    best_time: { type: string }
+                consent_to_share:
+                  type: boolean
+                  default: false
+                  description: KVKK/GDPR gate. Without it, contact PII is removed from the webhook payload.
+                locale:
+                  type: string
+                  default: "tr-TR"
+                notes:
+                  type: string
+      responses:
+        "200":
+          description: Envelope (RESULT with code=LEAD_ACCEPTED, or ERROR)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Envelope"
+
   /v1/quote/itinerary:
     post:
       summary: Generate a day-by-day itinerary for a chosen procedure + clinic + date

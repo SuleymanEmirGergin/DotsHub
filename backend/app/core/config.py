@@ -120,6 +120,18 @@ class Settings(BaseSettings):
     LLM_PROCEDURE_INTENT_ENABLED: bool = False
     LLM_PROCEDURE_INTENT_MIN_CONFIDENCE: float = 0.40
 
+    # ── Health-tourism: lead conversion webhook ──────────────────────────
+    # When LEAD_WEBHOOK_URL is set, /v1/quote/lead dispatches a JSON
+    # POST after accepting the lead. Compatible with Slack incoming
+    # webhooks, Make/Zapier hooks, and any generic HTTP receiver. The
+    # endpoint stays synchronous from the caller's perspective; the
+    # dispatch happens in a background task with bounded retries so
+    # one slow CRM doesn't add seconds to user-facing latency.
+    LEAD_WEBHOOK_URL: str = ""
+    LEAD_WEBHOOK_AUTH_TOKEN: str = ""  # sent as 'Authorization: Bearer ...'
+    LEAD_WEBHOOK_TIMEOUT_SECONDS: float = 5.0
+    LEAD_WEBHOOK_MAX_RETRIES: int = 3
+
     # ── Curated injection score tiers (audit follow-up) ──────────────────
     # triage_engine.py used to hardcode per-injection score_0_1 values
     # scattered across 25+ call sites. They collapse into three tiers.
