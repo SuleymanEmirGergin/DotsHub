@@ -284,6 +284,7 @@ deployment-page strings — adopted across mobile in Session 12.
 
 ## Documentation
 
+- [Health-tourism compliance](docs/HEALTH_TOURISM_COMPLIANCE.md) — KVKK, Sağlık Turizmi Yetki Belgesi, GDPR, audit refs for the `/v1/quote` + `/v1/quote/itinerary` + `/v1/quote/lead` flow.
 - [Deploy & environment](docs/DEPLOY_AND_ENV.md) — deployment and env vars.
 - [Architecture](docs/ARCHITECTURE.md) — high-level diagrams and components.
 - [Privacy & security](docs/PRIVACY_AND_SECURITY.md) — data handling, retention, KVKD/GDPR notes.

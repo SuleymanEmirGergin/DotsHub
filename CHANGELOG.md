@@ -4,7 +4,15 @@ Tüm önemli değişiklikler bu dosyada listelenir.
 
 ## [Unreleased]
 
-- (Yeni değişiklikler buraya.)
+- **Session 17 — Sağlık turizmi pivotu (additive, non-breaking):**
+  - **Bridge sertleştirme:** `streaming_envelope` capability token (backend + mobile + docs üçlüsü senkronize), `/v1/triage/stream` SSE capability gating fix (gerçek contract leak kapatıldı), `GET /v1/config/capabilities` runtime drift discovery.
+  - **Backend reliability:** `/health` Supabase + Redis latency probe + threshold tag, session bazlı rate limit bucket (`X-Session-Id` ile NAT-fair), `Idempotency-Key` header (SHA-256 body hash + 5 dk TTL Redis/LRU).
+  - **OpenAPI ↔ FastAPI route drift CI gate** (`.github/workflows/openapi-drift.yml` + `scripts/check_openapi_drift.py`).
+  - **Sağlık turizmi domain v0:** 10 prosedür kataloğu (`procedures.json`) + 8 örnek partner klinik (`clinics.json`) + 12 fit-to-travel kuralı (5 dilli) + `QUOTE`/`ITINERARY` envelope tipleri (additive, eski client'lar etkisiz). Servisler: `procedure_catalog`, `clinic_registry` (hybrid Supabase/JSON), `procedure_intent` (deterministic + opt-in LLM fallback), `fit_to_travel`, `quote_engine` (5-component weighted scorer), `itinerary_engine` (category templates + 18 activity types).
+  - **Yeni route'lar:** `POST /v1/quote`, `POST /v1/quote/itinerary`, `POST /v1/quote/lead` (CRM webhook out: Slack/Make/Zapier/generic, KVKK consent-gated PII, retry policy).
+  - **Supabase migration:** `health_tourism_clinics` tablosu + jsonb GIN index + soft-delete + idempotent seed script.
+  - **Compliance:** [docs/HEALTH_TOURISM_COMPLIANCE.md](docs/HEALTH_TOURISM_COMPLIANCE.md) — KVKK, Sağlık Turizmi Yetki Belgesi, GDPR notları + 10 maddelik operatör eylem listesi.
+  - **Test:** 641 backend test (153 yeni: 13 SSE/capability + 31 reliability + 9 OpenAPI drift + 47 health tourism services/route + 15 itinerary + 19 LLM fallback + 9 hybrid registry + 13 lead webhook); sıfır regresyon.
 
 ## [4.6.0] — 2026-04-21
 
