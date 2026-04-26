@@ -267,6 +267,68 @@ class IdempotencyRouteIntegrationTests(unittest.TestCase):
         self.assertEqual(len(engine_calls), 2)
 
 
+class IdempotencyTtlSplitTests(unittest.TestCase):
+    """Quote endpoints get a longer cache TTL than triage because
+    users read-then-accept over minutes; triage retries are network-
+    layer (timeout/packet-loss) so the 5 min default fits."""
+
+    def test_quote_ttl_default_is_15_min(self):
+        # Pin the default — env override changes it but the in-process
+        # default must stay 900s so the helper picks the right TTL.
+        self.assertEqual(idem.IDEMPOTENCY_QUOTE_TTL_SEC, 900)
+
+    def test_triage_ttl_default_is_5_min(self):
+        self.assertEqual(idem.IDEMPOTENCY_TTL_SEC, 300)
+
+    def test_helper_passes_ttl_through_to_memory_store(self):
+        """A helper constructed with a custom ttl_sec must call
+        _memory_store with that TTL — not the module default."""
+        import asyncio
+        from datetime import datetime, timezone
+
+        from app.models.schemas import Envelope, Meta
+
+        envelope = Envelope(
+            type="QUOTE",
+            session_id="s",
+            turn_index=0,
+            payload={},
+            meta=Meta(
+                disclaimer_tr="x",
+                timestamp=datetime.now(timezone.utc),
+            ),
+        )
+
+        class _StubReq:
+            def __init__(self, headers):
+                self.headers = headers
+                self.app = type("A", (), {"state": type("S", (), {"redis": None})()})()
+
+        class _Body:
+            def model_dump(self, mode="json"):
+                return {"k": "v"}
+
+        helper = idem.IdempotencyHelper(
+            _StubReq({"idempotency-key": "k-ttl"}),
+            _Body(),
+            lambda: Meta(
+                disclaimer_tr="x",
+                timestamp=datetime.now(timezone.utc),
+            ),
+            session_id="s",
+            ttl_sec=42,
+        )
+        asyncio.run(helper.store(envelope))
+        # The cache entry's expires_at must reflect the 42s TTL, not
+        # 300s. Slack window: time.time() varies between store and
+        # assert; allow a 5s wall-clock buffer.
+        body_hash, env, expires_at = idem._MEMORY_CACHE["k-ttl"]
+        from time import time as _now
+
+        self.assertLess(expires_at - _now(), 50)  # well under 300s default
+        self.assertGreater(expires_at - _now(), 30)
+
+
 class IdempotencyHelperTests(unittest.TestCase):
     """The route-level helper that the 4 idempotent endpoints share.
     These tests exercise the helper in isolation so a regression in

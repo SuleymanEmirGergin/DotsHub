@@ -6,7 +6,7 @@ import uuid
 
 from fastapi import APIRouter, Request
 
-from app.idempotency import IdempotencyHelper
+from app.idempotency import IDEMPOTENCY_QUOTE_TTL_SEC, IdempotencyHelper
 from app.models.schemas import Envelope, ItineraryRequest
 from app.services import (
     clinic_registry,
@@ -43,7 +43,10 @@ async def quote_itinerary(http_request: Request, request: ItineraryRequest):
     """
     session_id = http_request.headers.get("x-session-id") or str(uuid.uuid4())
 
-    idem = IdempotencyHelper(http_request, request, _meta_factory, session_id)
+    idem = IdempotencyHelper(
+        http_request, request, _meta_factory, session_id,
+        ttl_sec=IDEMPOTENCY_QUOTE_TTL_SEC,
+    )
     early = await idem.check()
     if early is not None:
         return early

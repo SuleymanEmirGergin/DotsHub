@@ -46,7 +46,17 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+# Default cache TTL (seconds). Triage uses this directly. Quote uses
+# the longer IDEMPOTENCY_QUOTE_TTL_SEC because users typically read a
+# quote, deliberate for several minutes, then accept — a 5-minute TTL
+# would expire under the user before they even finish reading. The
+# engine itself is cheap to re-run, but a longer TTL prevents
+# accidental double-leads when the user's network drops between
+# quote-read and lead-submit.
 IDEMPOTENCY_TTL_SEC = int(os.getenv("IDEMPOTENCY_TTL_SEC", "300"))  # 5 min
+IDEMPOTENCY_QUOTE_TTL_SEC = int(
+    os.getenv("IDEMPOTENCY_QUOTE_TTL_SEC", "900")  # 15 min
+)
 IDEMPOTENCY_REDIS_KEY_PREFIX = "idem:"
 # In-memory cap — enough headroom for normal retry traffic, low enough
 # that a flood of distinct keys can't OOM the worker. LRU eviction.
@@ -91,8 +101,10 @@ def _memory_lookup(key: str) -> Optional[Tuple[str, dict]]:
     return body_hash, envelope
 
 
-def _memory_store(key: str, body_hash: str, envelope: dict) -> None:
-    expires_at = time.time() + IDEMPOTENCY_TTL_SEC
+def _memory_store(
+    key: str, body_hash: str, envelope: dict, ttl_sec: int = IDEMPOTENCY_TTL_SEC
+) -> None:
+    expires_at = time.time() + ttl_sec
     _MEMORY_CACHE[key] = (body_hash, envelope, expires_at)
     _MEMORY_CACHE.move_to_end(key)
     while len(_MEMORY_CACHE) > _MEMORY_CACHE_MAX_ENTRIES:
@@ -129,7 +141,11 @@ async def _redis_lookup(
 
 
 async def _redis_store(
-    redis: "Redis", key: str, body_hash: str, envelope: dict
+    redis: "Redis",
+    key: str,
+    body_hash: str,
+    envelope: dict,
+    ttl_sec: int = IDEMPOTENCY_TTL_SEC,
 ) -> None:
     rkey = f"{IDEMPOTENCY_REDIS_KEY_PREFIX}{key}"
     payload = json.dumps(
@@ -138,13 +154,13 @@ async def _redis_store(
         default=str,
     )
     try:
-        await redis.set(rkey, payload, ex=IDEMPOTENCY_TTL_SEC)
+        await redis.set(rkey, payload, ex=ttl_sec)
     except Exception as exc:
         logger.warning(
             "idempotency: Redis SET failed for key=%s (%s); using in-memory",
             key, type(exc).__name__,
         )
-        _memory_store(key, body_hash, envelope)
+        _memory_store(key, body_hash, envelope, ttl_sec=ttl_sec)
 
 
 # ─── Public API ───────────────────────────────────────────────────────
@@ -180,13 +196,24 @@ async def lookup_cached(
 
 
 async def store_response(
-    redis: Optional["Redis"], key: str, body_hash: str, envelope: dict
+    redis: Optional["Redis"],
+    key: str,
+    body_hash: str,
+    envelope: dict,
+    ttl_sec: int = IDEMPOTENCY_TTL_SEC,
 ) -> None:
-    """Cache the envelope for a key/body pair. TTL = IDEMPOTENCY_TTL_SEC."""
+    """Cache the envelope for a key/body pair.
+
+    ``ttl_sec`` defaults to IDEMPOTENCY_TTL_SEC (5 min) — the right
+    cap for triage where retries are network-layer (timeout / packet
+    loss). Health-tourism quote endpoints pass ``IDEMPOTENCY_QUOTE_TTL_SEC``
+    (15 min) instead, because users read a quote and deliberate
+    before accepting; their retry window is bigger.
+    """
     if redis is not None:
-        await _redis_store(redis, key, body_hash, envelope)
+        await _redis_store(redis, key, body_hash, envelope, ttl_sec=ttl_sec)
     else:
-        _memory_store(key, body_hash, envelope)
+        _memory_store(key, body_hash, envelope, ttl_sec=ttl_sec)
 
 
 # ─── Route-level helper ──────────────────────────────────────────────
@@ -228,12 +255,14 @@ class IdempotencyHelper:
         mismatch_message_tr: str = (
             "Idempotency-Key aynı ama istek gövdesi farklı."
         ),
+        ttl_sec: int = IDEMPOTENCY_TTL_SEC,
     ):
         self._http_request = http_request
         self._body_model = body_model
         self._meta_factory = meta_factory
         self._session_id = session_id
         self._mismatch_message_tr = mismatch_message_tr
+        self._ttl_sec = ttl_sec
         self.idempotency_key: Optional[str] = http_request.headers.get(
             "idempotency-key"
         )
@@ -305,7 +334,8 @@ class IdempotencyHelper:
     async def store(self, envelope) -> None:
         """Cache the envelope for next-attempt retrieval. Cache write
         failures are non-fatal — the response has already been built;
-        a missed cache only costs a re-run on the next retry."""
+        a missed cache only costs a re-run on the next retry. TTL
+        comes from the helper's ttl_sec (set at construction)."""
         if self.idempotency_key is None or self._body_hash is None:
             return
         try:
@@ -314,6 +344,7 @@ class IdempotencyHelper:
                 self.idempotency_key,
                 self._body_hash,
                 envelope.model_dump(mode="json"),
+                ttl_sec=self._ttl_sec,
             )
         except Exception as exc:  # noqa: BLE001 — non-fatal
             logger.warning("idempotency.store_failed: %s", exc)

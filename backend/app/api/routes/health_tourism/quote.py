@@ -6,7 +6,7 @@ import uuid
 
 from fastapi import APIRouter, Request
 
-from app.idempotency import IdempotencyHelper
+from app.idempotency import IDEMPOTENCY_QUOTE_TTL_SEC, IdempotencyHelper
 from app.models.schemas import Envelope, QuoteRequest
 from app.services import (
     fit_to_travel,
@@ -44,7 +44,13 @@ async def quote(http_request: Request, request: QuoteRequest):
     """
     session_id = http_request.headers.get("x-session-id") or str(uuid.uuid4())
 
-    idem = IdempotencyHelper(http_request, request, _meta_factory, session_id)
+    # 15-min TTL — users read a quote, deliberate, then accept; the
+    # 5-min default would expire under them. Engine is cheap to re-run,
+    # but the longer cache prevents accidental double-quotes.
+    idem = IdempotencyHelper(
+        http_request, request, _meta_factory, session_id,
+        ttl_sec=IDEMPOTENCY_QUOTE_TTL_SEC,
+    )
     early = await idem.check()
     if early is not None:
         return early

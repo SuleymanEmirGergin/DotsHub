@@ -30,7 +30,8 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 | `RATE_LIMIT_MAX_REQ` | IP/device rate limit — pencere başına istek | `20` |
 | `SESSION_RATE_LIMIT_WINDOW_SEC` | Session bazlı rate limit penceresi (sn). NAT arkasında adil paylaşım için IP bucket'ına ek olarak çalışır; `X-Session-Id` header'ı ile aktif olur. | `3600` |
 | `SESSION_RATE_LIMIT_MAX_REQ` | Session başına pencere başına istek | `30` |
-| `IDEMPOTENCY_TTL_SEC` | `Idempotency-Key` cache TTL (sn). Aynı key+gövde ile gelen retry isteğinde cached envelope döner; engine yeniden çalışmaz. Redis varsa orada, yoksa LRU in-memory. | `300` |
+| `IDEMPOTENCY_TTL_SEC` | `Idempotency-Key` cache TTL (sn) — **triage** (`/v1/triage/turn`) için. Retry timeout/packet-loss network-katmanı; 5 dk yeterli. | `300` |
+| `IDEMPOTENCY_QUOTE_TTL_SEC` | `Idempotency-Key` cache TTL — **quote** (`/v1/quote*`) için. Hasta teklifi okur, dakikalarca düşünür, accept eder; daha uzun pencere lazım. | `900` |
 | `IDEMPOTENCY_MEMORY_MAX` | In-memory idempotency cache azami giriş sayısı (LRU). Redis yoksa kullanılır. | `1024` |
 | `LLM_PROCEDURE_INTENT_ENABLED` | `1` ise sağlık turizmi `/v1/quote` deterministik sinonim eşleyici düşük confidence ya da miss verdiğinde LLM fallback'i çağırır. | `0` |
 | `LLM_PROCEDURE_INTENT_MIN_CONFIDENCE` | Deterministik match'in altında LLM tetiklendiği eşik (0.0–1.0). | `0.40` |
