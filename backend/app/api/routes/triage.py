@@ -16,7 +16,7 @@ from datetime import datetime, timezone
 from typing import Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Header, HTTPException, Query
+from fastapi import APIRouter, Header, HTTPException, Query, Request
 
 from app.models.schemas import (
     TriageTurnRequest,
@@ -26,6 +26,11 @@ from app.models.schemas import (
 from app.services.facility_discovery import discover_facilities, DEFAULT_CITY
 from app.core.config import settings
 from app.core.i18n import get_text
+from app.version_gating import (
+    KNOWN_CAPABILITIES,
+    filter_envelope,
+    parse_capabilities,
+)
 
 from copy import deepcopy
 
@@ -401,7 +406,7 @@ def _sse_event(event: str, data: dict) -> str:
 
 
 @router.post("/triage/stream")
-async def triage_stream(request: TriageTurnRequest):
+async def triage_stream(http_request: Request, request: TriageTurnRequest):
     """Streaming variant of /v1/triage/turn using Server-Sent Events.
 
     Emits three events in sequence:
@@ -411,11 +416,20 @@ async def triage_stream(request: TriageTurnRequest):
 
     On error emits an ``error`` event then ``done``.
 
+    Capability gating
+        ``CapabilityGateMiddleware`` only filters JSON responses, so SSE
+        bypasses it. We apply ``filter_envelope`` here against the same
+        ``X-Client-Capabilities`` header so old clients on /stream see
+        the same shape they'd get on /turn — uniform field gating across
+        both transport modes. See ``docs/client_versioning.md``.
+
     Client usage (JavaScript):
         const es = await fetch('/v1/triage/stream', {method:'POST', body: JSON.stringify(body)});
         const reader = es.body.getReader();
         // parse SSE lines
     """
+    caps = parse_capabilities(http_request.headers.get("x-client-capabilities"))
+    fully_capable = caps >= KNOWN_CAPABILITIES
 
     async def _generate():
         # 1) Immediate thinking event — lets the UI show a spinner without waiting
@@ -432,8 +446,10 @@ async def triage_stream(request: TriageTurnRequest):
             else:
                 envelope = await _handle_turn_legacy(request)
 
-            # 3) Emit the full envelope as an SSE event
+            # 3) Emit the full envelope as an SSE event — capability-gated.
             envelope_dict = envelope.model_dump(mode="json")
+            if not fully_capable:
+                envelope_dict = filter_envelope(envelope_dict, caps)
             yield _sse_event("envelope", envelope_dict)
 
         except Exception as exc:

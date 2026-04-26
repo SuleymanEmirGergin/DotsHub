@@ -20,6 +20,7 @@ from fastapi.testclient import TestClient
 from app.version_gating import (
     CAP_CURATED_META,
     CAP_EMERGENCY_SPECIALTY,
+    CAP_STREAMING_ENVELOPE,
     CURATED_TOP_CONDITION_FIELDS,
     CapabilityGateMiddleware,
     KNOWN_CAPABILITIES,
@@ -178,7 +179,35 @@ def test_curated_fields_registry_covers_known_new_keys():
 
 
 def test_known_capabilities_registry_stable():
-    assert {CAP_CURATED_META, CAP_EMERGENCY_SPECIALTY} == set(KNOWN_CAPABILITIES)
+    assert {
+        CAP_CURATED_META,
+        CAP_EMERGENCY_SPECIALTY,
+        CAP_STREAMING_ENVELOPE,
+    } == set(KNOWN_CAPABILITIES)
+
+
+def test_streaming_envelope_token_does_not_gate_result_payload():
+    # `streaming_envelope` is a transport-mode advertisement; it must
+    # not strip any field on its own. A client that advertises only
+    # this token should see the same shape as a client with no caps.
+    env = _result_envelope([
+        {"disease_label": "X", "score_0_1": 0.5, "icd10": "K27"}
+    ])
+    only_streaming = filter_envelope(env, frozenset({CAP_STREAMING_ENVELOPE}))
+    no_caps = filter_envelope(env, frozenset())
+    assert only_streaming == no_caps
+
+
+def test_streaming_envelope_token_does_not_gate_emergency_payload():
+    env = _emergency_envelope()
+    only_streaming = filter_envelope(env, frozenset({CAP_STREAMING_ENVELOPE}))
+    no_caps = filter_envelope(env, frozenset())
+    assert only_streaming == no_caps
+
+
+def test_streaming_envelope_token_parses_via_header():
+    got = parse_capabilities("streaming_envelope")
+    assert got == frozenset({CAP_STREAMING_ENVELOPE})
 
 
 # ─── CapabilityGateMiddleware via FastAPI TestClient ─────────────────

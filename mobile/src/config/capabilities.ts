@@ -48,15 +48,24 @@
 
 export const CAP_CURATED_META = "curated_meta" as const;
 export const CAP_EMERGENCY_SPECIALTY = "emergency_specialty" as const;
+// Transport-mode advertisement: this build can parse SSE events from
+// /v1/triage/stream (thinking → envelope → done). Currently gates no
+// payload field, but is registered so future stream-only fields can
+// hide behind it. Safe to advertise: this build's chat layer reads
+// `/v1/triage/stream` via fetch + ReadableStream and falls back to
+// `/v1/triage/turn` if the server returns a non-SSE response.
+export const CAP_STREAMING_ENVELOPE = "streaming_envelope" as const;
 
 export type CapabilityToken =
   | typeof CAP_CURATED_META
-  | typeof CAP_EMERGENCY_SPECIALTY;
+  | typeof CAP_EMERGENCY_SPECIALTY
+  | typeof CAP_STREAMING_ENVELOPE;
 
 /** Canonical ordered list — used for header serialisation + iteration. */
 export const CLIENT_CAPABILITIES: readonly CapabilityToken[] = [
   CAP_CURATED_META,
   CAP_EMERGENCY_SPECIALTY,
+  CAP_STREAMING_ENVELOPE,
 ] as const;
 
 export const CLIENT_CAPABILITIES_SET: ReadonlySet<CapabilityToken> = new Set(

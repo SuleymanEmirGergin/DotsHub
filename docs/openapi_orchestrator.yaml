@@ -305,6 +305,47 @@ paths:
                       update_url_ios: "https://apps.apple.com/app/..."
                       update_url_android: "https://play.google.com/..."
 
+  /v1/config/capabilities:
+    get:
+      summary: Server-known capability registry (drift discovery)
+      operationId: getConfigCapabilities
+      description: |
+        Runtime discovery counterpart to the CI-time
+        `scripts/check_capability_drift.cjs` check. Returns the
+        canonical token list the server understands so a client can
+        compare against its own `CLIENT_CAPABILITIES` constant and log
+        a warning if either side is missing tokens.
+
+        The list is sorted alphabetically and the body is byte-stable
+        across calls — safe to cache aggressively. See
+        `docs/client_versioning.md` for the protocol.
+      responses:
+        "200":
+          description: Current capability registry snapshot.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [capabilities, count]
+                properties:
+                  capabilities:
+                    type: array
+                    items:
+                      type: string
+                    description: Sorted token list.
+                  count:
+                    type: integer
+                    description: Length of `capabilities`; redundant but cheap to verify.
+              examples:
+                current:
+                  summary: 2026-04 registry snapshot
+                  value:
+                    capabilities:
+                      - curated_meta
+                      - emergency_specialty
+                      - streaming_envelope
+                    count: 3
+
   /v1/triage/stream:
     post:
       summary: Streaming variant of /v1/triage/turn (Server-Sent Events)

@@ -101,10 +101,19 @@ def _inc_gate_counters(
 
 CAP_CURATED_META = "curated_meta"
 CAP_EMERGENCY_SPECIALTY = "emergency_specialty"
+# Transport-mode advertisement: client can parse Server-Sent Events from
+# /v1/triage/stream. No payload field is currently gated by this token —
+# the SSE generator runs `filter_envelope` against the same caps set, so
+# field gating is uniform across /turn and /stream. The token exists so
+# (a) clients can self-report streaming support for telemetry, and (b)
+# future stream-only fields (e.g. partial progress, token streaming)
+# have a registered gate token from day one.
+CAP_STREAMING_ENVELOPE = "streaming_envelope"
 
 KNOWN_CAPABILITIES: FrozenSet[str] = frozenset({
     CAP_CURATED_META,
     CAP_EMERGENCY_SPECIALTY,
+    CAP_STREAMING_ENVELOPE,
 })
 
 # Fields within `Envelope.payload.top_conditions[*]` that are only safe

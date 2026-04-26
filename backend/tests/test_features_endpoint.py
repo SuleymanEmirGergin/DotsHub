@@ -14,6 +14,7 @@ from unittest.mock import patch
 from fastapi.testclient import TestClient
 
 from app.main import app
+from app.version_gating import KNOWN_CAPABILITIES
 
 
 class FeaturesEndpointTests(unittest.TestCase):
@@ -54,6 +55,44 @@ class FeaturesEndpointTests(unittest.TestCase):
         data = res.json()
         self.assertIsNone(data["client_version"]["update_url_ios"])
         self.assertIsNone(data["client_version"]["update_url_android"])
+
+
+class CapabilitiesEndpointTests(unittest.TestCase):
+    """GET /v1/config/capabilities — runtime capability discovery.
+
+    Returns the canonical token list the server understands. The mobile
+    build can compare this to its `CLIENT_CAPABILITIES` constant and log
+    drift (token unknown to server, or token server knows but client
+    doesn't advertise) without needing a CI run.
+    """
+
+    def test_returns_known_capability_tokens_sorted(self):
+        with TestClient(app) as client:
+            res = client.get("/v1/config/capabilities")
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertIn("capabilities", data)
+        self.assertIn("count", data)
+        # Byte-stable: sorted alphabetically.
+        self.assertEqual(data["capabilities"], sorted(KNOWN_CAPABILITIES))
+        self.assertEqual(data["count"], len(KNOWN_CAPABILITIES))
+
+    def test_includes_streaming_envelope_token(self):
+        # A1's new token must appear here so mobile drift detection sees
+        # it. This is a contract-level smoke test — if streaming_envelope
+        # disappears from the registry, this fails loudly.
+        with TestClient(app) as client:
+            res = client.get("/v1/config/capabilities")
+        self.assertIn("streaming_envelope", res.json()["capabilities"])
+
+    def test_capabilities_response_is_byte_stable_across_calls(self):
+        """The endpoint should return identical bytes on repeated calls
+        with the same registry — required for HTTP caching and log
+        diffing."""
+        with TestClient(app) as client:
+            r1 = client.get("/v1/config/capabilities")
+            r2 = client.get("/v1/config/capabilities")
+        self.assertEqual(r1.content, r2.content)
 
 
 if __name__ == "__main__":
