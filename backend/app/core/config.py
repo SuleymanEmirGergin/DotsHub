@@ -221,7 +221,12 @@ class Settings(BaseSettings):
     # are skipped, the chain advances. If all providers fail / are
     # disabled, the field stays ``None``.
     QUOTE_SUMMARY_LLM_ENABLED: bool = False
-    QUOTE_SUMMARY_LLM_PROVIDERS: str = "qwen,gpt5_mini"
+    # Default chain order: qwen (Türkçe-tuned, primary) -> gemini
+    # (262K-context multimodal, robust fallback) -> gpt5_mini (cheaper
+    # last-resort for short summaries). All three must have their own
+    # WIRO_*_ENABLED flag on AND a valid WIRO_API_SECRET; the chain
+    # walker silently skips disabled providers.
+    QUOTE_SUMMARY_LLM_PROVIDERS: str = "qwen,gemini,gpt5_mini"
     # Wall-clock budget for ONE provider's submit+poll. The full chain
     # may take up to len(providers) * timeout in the worst case — but
     # since this runs in a background task, that's a cost concern, not

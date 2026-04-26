@@ -167,6 +167,48 @@ def test_provider_exception_advances_chain(monkeypatch):
     assert out == "recovered"
 
 
+def test_default_provider_chain_includes_gemini():
+    """Tripwire: production default chain MUST include gemini between
+    qwen and gpt5_mini. If someone reorders or drops gemini without
+    thinking, this test fails — surfacing it in code review.
+
+    Reads from settings without monkeypatching, so it observes the
+    real default. The conftest stub doesn't override
+    QUOTE_SUMMARY_LLM_PROVIDERS, so settings.X here is the
+    production default."""
+    chain = quote_summary._provider_chain()
+    assert chain == ["qwen", "gemini", "gpt5_mini"], (
+        f"default chain drift: got {chain}; "
+        "expected ['qwen', 'gemini', 'gpt5_mini']"
+    )
+
+
+def test_gemini_dispatched_when_qwen_disabled_in_default_chain(monkeypatch):
+    """End-to-end: with the real default chain, qwen disabled but
+    gemini enabled → gemini dispatched, gpt5_mini NOT touched."""
+    monkeypatch.setattr(
+        quote_summary.settings, "QUOTE_SUMMARY_LLM_ENABLED", True
+    )
+    # Don't override QUOTE_SUMMARY_LLM_PROVIDERS — use the prod default.
+    gpt5_called = []
+    with patch.object(
+        quote_summary.qwen_llm, "is_enabled", return_value=False,
+    ), patch.object(
+        quote_summary.gemini_llm, "is_enabled", return_value=True,
+    ), patch.object(
+        quote_summary.gemini_llm, "generate", return_value="from gemini",
+    ), patch.object(
+        quote_summary.gpt5_mini_llm, "is_enabled", return_value=True,
+    ), patch.object(
+        quote_summary.gpt5_mini_llm,
+        "generate",
+        side_effect=lambda **_: gpt5_called.append(1) or "ignored",
+    ):
+        out = quote_summary.generate_and_cache(**_FIXED_INPUTS)
+    assert out == "from gemini"
+    assert gpt5_called == []  # default chain stops at gemini
+
+
 def test_unknown_provider_skipped(monkeypatch):
     """Typo in env (``QUOTE_SUMMARY_LLM_PROVIDERS=xxxx,qwen``) must
     skip the unknown name and proceed."""
