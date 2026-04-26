@@ -182,6 +182,141 @@ class QuoteIdempotencyTests(unittest.TestCase):
         self.assertEqual(r2.json()["payload"]["code"], "IDEMPOTENCY_KEY_REUSED")
 
 
+class QuoteIdContinuityTests(unittest.TestCase):
+    """quote_id flow: /v1/quote returns it; /v1/quote/lead optionally
+    forwards it; webhook payload carries it. Operator can trace which
+    exact price/clinic combination the patient accepted."""
+
+    # autouse fixture in conftest.py handles cache cleanup.
+
+    def test_quote_envelope_includes_quote_id(self):
+        with TestClient(app) as client:
+            r = _post(client, {
+                "procedure_id": "fue_hair_transplant",
+                "profile": {},
+                "locale": "tr-TR",
+            })
+        body = r.json()
+        self.assertEqual(body["type"], "QUOTE")
+        self.assertIn("quote_id", body["payload"])
+        # UUID4 hex format check (loose — full validation in pydantic
+        # if we ever type the field strictly).
+        qid = body["payload"]["quote_id"]
+        self.assertEqual(len(qid), 36)
+        self.assertEqual(qid.count("-"), 4)
+
+    def test_quote_id_differs_across_calls(self):
+        with TestClient(app) as client:
+            r1 = _post(client, {
+                "procedure_id": "fue_hair_transplant",
+                "profile": {},
+                "locale": "tr-TR",
+            })
+            r2 = _post(client, {
+                "procedure_id": "fue_hair_transplant",
+                "profile": {},
+                "locale": "tr-TR",
+            })
+        self.assertNotEqual(
+            r1.json()["payload"]["quote_id"],
+            r2.json()["payload"]["quote_id"],
+        )
+
+    def test_lead_accepts_and_returns_quote_id(self):
+        with TestClient(app) as client:
+            r = client.post("/v1/quote/lead", json={
+                "procedure_id": "fue_hair_transplant",
+                "clinic_id": "clinic_istanbul_aesthetics_one",
+                "quote_id": "Q-stable-12345",
+                "consent_to_share": False,
+            })
+        body = r.json()
+        self.assertEqual(body["payload"]["quote_id"], "Q-stable-12345")
+
+    def test_lead_quote_id_propagates_to_webhook_payload(self):
+        from app.services import lead_dispatcher
+
+        captured: list[dict] = []
+
+        async def _capture(payload):
+            captured.append(payload)
+            return "delivered"
+
+        with patch.object(
+            lead_dispatcher.settings, "LEAD_WEBHOOK_URL",
+            "https://hooks.example.com/x",
+        ), patch(
+            "app.services.lead_dispatcher.dispatch", new=_capture,
+        ):
+            with TestClient(app) as client:
+                client.post("/v1/quote/lead", json={
+                    "procedure_id": "fue_hair_transplant",
+                    "clinic_id": "clinic_istanbul_aesthetics_one",
+                    "quote_id": "Q-from-prior-quote",
+                    "consent_to_share": False,
+                })
+        self.assertEqual(len(captured), 1)
+        self.assertEqual(captured[0]["quote_id"], "Q-from-prior-quote")
+
+
+class LeadPersistenceWiringTests(unittest.TestCase):
+    """The /v1/quote/lead route writes to lead_repository before
+    dispatch and updates the row with the dispatch outcome."""
+
+    def test_lead_calls_insert_then_record_outcome(self):
+        from app.services import lead_dispatcher, lead_repository
+
+        async def _fake_dispatch(payload):  # noqa: ARG001
+            return "delivered"
+
+        with patch.object(
+            lead_dispatcher.settings, "LEAD_WEBHOOK_URL",
+            "https://hooks.example.com/x",
+        ), patch(
+            "app.services.lead_dispatcher.dispatch", new=_fake_dispatch,
+        ), patch.object(
+            lead_repository, "insert", return_value=True,
+        ) as insert_mock, patch.object(
+            lead_repository, "record_outcome", return_value=True,
+        ) as outcome_mock:
+            with TestClient(app) as client:
+                r = client.post("/v1/quote/lead", json={
+                    "procedure_id": "fue_hair_transplant",
+                    "clinic_id": "clinic_istanbul_aesthetics_one",
+                    "consent_to_share": True,
+                    "contact": {"name": "T"},
+                })
+        self.assertEqual(r.json()["payload"]["persisted"], True)
+        insert_mock.assert_called_once()
+        outcome_mock.assert_called_once()
+        # Outcome string must match dispatcher's return.
+        self.assertEqual(outcome_mock.call_args[0][1], "delivered")
+
+    def test_lead_skips_record_outcome_when_persistence_fails(self):
+        """If insert returns False (Supabase down), don't bother
+        calling record_outcome — there's nothing to update."""
+        from app.services import lead_dispatcher, lead_repository
+
+        async def _fake_dispatch(payload):  # noqa: ARG001
+            return "delivered"
+
+        with patch(
+            "app.services.lead_dispatcher.dispatch", new=_fake_dispatch,
+        ), patch.object(
+            lead_repository, "insert", return_value=False,
+        ), patch.object(
+            lead_repository, "record_outcome", return_value=True,
+        ) as outcome_mock:
+            with TestClient(app) as client:
+                r = client.post("/v1/quote/lead", json={
+                    "procedure_id": "fue_hair_transplant",
+                    "clinic_id": "clinic_istanbul_aesthetics_one",
+                    "consent_to_share": False,
+                })
+        self.assertEqual(r.json()["payload"]["persisted"], False)
+        outcome_mock.assert_not_called()
+
+
 class QuoteSessionRateLimitTests(unittest.TestCase):
     # setUp removed — autouse fixture in conftest.py.
 

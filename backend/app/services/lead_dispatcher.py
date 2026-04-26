@@ -144,21 +144,22 @@ async def _post_once(
     )
 
 
-async def dispatch(payload: dict) -> bool:
-    """POST the payload with bounded retries. Return True on first
-    2xx, False after exhausting retries.
+async def dispatch(payload: dict) -> str:
+    """POST the payload with bounded retries. Return one of the
+    granular outcome strings used by ``lead_repository.record_outcome``:
 
-    Backoff: 250 ms × attempt-number up to 1 s. The webhook is a
-    best-effort path so we don't want to spend seconds in this loop;
-    a 3-attempt cap with sub-second sleeps still gives the receiver
-    one transient-error opportunity each.
+      - "delivered"        → 2xx response on any attempt
+      - "failed_4xx"       → 4xx client error (permanent, no retry)
+      - "failed_exhausted" → all retries returned 5xx / network error
+      - "not_configured"   → LEAD_WEBHOOK_URL is empty (drop silently)
+
+    The state-machine is shared with the persistence layer so a
+    typo here would surface as a CHECK-constraint violation in
+    the SQL migration. Backoff: 250 ms × attempt up to 1 s.
     """
     if not is_configured():
-        # Drop silently — operator hasn't configured a CRM yet. Not an
-        # error; many deployments of /v1/quote will run without leads
-        # if the operator wants to gather them out-of-band.
         logger.debug("lead_dispatcher.no_webhook_configured")
-        return False
+        return "not_configured"
 
     url = settings.LEAD_WEBHOOK_URL
     timeout = float(getattr(settings, "LEAD_WEBHOOK_TIMEOUT_SECONDS", 5.0))
@@ -169,8 +170,8 @@ async def dispatch(payload: dict) -> bool:
             try:
                 resp = await _post_once(client, url, payload, timeout)
                 if 200 <= resp.status_code < 300:
-                    _inc_counter("lead_webhook_dispatch_total", outcome="ok")
-                    return True
+                    _inc_counter("lead_webhook_dispatch_total", outcome="delivered")
+                    return "delivered"
                 # 4xx is permanent — don't retry. The webhook URL or
                 # auth token is wrong; the operator must fix it.
                 if 400 <= resp.status_code < 500:
@@ -181,7 +182,7 @@ async def dispatch(payload: dict) -> bool:
                     _inc_counter(
                         "lead_webhook_dispatch_total", outcome="failed_4xx"
                     )
-                    return False
+                    return "failed_4xx"
                 # 5xx → transient, retry within the cap
                 logger.info(
                     "lead_dispatcher.transient_failure attempt=%d status=%d",
@@ -203,4 +204,4 @@ async def dispatch(payload: dict) -> bool:
                 await asyncio.sleep(min(0.25 * attempt, 1.0))
 
     _inc_counter("lead_webhook_dispatch_total", outcome="failed_exhausted")
-    return False
+    return "failed_exhausted"

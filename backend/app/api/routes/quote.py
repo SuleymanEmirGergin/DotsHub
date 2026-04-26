@@ -50,6 +50,7 @@ from app.services import (
     fit_to_travel,
     itinerary_engine,
     lead_dispatcher,
+    lead_repository,
     procedure_catalog,
     procedure_intent,
     procedure_intent_llm,
@@ -245,11 +246,19 @@ async def quote(http_request: Request, request: QuoteRequest):
         )
 
     # ─── 4. Build QUOTE envelope ─────────────────────────────────────
+    # quote_id is a UUID stamped at response time. Clients pass it
+    # back in /v1/quote/lead so the operator can trace which exact
+    # price/clinic combination the patient is accepting. Not currently
+    # persisted server-side — the QUOTE itself is a pure function of
+    # (procedure_id, profile, target_city, locale, top_n), so we don't
+    # need a database round-trip; the id is the audit handle.
+    quote_id = str(uuid.uuid4())
     envelope = Envelope(
         type="QUOTE",
         session_id=session_id,
         turn_index=0,
         payload={
+            "quote_id": quote_id,
             "procedure": {
                 "id": procedure_id,
                 "name_tr": procedure_catalog.name(procedure_id, request.locale),
@@ -539,6 +548,24 @@ async def quote_lead(http_request: Request, request: LeadRequest):
     if base is not None:
         quoted_price = int(round(base * float(clinic.get("price_modifier", 1.0))))
 
+    # ─── Persist BEFORE dispatching ───────────────────────────────────
+    # The lead row is the durable handle. If Supabase is down, we
+    # still proceed to webhook (the operator gets the lead via CRM
+    # even without our DB record); the gap surfaces in metrics, not
+    # in user-facing 5xx.
+    persisted = lead_repository.insert(
+        lead_id=lead_id,
+        session_id=session_id,
+        quote_id=request.quote_id,
+        procedure_id=request.procedure_id,
+        clinic_id=request.clinic_id,
+        consent_to_share=request.consent_to_share,
+        contact=request.contact.model_dump(),
+        notes=request.notes,
+        locale=request.locale,
+        quoted_price_eur=quoted_price,
+    )
+
     payload = lead_dispatcher.build_payload(
         lead_id=lead_id,
         session_id=session_id,
@@ -550,13 +577,22 @@ async def quote_lead(http_request: Request, request: LeadRequest):
         notes=request.notes,
         quoted_price_eur=quoted_price,
     )
+    # quote_id propagates to the webhook payload so the receiver can
+    # cross-reference the offer the patient accepted.
+    if request.quote_id:
+        payload["quote_id"] = request.quote_id
 
-    delivered = False
-    if lead_dispatcher.is_configured():
-        try:
-            delivered = await lead_dispatcher.dispatch(payload)
-        except Exception as exc:
-            logger.warning("lead.dispatch_unexpected: %s", exc)
+    # ─── Dispatch webhook ─────────────────────────────────────────────
+    outcome = "not_configured"
+    try:
+        outcome = await lead_dispatcher.dispatch(payload)
+    except Exception as exc:
+        logger.warning("lead.dispatch_unexpected: %s", exc)
+        outcome = "errored"
+
+    # ─── Update DB row with outcome ───────────────────────────────────
+    if persisted:
+        lead_repository.record_outcome(lead_id, outcome)
 
     return Envelope(
         type="RESULT",
@@ -565,9 +601,11 @@ async def quote_lead(http_request: Request, request: LeadRequest):
         payload={
             "code": "LEAD_ACCEPTED",
             "lead_id": lead_id,
+            "quote_id": request.quote_id,
             "consent_to_share": bool(request.consent_to_share),
-            "webhook_delivered": delivered,
+            "webhook_status": outcome,
             "webhook_configured": lead_dispatcher.is_configured(),
+            "persisted": persisted,
             "next_steps_tr": (
                 "Klinik temsilcisi 24 saat içinde sizinle iletişime geçecektir."
                 if request.consent_to_share

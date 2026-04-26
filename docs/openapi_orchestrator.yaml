@@ -496,6 +496,14 @@ paths:
                   default: "tr-TR"
                 notes:
                   type: string
+                quote_id:
+                  type: string
+                  description: |
+                    `payload.quote_id` from the prior `/v1/quote`
+                    response. Optional for backward compat, but new
+                    clients should always send it so the operator can
+                    trace which exact price/clinic combination is
+                    being accepted.
       responses:
         "200":
           description: Envelope (RESULT with code=LEAD_ACCEPTED, or ERROR)

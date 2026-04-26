@@ -111,14 +111,14 @@ def test_is_configured_true_when_url_set():
 
 
 @pytest.mark.asyncio
-async def test_dispatch_returns_false_when_unconfigured():
+async def test_dispatch_returns_not_configured_when_unconfigured():
     with patch.object(lead_dispatcher.settings, "LEAD_WEBHOOK_URL", ""):
         out = await lead_dispatcher.dispatch({"any": "payload"})
-    assert out is False
+    assert out == "not_configured"
 
 
 @pytest.mark.asyncio
-async def test_dispatch_returns_true_on_2xx():
+async def test_dispatch_returns_delivered_on_2xx():
     response = MagicMock(spec=httpx.Response)
     response.status_code = 200
     response.text = "ok"
@@ -132,11 +132,11 @@ async def test_dispatch_returns_true_on_2xx():
         httpx.AsyncClient, "post", new=_fake_post
     ):
         out = await lead_dispatcher.dispatch({"any": "payload"})
-    assert out is True
+    assert out == "delivered"
 
 
 @pytest.mark.asyncio
-async def test_dispatch_returns_false_on_4xx_no_retry():
+async def test_dispatch_returns_failed_4xx_no_retry():
     """4xx = permanent (bad URL or auth). One attempt only."""
     response = MagicMock(spec=httpx.Response)
     response.status_code = 401
@@ -156,12 +156,12 @@ async def test_dispatch_returns_false_on_4xx_no_retry():
         httpx.AsyncClient, "post", new=_fake_post
     ):
         out = await lead_dispatcher.dispatch({"x": 1})
-    assert out is False
+    assert out == "failed_4xx"
     assert call_count["n"] == 1
 
 
 @pytest.mark.asyncio
-async def test_dispatch_retries_on_5xx_and_eventually_succeeds():
+async def test_dispatch_retries_on_5xx_and_eventually_delivers():
     statuses = iter([500, 503, 200])
 
     async def _fake_post(*args, **kwargs):  # noqa: ARG001
@@ -180,11 +180,11 @@ async def test_dispatch_retries_on_5xx_and_eventually_succeeds():
         "app.services.lead_dispatcher.asyncio.sleep", new=AsyncMock()
     ):
         out = await lead_dispatcher.dispatch({"x": 1})
-    assert out is True
+    assert out == "delivered"
 
 
 @pytest.mark.asyncio
-async def test_dispatch_returns_false_after_exhausting_retries():
+async def test_dispatch_returns_failed_exhausted_after_retries():
     async def _fake_post(*args, **kwargs):  # noqa: ARG001
         resp = MagicMock(spec=httpx.Response)
         resp.status_code = 500
@@ -201,7 +201,7 @@ async def test_dispatch_returns_false_after_exhausting_retries():
         "app.services.lead_dispatcher.asyncio.sleep", new=AsyncMock()
     ):
         out = await lead_dispatcher.dispatch({"x": 1})
-    assert out is False
+    assert out == "failed_exhausted"
 
 
 @pytest.mark.asyncio
@@ -227,7 +227,7 @@ async def test_dispatch_handles_network_exception_with_retry():
         "app.services.lead_dispatcher.asyncio.sleep", new=AsyncMock()
     ):
         out = await lead_dispatcher.dispatch({"x": 1})
-    assert out is True
+    assert out == "delivered"
     assert attempts["n"] == 2
 
 
@@ -258,7 +258,7 @@ class LeadRouteTests(unittest.TestCase):
         self.assertEqual(body["payload"]["code"], "LEAD_ACCEPTED")
         self.assertTrue(body["payload"]["consent_to_share"])
         # No webhook configured → reported truthfully.
-        self.assertFalse(body["payload"]["webhook_delivered"])
+        self.assertEqual(body["payload"]["webhook_status"], "not_configured")
         self.assertFalse(body["payload"]["webhook_configured"])
 
     def test_lead_clinic_procedure_mismatch_returns_error(self):
@@ -274,9 +274,9 @@ class LeadRouteTests(unittest.TestCase):
         )
 
     def test_lead_dispatches_webhook_when_configured(self):
-        # Simulate a configured webhook returning 200.
+        # Simulate a configured webhook returning delivered.
         async def _fake_dispatch(payload):  # noqa: ARG001
-            return True
+            return "delivered"
 
         with patch.object(
             lead_dispatcher.settings, "LEAD_WEBHOOK_URL",
@@ -294,4 +294,4 @@ class LeadRouteTests(unittest.TestCase):
                 })
         body = r.json()
         self.assertTrue(body["payload"]["webhook_configured"])
-        self.assertTrue(body["payload"]["webhook_delivered"])
+        self.assertEqual(body["payload"]["webhook_status"], "delivered")

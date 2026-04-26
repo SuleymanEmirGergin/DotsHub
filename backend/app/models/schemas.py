@@ -394,6 +394,11 @@ class LeadRequest(BaseModel):
     backend still records the lead and dispatches a redacted webhook
     so the operator knows interest exists, but no PII leaves the
     system. With it, the full contact block is forwarded.
+
+    ``quote_id`` is the QUOTE envelope id (`payload.quote_id` from
+    `/v1/quote`). Optional for backwards compatibility, but new
+    clients should always send it so the operator can trace which
+    exact price band / clinic combination is being accepted.
     """
 
     procedure_id: str
@@ -402,6 +407,7 @@ class LeadRequest(BaseModel):
     consent_to_share: bool = False
     locale: str = "tr-TR"
     notes: str = ""
+    quote_id: Optional[str] = None
 
 
 # ─── Legacy compat / internal helpers ───
