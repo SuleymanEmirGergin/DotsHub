@@ -354,6 +354,24 @@ class FitToTravelWarning(BaseModel):
     recommendation_tr: str
 
 
+class ItineraryRequest(BaseModel):
+    """Body for `POST /v1/quote/itinerary`.
+
+    The patient has chosen a clinic from a prior QUOTE envelope and
+    confirmed an arrival date; this request resolves to a day-by-day
+    plan they can take to a doctor or travel agent. We re-run the
+    fit-to-travel rules against the profile because a few weeks may
+    have passed between the quote and the itinerary request — health
+    state changes, the rules don't.
+    """
+
+    procedure_id: str
+    clinic_id: str
+    arrival_date: str  # ISO date "YYYY-MM-DD"
+    profile: HealthTourismProfile = Field(default_factory=HealthTourismProfile)
+    locale: str = "tr-TR"
+
+
 # ─── Legacy compat / internal helpers ───
 
 class ChatMessage(BaseModel):

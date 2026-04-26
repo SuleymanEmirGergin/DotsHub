@@ -441,6 +441,59 @@ paths:
               schema:
                 $ref: "#/components/schemas/Envelope"
 
+  /v1/quote/itinerary:
+    post:
+      summary: Generate a day-by-day itinerary for a chosen procedure + clinic + date
+      operationId: quoteItinerary
+      description: |
+        After the patient picks a clinic from a `/v1/quote` response,
+        this endpoint produces an illustrative day-by-day plan using
+        a category-keyed template. The fit-to-travel rule engine runs
+        again because the patient's health state may have shifted
+        between quote and itinerary requests.
+
+        Envelope types in the response:
+          - `ITINERARY` — successful plan with `items[]` (day_offset,
+            date, activity_id, label, location, duration_hours),
+            pre-op requirements, post-op no-fly days, follow-up window.
+          - `EMERGENCY` — fit-to-travel block fired (no plan).
+          - `ERROR` — invalid procedure / clinic / date, or
+            clinic-procedure mismatch.
+      parameters:
+        - $ref: "#/components/parameters/ClientCapabilitiesHeader"
+        - $ref: "#/components/parameters/IdempotencyKeyHeader"
+        - $ref: "#/components/parameters/SessionIdHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [procedure_id, clinic_id, arrival_date]
+              properties:
+                procedure_id:
+                  type: string
+                  example: "fue_hair_transplant"
+                clinic_id:
+                  type: string
+                  example: "clinic_istanbul_aesthetics_one"
+                arrival_date:
+                  type: string
+                  format: date
+                  example: "2026-05-15"
+                profile:
+                  type: object
+                locale:
+                  type: string
+                  default: "tr-TR"
+      responses:
+        "200":
+          description: Envelope (ITINERARY / EMERGENCY / ERROR)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Envelope"
+
   /v1/triage/stream:
     post:
       summary: Streaming variant of /v1/triage/turn (Server-Sent Events)

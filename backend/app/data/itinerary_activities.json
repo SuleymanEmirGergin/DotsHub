@@ -1,0 +1,207 @@
+{
+  "_meta": {
+    "version": "0.1.0",
+    "updated": "2026-04-26",
+    "notes": "Activity catalog for itinerary generation. Each activity is a single labelled step with i18n copy (TR/EN/DE/RU/AR). Templates in itinerary_templates.json reference these by id. Adding a new activity here is the only place i18n copy lives — templates only carry the schedule, not the localised text."
+  },
+  "activities": {
+    "arrival_transfer": {
+      "location": "airport",
+      "duration_hours": 1.5,
+      "label": {
+        "tr": "Havalimanı karşılama ve otele transfer",
+        "en": "Airport pickup and transfer to hotel",
+        "de": "Abholung am Flughafen und Transfer zum Hotel",
+        "ru": "Встреча в аэропорту и трансфер до отеля",
+        "ar": "الاستقبال من المطار والنقل إلى الفندق"
+      }
+    },
+    "hotel_checkin": {
+      "location": "hotel",
+      "duration_hours": 1,
+      "label": {
+        "tr": "Otele yerleşim ve dinlenme",
+        "en": "Hotel check-in and rest",
+        "de": "Hotel-Check-in und Ruhepause",
+        "ru": "Заселение в отель и отдых",
+        "ar": "تسجيل الدخول إلى الفندق والراحة"
+      }
+    },
+    "pre_op_consult": {
+      "location": "clinic",
+      "duration_hours": 1,
+      "label": {
+        "tr": "Hekim ile ön muayene ve plan onayı",
+        "en": "Pre-op consultation with the surgeon",
+        "de": "Voruntersuchung beim Chirurgen",
+        "ru": "Предоперационная консультация с хирургом",
+        "ar": "استشارة ما قبل العملية مع الجراح"
+      }
+    },
+    "pre_op_tests": {
+      "location": "clinic",
+      "duration_hours": 2,
+      "label": {
+        "tr": "Kan, EKG ve görüntüleme tetkikleri",
+        "en": "Blood tests, ECG and imaging",
+        "de": "Blutuntersuchungen, EKG und Bildgebung",
+        "ru": "Анализы крови, ЭКГ и визуализация",
+        "ar": "تحاليل الدم وتخطيط القلب والتصوير"
+      }
+    },
+    "anesthesia_consult": {
+      "location": "clinic",
+      "duration_hours": 0.5,
+      "label": {
+        "tr": "Anestezi uzmanı görüşmesi",
+        "en": "Anesthesiologist consultation",
+        "de": "Anästhesie-Aufklärung",
+        "ru": "Консультация анестезиолога",
+        "ar": "استشارة طبيب التخدير"
+      }
+    },
+    "procedure_day": {
+      "location": "clinic",
+      "duration_hours": 4,
+      "label": {
+        "tr": "Operasyon günü",
+        "en": "Procedure day",
+        "de": "OP-Tag",
+        "ru": "День операции",
+        "ar": "يوم العملية"
+      }
+    },
+    "recovery_observation": {
+      "location": "clinic_or_hotel",
+      "duration_hours": 8,
+      "label": {
+        "tr": "İyileşme ve gözlem",
+        "en": "Recovery and observation",
+        "de": "Erholung und Beobachtung",
+        "ru": "Восстановление и наблюдение",
+        "ar": "التعافي والملاحظة"
+      }
+    },
+    "post_op_followup": {
+      "location": "clinic",
+      "duration_hours": 0.75,
+      "label": {
+        "tr": "Operasyon sonrası kontrol muayenesi",
+        "en": "Post-op follow-up examination",
+        "de": "Postoperative Kontrolluntersuchung",
+        "ru": "Послеоперационный контрольный осмотр",
+        "ar": "فحص ما بعد العملية"
+      }
+    },
+    "first_wash": {
+      "location": "clinic",
+      "duration_hours": 1,
+      "label": {
+        "tr": "İlk yıkama (saç ekimi sonrası)",
+        "en": "First wash (post hair transplant)",
+        "de": "Erste Haarwäsche nach Transplantation",
+        "ru": "Первое мытьё после пересадки",
+        "ar": "أول غسيل بعد زراعة الشعر"
+      }
+    },
+    "dental_impressions": {
+      "location": "clinic",
+      "duration_hours": 1,
+      "label": {
+        "tr": "Diş ölçü alımı ve dijital tarama",
+        "en": "Dental impressions and digital scan",
+        "de": "Zahnabdruck und digitaler Scan",
+        "ru": "Снятие слепков и цифровое сканирование",
+        "ar": "أخذ مقاسات الأسنان والمسح الرقمي"
+      }
+    },
+    "dental_fitting": {
+      "location": "clinic",
+      "duration_hours": 1.5,
+      "label": {
+        "tr": "Veneer / kron yerleştirme",
+        "en": "Veneer or crown fitting",
+        "de": "Veneer- oder Krone-Anpassung",
+        "ru": "Установка виниров или коронок",
+        "ar": "تركيب القشور أو التيجان"
+      }
+    },
+    "dietitian_consult": {
+      "location": "clinic",
+      "duration_hours": 1,
+      "label": {
+        "tr": "Diyetisyen görüşmesi ve beslenme planı",
+        "en": "Dietitian consultation and nutrition plan",
+        "de": "Ernährungsberatung",
+        "ru": "Консультация диетолога и план питания",
+        "ar": "استشارة أخصائي التغذية وخطة الغذاء"
+      }
+    },
+    "ovarian_stimulation": {
+      "location": "clinic_or_hotel",
+      "duration_hours": 0.5,
+      "label": {
+        "tr": "Yumurtalık uyarımı (günlük enjeksiyon takibi)",
+        "en": "Ovarian stimulation (daily injection follow-up)",
+        "de": "Ovarielle Stimulation (tägliche Injektionskontrolle)",
+        "ru": "Стимуляция яичников (ежедневный контроль инъекций)",
+        "ar": "تحفيز المبيض (متابعة يومية للحقن)"
+      }
+    },
+    "egg_retrieval": {
+      "location": "clinic",
+      "duration_hours": 2,
+      "label": {
+        "tr": "Yumurta toplama işlemi",
+        "en": "Egg retrieval",
+        "de": "Eizellentnahme",
+        "ru": "Забор яйцеклеток",
+        "ar": "سحب البويضات"
+      }
+    },
+    "embryo_transfer": {
+      "location": "clinic",
+      "duration_hours": 1,
+      "label": {
+        "tr": "Embriyo transferi",
+        "en": "Embryo transfer",
+        "de": "Embryotransfer",
+        "ru": "Перенос эмбриона",
+        "ar": "نقل الأجنة"
+      }
+    },
+    "cardiac_rehab_intro": {
+      "location": "clinic",
+      "duration_hours": 1.5,
+      "label": {
+        "tr": "Kardiyak rehabilitasyon başlangıç eğitimi",
+        "en": "Cardiac rehabilitation orientation",
+        "de": "Kardiologische Reha-Einführung",
+        "ru": "Вводная сессия по кардиореабилитации",
+        "ar": "جلسة توجيه إعادة التأهيل القلبي"
+      }
+    },
+    "discharge_consult": {
+      "location": "clinic",
+      "duration_hours": 0.5,
+      "label": {
+        "tr": "Taburcu görüşmesi ve evdeki bakım talimatları",
+        "en": "Discharge briefing and home-care instructions",
+        "de": "Entlassungsgespräch und Pflege zu Hause",
+        "ru": "Выписка и инструкции по уходу дома",
+        "ar": "جلسة الخروج وتعليمات الرعاية المنزلية"
+      }
+    },
+    "airport_transfer_departure": {
+      "location": "airport",
+      "duration_hours": 1.5,
+      "label": {
+        "tr": "Havalimanına transfer ve çıkış",
+        "en": "Airport transfer and departure",
+        "de": "Transfer zum Flughafen und Abreise",
+        "ru": "Трансфер в аэропорт и вылет",
+        "ar": "النقل إلى المطار والمغادرة"
+      }
+    }
+  }
+}

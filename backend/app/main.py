@@ -276,6 +276,7 @@ async def rate_limit_middleware(request, call_next):
         "/v1/triage/stream",
         "/v1/triage/feedback",
         "/v1/quote",
+        "/v1/quote/itinerary",
     ):
         bucket = "default"
         device_id = request.headers.get("x-device-id")

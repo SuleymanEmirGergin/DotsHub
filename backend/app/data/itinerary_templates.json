@@ -1,0 +1,104 @@
+{
+  "_meta": {
+    "version": "0.1.0",
+    "updated": "2026-04-26",
+    "notes": "Itinerary templates keyed by procedure category. Each entry is a list of (day_offset, activity_id) pairs. Day 0 = arrival day. Activities reference itinerary_activities.json. The itinerary_engine resolves procedure_id → procedure.category → template; missing categories fall back to 'generic'. To support a procedure-specific deviation (e.g. cabg has more days), add a category entry, not an activity in code."
+  },
+  "templates": {
+    "hair": [
+      {"day_offset": 0, "activity_id": "arrival_transfer"},
+      {"day_offset": 0, "activity_id": "hotel_checkin"},
+      {"day_offset": 1, "activity_id": "pre_op_consult"},
+      {"day_offset": 1, "activity_id": "procedure_day"},
+      {"day_offset": 1, "activity_id": "recovery_observation"},
+      {"day_offset": 2, "activity_id": "first_wash"},
+      {"day_offset": 2, "activity_id": "post_op_followup"},
+      {"day_offset": 3, "activity_id": "discharge_consult"},
+      {"day_offset": 3, "activity_id": "airport_transfer_departure"}
+    ],
+    "plastic_surgery": [
+      {"day_offset": 0, "activity_id": "arrival_transfer"},
+      {"day_offset": 0, "activity_id": "hotel_checkin"},
+      {"day_offset": 1, "activity_id": "pre_op_tests"},
+      {"day_offset": 1, "activity_id": "pre_op_consult"},
+      {"day_offset": 1, "activity_id": "anesthesia_consult"},
+      {"day_offset": 2, "activity_id": "procedure_day"},
+      {"day_offset": 2, "activity_id": "recovery_observation"},
+      {"day_offset": 3, "activity_id": "post_op_followup"},
+      {"day_offset": 5, "activity_id": "post_op_followup"},
+      {"day_offset": 6, "activity_id": "discharge_consult"},
+      {"day_offset": 6, "activity_id": "airport_transfer_departure"}
+    ],
+    "dental": [
+      {"day_offset": 0, "activity_id": "arrival_transfer"},
+      {"day_offset": 0, "activity_id": "hotel_checkin"},
+      {"day_offset": 1, "activity_id": "pre_op_consult"},
+      {"day_offset": 1, "activity_id": "dental_impressions"},
+      {"day_offset": 2, "activity_id": "procedure_day"},
+      {"day_offset": 4, "activity_id": "dental_fitting"},
+      {"day_offset": 5, "activity_id": "post_op_followup"},
+      {"day_offset": 5, "activity_id": "discharge_consult"},
+      {"day_offset": 5, "activity_id": "airport_transfer_departure"}
+    ],
+    "bariatric": [
+      {"day_offset": 0, "activity_id": "arrival_transfer"},
+      {"day_offset": 0, "activity_id": "hotel_checkin"},
+      {"day_offset": 1, "activity_id": "pre_op_tests"},
+      {"day_offset": 1, "activity_id": "pre_op_consult"},
+      {"day_offset": 1, "activity_id": "anesthesia_consult"},
+      {"day_offset": 2, "activity_id": "procedure_day"},
+      {"day_offset": 2, "activity_id": "recovery_observation"},
+      {"day_offset": 3, "activity_id": "post_op_followup"},
+      {"day_offset": 4, "activity_id": "dietitian_consult"},
+      {"day_offset": 5, "activity_id": "post_op_followup"},
+      {"day_offset": 6, "activity_id": "discharge_consult"},
+      {"day_offset": 6, "activity_id": "airport_transfer_departure"}
+    ],
+    "fertility": [
+      {"day_offset": 0, "activity_id": "arrival_transfer"},
+      {"day_offset": 0, "activity_id": "hotel_checkin"},
+      {"day_offset": 1, "activity_id": "pre_op_consult"},
+      {"day_offset": 1, "activity_id": "pre_op_tests"},
+      {"day_offset": 2, "activity_id": "ovarian_stimulation"},
+      {"day_offset": 6, "activity_id": "ovarian_stimulation"},
+      {"day_offset": 10, "activity_id": "ovarian_stimulation"},
+      {"day_offset": 12, "activity_id": "egg_retrieval"},
+      {"day_offset": 15, "activity_id": "embryo_transfer"},
+      {"day_offset": 16, "activity_id": "post_op_followup"},
+      {"day_offset": 17, "activity_id": "discharge_consult"},
+      {"day_offset": 17, "activity_id": "airport_transfer_departure"}
+    ],
+    "ophthalmology": [
+      {"day_offset": 0, "activity_id": "arrival_transfer"},
+      {"day_offset": 0, "activity_id": "hotel_checkin"},
+      {"day_offset": 0, "activity_id": "pre_op_tests"},
+      {"day_offset": 1, "activity_id": "procedure_day"},
+      {"day_offset": 2, "activity_id": "post_op_followup"},
+      {"day_offset": 2, "activity_id": "airport_transfer_departure"}
+    ],
+    "cardiology": [
+      {"day_offset": 0, "activity_id": "arrival_transfer"},
+      {"day_offset": 0, "activity_id": "hotel_checkin"},
+      {"day_offset": 1, "activity_id": "pre_op_tests"},
+      {"day_offset": 1, "activity_id": "pre_op_consult"},
+      {"day_offset": 2, "activity_id": "anesthesia_consult"},
+      {"day_offset": 3, "activity_id": "procedure_day"},
+      {"day_offset": 3, "activity_id": "recovery_observation"},
+      {"day_offset": 4, "activity_id": "recovery_observation"},
+      {"day_offset": 5, "activity_id": "recovery_observation"},
+      {"day_offset": 7, "activity_id": "post_op_followup"},
+      {"day_offset": 9, "activity_id": "cardiac_rehab_intro"},
+      {"day_offset": 11, "activity_id": "post_op_followup"},
+      {"day_offset": 13, "activity_id": "discharge_consult"},
+      {"day_offset": 13, "activity_id": "airport_transfer_departure"}
+    ],
+    "generic": [
+      {"day_offset": 0, "activity_id": "arrival_transfer"},
+      {"day_offset": 0, "activity_id": "hotel_checkin"},
+      {"day_offset": 1, "activity_id": "pre_op_consult"},
+      {"day_offset": 2, "activity_id": "procedure_day"},
+      {"day_offset": 3, "activity_id": "post_op_followup"},
+      {"day_offset": 3, "activity_id": "airport_transfer_departure"}
+    ]
+  }
+}
