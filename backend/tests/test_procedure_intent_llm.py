@@ -365,3 +365,251 @@ class QuoteRouteWithLLMFallbackTests(unittest.TestCase):
         self.assertEqual(r.json()["type"], "QUOTE")
         # LLM must not have been called.
         self.assertEqual(called, [])
+
+
+# ─── A2b: Qwen 3rd-tier fallback ────────────────────────────────────
+
+
+def test_qwen_fallback_disabled_when_master_flag_off():
+    """``LLM_PROCEDURE_INTENT_QWEN_FALLBACK_ENABLED=False`` → qwen
+    not called even when WIRO_QWEN_LLM_ENABLED is True."""
+    from app.services.ai import qwen_llm
+
+    with patch.object(
+        procedure_intent_llm.settings,
+        "LLM_PROCEDURE_INTENT_QWEN_FALLBACK_ENABLED",
+        False,
+    ), patch.object(
+        qwen_llm.settings, "WIRO_QWEN_LLM_ENABLED", True,
+    ):
+        assert procedure_intent_llm._qwen_fallback_enabled() is False
+
+
+def test_qwen_fallback_disabled_when_qwen_service_off():
+    """Master flag on but qwen service off → fallback inert.
+
+    Reason: an operator can flip ``WIRO_QWEN_LLM_ENABLED`` off without
+    knowing the procedure-intent fallback depends on it; the chain
+    must respect the service-level flag, not just its own."""
+    from app.services.ai import qwen_llm
+
+    with patch.object(
+        procedure_intent_llm.settings,
+        "LLM_PROCEDURE_INTENT_QWEN_FALLBACK_ENABLED",
+        True,
+    ), patch.object(
+        qwen_llm.settings, "WIRO_QWEN_LLM_ENABLED", False,
+    ):
+        assert procedure_intent_llm._qwen_fallback_enabled() is False
+
+
+def test_qwen_fallback_enabled_when_both_flags_on():
+    from app.services.ai import qwen_llm
+
+    with patch.object(
+        procedure_intent_llm.settings,
+        "LLM_PROCEDURE_INTENT_QWEN_FALLBACK_ENABLED",
+        True,
+    ), patch.object(
+        qwen_llm.settings, "WIRO_QWEN_LLM_ENABLED", True,
+    ):
+        assert procedure_intent_llm._qwen_fallback_enabled() is True
+
+
+def test_qwen_fallback_called_when_primary_returns_none():
+    """Primary parses but rejects (id="none") → qwen retries with same
+    prompt and surfaces a valid match."""
+    from app.services.ai import qwen_llm
+
+    primary_resp = ('{"procedure_id": "none", "confidence_0_1": 0.0}', 0, 0)
+
+    class _PrimaryRejects:
+        def call(self, system, user):  # noqa: ARG002
+            return primary_resp
+
+    with patch.object(
+        procedure_intent_llm.settings,
+        "LLM_PROCEDURE_INTENT_ENABLED", True,
+    ), patch.object(
+        procedure_intent_llm.settings,
+        "LLM_PROCEDURE_INTENT_QWEN_FALLBACK_ENABLED", True,
+    ), patch.object(
+        qwen_llm.settings, "WIRO_QWEN_LLM_ENABLED", True,
+    ), patch(
+        "app.services.llm_nlu_client.get_nlu_client",
+        return_value=_PrimaryRejects(),
+    ), patch.object(
+        qwen_llm,
+        "generate",
+        return_value=(
+            '{"procedure_id": "fue_hair_transplant", '
+            '"confidence_0_1": 0.85, "reason": "saç dökülmesi"}'
+        ),
+    ):
+        result = procedure_intent_llm.extract_via_llm(
+            "saçlarım çok dökülüyor", "tr-TR"
+        )
+    assert result is not None
+    assert result.procedure_id == "fue_hair_transplant"
+    # qwen wins → matched_synonyms tagged with provider for audit trail
+    assert any("llm:qwen" in s for s in result.matched_synonyms)
+
+
+def test_qwen_fallback_NOT_called_when_primary_succeeds():
+    """Primary returned a valid match → qwen must NOT be invoked.
+
+    This is the cost-control invariant: 3rd-tier should only fire when
+    the primary delivered nothing useful."""
+    from app.services.ai import qwen_llm
+
+    qwen_called = []
+
+    class _PrimarySucceeds:
+        def call(self, system, user):  # noqa: ARG002
+            return (
+                '{"procedure_id": "fue_hair_transplant", "confidence_0_1": 0.7}',
+                0, 0,
+            )
+
+    with patch.object(
+        procedure_intent_llm.settings,
+        "LLM_PROCEDURE_INTENT_ENABLED", True,
+    ), patch.object(
+        procedure_intent_llm.settings,
+        "LLM_PROCEDURE_INTENT_QWEN_FALLBACK_ENABLED", True,
+    ), patch.object(
+        qwen_llm.settings, "WIRO_QWEN_LLM_ENABLED", True,
+    ), patch(
+        "app.services.llm_nlu_client.get_nlu_client",
+        return_value=_PrimarySucceeds(),
+    ), patch.object(
+        qwen_llm,
+        "generate",
+        side_effect=lambda **_: qwen_called.append(1) or "ignored",
+    ):
+        result = procedure_intent_llm.extract_via_llm(
+            "saçlarım dökülüyor", "tr-TR"
+        )
+    assert result is not None
+    assert result.procedure_id == "fue_hair_transplant"
+    assert qwen_called == []
+
+
+def test_qwen_fallback_returns_none_when_qwen_also_rejects():
+    """Both tiers say id="none" → outer extract_via_llm returns None."""
+    from app.services.ai import qwen_llm
+
+    class _PrimaryRejects:
+        def call(self, system, user):  # noqa: ARG002
+            return '{"procedure_id": "none", "confidence_0_1": 0.0}', 0, 0
+
+    with patch.object(
+        procedure_intent_llm.settings,
+        "LLM_PROCEDURE_INTENT_ENABLED", True,
+    ), patch.object(
+        procedure_intent_llm.settings,
+        "LLM_PROCEDURE_INTENT_QWEN_FALLBACK_ENABLED", True,
+    ), patch.object(
+        qwen_llm.settings, "WIRO_QWEN_LLM_ENABLED", True,
+    ), patch(
+        "app.services.llm_nlu_client.get_nlu_client",
+        return_value=_PrimaryRejects(),
+    ), patch.object(
+        qwen_llm,
+        "generate",
+        return_value='{"procedure_id": "none", "confidence_0_1": 0.0}',
+    ):
+        assert procedure_intent_llm.extract_via_llm(
+            "abc xyz nonsense", "tr-TR"
+        ) is None
+
+
+def test_qwen_fallback_handles_qwen_exception_gracefully():
+    """qwen_llm.generate raising must not crash the route — return None
+    so the caller emits PROCEDURE_UNRESOLVED."""
+    from app.services.ai import qwen_llm
+
+    class _PrimaryRejects:
+        def call(self, system, user):  # noqa: ARG002
+            return '{"procedure_id": "none", "confidence_0_1": 0.0}', 0, 0
+
+    with patch.object(
+        procedure_intent_llm.settings,
+        "LLM_PROCEDURE_INTENT_ENABLED", True,
+    ), patch.object(
+        procedure_intent_llm.settings,
+        "LLM_PROCEDURE_INTENT_QWEN_FALLBACK_ENABLED", True,
+    ), patch.object(
+        qwen_llm.settings, "WIRO_QWEN_LLM_ENABLED", True,
+    ), patch(
+        "app.services.llm_nlu_client.get_nlu_client",
+        return_value=_PrimaryRejects(),
+    ), patch.object(
+        qwen_llm, "generate", side_effect=RuntimeError("wiro down"),
+    ):
+        assert procedure_intent_llm.extract_via_llm(
+            "saçlarım dökülüyor", "tr-TR"
+        ) is None
+
+
+def test_qwen_fallback_returns_none_on_qwen_schema_error():
+    """qwen returns garbage non-JSON → fallback returns None."""
+    from app.services.ai import qwen_llm
+
+    class _PrimaryRejects:
+        def call(self, system, user):  # noqa: ARG002
+            return '{"procedure_id": "none", "confidence_0_1": 0.0}', 0, 0
+
+    with patch.object(
+        procedure_intent_llm.settings,
+        "LLM_PROCEDURE_INTENT_ENABLED", True,
+    ), patch.object(
+        procedure_intent_llm.settings,
+        "LLM_PROCEDURE_INTENT_QWEN_FALLBACK_ENABLED", True,
+    ), patch.object(
+        qwen_llm.settings, "WIRO_QWEN_LLM_ENABLED", True,
+    ), patch(
+        "app.services.llm_nlu_client.get_nlu_client",
+        return_value=_PrimaryRejects(),
+    ), patch.object(
+        qwen_llm,
+        "generate",
+        return_value="this is not JSON at all, just prose.",
+    ):
+        assert procedure_intent_llm.extract_via_llm(
+            "saçlarım dökülüyor", "tr-TR"
+        ) is None
+
+
+def test_qwen_fallback_called_when_primary_raises():
+    """Primary throws (network/timeout/auth) → fallback still tried."""
+    from app.services.ai import qwen_llm
+
+    class _PrimaryRaises:
+        def call(self, system, user):  # noqa: ARG002
+            raise TimeoutError("primary timeout")
+
+    with patch.object(
+        procedure_intent_llm.settings,
+        "LLM_PROCEDURE_INTENT_ENABLED", True,
+    ), patch.object(
+        procedure_intent_llm.settings,
+        "LLM_PROCEDURE_INTENT_QWEN_FALLBACK_ENABLED", True,
+    ), patch.object(
+        qwen_llm.settings, "WIRO_QWEN_LLM_ENABLED", True,
+    ), patch(
+        "app.services.llm_nlu_client.get_nlu_client",
+        return_value=_PrimaryRaises(),
+    ), patch.object(
+        qwen_llm,
+        "generate",
+        return_value=(
+            '{"procedure_id": "rhinoplasty", '
+            '"confidence_0_1": 0.7, "reason": "burun"}'
+        ),
+    ):
+        result = procedure_intent_llm.extract_via_llm(
+            "burnumdaki kemerden hoşlanmıyorum", "tr-TR"
+        )
+    assert result is not None
+    assert result.procedure_id == "rhinoplasty"

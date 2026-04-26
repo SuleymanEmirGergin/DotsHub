@@ -35,6 +35,7 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 | `IDEMPOTENCY_MEMORY_MAX` | In-memory idempotency cache azami giriş sayısı (LRU). Redis yoksa kullanılır. | `1024` |
 | `LLM_PROCEDURE_INTENT_ENABLED` | `1` ise sağlık turizmi `/v1/quote` deterministik sinonim eşleyici düşük confidence ya da miss verdiğinde LLM fallback'i çağırır. | `0` |
 | `LLM_PROCEDURE_INTENT_MIN_CONFIDENCE` | Deterministik match'in altında LLM tetiklendiği eşik (0.0–1.0). | `0.40` |
+| `LLM_PROCEDURE_INTENT_QWEN_FALLBACK_ENABLED` | `1` ise primary Gemini Flash boş / parse-error / `id="none"` döndüğünde aynı prompt **Wiro/Qwen3.6-27B** üzerinde tekrar denenir (3. tier). Hem bu flag, hem `WIRO_QWEN_LLM_ENABLED` açık olmalı. Türkçe-tuned Qwen, Gemini Flash'ın `id="none"` dediği temiz Türkçe input'larda daha doğru sonuç vermek için. | `0` |
 | `WIRO_QWEN_LLM_ENABLED` | `1` ise Qwen3.6-27B text generation servisi etkin (`app/services/ai/qwen_llm.py`). Quote summary, doctor-Q&A, multi-language clinic comparison için. WIRO_API_KEY/SECRET aynı kimlik ile auth. | `0` |
 | `WIRO_QWEN_LLM_MODEL` | Wiro model slug; rebrand olursa env ile değiştirilir, kod release gerekmez. | `qwen/qwen3-6-27b` |
 | `WIRO_WHISPER_STT_ENABLED` | `1` ise Whisper-large-v3-turbo-turkish ASR etkin (`app/services/ai/whisper_stt.py`). Hasta sesli mesajının metne dönüşümü. PII redaksiyonu transcript'te uygulanır. | `0` |

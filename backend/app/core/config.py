@@ -120,6 +120,16 @@ class Settings(BaseSettings):
     LLM_PROCEDURE_INTENT_ENABLED: bool = False
     LLM_PROCEDURE_INTENT_MIN_CONFIDENCE: float = 0.40
 
+    # When the primary procedure-intent LLM (Gemini Flash via the legacy
+    # llm_nlu_client) returns no usable answer (network failure, schema
+    # error, ``id="none"``, or hallucinated id), retry the same prompt
+    # against Wiro/Qwen3.6-27B as a last-tier fallback. Off by default —
+    # operators flip this on when they observe Gemini Flash returning
+    # ``id="none"`` for clear Turkish input that Qwen handles better.
+    # Both ``WIRO_QWEN_LLM_ENABLED`` and ``WIRO_API_SECRET`` must also
+    # be set for this fallback to actually run.
+    LLM_PROCEDURE_INTENT_QWEN_FALLBACK_ENABLED: bool = False
+
     # ── Wiro AI services (health-tourism extensions) ────────────────────
     # Each service is a thin wrapper around the existing Wiro
     # submit+poll pattern (HMAC auth from llm_nlu_client). Feature

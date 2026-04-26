@@ -199,7 +199,17 @@ def extract_via_llm(
 ) -> Optional[ProcedureMatch]:
     """Run the LLM-backed extractor. Returns None on any failure path.
 
-    Failure modes that surface as None:
+    Two-tier internal chain:
+      1. Primary: Gemini Flash via the legacy ``llm_nlu_client``
+         (single-vendor production path that's been live for months).
+      2. Optional 3rd-tier: Wiro/Qwen3.6-27B, gated by
+         ``LLM_PROCEDURE_INTENT_QWEN_FALLBACK_ENABLED`` AND
+         ``WIRO_QWEN_LLM_ENABLED``. Tries the same prompt against Qwen
+         when the primary returns no usable answer — useful when the
+         primary returns ``id="none"`` for clear Turkish input that
+         the Türkçe-tuned Qwen handles better.
+
+    Failure modes that surface as None (after both tiers tried):
       - LLM client raises (network, auth, timeout)
       - Response doesn't contain parseable JSON
       - Model returned ``id="none"`` or an id not in the catalog
@@ -212,6 +222,153 @@ def extract_via_llm(
     if not user_message or not user_message.strip():
         return None
 
+    primary = _attempt_primary(user_message, locale)
+    if primary is not None:
+        return primary
+
+    if _qwen_fallback_enabled():
+        return _attempt_qwen_fallback(user_message, locale)
+    return None
+
+
+def _qwen_fallback_enabled() -> bool:
+    """True when both the procedure-intent fallback flag AND the qwen
+    service flag are on. Lazy import keeps the qwen module out of
+    procedure_intent_llm's startup graph for callers that don't enable
+    the fallback."""
+    if not bool(
+        getattr(settings, "LLM_PROCEDURE_INTENT_QWEN_FALLBACK_ENABLED", False)
+    ):
+        return False
+    from app.services.ai import qwen_llm
+    return qwen_llm.is_enabled()
+
+
+def _attempt_qwen_fallback(
+    user_message: str, locale: str | None
+) -> Optional[ProcedureMatch]:
+    """Re-run the same catalog-aware prompt against Qwen via Wiro.
+
+    Logs to ``llm_calls`` with ``model="qwen"`` so the operator can
+    measure 3rd-tier ROI separately from the primary Gemini Flash
+    call. The qwen_llm wrapper applies PII redaction to the prompt
+    before submit — same redaction the legacy llm_nlu_client does for
+    the primary call, so neither tier leaks raw user_message bytes.
+    """
+    from app.services.ai import qwen_llm
+
+    prompt = (
+        _SYSTEM_PROMPT
+        + "\n\n"
+        + _build_user_prompt(user_message, locale)
+    )
+
+    t_start = time.perf_counter()
+    try:
+        text = qwen_llm.generate(prompt=prompt)
+    except Exception as exc:  # noqa: BLE001 — never crash the route
+        latency_ms = int((time.perf_counter() - t_start) * 1000)
+        err = type(exc).__name__.lower()
+        error_type = (
+            "timeout" if "timeout" in err
+            else "rate_limit" if "ratelimit" in err
+            else "error"
+        )
+        logger.warning("procedure_intent_llm.qwen_fallback_failed: %s", exc)
+        _log_llm_call(
+            provider="wiro",
+            model="qwen",
+            input_tokens=0,
+            output_tokens=0,
+            latency_ms=latency_ms,
+            success=False,
+            error_type=error_type,
+        )
+        return None
+
+    latency_ms = int((time.perf_counter() - t_start) * 1000)
+    if not text:
+        _log_llm_call(
+            provider="wiro",
+            model="qwen",
+            input_tokens=0,
+            output_tokens=0,
+            latency_ms=latency_ms,
+            success=False,
+            error_type="empty",
+        )
+        return None
+
+    parsed = _parse_response(text)
+    if not parsed:
+        _log_llm_call(
+            provider="wiro",
+            model="qwen",
+            input_tokens=0,
+            output_tokens=0,
+            latency_ms=latency_ms,
+            success=False,
+            error_type="schema_error",
+        )
+        return None
+
+    proc_id = parsed.get("procedure_id")
+    if proc_id == "none" or proc_id not in procedure_catalog.procedure_ids():
+        # Qwen also rejected / hallucinated. Counts as a successful
+        # call (no retry needed) but a no-match outcome — same
+        # convention as the primary path.
+        _log_llm_call(
+            provider="wiro",
+            model="qwen",
+            input_tokens=0,
+            output_tokens=0,
+            latency_ms=latency_ms,
+            success=True,
+            error_type=None,
+        )
+        return None
+
+    try:
+        confidence = float(parsed.get("confidence_0_1", 0.0))
+    except (TypeError, ValueError):
+        _log_llm_call(
+            provider="wiro",
+            model="qwen",
+            input_tokens=0,
+            output_tokens=0,
+            latency_ms=latency_ms,
+            success=False,
+            error_type="schema_error",
+        )
+        return None
+    confidence = max(0.0, min(confidence, 0.95))
+
+    reason = parsed.get("reason", "")
+    _log_llm_call(
+        provider="wiro",
+        model="qwen",
+        input_tokens=0,
+        output_tokens=0,
+        latency_ms=latency_ms,
+        success=True,
+        error_type=None,
+    )
+    return ProcedureMatch(
+        procedure_id=proc_id,
+        confidence_0_1=round(confidence, 3),
+        matched_synonyms=[f"llm:qwen:{reason[:60]}"] if reason else ["llm:qwen"],
+    )
+
+
+def _attempt_primary(
+    user_message: str, locale: str | None
+) -> Optional[ProcedureMatch]:
+    """Primary tier — Gemini Flash via legacy llm_nlu_client.
+
+    Identical to the previous body of ``extract_via_llm``; promoted to
+    its own function so the chain in ``extract_via_llm`` reads as
+    primary → optional qwen fallback.
+    """
     t_start = time.perf_counter()
     in_tok = 0
     out_tok = 0
