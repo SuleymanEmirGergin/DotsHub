@@ -326,6 +326,61 @@ def get_upload(asset_id: str) -> Optional[dict]:
 # ─── Tombstone (KVKK) ────────────────────────────────────────────────
 
 
+def list_for_review(
+    *,
+    ai_status: Optional[str] = None,
+    kind: Optional[str] = None,
+    session_id: Optional[str] = None,
+    created_after: Optional[str] = None,
+    created_before: Optional[str] = None,
+    include_tombstoned: bool = False,
+    limit: int = 50,
+    offset: int = 0,
+) -> tuple[list[dict], int]:
+    """Operator review queue. Returns ``(rows, total_count_matching_filter)``.
+
+    The total count is computed server-side via Supabase's ``count``
+    option (constant cost on PostgreSQL with the existing indexes) so
+    the dashboard can render pagination controls without a second
+    round-trip.
+
+    Filters compose with AND. ``created_after`` / ``created_before``
+    must be ISO 8601 timestamps; the route validates the format
+    before calling. None values skip the corresponding filter
+    entirely (no-op).
+    """
+    from app.db import supabase
+
+    q = (
+        supabase.table("patient_uploads")
+        .select("*", count="exact")
+        .order("created_at", desc=True)
+    )
+    if not include_tombstoned:
+        q = q.is_("deleted_at", "null")
+    if ai_status:
+        q = q.eq("ai_status", ai_status)
+    if kind:
+        q = q.eq("upload_kind", kind)
+    if session_id:
+        q = q.eq("session_id", session_id)
+    if created_after:
+        q = q.gte("created_at", created_after)
+    if created_before:
+        q = q.lt("created_at", created_before)
+    # supabase-py exposes range() as inclusive on both ends; we use
+    # offset..offset+limit-1 to match the limit-and-offset pattern.
+    q = q.range(offset, offset + max(limit, 1) - 1)
+    try:
+        resp = q.execute()
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("patient_uploads.list_for_review_failed: %s", exc)
+        return [], 0
+    rows = resp.data or []
+    total = getattr(resp, "count", None) or 0
+    return rows, total
+
+
 def tombstone_expired_uploads(*, reason: str = "scheduled_retention") -> int:
     """Tombstone every live row whose ``expires_at`` is in the past.
 

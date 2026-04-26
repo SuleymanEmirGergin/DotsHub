@@ -200,7 +200,10 @@ def fake_supabase():
     chain.select.return_value = chain
     chain.eq.return_value = chain
     chain.lt.return_value = chain
+    chain.gte.return_value = chain
     chain.is_.return_value = chain
+    chain.order.return_value = chain
+    chain.range.return_value = chain
     chain.maybe_single.return_value = chain
     return sb, chain
 
@@ -350,6 +353,75 @@ def test_tombstone_returns_minus_one_on_db_failure(fake_supabase):
     chain.execute.side_effect = ConnectionError("down")
     with patch("app.db.supabase", sb):
         assert patient_uploads.tombstone_uploads_for_session("sess-1") == -1
+
+
+# ─── List for review (operator queue) ───────────────────────────────
+
+
+def test_list_for_review_default_excludes_tombstoned(fake_supabase):
+    sb, chain = fake_supabase
+    chain.execute.return_value = MagicMock(data=[], count=0)
+    with patch("app.db.supabase", sb):
+        patient_uploads.list_for_review()
+    chain.is_.assert_called_with("deleted_at", "null")
+
+
+def test_list_for_review_include_tombstoned_skips_filter(fake_supabase):
+    sb, chain = fake_supabase
+    chain.execute.return_value = MagicMock(data=[], count=0)
+    with patch("app.db.supabase", sb):
+        patient_uploads.list_for_review(include_tombstoned=True)
+    chain.is_.assert_not_called()
+
+
+def test_list_for_review_returns_tuple_with_count(fake_supabase):
+    sb, chain = fake_supabase
+    chain.execute.return_value = MagicMock(
+        data=[{"asset_id": "A1"}, {"asset_id": "A2"}], count=99,
+    )
+    with patch("app.db.supabase", sb):
+        rows, total = patient_uploads.list_for_review()
+    assert len(rows) == 2
+    assert total == 99
+
+
+def test_list_for_review_filters_compose_with_and(fake_supabase):
+    """Each non-None filter adds an .eq / .gte / .lt; absent filters
+    skip entirely so the SQL doesn't carry redundant clauses."""
+    sb, chain = fake_supabase
+    chain.execute.return_value = MagicMock(data=[], count=0)
+    with patch("app.db.supabase", sb):
+        patient_uploads.list_for_review(
+            ai_status="failed",
+            kind="image",
+            session_id="S1",
+            created_after="2026-04-01T00:00:00Z",
+            created_before="2026-05-01T00:00:00Z",
+        )
+    eq_calls = [args.args for args in chain.eq.call_args_list]
+    assert ("ai_status", "failed") in eq_calls
+    assert ("upload_kind", "image") in eq_calls
+    assert ("session_id", "S1") in eq_calls
+    chain.gte.assert_called_with("created_at", "2026-04-01T00:00:00Z")
+    chain.lt.assert_called_with("created_at", "2026-05-01T00:00:00Z")
+
+
+def test_list_for_review_pagination_uses_range(fake_supabase):
+    """range(offset, offset+limit-1) inclusive on both ends."""
+    sb, chain = fake_supabase
+    chain.execute.return_value = MagicMock(data=[], count=0)
+    with patch("app.db.supabase", sb):
+        patient_uploads.list_for_review(limit=25, offset=50)
+    chain.range.assert_called_with(50, 50 + 25 - 1)
+
+
+def test_list_for_review_db_error_returns_empty_zero(fake_supabase):
+    sb, chain = fake_supabase
+    chain.execute.side_effect = ConnectionError("supabase down")
+    with patch("app.db.supabase", sb):
+        rows, total = patient_uploads.list_for_review()
+    assert rows == []
+    assert total == 0
 
 
 # ─── Retention sweep ─────────────────────────────────────────────────
