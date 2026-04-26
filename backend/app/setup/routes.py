@@ -17,6 +17,7 @@ from fastapi import FastAPI
 from app.admin_api import router as admin_router
 from app.admin_feedback_api import router as admin_feedback_router
 from app.admin_image_api import router as admin_image_router
+from app.admin_retention_api import router as admin_retention_router
 from app.admin_tenants_api import router as admin_tenants_router
 from app.admin_v5 import router as admin_v5_router
 from app.api.routes.data_rights import router as data_rights_router
@@ -49,3 +50,4 @@ def register_routes(app: FastAPI) -> None:
     app.include_router(admin_v5_router, prefix="/v1", tags=["Admin V5"])
     app.include_router(admin_image_router, prefix="/v1", tags=["Admin Image"])
     app.include_router(patient_upload_router, prefix="/v1", tags=["Patient Upload"])
+    app.include_router(admin_retention_router, prefix="/v1", tags=["Admin Retention"])

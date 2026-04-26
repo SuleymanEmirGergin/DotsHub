@@ -142,6 +142,7 @@ def fake_supabase():
     chain.update.return_value = chain
     chain.select.return_value = chain
     chain.eq.return_value = chain
+    chain.lt.return_value = chain
     chain.is_.return_value = chain
     chain.maybe_single.return_value = chain
     return sb, chain
@@ -292,3 +293,64 @@ def test_tombstone_returns_minus_one_on_db_failure(fake_supabase):
     chain.execute.side_effect = ConnectionError("down")
     with patch("app.db.supabase", sb):
         assert patient_uploads.tombstone_uploads_for_session("sess-1") == -1
+
+
+# ─── Retention sweep ─────────────────────────────────────────────────
+
+
+def test_tombstone_expired_uploads_filters_by_expires_at(fake_supabase):
+    """The sweep must use lt(expires_at, now) AND is_(deleted_at, null)
+    so it skips both future and already-tombstoned rows. Future drift
+    here would either leak PII (no expires_at filter) or re-stamp
+    deleted_at (no idempotency filter)."""
+    sb, chain = fake_supabase
+    chain.execute.return_value = MagicMock(
+        data=[{"asset_id": "a"}, {"asset_id": "b"}, {"asset_id": "c"}]
+    )
+    with patch("app.db.supabase", sb):
+        count = patient_uploads.tombstone_expired_uploads()
+    assert count == 3
+    chain.lt.assert_called_once()
+    lt_call = chain.lt.call_args
+    assert lt_call.args[0] == "expires_at"
+    chain.is_.assert_called_with("deleted_at", "null")
+
+
+def test_tombstone_expired_clears_content_columns(fake_supabase):
+    sb, chain = fake_supabase
+    chain.execute.return_value = MagicMock(data=[{"asset_id": "a"}])
+    with patch("app.db.supabase", sb):
+        patient_uploads.tombstone_expired_uploads()
+    patch_arg = chain.update.call_args.args[0]
+    for content_col in (
+        "sha256_hex", "ai_result_text", "ai_error", "consent_text",
+    ):
+        assert patch_arg[content_col] is None
+    assert patch_arg["deleted_reason"] == "scheduled_retention"
+
+
+def test_tombstone_expired_returns_minus_one_on_db_blip(fake_supabase):
+    sb, chain = fake_supabase
+    chain.execute.side_effect = ConnectionError("supabase down")
+    with patch("app.db.supabase", sb):
+        assert patient_uploads.tombstone_expired_uploads() == -1
+
+
+def test_tombstone_expired_zero_when_no_rows(fake_supabase):
+    """Healthy steady-state: no rows past expires_at -> count 0,
+    no exception. The cron treats 200 with count=0 as success."""
+    sb, chain = fake_supabase
+    chain.execute.return_value = MagicMock(data=[])
+    with patch("app.db.supabase", sb):
+        assert patient_uploads.tombstone_expired_uploads() == 0
+
+
+def test_tombstone_expired_custom_reason(fake_supabase):
+    """Lets a manual sweep tag rows differently for forensic distinction
+    (e.g. operator triggers a one-off cleanup post-incident)."""
+    sb, chain = fake_supabase
+    chain.execute.return_value = MagicMock(data=[{"asset_id": "a"}])
+    with patch("app.db.supabase", sb):
+        patient_uploads.tombstone_expired_uploads(reason="post_incident_cleanup")
+    patch_arg = chain.update.call_args.args[0]
+    assert patch_arg["deleted_reason"] == "post_incident_cleanup"

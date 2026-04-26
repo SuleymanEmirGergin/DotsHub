@@ -261,6 +261,56 @@ def get_upload(asset_id: str) -> Optional[dict]:
 # ─── Tombstone (KVKK) ────────────────────────────────────────────────
 
 
+def tombstone_expired_uploads(*, reason: str = "scheduled_retention") -> int:
+    """Tombstone every live row whose ``expires_at`` is in the past.
+
+    Called by the nightly retention cron via
+    ``POST /v1/admin/retention/patient-uploads/sweep``. Same NULLing
+    shape as ``tombstone_uploads_for_session`` so downstream consumers
+    see a uniform tombstone contract regardless of how the row got
+    swept.
+
+    Idempotency: the ``.is_("deleted_at", "null")`` filter excludes
+    already-tombstoned rows, so re-running the sweep is a no-op.
+
+    Returns the number of rows tombstoned. -1 on DB error so the
+    caller can surface a non-200 to the cron without crashing the
+    workflow run.
+    """
+    from app.db import supabase
+
+    now_iso = datetime.now(timezone.utc).isoformat()
+    try:
+        resp = (
+            supabase.table("patient_uploads")
+            .update(
+                {
+                    "sha256_hex": None,
+                    "ai_result_text": None,
+                    "ai_error": None,
+                    "consent_text": None,
+                    "deleted_at": now_iso,
+                    "deleted_reason": reason,
+                }
+            )
+            .lt("expires_at", now_iso)
+            .is_("deleted_at", "null")
+            .execute()
+        )
+        count = len(resp.data or [])
+        if count:
+            logger.info(
+                "patient_uploads.retention_sweep tombstoned=%d reason=%s",
+                count, reason,
+            )
+        return count
+    except Exception as exc:  # noqa: BLE001
+        logger.warning(
+            "patient_uploads.retention_sweep_failed: %s", exc
+        )
+        return -1
+
+
 def tombstone_uploads_for_session(
     session_id: str, *, reason: str = "user_request"
 ) -> int:

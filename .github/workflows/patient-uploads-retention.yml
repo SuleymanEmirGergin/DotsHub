@@ -1,0 +1,73 @@
+name: Patient Uploads Retention Sweep
+
+# Nightly cron that tombstones expired patient_uploads rows. The
+# sweep is idempotent (the service skips already-tombstoned rows),
+# so a missed run + double-fire on the next day is harmless.
+#
+# Schedule rationale: 03:00 UTC = 06:00 İstanbul. Quiet window for
+# both backend traffic and Wiro AI dispatch (no in-flight tasks
+# fight the sweep for DB connections).
+#
+# When this fires the backend should still be reachable; if the
+# admin endpoint returns non-200 the workflow fails and the
+# Slack/Discord webhook fires (same secret pattern health-alert.yml
+# uses).
+
+on:
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch: {}
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+jobs:
+  sweep:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: POST /v1/admin/retention/patient-uploads/sweep
+        env:
+          ADMIN_RETENTION_URL: ${{ secrets.ADMIN_RETENTION_URL }}
+          ADMIN_API_KEY: ${{ secrets.ADMIN_API_KEY }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${ADMIN_RETENTION_URL:-}" ] || [ -z "${ADMIN_API_KEY:-}" ]; then
+            echo "Missing ADMIN_RETENTION_URL or ADMIN_API_KEY"
+            echo "Configure repo secrets pointing at your prod backend, e.g."
+            echo "  ADMIN_RETENTION_URL=https://api.example.com/v1/admin/retention/patient-uploads/sweep"
+            exit 1
+          fi
+
+          echo "POST $ADMIN_RETENTION_URL"
+          HTTP_CODE="$(curl -s -o resp.json -w '%{http_code}' \
+              -X POST \
+              -H "x-admin-key: $ADMIN_API_KEY" \
+              "$ADMIN_RETENTION_URL")"
+          echo "HTTP $HTTP_CODE"
+          cat resp.json || true
+
+          if [ "$HTTP_CODE" != "200" ]; then
+            MSG="patient_uploads retention sweep FAILED (HTTP $HTTP_CODE)"
+            if [ -n "${SLACK_WEBHOOK_URL:-}" ]; then
+              curl -s -X POST -H 'Content-Type: application/json' \
+                -d "{\"text\":\"$MSG\"}" \
+                "$SLACK_WEBHOOK_URL" || true
+            fi
+            if [ -n "${DISCORD_WEBHOOK_URL:-}" ]; then
+              curl -s -X POST -H 'Content-Type: application/json' \
+                -d "{\"content\":\"$MSG\"}" \
+                "$DISCORD_WEBHOOK_URL" || true
+            fi
+            exit 1
+          fi
+
+          # Surface the count in the workflow log for at-a-glance audit.
+          python3 - <<'PY'
+          import json
+          d = json.load(open("resp.json"))
+          print(f"::notice::tombstoned {d.get('tombstoned_count', '?')} patient_uploads rows")
+          PY

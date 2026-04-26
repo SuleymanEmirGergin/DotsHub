@@ -70,6 +70,7 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 | `PATIENT_UPLOAD_MAX_VIDEO_BYTES` | Video (mp4/webm) için size cap. CogVLM klinik klip için (4K/30s headroom'u). | `104857600` (100MB) |
 | `PATIENT_UPLOAD_MAX_DOCUMENT_BYTES` | Document (pdf/jpeg-scan/png-scan) için size cap. Lab sonucu / reçete fotoğrafı için. | `10485760` (10MB) |
 | `PATIENT_UPLOAD_POLL_INTERVAL_SECONDS` | Client polling interval ipucu (`Retry-After` header). | `5` |
+| `ADMIN_RETENTION_URL` (GitHub secret) | Patient uploads retention sweep cron'u (`POST /v1/admin/retention/patient-uploads/sweep`) bu URL'i çağırır. Production backend'in bu endpoint'ine işaret etmeli (örn. `https://api.example.com/v1/admin/retention/patient-uploads/sweep`). Cron schedule: `0 3 * * *` (03:00 UTC = 06:00 İstanbul). Workflow: `.github/workflows/patient-uploads-retention.yml`. | — |
 | `LEAD_WEBHOOK_URL` | `/v1/quote/lead` kabul edildiğinde JSON POST gönderilen URL. Slack incoming webhook, Make/Zapier veya generic CRM olabilir. Boşsa lead webhook devre dışı; route 200 dönmeye devam eder ama payload `webhook_configured: false` olur. | — |
 | `LEAD_WEBHOOK_AUTH_TOKEN` | Set edilirse `Authorization: Bearer <token>` header'ı gönderilir. | — |
 | `LEAD_WEBHOOK_TIMEOUT_SECONDS` | Tek istek için timeout. | `5.0` |
