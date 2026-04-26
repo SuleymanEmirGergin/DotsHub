@@ -1,0 +1,270 @@
+{
+  "_meta": {
+    "version": "0.1.0",
+    "updated": "2026-04-26",
+    "currency": "EUR",
+    "notes": "Health tourism procedure catalog. Prices are non-binding indicative bands sourced from public clinic listings; no-fly windows and recovery days are conservative defaults — clinic-specific protocol overrides clinic.procedure_overrides[procedure_id]. Synonyms drive procedure-intent extraction in app.services.procedure_intent."
+  },
+  "procedures": [
+    {
+      "id": "fue_hair_transplant",
+      "category": "hair",
+      "complexity": "low",
+      "anesthesia": "local",
+      "name": {
+        "tr": "FUE Saç Ekimi",
+        "en": "FUE Hair Transplant",
+        "de": "FUE Haartransplantation",
+        "ru": "Пересадка волос FUE",
+        "ar": "زراعة الشعر بتقنية FUE"
+      },
+      "synonyms": {
+        "tr": ["saç ekimi", "saç dökülmesi", "saçlarım açıldı", "saçım dökülüyor", "kelleşme", "fue", "saç naklİ", "saç dökülüyor"],
+        "en": ["hair transplant", "hair loss", "going bald", "balding", "fue", "hair restoration", "thinning hair"],
+        "de": ["haartransplantation", "haarausfall", "glatze", "fue"],
+        "ru": ["пересадка волос", "пересадку волос", "выпадение волос", "выпадают волосы", "облысение", "fue"],
+        "ar": ["زراعة الشعر", "تساقط الشعر", "صلع"]
+      },
+      "duration_days": {"min_stay": 3, "max_stay": 5, "recovery_total": 14},
+      "post_op_no_fly_days": 3,
+      "pre_op_requirements": ["blood_test_basic", "donor_area_photo"],
+      "package_typical_inclusions": ["hotel_4_nights", "transfer_airport", "translator", "post_op_kit"],
+      "price_band_eur": {"low": 1500, "mid": 2200, "high": 3500},
+      "fit_to_travel_concerns": ["recent_mi", "anticoagulant_therapy"]
+    },
+    {
+      "id": "dhi_hair_transplant",
+      "category": "hair",
+      "complexity": "low",
+      "anesthesia": "local",
+      "name": {
+        "tr": "DHI Saç Ekimi",
+        "en": "DHI Hair Transplant",
+        "de": "DHI Haartransplantation",
+        "ru": "Пересадка волос DHI",
+        "ar": "زراعة الشعر بتقنية DHI"
+      },
+      "synonyms": {
+        "tr": ["dhi", "saf saç ekimi", "kalemle saç ekimi", "choi"],
+        "en": ["dhi", "direct hair implantation", "choi pen hair transplant"],
+        "de": ["dhi", "direkte haartransplantation"],
+        "ru": ["dhi", "прямая пересадка волос"],
+        "ar": ["dhi", "زراعة الشعر المباشرة"]
+      },
+      "duration_days": {"min_stay": 3, "max_stay": 5, "recovery_total": 14},
+      "post_op_no_fly_days": 3,
+      "pre_op_requirements": ["blood_test_basic", "donor_area_photo"],
+      "package_typical_inclusions": ["hotel_4_nights", "transfer_airport", "translator", "post_op_kit"],
+      "price_band_eur": {"low": 2000, "mid": 3000, "high": 4500},
+      "fit_to_travel_concerns": ["recent_mi", "anticoagulant_therapy"]
+    },
+    {
+      "id": "rhinoplasty",
+      "category": "plastic_surgery",
+      "complexity": "medium",
+      "anesthesia": "general",
+      "name": {
+        "tr": "Burun Estetiği (Rinoplasti)",
+        "en": "Rhinoplasty (Nose Job)",
+        "de": "Nasenkorrektur",
+        "ru": "Ринопластика",
+        "ar": "تجميل الأنف"
+      },
+      "synonyms": {
+        "tr": ["burun estetiği", "rinoplasti", "burnumdan memnun değilim", "burun ameliyatı", "burun küçültme", "burun düzeltme", "kemerli burun"],
+        "en": ["rhinoplasty", "nose job", "nose surgery", "nose reshaping", "deviated septum"],
+        "de": ["nasenkorrektur", "nasen-op", "nasenoperation", "rhinoplastik"],
+        "ru": ["ринопластика", "пластика носа", "операция на нос"],
+        "ar": ["تجميل الأنف", "عملية الأنف", "ريوبلاستي"]
+      },
+      "duration_days": {"min_stay": 6, "max_stay": 8, "recovery_total": 30},
+      "post_op_no_fly_days": 10,
+      "pre_op_requirements": ["blood_test_basic", "ct_paranasal_sinus", "ecg", "anesthesia_consult"],
+      "package_typical_inclusions": ["hotel_7_nights", "transfer_airport", "translator", "follow_up_consult", "post_op_kit"],
+      "price_band_eur": {"low": 2500, "mid": 3800, "high": 5500},
+      "fit_to_travel_concerns": ["recent_mi", "uncontrolled_hypertension", "active_infection", "pregnancy"]
+    },
+    {
+      "id": "mommy_makeover",
+      "category": "plastic_surgery",
+      "complexity": "high",
+      "anesthesia": "general",
+      "name": {
+        "tr": "Mommy Makeover (Annelik Sonrası Estetik)",
+        "en": "Mommy Makeover",
+        "de": "Mommy Makeover",
+        "ru": "Mommy Makeover (восстановление после родов)",
+        "ar": "Mommy Makeover (تجديد ما بعد الولادة)"
+      },
+      "synonyms": {
+        "tr": ["mommy makeover", "annelik sonrası estetik", "doğum sonrası vücut", "karın germe", "tummy tuck"],
+        "en": ["mommy makeover", "post-pregnancy makeover", "tummy tuck and lift", "abdominoplasty plus"],
+        "de": ["mommy makeover", "bauchstraffung", "post-schwangerschaft"],
+        "ru": ["mommy makeover", "восстановление после родов", "абдоминопластика"],
+        "ar": ["mommy makeover", "شد البطن بعد الولادة"]
+      },
+      "duration_days": {"min_stay": 10, "max_stay": 14, "recovery_total": 60},
+      "post_op_no_fly_days": 14,
+      "pre_op_requirements": ["blood_test_full", "ecg", "echocardiogram", "anesthesia_consult", "breast_imaging", "dvt_risk_screen"],
+      "package_typical_inclusions": ["hotel_12_nights", "transfer_airport", "translator", "compression_garments", "follow_up_consult", "lymph_drainage_sessions"],
+      "price_band_eur": {"low": 5000, "mid": 7000, "high": 9000},
+      "fit_to_travel_concerns": ["recent_mi", "uncontrolled_hypertension", "active_cancer", "pregnancy", "breastfeeding", "smoker_active", "bmi_over_35", "dvt_history"]
+    },
+    {
+      "id": "dental_implant_full",
+      "category": "dental",
+      "complexity": "medium",
+      "anesthesia": "local_or_sedation",
+      "name": {
+        "tr": "Tam Ağız Diş İmplantı (All-on-4 / 6)",
+        "en": "Full-Mouth Dental Implants (All-on-4 / 6)",
+        "de": "Komplette Zahnimplantate (All-on-4 / 6)",
+        "ru": "Полные зубные имплантаты (All-on-4 / 6)",
+        "ar": "زراعة الأسنان الكاملة (All-on-4 / 6)"
+      },
+      "synonyms": {
+        "tr": ["diş implantı", "all on 4", "all on 6", "tam ağız implant", "dişlerim yok", "takma diş istemiyorum"],
+        "en": ["dental implant", "all on 4", "all on 6", "full mouth implants", "teeth replacement"],
+        "de": ["zahnimplantat", "all on 4", "zahnersatz"],
+        "ru": ["зубной имплант", "all on 4", "имплантация зубов"],
+        "ar": ["زراعة الأسنان", "all on 4", "زرع الأسنان"]
+      },
+      "duration_days": {"min_stay": 5, "max_stay": 7, "recovery_total": 90},
+      "post_op_no_fly_days": 2,
+      "pre_op_requirements": ["panoramic_xray", "ct_dental", "blood_test_basic"],
+      "package_typical_inclusions": ["hotel_6_nights", "transfer_airport", "translator", "temporary_prosthesis", "follow_up_consult"],
+      "price_band_eur": {"low": 4000, "mid": 5500, "high": 8000},
+      "fit_to_travel_concerns": ["uncontrolled_diabetes", "bisphosphonate_therapy", "active_chemo"]
+    },
+    {
+      "id": "dental_veneers",
+      "category": "dental",
+      "complexity": "low",
+      "anesthesia": "local",
+      "name": {
+        "tr": "Diş Lamina (Porselen Veneer)",
+        "en": "Dental Veneers (Porcelain)",
+        "de": "Veneers (Keramik)",
+        "ru": "Виниры (керамические)",
+        "ar": "قشور الأسنان"
+      },
+      "synonyms": {
+        "tr": ["diş lamina", "porselen veneer", "lamine diş", "hollywood gülüşü", "diş kapağı"],
+        "en": ["veneers", "porcelain veneers", "hollywood smile", "smile makeover"],
+        "de": ["veneers", "keramikveneers", "hollywood-lächeln"],
+        "ru": ["виниры", "голливудская улыбка"],
+        "ar": ["قشور الأسنان", "ابتسامة هوليوود"]
+      },
+      "duration_days": {"min_stay": 4, "max_stay": 6, "recovery_total": 7},
+      "post_op_no_fly_days": 1,
+      "pre_op_requirements": ["panoramic_xray", "dental_consult"],
+      "package_typical_inclusions": ["hotel_5_nights", "transfer_airport", "translator", "follow_up_consult"],
+      "price_band_eur": {"low": 2000, "mid": 3500, "high": 5500},
+      "fit_to_travel_concerns": ["bruxism_severe"]
+    },
+    {
+      "id": "gastric_sleeve",
+      "category": "bariatric",
+      "complexity": "high",
+      "anesthesia": "general",
+      "name": {
+        "tr": "Tüp Mide Ameliyatı (Sleeve Gastrektomi)",
+        "en": "Gastric Sleeve (Sleeve Gastrectomy)",
+        "de": "Schlauchmagen (Sleeve-Gastrektomie)",
+        "ru": "Рукавная гастропластика",
+        "ar": "تكميم المعدة"
+      },
+      "synonyms": {
+        "tr": ["mide ameliyatı", "tüp mide", "obezite ameliyatı", "kilo veremiyorum", "sleeve", "gastrik sleeve"],
+        "en": ["gastric sleeve", "sleeve gastrectomy", "weight loss surgery", "bariatric surgery", "obesity surgery"],
+        "de": ["schlauchmagen", "magenverkleinerung", "adipositaschirurgie"],
+        "ru": ["рукавная гастропластика", "операция по снижению веса", "бариатрия"],
+        "ar": ["تكميم المعدة", "جراحة السمنة"]
+      },
+      "duration_days": {"min_stay": 5, "max_stay": 7, "recovery_total": 28},
+      "post_op_no_fly_days": 10,
+      "pre_op_requirements": ["blood_test_full", "ecg", "echocardiogram", "endoscopy", "psych_eval", "anesthesia_consult", "dvt_risk_screen"],
+      "package_typical_inclusions": ["hotel_6_nights", "transfer_airport", "translator", "dietitian_consult", "follow_up_consult", "1_year_telehealth"],
+      "price_band_eur": {"low": 3500, "mid": 4500, "high": 6500},
+      "fit_to_travel_concerns": ["recent_mi", "uncontrolled_hypertension", "uncontrolled_diabetes", "active_cancer", "pregnancy", "bmi_over_55", "dvt_history", "smoker_active"]
+    },
+    {
+      "id": "ivf",
+      "category": "fertility",
+      "complexity": "medium",
+      "anesthesia": "sedation",
+      "name": {
+        "tr": "Tüp Bebek (IVF)",
+        "en": "IVF (In Vitro Fertilization)",
+        "de": "IVF (Künstliche Befruchtung)",
+        "ru": "ЭКО (Экстракорпоральное оплодотворение)",
+        "ar": "أطفال الأنابيب"
+      },
+      "synonyms": {
+        "tr": ["tüp bebek", "ivf", "kısırlık", "bebeğim olmuyor", "üreme tedavisi", "icsi"],
+        "en": ["ivf", "in vitro", "fertility treatment", "infertility", "icsi"],
+        "de": ["ivf", "künstliche befruchtung", "kinderwunschbehandlung", "icsi"],
+        "ru": ["эко", "экстракорпоральное оплодотворение", "бесплодие"],
+        "ar": ["أطفال الأنابيب", "العقم", "علاج الخصوبة"]
+      },
+      "duration_days": {"min_stay": 14, "max_stay": 21, "recovery_total": 14},
+      "post_op_no_fly_days": 0,
+      "pre_op_requirements": ["hormone_panel", "amh", "semen_analysis", "ultrasound_pelvic", "infectious_disease_screen"],
+      "package_typical_inclusions": ["hotel_15_nights", "transfer_airport", "translator", "medication_kit", "embryo_transfer", "1_cycle_meds"],
+      "price_band_eur": {"low": 3000, "mid": 4500, "high": 6500},
+      "fit_to_travel_concerns": ["active_cancer", "uncontrolled_thyroid"]
+    },
+    {
+      "id": "lasik",
+      "category": "ophthalmology",
+      "complexity": "low",
+      "anesthesia": "local_drops",
+      "name": {
+        "tr": "LASIK Göz Lazer Ameliyatı",
+        "en": "LASIK Eye Surgery",
+        "de": "LASIK-Augenlaser-OP",
+        "ru": "Лазерная коррекция зрения LASIK",
+        "ar": "عملية الليزك للعيون"
+      },
+      "synonyms": {
+        "tr": ["lasik", "göz lazer", "miyop ameliyatı", "gözlüksüz görmek istiyorum", "smile lazer"],
+        "en": ["lasik", "laser eye surgery", "vision correction", "smile laser", "femto-lasik"],
+        "de": ["lasik", "augenlaser", "sehkorrektur"],
+        "ru": ["lasik", "лазерная коррекция зрения", "smile"],
+        "ar": ["ليزك", "تصحيح البصر بالليزر"]
+      },
+      "duration_days": {"min_stay": 2, "max_stay": 3, "recovery_total": 7},
+      "post_op_no_fly_days": 2,
+      "pre_op_requirements": ["corneal_topography", "pachymetry", "dry_eye_test"],
+      "package_typical_inclusions": ["hotel_2_nights", "transfer_airport", "translator", "post_op_drops", "1_year_follow_up"],
+      "price_band_eur": {"low": 1200, "mid": 1700, "high": 2500},
+      "fit_to_travel_concerns": ["pregnancy", "active_eye_infection", "dry_eye_severe"]
+    },
+    {
+      "id": "cabg",
+      "category": "cardiology",
+      "complexity": "very_high",
+      "anesthesia": "general",
+      "name": {
+        "tr": "Koroner Bypass (CABG)",
+        "en": "Coronary Artery Bypass Graft (CABG)",
+        "de": "Koronare Bypassoperation (CABG)",
+        "ru": "Аортокоронарное шунтирование",
+        "ar": "جراحة المجازة التاجية"
+      },
+      "synonyms": {
+        "tr": ["bypass", "kalp ameliyatı", "koroner bypass", "kalp damarı tıkalı"],
+        "en": ["bypass surgery", "cabg", "coronary bypass", "open heart"],
+        "de": ["bypass-operation", "koronare bypass-op", "herz-op"],
+        "ru": ["аортокоронарное шунтирование", "акш", "операция на сердце"],
+        "ar": ["جراحة القلب المفتوح", "مجازة شريانية"]
+      },
+      "duration_days": {"min_stay": 12, "max_stay": 16, "recovery_total": 90},
+      "post_op_no_fly_days": 21,
+      "pre_op_requirements": ["coronary_angiogram", "echocardiogram", "blood_test_full", "carotid_doppler", "anesthesia_consult", "dvt_risk_screen"],
+      "package_typical_inclusions": ["hotel_14_nights", "transfer_airport", "translator", "icu_stay", "cardiac_rehab_starter", "30_day_telehealth"],
+      "price_band_eur": {"low": 14000, "mid": 18000, "high": 25000},
+      "fit_to_travel_concerns": ["unstable_angina", "decompensated_heart_failure", "active_cancer", "active_infection", "severe_copd", "dialysis_dependent"]
+    }
+  ]
+}

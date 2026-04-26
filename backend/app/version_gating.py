@@ -37,7 +37,7 @@ logger = logging.getLogger(__name__)
 # middleware stays fully functional; the scrape is just silent.
 
 _VALID_ENVELOPE_TYPES: FrozenSet[str] = frozenset(
-    {"RESULT", "EMERGENCY", "QUESTION", "ERROR"}
+    {"RESULT", "EMERGENCY", "QUESTION", "ERROR", "QUOTE", "ITINERARY"}
 )
 
 
@@ -170,9 +170,15 @@ def filter_envelope(data: Any, caps: FrozenSet[str]) -> Any:
 
     envelope_type = data.get("type")
     payload = data.get("payload")
-    if not isinstance(payload, Mapping) or envelope_type not in {"RESULT", "EMERGENCY", "QUESTION", "ERROR"}:
-        # Not a triage envelope — skip entirely so arbitrary response
-        # shapes aren't accidentally mangled.
+    if not isinstance(payload, Mapping) or envelope_type not in _VALID_ENVELOPE_TYPES:
+        # Not an envelope shape we know — skip entirely so arbitrary
+        # response shapes aren't accidentally mangled.
+        return data
+    if envelope_type in {"QUOTE", "ITINERARY"}:
+        # Health-tourism envelopes have no curated_meta /
+        # emergency_specialty fields to gate; pass through unchanged.
+        # Kept on the envelope-type whitelist so the prometheus
+        # `triage_envelope_total` counter still bumps for them.
         return data
 
     new_payload: MutableMapping[str, Any] = dict(payload)

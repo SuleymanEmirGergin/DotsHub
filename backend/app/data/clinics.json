@@ -1,0 +1,185 @@
+{
+  "_meta": {
+    "version": "0.1.0",
+    "updated": "2026-04-26",
+    "currency": "EUR",
+    "notes": "Health-tourism clinic registry. Sample data — names and contact details are fictional placeholders for the v0 quote engine; production deployments must replace this with real, contracted clinic partners (each requires Türkiye Sağlık Turizmi Yetki Belgesi). price_modifier multiplies the procedure baseline from procedures.json. languages must include the patient's locale for the clinic to be recommended without warning."
+  },
+  "clinics": [
+    {
+      "id": "clinic_istanbul_aesthetics_one",
+      "name": "İstanbul Aesthetics One",
+      "city": "İstanbul",
+      "country": "TR",
+      "lat": 41.0489,
+      "lon": 29.0335,
+      "certifications": ["JCI", "ISO_9001", "TURSAB_A_GROUP"],
+      "languages": ["tr", "en", "de", "ru", "ar"],
+      "procedures_offered": [
+        "fue_hair_transplant",
+        "dhi_hair_transplant",
+        "rhinoplasty",
+        "mommy_makeover",
+        "dental_veneers"
+      ],
+      "package_features": ["hotel_5_star", "transfer_vip", "translator_dedicated", "post_op_app", "before_after_portfolio_500_plus"],
+      "price_modifier": 1.15,
+      "years_experience": 14,
+      "before_after_count": 612,
+      "specialties_strength": ["plastic_surgery", "hair"],
+      "average_rating_5": 4.7,
+      "consult_response_hours": 4
+    },
+    {
+      "id": "clinic_istanbul_dental_studio",
+      "name": "İstanbul Dental Studio",
+      "city": "İstanbul",
+      "country": "TR",
+      "lat": 41.0820,
+      "lon": 29.0123,
+      "certifications": ["ISO_9001", "TURSAB_A_GROUP", "ICOI"],
+      "languages": ["tr", "en", "de", "ar"],
+      "procedures_offered": [
+        "dental_implant_full",
+        "dental_veneers"
+      ],
+      "package_features": ["hotel_4_star", "transfer_airport", "translator", "panoramic_xray_onsite", "lifetime_warranty_implant"],
+      "price_modifier": 0.95,
+      "years_experience": 11,
+      "before_after_count": 1240,
+      "specialties_strength": ["dental"],
+      "average_rating_5": 4.8,
+      "consult_response_hours": 2
+    },
+    {
+      "id": "clinic_antalya_med_park",
+      "name": "Antalya MedPark Bariatric Center",
+      "city": "Antalya",
+      "country": "TR",
+      "lat": 36.8920,
+      "lon": 30.7050,
+      "certifications": ["JCI", "ISO_9001", "TURSAB_A_GROUP", "IFSO_COE"],
+      "languages": ["tr", "en", "de", "ru"],
+      "procedures_offered": [
+        "gastric_sleeve",
+        "rhinoplasty",
+        "mommy_makeover"
+      ],
+      "package_features": ["hotel_5_star_resort", "transfer_vip", "translator_dedicated", "icu_capable", "1_year_telehealth_followup", "dietitian_program"],
+      "price_modifier": 1.10,
+      "years_experience": 18,
+      "before_after_count": 920,
+      "specialties_strength": ["bariatric", "plastic_surgery"],
+      "average_rating_5": 4.6,
+      "consult_response_hours": 6
+    },
+    {
+      "id": "clinic_izmir_eye_center",
+      "name": "İzmir Vision Lazer Merkezi",
+      "city": "İzmir",
+      "country": "TR",
+      "lat": 38.4189,
+      "lon": 27.1287,
+      "certifications": ["ISO_9001", "TURSAB_A_GROUP"],
+      "languages": ["tr", "en", "de"],
+      "procedures_offered": [
+        "lasik"
+      ],
+      "package_features": ["hotel_4_star", "transfer_airport", "translator", "femto_lasik_capable", "smile_capable"],
+      "price_modifier": 0.90,
+      "years_experience": 9,
+      "before_after_count": 3100,
+      "specialties_strength": ["ophthalmology"],
+      "average_rating_5": 4.9,
+      "consult_response_hours": 3
+    },
+    {
+      "id": "clinic_istanbul_fertility",
+      "name": "İstanbul Fertility & IVF Institute",
+      "city": "İstanbul",
+      "country": "TR",
+      "lat": 41.0608,
+      "lon": 28.9924,
+      "certifications": ["JCI", "ISO_9001", "ESHRE_MEMBER", "TURSAB_A_GROUP"],
+      "languages": ["tr", "en", "ru", "ar"],
+      "procedures_offered": [
+        "ivf"
+      ],
+      "package_features": ["hotel_4_star", "transfer_airport", "translator_medical", "embryology_lab_iso", "psych_support_optional"],
+      "price_modifier": 1.05,
+      "years_experience": 21,
+      "before_after_count": 4800,
+      "specialties_strength": ["fertility"],
+      "average_rating_5": 4.7,
+      "consult_response_hours": 4
+    },
+    {
+      "id": "clinic_ankara_cardiac",
+      "name": "Ankara Heart Center",
+      "city": "Ankara",
+      "country": "TR",
+      "lat": 39.9036,
+      "lon": 32.8617,
+      "certifications": ["JCI", "ISO_9001", "TURSAB_A_GROUP", "ESC_MEMBER"],
+      "languages": ["tr", "en", "de", "ru", "ar"],
+      "procedures_offered": [
+        "cabg"
+      ],
+      "package_features": ["hotel_5_star_medical", "transfer_medical_van", "translator_medical_dedicated", "icu_24_7", "cardiac_rehab_program", "30_day_telehealth"],
+      "price_modifier": 1.20,
+      "years_experience": 26,
+      "before_after_count": 380,
+      "specialties_strength": ["cardiology"],
+      "average_rating_5": 4.8,
+      "consult_response_hours": 8
+    },
+    {
+      "id": "clinic_bursa_hair_clinic",
+      "name": "Bursa Hair Restoration Clinic",
+      "city": "Bursa",
+      "country": "TR",
+      "lat": 40.1828,
+      "lon": 29.0665,
+      "certifications": ["ISO_9001", "TURSAB_A_GROUP"],
+      "languages": ["tr", "en", "de", "ar"],
+      "procedures_offered": [
+        "fue_hair_transplant",
+        "dhi_hair_transplant"
+      ],
+      "package_features": ["hotel_4_star", "transfer_airport", "translator", "post_op_kit", "1_year_follow_up"],
+      "price_modifier": 0.85,
+      "years_experience": 7,
+      "before_after_count": 2100,
+      "specialties_strength": ["hair"],
+      "average_rating_5": 4.5,
+      "consult_response_hours": 2
+    },
+    {
+      "id": "clinic_istanbul_full_service",
+      "name": "İstanbul Premium Health",
+      "city": "İstanbul",
+      "country": "TR",
+      "lat": 41.0760,
+      "lon": 29.0234,
+      "certifications": ["JCI", "ISO_9001", "TURSAB_A_GROUP"],
+      "languages": ["tr", "en", "de", "ru", "ar"],
+      "procedures_offered": [
+        "fue_hair_transplant",
+        "dhi_hair_transplant",
+        "rhinoplasty",
+        "mommy_makeover",
+        "dental_implant_full",
+        "dental_veneers",
+        "gastric_sleeve",
+        "lasik"
+      ],
+      "package_features": ["hotel_5_star", "transfer_vip", "translator_dedicated", "concierge", "before_after_portfolio_1000_plus", "1_year_aftercare"],
+      "price_modifier": 1.25,
+      "years_experience": 17,
+      "before_after_count": 2400,
+      "specialties_strength": ["plastic_surgery", "dental", "hair", "bariatric"],
+      "average_rating_5": 4.6,
+      "consult_response_hours": 3
+    }
+  ]
+}

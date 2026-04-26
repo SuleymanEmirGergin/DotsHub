@@ -351,6 +351,96 @@ paths:
                       - streaming_envelope
                     count: 3
 
+  /v1/quote:
+    post:
+      summary: Generate a non-binding health-tourism quote
+      operationId: quote
+      description: |
+        Resolves a procedure (explicit `procedure_id` or extracted from
+        free-text), runs the fit-to-travel rule engine against the
+        patient profile, and returns a ranked list of partner clinics
+        with indicative price bands.
+
+        Envelope types in the response:
+          - `QUOTE` — clinics ranked best-first; `fit_to_travel_warnings`
+            (severity=`warn`) ride on the payload for the UI to surface.
+          - `EMERGENCY` — at least one fit-to-travel rule of severity
+            `block` triggered; the patient must seek local care first.
+            No clinic list is returned.
+          - `ERROR` — `code=PROCEDURE_UNRESOLVED` (no procedure id
+            provided and intent extraction missed) or
+            `code=NO_PARTNER_CLINIC` (procedure exists but no clinic
+            currently offers it).
+
+        See `docs/HEALTH_TOURISM.md` (forthcoming) for the full
+        contract and clinical-safety rationale.
+      parameters:
+        - $ref: "#/components/parameters/ClientCapabilitiesHeader"
+        - $ref: "#/components/parameters/ClientVersionHeader"
+        - $ref: "#/components/parameters/IdempotencyKeyHeader"
+        - $ref: "#/components/parameters/SessionIdHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                procedure_id:
+                  type: string
+                  description: Explicit procedure id (e.g. "fue_hair_transplant"). Either this or `user_message` is required.
+                user_message:
+                  type: string
+                  description: Free-text user request; intent extraction resolves it to a procedure id.
+                profile:
+                  type: object
+                  description: Patient profile (HealthTourismProfile). Boolean flags drive fit-to-travel rules.
+                locale:
+                  type: string
+                  default: "tr-TR"
+                target_city:
+                  type: string
+                  description: Optional preferred city (e.g. "İstanbul"). Boosts matching clinic scores.
+                top_n:
+                  type: integer
+                  default: 5
+                  minimum: 1
+                  maximum: 20
+            examples:
+              by_procedure_id:
+                summary: Hair transplant quote with target city
+                value:
+                  procedure_id: "fue_hair_transplant"
+                  profile:
+                    age: 35
+                    sex: "male"
+                  locale: "tr-TR"
+                  target_city: "İstanbul"
+                  top_n: 3
+              by_freetext:
+                summary: Free-text input → intent extracts rhinoplasty
+                value:
+                  user_message: "Burnumdan memnun değilim, ameliyat olmak istiyorum"
+                  profile:
+                    age: 28
+                    sex: "female"
+                  locale: "tr-TR"
+              fit_to_travel_block:
+                summary: Recent MI blocks elective surgery
+                value:
+                  procedure_id: "rhinoplasty"
+                  profile:
+                    age: 52
+                    recent_mi: true
+                  locale: "tr-TR"
+      responses:
+        "200":
+          description: Envelope (QUOTE / EMERGENCY / ERROR)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Envelope"
+
   /v1/triage/stream:
     post:
       summary: Streaming variant of /v1/triage/turn (Server-Sent Events)

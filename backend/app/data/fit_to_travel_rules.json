@@ -1,0 +1,249 @@
+{
+  "_meta": {
+    "version": "0.1.0",
+    "updated": "2026-04-26",
+    "notes": "Fit-to-travel rules for health-tourism quotes. Mirrors the emergency_rules.json pattern but predicates on a structured patient profile (boolean trigger keys), not free-text keywords. Severity 'block' returns a non-quote envelope (patient must seek local care first); 'warn' allows the quote with the warning attached. applies_to_procedures='*' applies the rule to every procedure; otherwise only to the listed IDs. Both backend and clinic-partner UI consume this file — keep TR/EN/DE/RU/AR copy in sync."
+  },
+  "rules": [
+    {
+      "id": "recent_mi_blocks_general_anesthesia",
+      "severity": "block",
+      "trigger_keys": ["recent_mi"],
+      "applies_to_procedures": ["rhinoplasty", "mommy_makeover", "gastric_sleeve", "cabg"],
+      "reason": {
+        "tr": "Son 6 ay içinde geçirilmiş kalp krizi, genel anestezi gerektiren bu işlem için yüksek risk oluşturur.",
+        "en": "A myocardial infarction within the last 6 months poses a high risk for procedures requiring general anesthesia.",
+        "de": "Ein Herzinfarkt innerhalb der letzten 6 Monate stellt ein hohes Risiko für Eingriffe unter Vollnarkose dar.",
+        "ru": "Перенесённый за последние 6 месяцев инфаркт миокарда представляет высокий риск для операций под общим наркозом.",
+        "ar": "احتشاء عضلة القلب خلال الستة أشهر الماضية يشكل خطراً عالياً للعمليات التي تتطلب التخدير العام."
+      },
+      "recommendation": {
+        "tr": "Lütfen kardiyoloğunuzla görüşün; bekleme süresi tamamlandıktan sonra tekrar değerlendirme önerilir.",
+        "en": "Consult your cardiologist; reassessment is recommended after the post-MI waiting period.",
+        "de": "Bitte konsultieren Sie Ihren Kardiologen; eine erneute Beurteilung nach der Wartezeit nach dem Infarkt wird empfohlen.",
+        "ru": "Проконсультируйтесь с кардиологом; повторная оценка рекомендуется после завершения периода ожидания.",
+        "ar": "يُرجى استشارة طبيب القلب وإعادة التقييم بعد انتهاء فترة الانتظار."
+      }
+    },
+    {
+      "id": "unstable_angina_blocks_cardiac_surgery",
+      "severity": "block",
+      "trigger_keys": ["unstable_angina"],
+      "applies_to_procedures": ["cabg", "rhinoplasty", "mommy_makeover", "gastric_sleeve"],
+      "reason": {
+        "tr": "Stabil olmayan anjina, planlı cerrahi öncesinde lokal kardiyoloji tedavisi gerektirir.",
+        "en": "Unstable angina requires local cardiology stabilization before any elective surgery.",
+        "de": "Instabile Angina erfordert vor jeder elektiven Operation eine kardiologische Stabilisierung.",
+        "ru": "Нестабильная стенокардия требует кардиологической стабилизации перед любой плановой операцией.",
+        "ar": "الذبحة الصدرية غير المستقرة تتطلب استقراراً قلبياً موضعياً قبل أي عملية اختيارية."
+      },
+      "recommendation": {
+        "tr": "Yerel kardiyoloji takibinizi tamamlayın; durum stabil olduğunda yeniden başvurabilirsiniz.",
+        "en": "Complete local cardiology follow-up; reapply once your condition is stable.",
+        "de": "Schließen Sie Ihre lokale kardiologische Nachsorge ab; bewerben Sie sich erneut, wenn Ihr Zustand stabil ist.",
+        "ru": "Завершите наблюдение у местного кардиолога; обратитесь снова после стабилизации.",
+        "ar": "أكمل المتابعة القلبية المحلية، وأعد الطلب بعد استقرار حالتك."
+      }
+    },
+    {
+      "id": "active_cancer_blocks_elective",
+      "severity": "block",
+      "trigger_keys": ["active_cancer", "active_chemo"],
+      "applies_to_procedures": ["mommy_makeover", "gastric_sleeve", "ivf", "rhinoplasty", "fue_hair_transplant", "dhi_hair_transplant", "cabg"],
+      "reason": {
+        "tr": "Aktif kanser tedavisi sırasında elektif sağlık turizmi işlemleri önerilmez; bağışıklık baskılanması ve iyileşme riski yüksektir.",
+        "en": "Elective health-tourism procedures are not recommended during active cancer treatment due to immunosuppression and impaired healing.",
+        "de": "Während einer aktiven Krebstherapie werden elektive Gesundheitstourismus-Eingriffe wegen Immunsuppression und gestörter Heilung nicht empfohlen.",
+        "ru": "Плановые процедуры медицинского туризма не рекомендуются во время активного онкологического лечения из-за иммуносупрессии.",
+        "ar": "لا يُنصح بإجراء عمليات السياحة الصحية الاختيارية أثناء العلاج النشط للسرطان بسبب كبت المناعة وضعف الالتئام."
+      },
+      "recommendation": {
+        "tr": "Onkologunuzla görüşün; tedavi tamamlandıktan ve hekiminizden onay aldıktan sonra başvurun.",
+        "en": "Consult your oncologist; reapply after treatment is complete and you have clinical clearance.",
+        "de": "Konsultieren Sie Ihren Onkologen; bewerben Sie sich nach Abschluss der Behandlung und ärztlicher Freigabe erneut.",
+        "ru": "Проконсультируйтесь с онкологом; обратитесь снова после завершения лечения и получения медицинского разрешения.",
+        "ar": "استشر طبيب الأورام، وأعد التقديم بعد اكتمال العلاج والحصول على موافقة طبية."
+      }
+    },
+    {
+      "id": "pregnancy_blocks_anesthesia_procedures",
+      "severity": "block",
+      "trigger_keys": ["pregnancy"],
+      "applies_to_procedures": ["rhinoplasty", "mommy_makeover", "gastric_sleeve", "lasik"],
+      "reason": {
+        "tr": "Hamilelik döneminde elektif anestezi içeren işlemler ve LASIK önerilmez.",
+        "en": "Elective procedures involving anesthesia and LASIK are not recommended during pregnancy.",
+        "de": "Elektive Eingriffe mit Narkose sowie LASIK werden während der Schwangerschaft nicht empfohlen.",
+        "ru": "Плановые процедуры с анестезией и LASIK не рекомендуются во время беременности.",
+        "ar": "لا يُنصح بالعمليات الاختيارية التي تتطلب التخدير أو الليزك أثناء الحمل."
+      },
+      "recommendation": {
+        "tr": "Doğum sonrası en az 6 ay (ve emzirme sonrası) tekrar değerlendirme önerilir.",
+        "en": "Reassessment is recommended at least 6 months after delivery (and after breastfeeding ends).",
+        "de": "Eine erneute Beurteilung wird mindestens 6 Monate nach der Geburt (und nach dem Abstillen) empfohlen.",
+        "ru": "Повторная оценка рекомендуется не ранее чем через 6 месяцев после родов (и завершения кормления).",
+        "ar": "يُنصح بإعادة التقييم بعد ستة أشهر على الأقل من الولادة (وبعد انتهاء الرضاعة)."
+      }
+    },
+    {
+      "id": "uncontrolled_hypertension_warn",
+      "severity": "warn",
+      "trigger_keys": ["uncontrolled_hypertension"],
+      "applies_to_procedures": "*",
+      "reason": {
+        "tr": "Kontrol altında olmayan tansiyon, anestezi ve cerrahi riskini artırır.",
+        "en": "Uncontrolled hypertension increases anesthesia and surgical risk.",
+        "de": "Unkontrollierter Bluthochdruck erhöht das Narkose- und Operationsrisiko.",
+        "ru": "Неконтролируемая гипертония повышает риск анестезии и операции.",
+        "ar": "ارتفاع ضغط الدم غير المضبوط يزيد من مخاطر التخدير والجراحة."
+      },
+      "recommendation": {
+        "tr": "Yola çıkmadan önce hekiminizle tansiyon kontrolünü sağlayın; klinik gerekirse ilave testler isteyebilir.",
+        "en": "Stabilize your blood pressure with your doctor before travel; the clinic may request additional tests.",
+        "de": "Stabilisieren Sie vor Reiseantritt mit Ihrem Arzt den Blutdruck; die Klinik kann Zusatzuntersuchungen anfordern.",
+        "ru": "Стабилизируйте давление с врачом до поездки; клиника может запросить дополнительные обследования.",
+        "ar": "اضبط ضغط الدم مع طبيبك قبل السفر؛ قد تطلب العيادة فحوصات إضافية."
+      }
+    },
+    {
+      "id": "smoker_active_warn_recovery",
+      "severity": "warn",
+      "trigger_keys": ["smoker_active"],
+      "applies_to_procedures": ["rhinoplasty", "mommy_makeover", "gastric_sleeve", "fue_hair_transplant", "dhi_hair_transplant", "cabg"],
+      "reason": {
+        "tr": "Aktif sigara kullanımı yara iyileşmesini ve cerrahi başarıyı olumsuz etkiler.",
+        "en": "Active smoking impairs wound healing and surgical outcomes.",
+        "de": "Aktives Rauchen beeinträchtigt die Wundheilung und das Operationsergebnis.",
+        "ru": "Активное курение ухудшает заживление ран и результаты операции.",
+        "ar": "التدخين النشط يعيق التئام الجروح ويقلل نجاح الجراحة."
+      },
+      "recommendation": {
+        "tr": "Operasyondan en az 4 hafta önce sigarayı bırakmanız şiddetle önerilir.",
+        "en": "Quitting smoking at least 4 weeks before surgery is strongly recommended.",
+        "de": "Es wird dringend empfohlen, mindestens 4 Wochen vor der Operation mit dem Rauchen aufzuhören.",
+        "ru": "Настоятельно рекомендуется бросить курить минимум за 4 недели до операции.",
+        "ar": "يُنصح بشدة بالإقلاع عن التدخين قبل العملية بأربعة أسابيع على الأقل."
+      }
+    },
+    {
+      "id": "dvt_history_warn_long_haul",
+      "severity": "warn",
+      "trigger_keys": ["dvt_history"],
+      "applies_to_procedures": ["mommy_makeover", "gastric_sleeve", "rhinoplasty", "cabg"],
+      "reason": {
+        "tr": "DVT (derin ven trombozu) öyküsü, uzun uçuş + cerrahi kombinasyonunda tekrarlama riski taşır.",
+        "en": "A history of DVT carries elevated recurrence risk with the combination of long-haul flight and surgery.",
+        "de": "Eine Thrombose-Vorgeschichte erhöht das Wiederholungsrisiko bei Langstreckenflug plus Operation.",
+        "ru": "История ТГВ повышает риск рецидива при комбинации длительного перелёта и операции.",
+        "ar": "وجود سابقة جلطة وريدية عميقة يزيد خطر التكرار مع الجمع بين الطيران الطويل والجراحة."
+      },
+      "recommendation": {
+        "tr": "Klinik öncesi tromboz profilaksisi planı isteyin; uçuşlarda kompresyon çorapları ve hareketli oturma planlayın.",
+        "en": "Request a thromboprophylaxis plan from the clinic; plan for compression stockings and ambulation during flights.",
+        "de": "Bitten Sie die Klinik um einen Thromboseprophylaxe-Plan; planen Sie Kompressionsstrümpfe und Bewegung auf Flügen.",
+        "ru": "Запросите у клиники план тромбопрофилактики; используйте компрессионные чулки и активность во время перелёта.",
+        "ar": "اطلب من العيادة خطة الوقاية من الجلطات؛ خطط لاستخدام جوارب ضاغطة والحركة أثناء الرحلات الجوية."
+      }
+    },
+    {
+      "id": "uncontrolled_diabetes_warn",
+      "severity": "warn",
+      "trigger_keys": ["uncontrolled_diabetes"],
+      "applies_to_procedures": ["dental_implant_full", "mommy_makeover", "gastric_sleeve", "cabg"],
+      "reason": {
+        "tr": "Kontrol altında olmayan diyabet (HbA1c > %8) yara iyileşmesini ve enfeksiyon riskini etkiler; implant entegrasyonu için kritik.",
+        "en": "Uncontrolled diabetes (HbA1c > 8%) affects wound healing and infection risk; critical for implant integration.",
+        "de": "Unkontrollierter Diabetes (HbA1c > 8%) beeinträchtigt Wundheilung und Infektionsrisiko; kritisch für Implantateinheilung.",
+        "ru": "Неконтролируемый диабет (HbA1c > 8%) влияет на заживление и риск инфекции; критично для приживления имплантов.",
+        "ar": "السكري غير المضبوط (HbA1c أكثر من 8%) يؤثر على الالتئام وخطر العدوى؛ أمر حاسم لاستقرار الزرعات."
+      },
+      "recommendation": {
+        "tr": "Operasyon öncesi en az 3 ay HbA1c kontrolü altına alınmalı. Doktorunuzla hedef değer planı yapın.",
+        "en": "HbA1c should be controlled for at least 3 months before surgery. Plan target levels with your doctor.",
+        "de": "HbA1c sollte mindestens 3 Monate vor der Operation kontrolliert sein. Zielwerte mit dem Arzt planen.",
+        "ru": "HbA1c должен контролироваться минимум 3 месяца до операции. Согласуйте целевые значения с врачом.",
+        "ar": "يجب ضبط HbA1c لمدة لا تقل عن ثلاثة أشهر قبل العملية. اتفق على القيم المستهدفة مع طبيبك."
+      }
+    },
+    {
+      "id": "bmi_over_55_warn_anesthesia",
+      "severity": "warn",
+      "trigger_keys": ["bmi_over_55"],
+      "applies_to_procedures": ["gastric_sleeve", "mommy_makeover"],
+      "reason": {
+        "tr": "BMI 55 üstü vücut kitlesi anestezi risk profilini ve operasyon süresini etkiler.",
+        "en": "BMI above 55 affects the anesthesia risk profile and surgery duration.",
+        "de": "Ein BMI über 55 beeinflusst das Narkoserisikoprofil und die Operationsdauer.",
+        "ru": "ИМТ выше 55 влияет на риск анестезии и продолжительность операции.",
+        "ar": "مؤشر كتلة الجسم فوق 55 يؤثر على خطورة التخدير ومدة العملية."
+      },
+      "recommendation": {
+        "tr": "Klinik ek pre-op süreç (kardiyak değerlendirme, uyku apnesi taraması) isteyebilir.",
+        "en": "The clinic may request additional pre-op steps (cardiac evaluation, sleep apnea screening).",
+        "de": "Die Klinik kann zusätzliche präoperative Schritte verlangen (kardiale Abklärung, Schlafapnoe-Screening).",
+        "ru": "Клиника может запросить дополнительные предоперационные шаги (кардиооценка, скрининг апноэ сна).",
+        "ar": "قد تطلب العيادة خطوات إضافية قبل العملية (تقييم قلبي، فحص انقطاع النفس النومي)."
+      }
+    },
+    {
+      "id": "anticoagulant_therapy_warn_bleeding",
+      "severity": "warn",
+      "trigger_keys": ["anticoagulant_therapy"],
+      "applies_to_procedures": "*",
+      "reason": {
+        "tr": "Kan sulandırıcı tedavi (warfarin, DOAK vb.) kanama riskini artırır; perioperatif yönetim gerekir.",
+        "en": "Anticoagulant therapy (warfarin, DOACs) increases bleeding risk and requires perioperative management.",
+        "de": "Antikoagulationstherapie (Warfarin, DOAKs) erhöht das Blutungsrisiko und erfordert perioperatives Management.",
+        "ru": "Антикоагулянтная терапия (варфарин, ПОАК) повышает риск кровотечения и требует периоперационного ведения.",
+        "ar": "العلاج بمضادات التخثر (وارفارين، DOAC) يزيد خطر النزيف ويتطلب إدارة محيطة بالعملية."
+      },
+      "recommendation": {
+        "tr": "Mevcut ilaçlarınızın listesini ve son INR/laboratuvar sonuçlarınızı klinikle paylaşın; köprüleme planını birlikte yapın.",
+        "en": "Share your current medication list and latest INR/lab results with the clinic; plan bridging together.",
+        "de": "Teilen Sie Ihre aktuelle Medikamentenliste und die letzten INR-/Laborwerte mit der Klinik; Bridging gemeinsam planen.",
+        "ru": "Поделитесь с клиникой списком препаратов и последними анализами/INR; спланируйте схему перехода.",
+        "ar": "شارك العيادة قائمة أدويتك ونتائج INR والمختبر الأخيرة؛ وخطط معها لمرحلة الانتقال."
+      }
+    },
+    {
+      "id": "decompensated_heart_failure_blocks_all",
+      "severity": "block",
+      "trigger_keys": ["decompensated_heart_failure"],
+      "applies_to_procedures": "*",
+      "reason": {
+        "tr": "Dekompanse kalp yetmezliği uçuş ve elektif cerrahi için ciddi risk oluşturur.",
+        "en": "Decompensated heart failure poses a serious risk for flight and elective surgery.",
+        "de": "Dekompensierte Herzinsuffizienz stellt ein ernstes Risiko für Flug und elektive Operationen dar.",
+        "ru": "Декомпенсированная сердечная недостаточность представляет серьёзный риск для перелёта и плановой операции.",
+        "ar": "قصور القلب اللا تعويضي يشكل خطراً جسيماً على السفر والعملية الاختيارية."
+      },
+      "recommendation": {
+        "tr": "Yerel tıbbi tedaviniz tamamlanmadan ve durum stabil olmadan başvurmayın.",
+        "en": "Do not travel until your local medical treatment is complete and your condition is stable.",
+        "de": "Reisen Sie nicht, bevor Ihre lokale medizinische Behandlung abgeschlossen und Ihr Zustand stabil ist.",
+        "ru": "Не отправляйтесь в поездку до завершения местного лечения и стабилизации состояния.",
+        "ar": "لا تسافر قبل اكتمال العلاج المحلي واستقرار حالتك."
+      }
+    },
+    {
+      "id": "active_eye_infection_blocks_lasik",
+      "severity": "block",
+      "trigger_keys": ["active_eye_infection"],
+      "applies_to_procedures": ["lasik"],
+      "reason": {
+        "tr": "Aktif göz enfeksiyonu LASIK için kesin kontrendikasyondur.",
+        "en": "Active eye infection is an absolute contraindication for LASIK.",
+        "de": "Eine aktive Augeninfektion ist eine absolute Kontraindikation für LASIK.",
+        "ru": "Активная глазная инфекция — абсолютное противопоказание к LASIK.",
+        "ar": "العدوى النشطة في العين مانع مطلق لإجراء الليزك."
+      },
+      "recommendation": {
+        "tr": "Enfeksiyon tedavisi tamamlanıp göz hekiminden onay aldıktan sonra başvurun.",
+        "en": "Reapply after the infection is treated and your ophthalmologist clears you.",
+        "de": "Bewerben Sie sich erneut nach Abklingen der Infektion und Freigabe durch Ihren Augenarzt.",
+        "ru": "Обратитесь снова после лечения инфекции и разрешения офтальмолога.",
+        "ar": "أعد التقديم بعد علاج العدوى وموافقة طبيب العيون."
+      }
+    }
+  ]
+}

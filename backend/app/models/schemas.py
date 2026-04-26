@@ -239,11 +239,119 @@ class ErrorPayload(BaseModel):
 
 
 class Envelope(BaseModel):
-    type: Literal["QUESTION", "RESULT", "EMERGENCY", "ERROR"]
+    # Health-tourism pivot extends the envelope union: QUOTE returns a
+    # ranked clinic+package list for a specific procedure; ITINERARY
+    # returns a day-by-day plan once a clinic is selected. Existing
+    # triage envelope types stay unchanged so the contract is purely
+    # additive — old clients keep working.
+    type: Literal[
+        "QUESTION", "RESULT", "EMERGENCY", "ERROR", "QUOTE", "ITINERARY"
+    ]
     session_id: str
     turn_index: int = 0
     payload: Any
     meta: Meta = Field(default_factory=Meta)
+
+
+# ──────────────────────────────────────────────────────────
+# Health-tourism request/response schemas (v0)
+# ──────────────────────────────────────────────────────────
+#
+# These types describe the contract for `POST /v1/quote`. The payload
+# inside Envelope.payload uses dict[str, Any] (kept loose to mirror the
+# existing triage payloads), but request/profile shapes are typed
+# rigorously so the route handler validates input at the FastAPI layer.
+
+
+class HealthTourismProfile(BaseModel):
+    """Patient profile used by the fit-to-travel rule engine.
+
+    Every flag is optional and defaults to False/unknown. The engine
+    treats missing fields as "no concern signaled" — clinical truth is
+    deferred to the in-person consultation. This profile is a screening
+    layer, not a clearance.
+
+    Add new flags to `KNOWN_TRIGGER_KEYS` in
+    `backend/app/services/fit_to_travel.py` when extending.
+    """
+
+    age: Optional[int] = Field(default=None, ge=0, le=120)
+    sex: Optional[Literal["male", "female", "other"]] = None
+    bmi: Optional[float] = Field(default=None, ge=10.0, le=80.0)
+
+    # Boolean trigger flags — match `trigger_keys` in fit_to_travel_rules.json.
+    recent_mi: bool = False
+    unstable_angina: bool = False
+    decompensated_heart_failure: bool = False
+    uncontrolled_hypertension: bool = False
+    uncontrolled_diabetes: bool = False
+    active_cancer: bool = False
+    active_chemo: bool = False
+    pregnancy: bool = False
+    breastfeeding: bool = False
+    smoker_active: bool = False
+    dvt_history: bool = False
+    anticoagulant_therapy: bool = False
+    bisphosphonate_therapy: bool = False
+    active_infection: bool = False
+    active_eye_infection: bool = False
+    dry_eye_severe: bool = False
+    bruxism_severe: bool = False
+    uncontrolled_thyroid: bool = False
+    severe_copd: bool = False
+    dialysis_dependent: bool = False
+    bmi_over_35: bool = False
+    bmi_over_55: bool = False
+
+
+class QuoteRequest(BaseModel):
+    """Body for `POST /v1/quote`.
+
+    Either ``procedure_id`` (resolved by the client / earlier turn) or
+    ``user_message`` (free-text, resolved server-side via the
+    procedure_intent extractor) must be present.
+    """
+
+    procedure_id: Optional[str] = None
+    user_message: Optional[str] = None
+    profile: HealthTourismProfile = Field(default_factory=HealthTourismProfile)
+    locale: str = "tr-TR"
+    target_city: Optional[str] = None
+    travel_origin_country: Optional[str] = None
+    top_n: int = Field(default=5, ge=1, le=20)
+
+
+class ClinicQuoteItem(BaseModel):
+    """One ranked clinic in a QUOTE envelope payload."""
+
+    clinic_id: str
+    clinic_name: str
+    city: str
+    score_0_1: float
+    price_eur: int
+    price_band_eur: dict[str, int]
+    package_features: List[str]
+    languages: List[str]
+    certifications: List[str]
+    consult_response_hours: int
+    average_rating_5: float
+    map_url: Optional[str] = None
+    why_recommended_tr: List[str] = Field(default_factory=list)
+
+
+class FitToTravelWarning(BaseModel):
+    """One fit-to-travel concern surfaced on a QUOTE envelope.
+
+    Severity ``warn`` lets the quote proceed with the warning visible;
+    severity ``block`` causes the route handler to return an
+    EMERGENCY-style envelope instead of QUOTE — the caller must seek
+    local care first.
+    """
+
+    rule_id: str
+    severity: Literal["warn", "block"]
+    reason_tr: str
+    recommendation_tr: str
 
 
 # ─── Legacy compat / internal helpers ───
