@@ -103,12 +103,36 @@ from app.observability import setup_metrics
 setup_metrics(app)
 
 # CORS
+#
+# expose_headers is needed because browsers DO NOT expose custom (X-*)
+# response headers to JavaScript by default — only the CORS-safelisted
+# six (Content-Type / Cache-Control / etc.). Without this list, web
+# dashboards and any browser-based debugger see only `null` when
+# reading e.g. `response.headers.get('X-Request-ID')`.
+#
+# The four headers below are ones we actively rely on:
+#   X-Request-ID         — log-correlation handle from Sentry/Loki
+#   X-RateLimit-Limit
+#   X-RateLimit-Remaining — feeds the mobile / dashboard "X requests
+#   X-RateLimit-Reset       left" indicator + 429 retry-after UX
+#   X-RateLimit-Bucket   — distinguishes IP/device vs session quota
+#                          breach so the UI shows a relevant message
+# Mobile fetch reads response headers fine without this — only matters
+# for browser callers — but it's cheap to add and the future dashboard
+# (or any third-party web integration) will silently break without it.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins_list,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=[
+        "X-Request-ID",
+        "X-RateLimit-Limit",
+        "X-RateLimit-Remaining",
+        "X-RateLimit-Reset",
+        "X-RateLimit-Bucket",
+    ],
 )
 app.add_middleware(SecurityHeadersMiddleware)
 # Client-capability gating — strips payload fields for clients that did
