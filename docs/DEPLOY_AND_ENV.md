@@ -32,6 +32,8 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 | `SESSION_RATE_LIMIT_MAX_REQ` | Session başına pencere başına istek | `30` |
 | `IDEMPOTENCY_TTL_SEC` | `Idempotency-Key` cache TTL (sn). Aynı key+gövde ile gelen retry isteğinde cached envelope döner; engine yeniden çalışmaz. Redis varsa orada, yoksa LRU in-memory. | `300` |
 | `IDEMPOTENCY_MEMORY_MAX` | In-memory idempotency cache azami giriş sayısı (LRU). Redis yoksa kullanılır. | `1024` |
+| `LLM_PROCEDURE_INTENT_ENABLED` | `1` ise sağlık turizmi `/v1/quote` deterministik sinonim eşleyici düşük confidence ya da miss verdiğinde LLM fallback'i çağırır. | `0` |
+| `LLM_PROCEDURE_INTENT_MIN_CONFIDENCE` | Deterministik match'in altında LLM tetiklendiği eşik (0.0–1.0). | `0.40` |
 | `SEND_SUMMARY_RATE_LIMIT_MAX_REQ` | send-summary ve export-summary limiti (örn. 5/dk) | `5` |
 | `SEND_SUMMARY_EMAIL` | `1` ise özet e-postası açık | `0` veya `1` |
 | `RESEND_API_KEY` | Resend API anahtarı (e-posta için) | — |

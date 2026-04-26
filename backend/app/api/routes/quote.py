@@ -50,6 +50,7 @@ from app.services import (
     itinerary_engine,
     procedure_catalog,
     procedure_intent,
+    procedure_intent_llm,
     quote_engine,
 )
 
@@ -72,25 +73,64 @@ def _make_meta() -> Meta:
 
 
 def _resolve_procedure_id(req: QuoteRequest) -> Optional[tuple[str, dict]]:
-    """Pick the procedure id. Explicit > extracted from user_message.
+    """Pick the procedure id. Explicit > deterministic intent > LLM intent.
 
     Returns ``(procedure_id, debug_info)`` so the route can include
     extraction confidence in the response meta — useful for the UI to
     decide whether to ask "Did you mean X?" instead of jumping
     straight to a quote.
+
+    Resolution order:
+      1. Explicit ``procedure_id`` field (no extraction).
+      2. Deterministic synonym match (fast, free, audit-friendly).
+      3. LLM fallback — only when the synonym matcher is uncertain
+         AND the feature flag is on. See ``procedure_intent_llm`` for
+         the cost/confidence rationale.
     """
     if req.procedure_id:
         if req.procedure_id in procedure_catalog.procedure_ids():
             return req.procedure_id, {"resolved_via": "explicit"}
         return None
-    if req.user_message:
-        match = procedure_intent.extract(req.user_message, req.locale)
-        if match is not None:
-            return match.procedure_id, {
-                "resolved_via": "intent",
-                "confidence_0_1": match.confidence_0_1,
-                "matched_synonyms": match.matched_synonyms,
+    if not req.user_message:
+        return None
+
+    # Step 2: deterministic.
+    match = procedure_intent.extract(req.user_message, req.locale)
+    if match is not None and not procedure_intent_llm.should_fallback(match):
+        return match.procedure_id, {
+            "resolved_via": "intent",
+            "confidence_0_1": match.confidence_0_1,
+            "matched_synonyms": match.matched_synonyms,
+        }
+
+    # Step 3: LLM fallback — only fires when the deterministic pass
+    # was uncertain AND the operator has flipped the feature flag.
+    # Failures here return None and let the caller surface
+    # PROCEDURE_UNRESOLVED — the LLM is a quality nudge, not a hard
+    # dependency.
+    if procedure_intent_llm.should_fallback(match):
+        llm_match = procedure_intent_llm.extract_via_llm(
+            req.user_message, req.locale
+        )
+        if llm_match is not None:
+            return llm_match.procedure_id, {
+                "resolved_via": "llm_intent",
+                "confidence_0_1": llm_match.confidence_0_1,
+                "deterministic_confidence_0_1": (
+                    match.confidence_0_1 if match else 0.0
+                ),
+                "matched_synonyms": llm_match.matched_synonyms,
             }
+
+    # Deterministic match exists but below threshold + LLM disabled or
+    # also failed → still return the deterministic answer rather than
+    # losing the lead. The UI can decide to confirm with the user.
+    if match is not None:
+        return match.procedure_id, {
+            "resolved_via": "intent",
+            "confidence_0_1": match.confidence_0_1,
+            "matched_synonyms": match.matched_synonyms,
+        }
     return None
 
 

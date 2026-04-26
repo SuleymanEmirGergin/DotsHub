@@ -111,6 +111,15 @@ class Settings(BaseSettings):
     LLM_NLU_LOG_TO_SUPABASE: bool = True
     LLM_EXPLAIN_ENABLED: bool = False        # optional explanation layer (B9)
 
+    # ── Health-tourism: LLM fallback for procedure-intent extraction ─────
+    # When the deterministic synonym matcher (services/procedure_intent.py)
+    # returns confidence below the threshold, fall back to an LLM call
+    # that picks one of the known procedure ids. Off by default —
+    # operators flip this on when they observe a meaningful tail of
+    # PROCEDURE_UNRESOLVED or low-confidence quotes in the analytics.
+    LLM_PROCEDURE_INTENT_ENABLED: bool = False
+    LLM_PROCEDURE_INTENT_MIN_CONFIDENCE: float = 0.40
+
     # ── Curated injection score tiers (audit follow-up) ──────────────────
     # triage_engine.py used to hardcode per-injection score_0_1 values
     # scattered across 25+ call sites. They collapse into three tiers.
