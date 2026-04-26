@@ -139,6 +139,70 @@ supabase_db_latency_seconds = Histogram(
 )
 
 
+# ─── Health-tourism counters ─────────────────────────────────────────
+#
+# Five counters covering the /v1/quote/* surface so Grafana / Sentry
+# can answer:
+#   - "How many quotes per hour, by outcome?" (quote_total)
+#   - "Are any clinics being recommended at all?" (quote_total →
+#     QUOTE outcome with the procedure label)
+#   - "How often does the LLM fallback fire vs deterministic match?"
+#     (procedure_intent_outcome_total)
+#   - "Did the lead webhook actually deliver?" (lead_webhook_dispatch_total)
+#   - "Are itineraries being generated, or are most quotes stalling
+#     before that step?" (itinerary_total)
+#
+# Cardinality is bounded: outcome enums are small, procedure labels
+# come from a 10-row catalog file. We deliberately do NOT include
+# clinic_id as a label — that grows with the partner network and
+# would explode time-series count.
+
+quote_total = Counter(
+    "quote_total",
+    "POST /v1/quote responses by envelope type and procedure category.",
+    # outcome ∈ {QUOTE, EMERGENCY, ERROR}; category from procedures.json
+    # (hair, plastic_surgery, dental, bariatric, fertility, ophthalmology,
+    # cardiology, unknown). 8 × 3 = 24 series, bounded.
+    labelnames=("outcome", "procedure_category"),
+)
+
+itinerary_total = Counter(
+    "itinerary_total",
+    "POST /v1/quote/itinerary responses by envelope type and procedure category.",
+    labelnames=("outcome", "procedure_category"),
+)
+
+lead_total = Counter(
+    "lead_total",
+    "POST /v1/quote/lead responses by webhook outcome and consent state.",
+    # outcome mirrors lead_dispatcher's return values; consent_to_share
+    # ∈ {"true", "false"} so it surfaces the KVKK consent rate directly.
+    labelnames=("webhook_status", "consent_to_share"),
+)
+
+# Counter — webhook delivery outcomes (granular). Mirrors the dispatch()
+# return string. lead_total above counts every /lead call (including
+# unconfigured webhooks); this counter only fires on actual dispatch
+# attempts so the failure rate is computed against attempted, not total.
+lead_webhook_dispatch_total = Counter(
+    "lead_webhook_dispatch_total",
+    "Lead webhook delivery outcomes (delivered / failed_4xx / failed_exhausted).",
+    labelnames=("outcome",),
+)
+
+# Counter — procedure-intent extraction outcomes by resolution path.
+# Drives the LLM fallback ROI dashboard:
+#   - "explicit" — caller passed procedure_id, no NLU work done
+#   - "intent"   — deterministic synonym match (free, fast)
+#   - "llm_intent" — LLM fallback fired and resolved
+#   - "unresolved" — neither matched, returned PROCEDURE_UNRESOLVED
+procedure_intent_outcome_total = Counter(
+    "procedure_intent_outcome_total",
+    "How /v1/quote resolved a procedure_id (explicit / intent / llm_intent / unresolved).",
+    labelnames=("resolved_via",),
+)
+
+
 # ─── Setup ─────────────────────────────────────────────────────────
 
 def setup_metrics(app: "FastAPI") -> None:

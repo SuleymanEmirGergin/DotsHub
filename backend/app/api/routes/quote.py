@@ -45,6 +45,12 @@ from app.models.schemas import (
     Meta,
     QuoteRequest,
 )
+from app.observability import (
+    itinerary_total,
+    lead_total,
+    procedure_intent_outcome_total,
+    quote_total,
+)
 from app.services import (
     clinic_registry,
     fit_to_travel,
@@ -75,6 +81,31 @@ def _make_meta() -> Meta:
     )
 
 
+# ─── Counter helpers (single bump-site per envelope creation) ────────
+
+
+def _bump_quote_metric(envelope_type: str, procedure: Optional[dict]) -> None:
+    """Single counter-bump entry point so every quote() return path
+    records its outcome consistently. Procedure category is bounded
+    by the JSON catalog (8 distinct values + "unknown")."""
+    category = (procedure or {}).get("category") or "unknown"
+    quote_total.labels(outcome=envelope_type, procedure_category=category).inc()
+
+
+def _bump_itinerary_metric(envelope_type: str, procedure: Optional[dict]) -> None:
+    category = (procedure or {}).get("category") or "unknown"
+    itinerary_total.labels(
+        outcome=envelope_type, procedure_category=category
+    ).inc()
+
+
+def _bump_lead_metric(webhook_status: str, consent_to_share: bool) -> None:
+    lead_total.labels(
+        webhook_status=webhook_status,
+        consent_to_share="true" if consent_to_share else "false",
+    ).inc()
+
+
 def _resolve_procedure_id(req: QuoteRequest) -> Optional[tuple[str, dict]]:
     """Pick the procedure id. Explicit > deterministic intent > LLM intent.
 
@@ -92,14 +123,19 @@ def _resolve_procedure_id(req: QuoteRequest) -> Optional[tuple[str, dict]]:
     """
     if req.procedure_id:
         if req.procedure_id in procedure_catalog.procedure_ids():
+            procedure_intent_outcome_total.labels(resolved_via="explicit").inc()
             return req.procedure_id, {"resolved_via": "explicit"}
+        # Explicit but unknown — counts as unresolved.
+        procedure_intent_outcome_total.labels(resolved_via="unresolved").inc()
         return None
     if not req.user_message:
+        procedure_intent_outcome_total.labels(resolved_via="unresolved").inc()
         return None
 
     # Step 2: deterministic.
     match = procedure_intent.extract(req.user_message, req.locale)
     if match is not None and not procedure_intent_llm.should_fallback(match):
+        procedure_intent_outcome_total.labels(resolved_via="intent").inc()
         return match.procedure_id, {
             "resolved_via": "intent",
             "confidence_0_1": match.confidence_0_1,
@@ -116,6 +152,7 @@ def _resolve_procedure_id(req: QuoteRequest) -> Optional[tuple[str, dict]]:
             req.user_message, req.locale
         )
         if llm_match is not None:
+            procedure_intent_outcome_total.labels(resolved_via="llm_intent").inc()
             return llm_match.procedure_id, {
                 "resolved_via": "llm_intent",
                 "confidence_0_1": llm_match.confidence_0_1,
@@ -129,11 +166,13 @@ def _resolve_procedure_id(req: QuoteRequest) -> Optional[tuple[str, dict]]:
     # also failed → still return the deterministic answer rather than
     # losing the lead. The UI can decide to confirm with the user.
     if match is not None:
+        procedure_intent_outcome_total.labels(resolved_via="intent").inc()
         return match.procedure_id, {
             "resolved_via": "intent",
             "confidence_0_1": match.confidence_0_1,
             "matched_synonyms": match.matched_synonyms,
         }
+    procedure_intent_outcome_total.labels(resolved_via="unresolved").inc()
     return None
 
 
@@ -176,6 +215,7 @@ async def quote(http_request: Request, request: QuoteRequest):
     # ─── 1. Resolve procedure_id ─────────────────────────────────────
     resolved = _resolve_procedure_id(request)
     if resolved is None:
+        _bump_quote_metric("ERROR", None)
         return Envelope(
             type="ERROR",
             session_id=session_id,
@@ -204,6 +244,7 @@ async def quote(http_request: Request, request: QuoteRequest):
         # rule's reason carries primary copy; remaining warnings ride
         # in the payload so the UI can list them.
         first_block = next(w for w in warnings if w.severity == "block")
+        _bump_quote_metric("EMERGENCY", procedure)
         return Envelope(
             type="EMERGENCY",
             session_id=session_id,
@@ -229,6 +270,7 @@ async def quote(http_request: Request, request: QuoteRequest):
         top_n=request.top_n,
     )
     if not clinics:
+        _bump_quote_metric("ERROR", procedure)
         return Envelope(
             type="ERROR",
             session_id=session_id,
@@ -290,6 +332,7 @@ async def quote(http_request: Request, request: QuoteRequest):
                 "quote.idempotency_store_failed: %s", exc
             )
 
+    _bump_quote_metric("QUOTE", procedure)
     return envelope
 
 
@@ -359,6 +402,7 @@ async def quote_itinerary(http_request: Request, request: ItineraryRequest):
     # ─── 1. Validate procedure / clinic / date ────────────────────────
     procedure = procedure_catalog.get_procedure(request.procedure_id)
     if procedure is None:
+        _bump_itinerary_metric("ERROR", None)
         return Envelope(
             type="ERROR",
             session_id=session_id,
@@ -373,6 +417,7 @@ async def quote_itinerary(http_request: Request, request: ItineraryRequest):
         )
     clinic = clinic_registry.get_clinic(request.clinic_id)
     if clinic is None or request.procedure_id not in clinic.get("procedures_offered", []):
+        _bump_itinerary_metric("ERROR", procedure)
         return Envelope(
             type="ERROR",
             session_id=session_id,
@@ -391,6 +436,7 @@ async def quote_itinerary(http_request: Request, request: ItineraryRequest):
         )
     arrival_date = _parse_arrival_date(request.arrival_date)
     if arrival_date is None:
+        _bump_itinerary_metric("ERROR", procedure)
         return Envelope(
             type="ERROR",
             session_id=session_id,
@@ -411,6 +457,7 @@ async def quote_itinerary(http_request: Request, request: ItineraryRequest):
     )
     if fit_to_travel.has_block(warnings):
         first_block = next(w for w in warnings if w.severity == "block")
+        _bump_itinerary_metric("EMERGENCY", procedure)
         return Envelope(
             type="EMERGENCY",
             session_id=session_id,
@@ -439,6 +486,7 @@ async def quote_itinerary(http_request: Request, request: ItineraryRequest):
         # Defensive: validation above should make this unreachable, but
         # the engine returning None is a contract we should surface
         # explicitly rather than 500'ing.
+        _bump_itinerary_metric("ERROR", procedure)
         return Envelope(
             type="ERROR",
             session_id=session_id,
@@ -484,6 +532,7 @@ async def quote_itinerary(http_request: Request, request: ItineraryRequest):
         except Exception as exc:
             logger.warning("itinerary.idempotency_store_failed: %s", exc)
 
+    _bump_itinerary_metric("ITINERARY", procedure)
     return envelope
 
 
@@ -527,6 +576,7 @@ async def quote_lead(http_request: Request, request: LeadRequest):
     if procedure is None or clinic is None or request.procedure_id not in clinic.get(
         "procedures_offered", []
     ):
+        _bump_lead_metric("rejected_mismatch", request.consent_to_share)
         return Envelope(
             type="ERROR",
             session_id=session_id,
@@ -593,6 +643,8 @@ async def quote_lead(http_request: Request, request: LeadRequest):
     # ─── Update DB row with outcome ───────────────────────────────────
     if persisted:
         lead_repository.record_outcome(lead_id, outcome)
+
+    _bump_lead_metric(outcome, request.consent_to_share)
 
     return Envelope(
         type="RESULT",
