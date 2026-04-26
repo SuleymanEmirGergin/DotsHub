@@ -706,6 +706,119 @@ paths:
                   service: { type: string }
                   version: { type: string }
 
+  /v1/patient/upload:
+    post:
+      summary: Submit a patient asset (selfie / voice memo / lab scan / video) for AI analysis
+      operationId: patientUpload
+      description: |
+        Multipart upload that hashes the bytes, records metadata in
+        `patient_uploads`, and schedules a BackgroundTask that pipes
+        the bytes to the appropriate Wiro AI service based on
+        `kind`:
+
+          - `image` → moondream VLM (Norwood / smile / dermatology Q&A)
+          - `audio` → whisper STT (Turkish-tuned transcription)
+          - `video` → cogvlm caption (clinical-style description)
+          - `document` → dots-ocr (lab/prescription text + layout)
+
+        **Bytes are NOT persisted.** Only the metadata + AI result
+        text land on the row. KVKK-friendly: the data-rights tombstone
+        on `DELETE /v1/me/sessions/{id}` cascades to every upload row
+        tied to the session.
+
+        The route returns 201 immediately with `asset_id` + `poll_url`.
+        Wiro task latency is 5-30s typical so the client must poll
+        `GET /v1/patient/upload/{asset_id}` until status flips to
+        `succeeded` or `failed`.
+      parameters:
+        - $ref: "#/components/parameters/SessionIdHeader"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file, kind, consent_to_process]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                kind:
+                  type: string
+                  enum: [image, audio, video, document]
+                consent_to_process:
+                  type: boolean
+                  description: KVKK explicit opt-in. Must be true; route 422s otherwise.
+                consent_text:
+                  type: string
+                  description: Operator-visible reason for processing ("hair-loss estimate", "voice transcription", ...).
+      responses:
+        "201":
+          description: Asset accepted; AI dispatch scheduled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  asset_id: { type: string, format: uuid }
+                  status: { type: string, enum: [pending] }
+                  poll_url: { type: string }
+        "400": { description: Missing X-Session-Id }
+        "413": { description: Size cap exceeded for the declared kind }
+        "415": { description: content-type not allowed for the declared kind }
+        "422": { description: Validation (consent false, unknown kind, empty file) }
+        "503": { description: PATIENT_UPLOAD_ENABLED is off }
+
+  /v1/patient/upload/{asset_id}:
+    get:
+      summary: Polling endpoint for an in-flight or completed upload
+      operationId: patientUploadStatus
+      description: |
+        Returns the current state of a previously-submitted asset.
+        Pending/processing responses include a `Retry-After` header
+        keyed to `PATIENT_UPLOAD_POLL_INTERVAL_SECONDS`. Terminal
+        states (succeeded / failed) omit the header so a header-
+        respecting client naturally stops polling.
+
+        Tombstoned uploads (KVKK delete) return 404 — same shape as
+        a true not-found, so a deleted asset is indistinguishable
+        from one that never existed.
+      parameters:
+        - in: path
+          name: asset_id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Current status + AI result if available
+          headers:
+            Retry-After:
+              schema: { type: integer }
+              description: Present only on pending/processing.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  asset_id: { type: string, format: uuid }
+                  status:
+                    type: string
+                    enum: [pending, processing, succeeded, failed]
+                  ai_provider: { type: string, nullable: true }
+                  ai_result_text: { type: string, nullable: true }
+                  ai_error: { type: string, nullable: true }
+                  ai_latency_ms: { type: integer, nullable: true }
+                  upload_kind:
+                    type: string
+                    enum: [image, audio, video, document]
+                  content_type: { type: string }
+                  size_bytes: { type: integer }
+                  expires_at: { type: string, format: date-time }
+                  created_at: { type: string, format: date-time }
+                  processed_at: { type: string, format: date-time, nullable: true }
+        "404": { description: Asset not found OR tombstoned }
+        "503": { description: PATIENT_UPLOAD_ENABLED is off }
+
 components:
   parameters:
     ClientVersionHeader:

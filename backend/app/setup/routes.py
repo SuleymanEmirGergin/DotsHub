@@ -25,6 +25,7 @@ from app.api.routes.features import router as features_router
 from app.api.routes.feedback import router as feedback_router
 from app.api.routes.health_tourism import router as health_tourism_router
 from app.api.routes.message import router as message_router
+from app.api.routes.patient_upload import router as patient_upload_router
 from app.api.routes.push_token import router as push_token_router
 from app.api.routes.session import router as session_router
 from app.api.routes.summary_email import router as summary_email_router
@@ -47,3 +48,4 @@ def register_routes(app: FastAPI) -> None:
     app.include_router(data_rights_router, prefix="/v1", tags=["Data Rights"])
     app.include_router(admin_v5_router, prefix="/v1", tags=["Admin V5"])
     app.include_router(admin_image_router, prefix="/v1", tags=["Admin Image"])
+    app.include_router(patient_upload_router, prefix="/v1", tags=["Patient Upload"])
