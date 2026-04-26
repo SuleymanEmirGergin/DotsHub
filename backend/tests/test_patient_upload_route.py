@@ -302,6 +302,126 @@ def test_get_succeeded_no_retry_after(client, monkeypatch):
     assert '"norwood_stage"' in body["ai_result_text"]
 
 
+# ─── prompt_preset (B5) ─────────────────────────────────────────────
+
+
+def test_post_image_with_valid_preset_201(client, monkeypatch):
+    _enable_uploads(monkeypatch)
+    captured = {}
+
+    def _capture(asset_id, content_bytes, **kwargs):
+        captured.update(kwargs)
+
+    with patch.object(
+        patient_uploads, "record_upload", return_value="ASSET-1",
+    ), patch.object(
+        patient_upload_dispatcher, "dispatch_to_ai", side_effect=_capture,
+    ):
+        resp = client.post(
+            "/v1/patient/upload",
+            files={"file": ("scalp.png", _png_bytes(), "image/png")},
+            data={
+                "kind": "image",
+                "consent_to_process": "true",
+                "prompt_preset": "hair_loss_norwood",
+            },
+            headers={"X-Session-Id": "sess-1"},
+        )
+    assert resp.status_code == 201
+    assert captured["prompt_preset"] == "hair_loss_norwood"
+
+
+def test_post_image_invalid_preset_returns_422(client, monkeypatch):
+    _enable_uploads(monkeypatch)
+    resp = client.post(
+        "/v1/patient/upload",
+        files={"file": ("a.png", _png_bytes(), "image/png")},
+        data={
+            "kind": "image",
+            "consent_to_process": "true",
+            "prompt_preset": "ultra_clinical",
+        },
+        headers={"X-Session-Id": "sess-1"},
+    )
+    assert resp.status_code == 422
+    assert "hair_loss_norwood" in resp.json()["detail"]
+
+
+def test_post_audio_with_any_preset_returns_422(client, monkeypatch):
+    """Audio kind doesn't accept presets — whisper language is fixed."""
+    _enable_uploads(monkeypatch)
+    resp = client.post(
+        "/v1/patient/upload",
+        files={"file": ("memo.mp3", b"\x00\x01" * 100, "audio/mp3")},
+        data={
+            "kind": "audio",
+            "consent_to_process": "true",
+            "prompt_preset": "anything",
+        },
+        headers={"X-Session-Id": "sess-1"},
+    )
+    assert resp.status_code == 422
+    assert "fixed dispatcher defaults" in resp.json()["detail"]
+
+
+def test_post_document_with_any_preset_returns_422(client, monkeypatch):
+    _enable_uploads(monkeypatch)
+    resp = client.post(
+        "/v1/patient/upload",
+        files={"file": ("lab.pdf", b"%PDF-1" + b"\x00" * 32, "application/pdf")},
+        data={
+            "kind": "document",
+            "consent_to_process": "true",
+            "prompt_preset": "any",
+        },
+        headers={"X-Session-Id": "sess-1"},
+    )
+    assert resp.status_code == 422
+
+
+def test_post_video_with_valid_preset_201(client, monkeypatch):
+    _enable_uploads(monkeypatch)
+    captured = {}
+
+    def _capture(asset_id, content_bytes, **kwargs):
+        captured.update(kwargs)
+
+    with patch.object(
+        patient_uploads, "record_upload", return_value="ASSET-V1",
+    ), patch.object(
+        patient_upload_dispatcher, "dispatch_to_ai", side_effect=_capture,
+    ):
+        resp = client.post(
+            "/v1/patient/upload",
+            files={"file": ("clip.mp4", b"\x00\x01" * 100, "video/mp4")},
+            data={
+                "kind": "video",
+                "consent_to_process": "true",
+                "prompt_preset": "rhinoplasty_assessment",
+            },
+            headers={"X-Session-Id": "sess-1"},
+        )
+    assert resp.status_code == 201
+    assert captured["prompt_preset"] == "rhinoplasty_assessment"
+
+
+def test_post_image_with_video_preset_returns_422(client, monkeypatch):
+    """rhinoplasty_assessment is a cogvlm-only key — sending it with
+    kind=image must 422 (caller's intent likely a typo)."""
+    _enable_uploads(monkeypatch)
+    resp = client.post(
+        "/v1/patient/upload",
+        files={"file": ("a.png", _png_bytes(), "image/png")},
+        data={
+            "kind": "image",
+            "consent_to_process": "true",
+            "prompt_preset": "rhinoplasty_assessment",
+        },
+        headers={"X-Session-Id": "sess-1"},
+    )
+    assert resp.status_code == 422
+
+
 def test_get_does_not_leak_session_id_or_sha256(client, monkeypatch):
     """Operator data + forensic hash MUST NOT appear in the polling
     response. Patient sees only their own upload metadata + AI result."""

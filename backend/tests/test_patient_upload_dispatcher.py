@@ -255,6 +255,127 @@ def test_dispatcher_never_raises_on_handler_blowup():
             pass  # expected; system signals propagate
 
 
+# ─── prompt_preset (B5) ─────────────────────────────────────────────
+
+
+def test_image_preset_picks_HEALTH_TOURISM_PROMPT():
+    """Valid preset must surface as the wrapper's ``prompt`` kwarg
+    pulling from moondream's HEALTH_TOURISM_PROMPTS dict."""
+    captured = {}
+    with patch.object(
+        patient_uploads, "mark_processing",
+    ), patch.object(
+        patient_uploads, "mark_succeeded",
+    ), patch(
+        "app.services.ai.moondream_vlm.query",
+        side_effect=lambda **kw: (captured.update(kw) or "ok"),
+    ):
+        from app.services.ai import moondream_vlm
+        patient_upload_dispatcher.dispatch_to_ai(
+            "ASSET-P", b"\x00",
+            upload_kind="image", content_type="image/png",
+            prompt_preset="hair_loss_norwood",
+        )
+        expected = moondream_vlm.HEALTH_TOURISM_PROMPTS["hair_loss_norwood"]
+    assert captured["prompt"] == expected
+
+
+def test_image_no_preset_omits_prompt_kwarg():
+    """No preset = wrapper's own default prompt kicks in. Dispatcher
+    must NOT pass prompt= at all (sending None would override)."""
+    captured = {}
+    with patch.object(
+        patient_uploads, "mark_processing",
+    ), patch.object(
+        patient_uploads, "mark_succeeded",
+    ), patch(
+        "app.services.ai.moondream_vlm.query",
+        side_effect=lambda **kw: (captured.update(kw) or "ok"),
+    ):
+        patient_upload_dispatcher.dispatch_to_ai(
+            "ASSET-P", b"\x00",
+            upload_kind="image", content_type="image/png",
+        )
+    assert "prompt" not in captured
+
+
+def test_video_preset_picks_cogvlm_prompt():
+    captured = {}
+    with patch.object(
+        patient_uploads, "mark_processing",
+    ), patch.object(
+        patient_uploads, "mark_succeeded",
+    ), patch(
+        "app.services.ai.cogvlm_caption.caption",
+        side_effect=lambda **kw: (captured.update(kw) or "ok"),
+    ):
+        from app.services.ai import cogvlm_caption
+        patient_upload_dispatcher.dispatch_to_ai(
+            "ASSET-V", b"\x00",
+            upload_kind="video", content_type="video/mp4",
+            prompt_preset="rhinoplasty_assessment",
+        )
+        expected = cogvlm_caption.HEALTH_TOURISM_PROMPTS["rhinoplasty_assessment"]
+    assert captured["prompt"] == expected
+
+
+def test_audio_preset_silently_dropped():
+    """Audio handler accepts prompt_preset for signature uniformity
+    but ignores it — whisper has no prompt knob in our wrapper.
+    Defensive: the route validation rejects this combo, but if a
+    direct caller misuses it the dispatcher must NOT crash."""
+    captured = {}
+    with patch.object(
+        patient_uploads, "mark_processing",
+    ), patch.object(
+        patient_uploads, "mark_succeeded",
+    ), patch(
+        "app.services.ai.whisper_stt.transcribe",
+        side_effect=lambda **kw: (captured.update(kw) or "ok"),
+    ):
+        patient_upload_dispatcher.dispatch_to_ai(
+            "ASSET-A", b"\x00",
+            upload_kind="audio", content_type="audio/mp3",
+            prompt_preset="anything",  # ignored by handler
+        )
+    assert "prompt" not in captured  # whisper has no `prompt` kwarg
+
+
+def test_provider_tag_includes_preset_when_set():
+    """ai_provider column gets 'moondream:hair_loss_norwood' so the
+    operator can split llm_calls / Sentry by preset."""
+    with patch.object(
+        patient_uploads, "mark_processing",
+    ) as mp, patch.object(
+        patient_uploads, "mark_succeeded",
+    ), patch(
+        "app.services.ai.moondream_vlm.query", return_value="ok",
+    ):
+        patient_upload_dispatcher.dispatch_to_ai(
+            "ASSET-P", b"\x00",
+            upload_kind="image", content_type="image/png",
+            prompt_preset="hair_loss_norwood",
+        )
+    mp.assert_called_once_with(
+        "ASSET-P", ai_provider="moondream:hair_loss_norwood"
+    )
+
+
+def test_provider_tag_omits_preset_when_none():
+    with patch.object(
+        patient_uploads, "mark_processing",
+    ) as mp, patch.object(
+        patient_uploads, "mark_succeeded",
+    ), patch(
+        "app.services.ai.moondream_vlm.query", return_value="ok",
+    ):
+        patient_upload_dispatcher.dispatch_to_ai(
+            "ASSET-P", b"\x00",
+            upload_kind="image", content_type="image/png",
+        )
+    mp.assert_called_once_with("ASSET-P", ai_provider="moondream")
+
+
 def test_dispatcher_never_raises_on_normal_exception():
     """Normal Exception in the handler must NOT propagate — caller is
     a BackgroundTask without exception handlers."""

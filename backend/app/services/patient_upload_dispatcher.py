@@ -40,22 +40,26 @@ logger = logging.getLogger(__name__)
 
 def _handle_image(
     content: bytes, *, content_type: str, filename: str,
+    prompt_preset: Optional[str] = None,
 ) -> Optional[str]:
-    """Image -> moondream VLM. Default prompt is the generic clinical
-    description; callers wanting a steered preset (Norwood / smile /
-    dermatology) will need a richer route signature later — for the
-    initial wire-through, generic is enough to validate the pipe."""
+    """Image -> moondream VLM. ``prompt_preset`` keys map directly to
+    ``moondream_vlm.HEALTH_TOURISM_PROMPTS``. Unknown / None falls
+    back to the wrapper's default (generic clinical description)."""
     from app.services.ai import moondream_vlm
 
-    return moondream_vlm.query(
-        image_bytes=content,
-        image_filename=filename or "image.jpg",
-        image_content_type=content_type,
-    )
+    kwargs: dict = {
+        "image_bytes": content,
+        "image_filename": filename or "image.jpg",
+        "image_content_type": content_type,
+    }
+    if prompt_preset and prompt_preset in moondream_vlm.HEALTH_TOURISM_PROMPTS:
+        kwargs["prompt"] = moondream_vlm.HEALTH_TOURISM_PROMPTS[prompt_preset]
+    return moondream_vlm.query(**kwargs)
 
 
 def _handle_audio(
     content: bytes, *, content_type: str, filename: str,
+    prompt_preset: Optional[str] = None,  # noqa: ARG001 — fixed dispatcher
 ) -> Optional[str]:
     """Audio -> whisper STT. Turkish-tuned model handles ~50 languages
     (auto-detect inside Wiro); we ship Turkish as the default since
@@ -72,21 +76,25 @@ def _handle_audio(
 
 def _handle_video(
     content: bytes, *, content_type: str, filename: str,
+    prompt_preset: Optional[str] = None,
 ) -> Optional[str]:
-    """Video -> cogvlm caption. Generic prompt for the initial wire-
-    through; clinical-domain prompt presets live in
-    cogvlm_caption.HEALTH_TOURISM_PROMPTS for callers that want them."""
+    """Video -> cogvlm caption. ``prompt_preset`` keys map directly to
+    ``cogvlm_caption.HEALTH_TOURISM_PROMPTS``."""
     from app.services.ai import cogvlm_caption
 
-    return cogvlm_caption.caption(
-        video_bytes=content,
-        video_filename=filename or "video.mp4",
-        video_content_type=content_type,
-    )
+    kwargs: dict = {
+        "video_bytes": content,
+        "video_filename": filename or "video.mp4",
+        "video_content_type": content_type,
+    }
+    if prompt_preset and prompt_preset in cogvlm_caption.HEALTH_TOURISM_PROMPTS:
+        kwargs["prompt"] = cogvlm_caption.HEALTH_TOURISM_PROMPTS[prompt_preset]
+    return cogvlm_caption.caption(**kwargs)
 
 
 def _handle_document(
     content: bytes, *, content_type: str, filename: str,
+    prompt_preset: Optional[str] = None,  # noqa: ARG001 — fixed dispatcher
 ) -> Optional[str]:
     """Document -> dots-ocr. ``prompt_ocr`` mode returns plain text;
     layout-aware modes (``prompt_layout_all_en``) return JSON-shaped
@@ -155,6 +163,7 @@ def dispatch_to_ai(
     upload_kind: str,
     content_type: str,
     filename: str = "",
+    prompt_preset: Optional[str] = None,
 ) -> None:
     """Run the kind-appropriate AI service against ``content_bytes``
     and write the result back to the patient_uploads row.
@@ -190,13 +199,19 @@ def dispatch_to_ai(
         return
 
     provider, handler_fn = handler_entry
-    patient_uploads.mark_processing(asset_id, ai_provider=provider)
+    # Tag ai_provider with the preset when one is in use, so the
+    # llm_calls / Sentry trail can split traffic by preset (e.g.
+    # "moondream:hair_loss_norwood" vs "moondream:smile_dental"
+    # is the operator's only signal of which preset performed best).
+    provider_tag = f"{provider}:{prompt_preset}" if prompt_preset else provider
+    patient_uploads.mark_processing(asset_id, ai_provider=provider_tag)
 
     try:
         result_text = handler_fn(
             content_bytes,
             content_type=content_type,
             filename=filename,
+            prompt_preset=prompt_preset,
         )
     except Exception as exc:  # noqa: BLE001 — never crash the BG task
         elapsed_ms = int((time.perf_counter() - t_start) * 1000)
@@ -210,7 +225,7 @@ def dispatch_to_ai(
             asset_id, upload_kind, exc,
         )
         _sentry_breadcrumb(
-            asset_id=asset_id, kind=upload_kind, provider=provider,
+            asset_id=asset_id, kind=upload_kind, provider=provider_tag,
             outcome="error", latency_ms=elapsed_ms, error=err_text,
         )
         patient_uploads.mark_failed(
@@ -226,7 +241,7 @@ def dispatch_to_ai(
     if not result_text or not result_text.strip():
         patient_upload_total.labels(kind=upload_kind, outcome="empty").inc()
         _sentry_breadcrumb(
-            asset_id=asset_id, kind=upload_kind, provider=provider,
+            asset_id=asset_id, kind=upload_kind, provider=provider_tag,
             outcome="empty", latency_ms=elapsed_ms,
             error="provider returned None or empty",
         )

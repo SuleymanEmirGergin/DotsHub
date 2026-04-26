@@ -47,6 +47,71 @@ ALLOWED_MIME_BY_KIND: dict[str, frozenset[str]] = {
 VALID_KINDS = frozenset(ALLOWED_MIME_BY_KIND.keys())
 
 
+# Per-kind prompt presets — keys map directly to entries in
+# moondream_vlm.HEALTH_TOURISM_PROMPTS / cogvlm_caption.HEALTH_TOURISM_PROMPTS.
+# Audio (whisper, language-fixed) and document (dots-ocr, promptMode-
+# fixed) deliberately have no presets; the dispatcher applies sensible
+# defaults and the route 422s if a caller tries to set one.
+PROMPT_PRESETS_BY_KIND: dict[str, frozenset[str]] = {
+    "image": frozenset(
+        {
+            "hair_loss_norwood",
+            "smile_dental",
+            "skin_dermatology",
+            "rhinoplasty_profile",
+            "general",
+        }
+    ),
+    "video": frozenset(
+        {
+            "hair_loss",
+            "smile_dental",
+            "skin_dermatology",
+            "rhinoplasty_assessment",
+            "general",
+        }
+    ),
+    "audio": frozenset(),
+    "document": frozenset(),
+}
+
+
+def validate_prompt_preset(kind: str, preset: Optional[str]) -> None:
+    """Validate a caller-supplied prompt_preset against the per-kind
+    whitelist. ``None``/empty is always valid (route falls back to
+    the dispatcher's default).
+
+    Raises UploadValidationError(422) on:
+      - preset set for a kind that doesn't support presets (audio /
+        document)
+      - preset string not in the kind's whitelist
+    """
+    if not preset:
+        return
+    allowed = PROMPT_PRESETS_BY_KIND.get(kind)
+    if allowed is None:
+        # Defensive — kind itself was already validated by the caller.
+        raise UploadValidationError(
+            422, f"unknown kind={kind!r} for preset validation"
+        )
+    if not allowed:
+        raise UploadValidationError(
+            422,
+            (
+                f"prompt_preset={preset!r} not supported for kind={kind!r}; "
+                "this kind uses fixed dispatcher defaults."
+            ),
+        )
+    if preset not in allowed:
+        raise UploadValidationError(
+            422,
+            (
+                f"prompt_preset={preset!r} unknown for kind={kind!r}. "
+                f"Valid: {sorted(allowed)}"
+            ),
+        )
+
+
 def size_cap_for_kind(kind: str) -> int:
     """Return the byte cap for ``kind``. Raises KeyError on unknown
     kinds — the caller validates ``kind`` first."""

@@ -110,6 +110,63 @@ def test_size_caps_distinct_per_kind():
     )
 
 
+# ─── Prompt preset validation ────────────────────────────────────────
+
+
+def test_validate_preset_none_is_valid():
+    """No preset = use dispatcher default. Both '' and None accepted."""
+    assert patient_uploads.validate_prompt_preset("image", None) is None
+    assert patient_uploads.validate_prompt_preset("image", "") is None
+
+
+def test_validate_preset_image_known_valid():
+    assert patient_uploads.validate_prompt_preset(
+        "image", "hair_loss_norwood"
+    ) is None
+    assert patient_uploads.validate_prompt_preset("image", "general") is None
+
+
+def test_validate_preset_image_unknown_returns_422():
+    with pytest.raises(patient_uploads.UploadValidationError) as exc:
+        patient_uploads.validate_prompt_preset("image", "ultra_clinical")
+    assert exc.value.status_code == 422
+    assert "hair_loss_norwood" in exc.value.detail  # surface valid options
+
+
+def test_validate_preset_audio_returns_422_even_when_known():
+    """Audio uses fixed dispatcher defaults (whisper language='Turkish');
+    a preset string is a config error -- 422."""
+    with pytest.raises(patient_uploads.UploadValidationError) as exc:
+        patient_uploads.validate_prompt_preset("audio", "anything")
+    assert exc.value.status_code == 422
+    assert "fixed dispatcher defaults" in exc.value.detail
+
+
+def test_validate_preset_document_returns_422():
+    with pytest.raises(patient_uploads.UploadValidationError):
+        patient_uploads.validate_prompt_preset("document", "anything")
+
+
+def test_validate_preset_video_known_valid():
+    """Video presets are NOT the same set as image (cogvlm vs moondream
+    naming); validator must respect the per-kind whitelist."""
+    assert patient_uploads.validate_prompt_preset(
+        "video", "rhinoplasty_assessment"  # cogvlm-only key
+    ) is None
+
+
+def test_validate_preset_image_video_keysets_differ():
+    """Cross-pollination tripwire: 'rhinoplasty_assessment' is video
+    only, 'rhinoplasty_profile' is image only. If someone consolidates
+    the dicts upstream, this test surfaces it."""
+    img = patient_uploads.PROMPT_PRESETS_BY_KIND["image"]
+    vid = patient_uploads.PROMPT_PRESETS_BY_KIND["video"]
+    assert "rhinoplasty_profile" in img
+    assert "rhinoplasty_profile" not in vid
+    assert "rhinoplasty_assessment" in vid
+    assert "rhinoplasty_assessment" not in img
+
+
 # ─── Hashing ─────────────────────────────────────────────────────────
 
 

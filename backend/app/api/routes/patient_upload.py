@@ -55,6 +55,7 @@ async def upload_asset(
     kind: str = Form(...),
     consent_to_process: bool = Form(...),
     consent_text: Optional[str] = Form(default=None),
+    prompt_preset: Optional[str] = Form(default=None),
     x_session_id: Optional[str] = Header(default=None),
 ):
     """Accept a single asset, validate, hash, and schedule AI dispatch.
@@ -99,6 +100,7 @@ async def upload_asset(
             size_bytes=size_bytes,
             consent_to_process=consent_to_process,
         )
+        patient_uploads.validate_prompt_preset(kind, prompt_preset)
     except patient_uploads.UploadValidationError as exc:
         raise HTTPException(
             status_code=exc.status_code, detail=exc.detail
@@ -130,6 +132,7 @@ async def upload_asset(
         upload_kind=kind,
         content_type=content_type,
         filename=file.filename or "",
+        prompt_preset=prompt_preset,
     )
 
     return {

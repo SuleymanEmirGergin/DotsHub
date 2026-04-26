@@ -752,6 +752,18 @@ paths:
                 consent_text:
                   type: string
                   description: Operator-visible reason for processing ("hair-loss estimate", "voice transcription", ...).
+                prompt_preset:
+                  type: string
+                  description: |
+                    Optional steered prompt key. Per-kind whitelist:
+                      - kind=image: hair_loss_norwood | smile_dental |
+                        skin_dermatology | rhinoplasty_profile | general
+                      - kind=video: hair_loss | smile_dental |
+                        skin_dermatology | rhinoplasty_assessment | general
+                      - kind=audio | document: NOT supported (422)
+                    Maps to HEALTH_TOURISM_PROMPTS in moondream_vlm /
+                    cogvlm_caption. Omit to use the wrapper's default
+                    (generic clinical description).
       responses:
         "201":
           description: Asset accepted; AI dispatch scheduled
