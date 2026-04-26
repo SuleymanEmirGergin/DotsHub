@@ -30,7 +30,7 @@ import uuid
 from datetime import date, datetime, timezone
 from typing import Optional
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, BackgroundTasks, Request
 
 from app.idempotency import (
     IdempotencyMismatch,
@@ -558,15 +558,49 @@ def _make_lead_meta() -> Meta:
     )
 
 
-@router.post("/quote/lead", response_model=Envelope)
-async def quote_lead(http_request: Request, request: LeadRequest):
-    """Accept a quote, hand the lead off to the configured webhook.
+async def _dispatch_and_record(
+    *,
+    lead_id: str,
+    payload: dict,
+    persisted: bool,
+    consent_to_share: bool,
+) -> None:
+    """Background task: deliver the webhook, update the DB row, bump
+    the prometheus counter. Runs after the response is sent so a slow
+    CRM does NOT add to user-visible latency.
 
-    Returns a RESULT envelope with a ``LEAD_ACCEPTED`` code so the
-    client UI can show a confirmation. The webhook dispatch happens
-    inside this handler (await), but the dispatcher's failure is
-    swallowed — the patient sees success either way; the operator
-    sees the failure in logs/metrics.
+    Failure-mode contract matches the inline path: every step
+    fail-soft, the user sees no consequence, ops sees the gap in
+    metrics + the lead row's terminal `webhook_status`.
+    """
+    try:
+        outcome = await lead_dispatcher.dispatch(payload)
+    except Exception as exc:
+        logger.warning("lead.bg_dispatch_unexpected: %s", exc)
+        outcome = "errored"
+    if persisted:
+        lead_repository.record_outcome(lead_id, outcome)
+    _bump_lead_metric(outcome, consent_to_share)
+
+
+@router.post("/quote/lead", response_model=Envelope)
+async def quote_lead(
+    http_request: Request,
+    request: LeadRequest,
+    background_tasks: BackgroundTasks,
+):
+    """Accept a quote, schedule the webhook in the background.
+
+    Returns a RESULT envelope with a ``LEAD_ACCEPTED`` code immediately
+    after persisting the lead row. The actual webhook dispatch runs
+    via FastAPI's BackgroundTasks AFTER the response is sent — a slow
+    CRM no longer adds seconds to user-facing latency. The eventual
+    delivery outcome lands on the DB row's ``webhook_status`` column,
+    queryable by the operator (or a future GET /v1/me/leads/{id}).
+
+    Response payload's ``webhook_status`` is therefore one of:
+      - "scheduled" — webhook configured, dispatch deferred
+      - "not_configured" — no webhook URL, nothing to dispatch
     """
     session_id = http_request.headers.get("x-session-id") or str(uuid.uuid4())
     lead_id = str(uuid.uuid4())
@@ -632,19 +666,24 @@ async def quote_lead(http_request: Request, request: LeadRequest):
     if request.quote_id:
         payload["quote_id"] = request.quote_id
 
-    # ─── Dispatch webhook ─────────────────────────────────────────────
-    outcome = "not_configured"
-    try:
-        outcome = await lead_dispatcher.dispatch(payload)
-    except Exception as exc:
-        logger.warning("lead.dispatch_unexpected: %s", exc)
-        outcome = "errored"
-
-    # ─── Update DB row with outcome ───────────────────────────────────
-    if persisted:
-        lead_repository.record_outcome(lead_id, outcome)
-
-    _bump_lead_metric(outcome, request.consent_to_share)
+    # ─── Schedule webhook (async, after response) ────────────────────
+    if lead_dispatcher.is_configured():
+        background_tasks.add_task(
+            _dispatch_and_record,
+            lead_id=lead_id,
+            payload=payload,
+            persisted=persisted,
+            consent_to_share=request.consent_to_share,
+        )
+        webhook_status = "scheduled"
+    else:
+        # No webhook URL — nothing to schedule. Still record the
+        # terminal state on the DB row so the lead is closed-out (not
+        # left in 'pending' indefinitely) and bump the lead counter.
+        webhook_status = "not_configured"
+        if persisted:
+            lead_repository.record_outcome(lead_id, "not_configured")
+        _bump_lead_metric("not_configured", request.consent_to_share)
 
     return Envelope(
         type="RESULT",
@@ -655,7 +694,7 @@ async def quote_lead(http_request: Request, request: LeadRequest):
             "lead_id": lead_id,
             "quote_id": request.quote_id,
             "consent_to_share": bool(request.consent_to_share),
-            "webhook_status": outcome,
+            "webhook_status": webhook_status,
             "webhook_configured": lead_dispatcher.is_configured(),
             "persisted": persisted,
             "next_steps_tr": (

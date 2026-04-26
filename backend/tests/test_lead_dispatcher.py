@@ -273,9 +273,47 @@ class LeadRouteTests(unittest.TestCase):
             r.json()["payload"]["code"], "CLINIC_PROCEDURE_MISMATCH"
         )
 
-    def test_lead_dispatches_webhook_when_configured(self):
-        # Simulate a configured webhook returning delivered.
-        async def _fake_dispatch(payload):  # noqa: ARG001
+    def test_lead_response_does_not_wait_for_dispatch(self):
+        """User-facing latency contract: the response body is built
+        BEFORE the dispatcher runs. A 5-second CRM cannot extend the
+        client's wait. We verify by stubbing dispatch with a long
+        sleep and checking the response carries 'scheduled' regardless
+        of how long the dispatch would have taken."""
+        import asyncio
+        dispatch_started = asyncio.Event()
+
+        async def _slow_dispatch(payload):  # noqa: ARG001
+            dispatch_started.set()
+            # If the route awaited this, the test would hang for 30s.
+            # Instead it returns "scheduled" and dispatch happens after.
+            await asyncio.sleep(0.05)
+            return "delivered"
+
+        with patch.object(
+            lead_dispatcher.settings, "LEAD_WEBHOOK_URL",
+            "https://hooks.example.com/x",
+        ), patch(
+            "app.services.lead_dispatcher.dispatch",
+            new=_slow_dispatch,
+        ):
+            with TestClient(app) as client:
+                r = client.post("/v1/quote/lead", json={
+                    "procedure_id": "fue_hair_transplant",
+                    "clinic_id": "clinic_istanbul_aesthetics_one",
+                    "consent_to_share": False,
+                })
+        # Response says scheduled — the await never happened.
+        self.assertEqual(r.json()["payload"]["webhook_status"], "scheduled")
+
+    def test_lead_schedules_webhook_when_configured(self):
+        """The synchronous response carries 'scheduled' — actual
+        delivery happens in the BackgroundTasks queue. Verify the
+        dispatcher was invoked at all (TestClient awaits bg tasks
+        before returning, so we can still check the side effect)."""
+        invocations: list[dict] = []
+
+        async def _fake_dispatch(payload):
+            invocations.append(payload)
             return "delivered"
 
         with patch.object(
@@ -294,4 +332,8 @@ class LeadRouteTests(unittest.TestCase):
                 })
         body = r.json()
         self.assertTrue(body["payload"]["webhook_configured"])
-        self.assertEqual(body["payload"]["webhook_status"], "delivered")
+        # User-facing response is 'scheduled' — moves dispatch latency
+        # off the request path.
+        self.assertEqual(body["payload"]["webhook_status"], "scheduled")
+        # But the bg task did fire (TestClient awaits it).
+        self.assertEqual(len(invocations), 1)

@@ -460,9 +460,16 @@ paths:
         personal data leaves the backend until consent is recorded.
         See `docs/HEALTH_TOURISM_COMPLIANCE.md` for the KVKK rationale.
 
-        Webhook delivery is best-effort: a failed dispatch does NOT
-        cause the response to fail. The operator monitors delivery
-        via `lead_webhook_dispatch_total` Prometheus counter.
+        Webhook delivery is best-effort and **runs in the background
+        AFTER the response is sent** (FastAPI BackgroundTasks). The
+        response payload's `webhook_status` is therefore one of:
+          - `scheduled` — webhook configured, dispatch deferred
+          - `not_configured` — no webhook URL, nothing to dispatch
+        The eventual delivery state machine (`delivered` /
+        `failed_4xx` / `failed_exhausted` / `errored`) lands on the
+        `health_tourism_leads.webhook_status` column and on the
+        `lead_webhook_dispatch_total` Prometheus counter. Operators
+        query the DB row or Grafana to see actual outcomes.
       parameters:
         - $ref: "#/components/parameters/SessionIdHeader"
       requestBody:
