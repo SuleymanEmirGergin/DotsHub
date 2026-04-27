@@ -99,6 +99,34 @@ def test_filter_envelope_non_mapping_payload_passes_through():
     assert filter_envelope(data, frozenset()) is data
 
 
+def test_filter_envelope_quote_envelope_passes_through_untouched():
+    """Health-tourism envelopes (QUOTE / ITINERARY) have no curated_meta
+    or emergency_specialty fields to gate. Middleware lets them through
+    so the prometheus envelope counter still bumps for them."""
+    data = {
+        "type": "QUOTE",
+        "payload": {
+            "quote_id": "q-1",
+            "procedure": {"id": "fue_hair_transplant"},
+            "clinics": [{"clinic_id": "c-1"}],
+        },
+    }
+    out = filter_envelope(data, frozenset())
+    assert out is data
+
+
+def test_filter_envelope_itinerary_envelope_passes_through_untouched():
+    data = {
+        "type": "ITINERARY",
+        "payload": {
+            "procedure": {"id": "fue_hair_transplant"},
+            "days": [{"day": 1}],
+        },
+    }
+    out = filter_envelope(data, frozenset())
+    assert out is data
+
+
 def test_filter_envelope_strips_curated_fields_without_cap():
     env = _result_envelope([
         {
@@ -271,9 +299,16 @@ def test_middleware_strips_curated_fields_when_header_missing(client: TestClient
 
 
 def test_middleware_keeps_curated_fields_with_full_caps(client: TestClient):
+    # Send EVERY known capability — exercises the "fully-capable
+    # client" early return in CapabilityGateMiddleware.dispatch
+    # (caps >= KNOWN_CAPABILITIES → bypass body re-serialisation).
     r = client.get(
         "/v1/result",
-        headers={"X-Client-Capabilities": "curated_meta,emergency_specialty"},
+        headers={
+            "X-Client-Capabilities": (
+                "curated_meta,emergency_specialty,streaming_envelope"
+            ),
+        },
     )
     body = r.json()
     assert body["payload"]["top_conditions"][0]["icd10"] == "I20"

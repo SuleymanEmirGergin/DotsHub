@@ -77,6 +77,16 @@ _orig_setup = _unittest.TestCase.setUp
 
 
 def _wrapped_setUp(self) -> None:
+    # Debug: confirm hook fires in CI. Only emits when env var is set
+    # so it doesn't pollute regular logs. Remove once CI is green.
+    if os.environ.get("DEBUG_TEST_SETUP_HOOK"):
+        import sys
+        print(
+            f"[setUp_hook] {self.__class__.__name__}."
+            f"{self._testMethodName}",
+            file=sys.stderr,
+            flush=True,
+        )
     _clear_process_caches()
     _orig_setup(self)
 
