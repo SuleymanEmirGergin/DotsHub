@@ -168,12 +168,17 @@ class ConsentPostTests(unittest.TestCase):
                         "device_id": "device-abc",
                     },
                 )
-        # Inspect the row that was passed to .insert(...)
-        insert_args = mock_db.table.return_value.insert.call_args
-        row = insert_args.args[0]
-        self.assertIsNotNone(row.get("notice_version"))
+        # Two inserts now (consent_records + audit_log; session 26).
+        # The consent_records insert is FIRST; audit_log is second
+        # because the route writes audit only on success. We inspect
+        # the first call to find the consent_records row whose
+        # notice_version we care about.
+        all_calls = mock_db.table.return_value.insert.call_args_list
+        self.assertGreaterEqual(len(all_calls), 1)
+        consent_row = all_calls[0].args[0]
+        self.assertIsNotNone(consent_row.get("notice_version"))
         # Default comes from settings.PRIVACY_NOTICE_VERSION
-        self.assertTrue(row["notice_version"].startswith("v"))
+        self.assertTrue(consent_row["notice_version"].startswith("v"))
 
 
 class ConsentGetTests(unittest.TestCase):

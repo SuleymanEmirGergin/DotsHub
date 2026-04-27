@@ -143,6 +143,36 @@ async def record_consent(
             "locale": body.locale,
         },
     )
+
+    # WORM audit trail (DPIA R-10) — best-effort; never raises.
+    # Cross-link via consent_records.id in payload so the audit row
+    # plus the consent_records row together form a complete picture
+    # (when, what type, what version, granted/withdrawn) without
+    # needing to JOIN. ip_hash mirrors what consent_records stores.
+    # `hash_ip` is already imported at module scope; re-importing
+    # inside the function would shadow it under Python's scoping
+    # rules and break the earlier `hash_ip(client_ip)` call.
+    from app.audit import record_event
+
+    client_ip = request.client.host if request.client else None
+    record_event(
+        event_type="consent.recorded",
+        actor_type="user",
+        actor_id=body.device_id,
+        target_id=body.session_id or body.device_id,
+        severity="info",
+        payload={
+            "consent_records_id": inserted.get("id"),
+            "consent_type": body.consent_type,
+            "consent_version": body.consent_version,
+            "granted": body.granted,
+            "locale": body.locale,
+            "notice_version": body.notice_version
+            or settings.PRIVACY_NOTICE_VERSION,
+        },
+        ip_hash=hash_ip(client_ip),
+    )
+
     return ConsentRecordResponse(
         ok=True,
         id=inserted.get("id"),

@@ -140,6 +140,27 @@ def delete_my_session(session_id: str) -> Dict[str, Any]:
         session_id,
         deleted_counts,
     )
+
+    # WORM audit trail (DPIA R-10) — best-effort; never raises.
+    # Records WHO erased WHAT and WHEN, with derived-delete counts as
+    # forensic context. The actor_id is the session_id itself
+    # (possession-as-auth model — session_ids are unguessable UUIDs
+    # the mobile app holds), since data_rights is the user-facing
+    # erasure path with no separate device_id on the request.
+    from app.audit import record_event
+
+    record_event(
+        event_type="data_rights.session_tombstoned",
+        actor_type="user",
+        actor_id=session_id,
+        target_id=session_id,
+        severity="info",
+        payload={
+            "deleted_reason": "user_request",
+            "derived_deleted": deleted_counts,
+        },
+    )
+
     return {
         "ok": True,
         "session_id": session_id,

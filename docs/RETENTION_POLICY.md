@@ -19,6 +19,7 @@ KVKK Madde 7 + GDPR Art. 5(1)(e) gereği saklama süreleri tanımlı, sınırlı
 | Push token | `push_tokens` | **90 gün inactive** sonra sil | Token cihaza özel; uzun süre kullanılmıyorsa cihaz değişmiş veya app silinmiştir. | `DELETE WHERE updated_at < NOW() - 90 days` |
 | IP hash (oturum metadata) | `triage_sessions.meta` | Oturumla aynı (90/180 gün) | Hash + salt ile, ham IP saklanmıyor. Oturumla aynı pencerede silinir. | Tombstone + purge ile birlikte gider |
 | Audit log (admin işlem) | `tenant_catalog_audit` | **730 gün (2 yıl)** | İdari soruşturma + denetim ihtiyacı. Kişisel veri içermez (admin user_id + işlem türü). | Manuel review — cron tarafından temizlenmez |
+| WORM audit log (forensik) | `audit_log` | **730 gün (2 yıl)** | KVKK Md.12 (güvenlik + ihlal kanıtı) + GDPR Art.30 (records of processing). PII içermez (ip_hash + UUID actor/target). | DB-level UPDATE/DELETE yasağı (trigger); `app_retention_purge` bu tabloya dokunmaz; bkz. `backend/sql/20260427_audit_log.sql`. Quarterly review için ayrı arama. |
 | E-posta gönderim logları | (Resend tarafında) | 30 gün max | Resend dashboard config; webhook event'leri saklanmıyor (uçtan uca pass-through). | Resend retention config |
 | Sentry breadcrumb / event | (Sentry tarafında) | 90 gün (Sentry default) | Hata gözlem; PII masking aktif. | Sentry org config |
 
