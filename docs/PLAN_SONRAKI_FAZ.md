@@ -1,5 +1,10 @@
 # Sonraki faz – Yapılacaklar planı
 
+> **STATUS: CLOSED — Faz 2 tamamlandı.** Bu dokümandaki tüm A/B/C/D/E
+> grupları + Faz 4 backlog (F4.1–F4.6) ✅ işaretli; aktif backlog artık
+> [`PLAN_FAZ_3_STARTUP.md`](PLAN_FAZ_3_STARTUP.md) üzerinden takip
+> ediliyor. Bu dosya tarihçe kaydı olarak korunuyor.
+
 **Faz 1 tamamlandı.** Tüm zorunlu adımlar (dil, error boundary, push, dashboard i18n, test/dokümantasyon) uygulandı. Bu belge, kalan iyileştirmeleri ve yeni hedefleri sıralar.
 
 ---

@@ -1,5 +1,9 @@
 # Kalan adımlar – Ayrıntılı plan (sırayla, atlama yok)
 
+> **STATUS: CLOSED — Faz 1 tamamlandı.** Bu dokümandaki tüm maddeler ✅
+> işaretli; aktif backlog artık [`PLAN_FAZ_3_STARTUP.md`](PLAN_FAZ_3_STARTUP.md)
+> üzerinden takip ediliyor. Bu dosya tarihçe kaydı olarak korunuyor.
+
 Bu belge, kalan tüm maddeleri tek tek alt adımlara böler. Her madde tamamlandıkça işaretlenir.
 
 ---
