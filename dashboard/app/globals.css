@@ -2,161 +2,96 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Design tokens — light (default) */
-:root,
-[data-theme="light"] {
-  --background: 0 0% 100%;
-  --foreground: 0 0% 20%;
-  --card: 0 0% 100%;
-  --card-foreground: 0 0% 20%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 0 0% 20%;
-  --primary: 217.2193 91.2195% 59.8039%;
-  --primary-foreground: 0 0% 100%;
-  --secondary: 220 14.2857% 95.8824%;
-  --secondary-foreground: 215 13.7931% 34.1176%;
-  --muted: 210 20% 98.0392%;
-  --muted-foreground: 220 8.9362% 46.0784%;
-  --accent: 204 93.75% 93.7255%;
-  --accent-foreground: 224.4444 64.2857% 32.9412%;
-  --destructive: 0 84.2365% 60.1961%;
-  --destructive-foreground: 0 0% 100%;
-  --border: 220 13.0435% 90.9804%;
-  --input: 220 13.0435% 90.9804%;
-  --ring: 217.2193 91.2195% 59.8039%;
-  --chart-1: 217.2193 91.2195% 59.8039%;
-  --chart-2: 221.2121 83.1933% 53.3333%;
-  --chart-3: 224.2781 76.3265% 48.0392%;
-  --chart-4: 225.9310 70.7317% 40.1961%;
-  --chart-5: 224.4444 64.2857% 32.9412%;
-  --sidebar: 210 20% 98.0392%;
-  --sidebar-foreground: 0 0% 20%;
-  --sidebar-primary: 217.2193 91.2195% 59.8039%;
-  --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 204 93.75% 93.7255%;
-  --sidebar-accent-foreground: 224.4444 64.2857% 32.9412%;
-  --sidebar-border: 220 13.0435% 90.9804%;
-  --sidebar-ring: 217.2193 91.2195% 59.8039%;
-  /* Fonts: set by next/font in layout.tsx (Inter, Source Serif 4, JetBrains Mono); fallback below */
-  --font-sans: ui-sans-serif, system-ui, sans-serif;
-  --font-serif: ui-serif, serif;
-  --font-mono: ui-monospace, monospace;
-  --radius: 0.375rem;
-
-  /* Backward compat: existing --dash-* (use semantic tokens) */
-  --dash-bg: var(--background);
-  --dash-bg-card: var(--card);
-  --dash-text: var(--foreground);
-  --dash-text-muted: var(--muted-foreground);
-  --dash-border: var(--border);
-  --dash-accent: var(--primary);
-  --dash-accent-bg: var(--accent);
-}
-
-/* Dark theme — class (Tailwind) and data-theme (existing toggle) */
-.dark,
-[data-theme="dark"] {
-  --background: 0 0% 9.0196%;
-  --foreground: 0 0% 89.8039%;
-  --card: 0 0% 14.9020%;
-  --card-foreground: 0 0% 89.8039%;
-  --popover: 0 0% 14.9020%;
-  --popover-foreground: 0 0% 89.8039%;
-  --primary: 217.2193 91.2195% 59.8039%;
-  --primary-foreground: 0 0% 100%;
-  --secondary: 0 0% 14.9020%;
-  --secondary-foreground: 0 0% 89.8039%;
-  --muted: 0 0% 12.1569%;
-  --muted-foreground: 0 0% 63.9216%;
-  --accent: 224.4444 64.2857% 32.9412%;
-  --accent-foreground: 213.3333 96.9231% 87.2549%;
-  --destructive: 0 84.2365% 60.1961%;
-  --destructive-foreground: 0 0% 100%;
-  --border: 0 0% 25.0980%;
-  --input: 0 0% 25.0980%;
-  --ring: 217.2193 91.2195% 59.8039%;
-  --chart-1: 213.1169 93.9024% 67.8431%;
-  --chart-2: 217.2193 91.2195% 59.8039%;
-  --chart-3: 221.2121 83.1933% 53.3333%;
-  --chart-4: 224.2781 76.3265% 48.0392%;
-  --chart-5: 225.9310 70.7317% 40.1961%;
-  --sidebar: 0 0% 9.0196%;
-  --sidebar-foreground: 0 0% 89.8039%;
-  --sidebar-primary: 217.2193 91.2195% 59.8039%;
-  --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 224.4444 64.2857% 32.9412%;
-  --sidebar-accent-foreground: 213.3333 96.9231% 87.2549%;
-  --sidebar-border: 0 0% 25.0980%;
-  --sidebar-ring: 217.2193 91.2195% 59.8039%;
-
-  --dash-bg: var(--background);
-  --dash-bg-card: var(--card);
-  --dash-text: var(--foreground);
-  --dash-text-muted: var(--muted-foreground);
-  --dash-border: var(--border);
-  --dash-accent: var(--primary);
-  --dash-accent-bg: var(--accent);
-}
+/* ─── Design tokens ──────────────────────────────────────────────────
+ *
+ * Single source of truth: oklch() values inside @layer base. The
+ * previous file had a parallel HSL block that drifted from this one
+ * (different values for the SAME tokens) — drift root cause flagged
+ * in the session-23 design critique. That block was deleted; this
+ * @layer base block is now authoritative.
+ *
+ * Naming follows shadcn/ui (background / foreground / primary / etc.)
+ * + Tailwind picks them up via tailwind.config.ts -> colors.X =
+ * "var(--X)".
+ *
+ * NOTE on --dash-* aliases: 10 pages still reference these as
+ * `var(--dash-bg)` / `.dash-panel`. They live at the bottom of this
+ * file as backward-compat aliases; a follow-up cleanup commit will
+ * migrate the call sites and remove them. Don't add new --dash-*
+ * tokens.
+ */
 
 @layer base {
-  body {
-    @apply bg-background text-foreground antialiased;
-    font-family: var(--font-sans);
-    letter-spacing: var(--tracking-normal);
-  }
-  .theme {
-    --radius: 0.375rem;
-    --tracking-tighter: calc(var(--tracking-normal) - 0.05em);
-    --tracking-tight: calc(var(--tracking-normal) - 0.025em);
-    --tracking-wide: calc(var(--tracking-normal) + 0.025em);
-    --tracking-wider: calc(var(--tracking-normal) + 0.05em);
-    --tracking-widest: calc(var(--tracking-normal) + 0.1em);
-    --font-sans: Inter, sans-serif;
-    --font-mono: JetBrains Mono, monospace;
-    --font-serif: Source Serif 4, serif;
-  }
   :root {
+    /* Surface */
     --background: oklch(1.0000 0 0);
     --foreground: oklch(0.3211 0 0);
     --card: oklch(1.0000 0 0);
     --card-foreground: oklch(0.3211 0 0);
     --popover: oklch(1.0000 0 0);
     --popover-foreground: oklch(0.3211 0 0);
+
+    /* Brand */
     --primary: oklch(0.6231 0.1880 259.8145);
     --primary-foreground: oklch(1.0000 0 0);
+    /* --primary-text: darker shade for text-only use on light bg.
+     * Fixes the WCAG 1.4.3 fail on text-primary (4.0:1) flagged in
+     * the a11y review. Used for sortable links + "view →" anchors. */
+    --primary-text: oklch(0.5200 0.2050 259.8145);
+
+    /* Secondary / accent */
     --secondary: oklch(0.9670 0.0029 264.5419);
     --secondary-foreground: oklch(0.4461 0.0263 256.8018);
     --muted: oklch(0.9846 0.0017 247.8389);
     --muted-foreground: oklch(0.5510 0.0234 264.3637);
     --accent: oklch(0.9514 0.0250 236.8242);
     --accent-foreground: oklch(0.3791 0.1378 265.5222);
+
+    /* Semantic — destructive (existing) + new success / warning / info.
+     * Foreground pairs are paired AA-pass (>= 4.5:1) on the matching
+     * background tier. */
     --destructive: oklch(0.6368 0.2078 25.3313);
     --destructive-foreground: oklch(1.0000 0 0);
-    --border: oklch(0.9276 0.0058 264.5313);
-    --input: oklch(0.9276 0.0058 264.5313);
+    --success: oklch(0.5400 0.1500 156.0000);          /* ~green-700 darker */
+    --success-foreground: oklch(1.0000 0 0);
+    --warning: oklch(0.5500 0.1700 70.0000);           /* ~amber-800 */
+    --warning-foreground: oklch(1.0000 0 0);
+    --info: oklch(0.6231 0.1880 259.8145);             /* same as primary */
+    --info-foreground: oklch(1.0000 0 0);
+
+    /* Borders / inputs / focus
+     * --border bumped from oklch(0.9276 ...) (~1.2:1 vs white, fails
+     * 1.4.11) to oklch(0.8500 ...) (~3.1:1, passes). Card edges
+     * become visible to low-vision users. */
+    --border: oklch(0.8500 0.0058 264.5313);
+    --input: oklch(0.8500 0.0058 264.5313);
     --ring: oklch(0.6231 0.1880 259.8145);
+
+    /* Charts */
     --chart-1: oklch(0.6231 0.1880 259.8145);
     --chart-2: oklch(0.5461 0.2152 262.8809);
     --chart-3: oklch(0.4882 0.2172 264.3763);
     --chart-4: oklch(0.4244 0.1809 265.6377);
     --chart-5: oklch(0.3791 0.1378 265.5222);
-    --radius: 0.375rem;
+
+    /* Sidebar — kept for shadcn compat; not yet used (admin layout
+     * sidebar lands in a follow-up commit). */
     --sidebar: oklch(0.9846 0.0017 247.8389);
     --sidebar-foreground: oklch(0.3211 0 0);
     --sidebar-primary: oklch(0.6231 0.1880 259.8145);
     --sidebar-primary-foreground: oklch(1.0000 0 0);
     --sidebar-accent: oklch(0.9514 0.0250 236.8242);
     --sidebar-accent-foreground: oklch(0.3791 0.1378 265.5222);
-    --sidebar-border: oklch(0.9276 0.0058 264.5313);
+    --sidebar-border: oklch(0.8500 0.0058 264.5313);
     --sidebar-ring: oklch(0.6231 0.1880 259.8145);
+
+    /* Shadows / radius / fonts */
     --shadow-color: oklch(0 0 0);
     --shadow-opacity: 0.1;
     --shadow-blur: 3px;
     --shadow-spread: 0px;
     --shadow-offset-x: 0;
     --shadow-offset-y: 1px;
-    --letter-spacing: 0em;
-    --spacing: 0.25rem;
     --shadow-2xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
     --shadow-xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
     --shadow-sm: 0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 1px 2px -1px hsl(0 0% 0% / 0.10);
@@ -165,53 +100,87 @@
     --shadow-lg: 0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 4px 6px -1px hsl(0 0% 0% / 0.10);
     --shadow-xl: 0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 8px 10px -1px hsl(0 0% 0% / 0.10);
     --shadow-2xl: 0 1px 3px 0px hsl(0 0% 0% / 0.25);
+
+    --letter-spacing: 0em;
     --tracking-normal: 0em;
+    --spacing: 0.25rem;
+    --radius: 0.375rem;
+
     --font-sans: Inter, sans-serif;
     --font-serif: Source Serif 4, serif;
     --font-mono: JetBrains Mono, monospace;
+
+    /* ─── Legacy backward-compat aliases ─────────────────────────
+     * 10 pages still reference these. Migration to semantic tokens
+     * scheduled for the next dashboard cleanup commit. DO NOT
+     * introduce new uses. */
+    --dash-bg: var(--background);
+    --dash-bg-card: var(--card);
+    --dash-text: var(--foreground);
+    --dash-text-muted: var(--muted-foreground);
+    --dash-border: var(--border);
+    --dash-accent: var(--primary);
+    --dash-accent-bg: var(--accent);
   }
-  .dark {
+
+  .dark,
+  [data-theme="dark"] {
     --background: oklch(0.2046 0 0);
     --foreground: oklch(0.9219 0 0);
     --card: oklch(0.2686 0 0);
     --card-foreground: oklch(0.9219 0 0);
     --popover: oklch(0.2686 0 0);
     --popover-foreground: oklch(0.9219 0 0);
+
     --primary: oklch(0.6231 0.1880 259.8145);
     --primary-foreground: oklch(1.0000 0 0);
+    /* Dark theme: lighter primary works fine on dark bg (~5.5:1);
+     * --primary-text aligns with primary so links stay vivid. */
+    --primary-text: oklch(0.7137 0.1434 254.6240);
+
     --secondary: oklch(0.2686 0 0);
     --secondary-foreground: oklch(0.9219 0 0);
     --muted: oklch(0.2393 0 0);
     --muted-foreground: oklch(0.7155 0 0);
     --accent: oklch(0.3791 0.1378 265.5222);
     --accent-foreground: oklch(0.8823 0.0571 254.1284);
+
     --destructive: oklch(0.6368 0.2078 25.3313);
     --destructive-foreground: oklch(1.0000 0 0);
-    --border: oklch(0.3715 0 0);
-    --input: oklch(0.3715 0 0);
+    /* Dark variants of semantic tokens — pair foregrounds for AA. */
+    --success: oklch(0.6500 0.1700 156.0000);
+    --success-foreground: oklch(0.1500 0.0500 156.0000);
+    --warning: oklch(0.7000 0.1500 70.0000);
+    --warning-foreground: oklch(0.1500 0.0500 70.0000);
+    --info: oklch(0.7137 0.1434 254.6240);
+    --info-foreground: oklch(0.1500 0.0500 260.0000);
+
+    --border: oklch(0.4500 0 0);
+    --input: oklch(0.4500 0 0);
     --ring: oklch(0.6231 0.1880 259.8145);
+
     --chart-1: oklch(0.7137 0.1434 254.6240);
     --chart-2: oklch(0.6231 0.1880 259.8145);
     --chart-3: oklch(0.5461 0.2152 262.8809);
     --chart-4: oklch(0.4882 0.2172 264.3763);
     --chart-5: oklch(0.4244 0.1809 265.6377);
-    --radius: 0.375rem;
+
     --sidebar: oklch(0.2046 0 0);
     --sidebar-foreground: oklch(0.9219 0 0);
     --sidebar-primary: oklch(0.6231 0.1880 259.8145);
     --sidebar-primary-foreground: oklch(1.0000 0 0);
     --sidebar-accent: oklch(0.3791 0.1378 265.5222);
     --sidebar-accent-foreground: oklch(0.8823 0.0571 254.1284);
-    --sidebar-border: oklch(0.3715 0 0);
+    --sidebar-border: oklch(0.4500 0 0);
     --sidebar-ring: oklch(0.6231 0.1880 259.8145);
+
+    /* Same shadow / spacing / font tokens carry over (theme-agnostic). */
     --shadow-color: oklch(0 0 0);
     --shadow-opacity: 0.1;
     --shadow-blur: 3px;
     --shadow-spread: 0px;
     --shadow-offset-x: 0;
     --shadow-offset-y: 1px;
-    --letter-spacing: 0em;
-    --spacing: 0.25rem;
     --shadow-2xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
     --shadow-xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
     --shadow-sm: 0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 1px 2px -1px hsl(0 0% 0% / 0.10);
@@ -220,13 +189,58 @@
     --shadow-lg: 0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 4px 6px -1px hsl(0 0% 0% / 0.10);
     --shadow-xl: 0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 8px 10px -1px hsl(0 0% 0% / 0.10);
     --shadow-2xl: 0 1px 3px 0px hsl(0 0% 0% / 0.25);
+
     --font-sans: Inter, sans-serif;
     --font-serif: Source Serif 4, serif;
     --font-mono: JetBrains Mono, monospace;
+
+    /* Legacy aliases — see :root note. */
+    --dash-bg: var(--background);
+    --dash-bg-card: var(--card);
+    --dash-text: var(--foreground);
+    --dash-text-muted: var(--muted-foreground);
+    --dash-border: var(--border);
+    --dash-accent: var(--primary);
+    --dash-accent-bg: var(--accent);
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-sans);
+    letter-spacing: var(--tracking-normal);
+  }
+
+  /* ─── Global focus indicator ──────────────────────────────────
+   * a11y review #9: links across the dashboard use `no-underline`
+   * which removes the default focus cue. Without a visible
+   * focus-visible style, keyboard users have no idea where focus
+   * is. This single rule covers every <a> and <button> not opting
+   * into a custom focus style (cva variants set focus-visible:
+   * styles explicitly, which override this).
+   *
+   * `:focus-visible` (not `:focus`) so mouse clicks don't paint
+   * the ring — only keyboard / programmatic focus does. */
+  a:focus-visible,
+  button:focus-visible,
+  [role="button"]:focus-visible,
+  [tabindex]:not([tabindex="-1"]):focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+    border-radius: var(--radius);
+  }
+
+  /* High-contrast / forced-colors mode: let the OS draw its own
+   * focus indicator instead of overriding with the ring color. */
+  @media (forced-colors: active) {
+    a:focus-visible,
+    button:focus-visible,
+    [role="button"]:focus-visible {
+      outline: 2px solid CanvasText;
+      outline-offset: 2px;
+    }
   }
 }
 
-/* Optional: theme-aware panels (existing class, now uses tokens) */
+/* Optional: theme-aware panels (legacy class — token-driven). */
 .dash-panel {
   background: var(--card);
   color: var(--card-foreground);

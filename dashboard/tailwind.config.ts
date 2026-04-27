@@ -17,6 +17,9 @@ const config: Config = {
         primary: {
           DEFAULT: "var(--primary)",
           foreground: "var(--primary-foreground)",
+          // text variant: AA-passing darker shade for text-primary on
+          // light backgrounds (sortable links, "view →" anchors).
+          text: "var(--primary-text)",
         },
         secondary: {
           DEFAULT: "var(--secondary)",
@@ -25,6 +28,22 @@ const config: Config = {
         destructive: {
           DEFAULT: "var(--destructive)",
           foreground: "var(--destructive-foreground)",
+        },
+        // ─── Semantic status tokens ─────────────────────────────────
+        // Replace raw Tailwind palette (text-emerald-600, bg-amber-50,
+        // etc.) at every status-tinted call site. The Badge primitive
+        // wires these into variants automatically.
+        success: {
+          DEFAULT: "var(--success)",
+          foreground: "var(--success-foreground)",
+        },
+        warning: {
+          DEFAULT: "var(--warning)",
+          foreground: "var(--warning-foreground)",
+        },
+        info: {
+          DEFAULT: "var(--info)",
+          foreground: "var(--info-foreground)",
         },
         muted: {
           DEFAULT: "var(--muted)",
