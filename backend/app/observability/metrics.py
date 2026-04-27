@@ -139,6 +139,141 @@ supabase_db_latency_seconds = Histogram(
 )
 
 
+# ─── Health-tourism counters ─────────────────────────────────────────
+#
+# Five counters covering the /v1/quote/* surface so Grafana / Sentry
+# can answer:
+#   - "How many quotes per hour, by outcome?" (quote_total)
+#   - "Are any clinics being recommended at all?" (quote_total →
+#     QUOTE outcome with the procedure label)
+#   - "How often does the LLM fallback fire vs deterministic match?"
+#     (procedure_intent_outcome_total)
+#   - "Did the lead webhook actually deliver?" (lead_webhook_dispatch_total)
+#   - "Are itineraries being generated, or are most quotes stalling
+#     before that step?" (itinerary_total)
+#
+# Cardinality is bounded: outcome enums are small, procedure labels
+# come from a 10-row catalog file. We deliberately do NOT include
+# clinic_id as a label — that grows with the partner network and
+# would explode time-series count.
+
+quote_total = Counter(
+    "quote_total",
+    "POST /v1/quote responses by envelope type and procedure category.",
+    # outcome ∈ {QUOTE, EMERGENCY, ERROR}; category from procedures.json
+    # (hair, plastic_surgery, dental, bariatric, fertility, ophthalmology,
+    # cardiology, unknown). 8 × 3 = 24 series, bounded.
+    labelnames=("outcome", "procedure_category"),
+)
+
+itinerary_total = Counter(
+    "itinerary_total",
+    "POST /v1/quote/itinerary responses by envelope type and procedure category.",
+    labelnames=("outcome", "procedure_category"),
+)
+
+lead_total = Counter(
+    "lead_total",
+    "POST /v1/quote/lead responses by webhook outcome and consent state.",
+    # outcome mirrors lead_dispatcher's return values; consent_to_share
+    # ∈ {"true", "false"} so it surfaces the KVKK consent rate directly.
+    labelnames=("webhook_status", "consent_to_share"),
+)
+
+# Counter — webhook delivery outcomes (granular). Mirrors the dispatch()
+# return string. lead_total above counts every /lead call (including
+# unconfigured webhooks); this counter only fires on actual dispatch
+# attempts so the failure rate is computed against attempted, not total.
+lead_webhook_dispatch_total = Counter(
+    "lead_webhook_dispatch_total",
+    "Lead webhook delivery outcomes (delivered / failed_4xx / failed_exhausted).",
+    labelnames=("outcome",),
+)
+
+# Counter — quote-summary LLM generation outcomes. Drives the
+# operator dashboard for the (optional) /v1/quote summary_tr field.
+# Cardinality is bounded:
+#   - `provider` ∈ {"qwen", "gpt5_mini", "gemini", "grok"} (matches
+#     the provider chain in services/quote_summary.py). Adding a new
+#     provider is a deliberate code change.
+#   - `outcome` ∈ {"success", "empty", "error", "disabled"} — 4 values.
+#     "disabled" fires when the provider is in the chain but
+#     ``is_enabled()`` is False; "empty" fires when the provider
+#     returned None / empty string (e.g. flag flips off mid-run).
+quote_summary_total = Counter(
+    "quote_summary_total",
+    "Quote-summary LLM generation outcomes per provider in the fallback chain.",
+    labelnames=("provider", "outcome"),
+)
+
+# Histogram — quote-summary generation wall-clock latency. Background
+# task path, so this is NOT a user-facing latency; it's the cost /
+# capacity dial. Bucket layout matches the realistic Wiro range
+# (sub-5s happy path, 5-30s typical, 60s+ pathological).
+quote_summary_latency_seconds = Histogram(
+    "quote_summary_latency_seconds",
+    "Quote-summary LLM generation latency (seconds) by provider.",
+    labelnames=("provider",),
+    buckets=(1.0, 2.5, 5.0, 10.0, 15.0, 30.0, 60.0),
+)
+
+# Counter — quote-summary cache hit/miss. Hit fraction tells the
+# operator whether the cache is doing its job. Cold-start / low
+# cache-hit + summary_tr=None on first quote → expected and
+# documented; persistent low hit means the cache key is too narrow.
+quote_summary_cache_total = Counter(
+    "quote_summary_cache_total",
+    "Quote-summary in-memory LRU cache lookups by result.",
+    labelnames=("result",),  # "hit" | "miss"
+)
+
+
+# Counter — patient upload AI dispatch outcomes. The BG task that
+# follows POST /v1/patient/upload increments one of:
+#   - "success"  — provider returned non-empty result text
+#   - "empty"    — provider returned None / empty (auth missing,
+#                  feature flag off, schema_error inside provider)
+#   - "error"    — provider raised an exception
+#   - "skipped"  — kind not in the handler map (defensive; route
+#                  validation should already exclude this)
+#
+# Cardinality bounded:
+#   - kind ∈ {image, audio, video, document} — 4 values.
+#   - outcome ∈ {success, empty, error, skipped} — 4 values.
+# 16 series total.
+patient_upload_total = Counter(
+    "patient_upload_total",
+    "Patient upload AI dispatch outcomes by kind.",
+    labelnames=("kind", "outcome"),
+)
+
+# Histogram — patient upload AI wall-clock latency. Per-kind so the
+# operator dashboard can compare moondream-image (5-15s) vs
+# whisper-audio (10-30s for long memos) vs cogvlm-video (30-60s)
+# without averaging them into one signal. Buckets cover the realistic
+# Wiro range; >60s is timeout territory and lands in the +Inf
+# bucket as a tail signal.
+patient_upload_latency_seconds = Histogram(
+    "patient_upload_latency_seconds",
+    "Patient upload AI dispatch latency (seconds) by kind.",
+    labelnames=("kind",),
+    buckets=(2.0, 5.0, 10.0, 20.0, 30.0, 60.0, 120.0),
+)
+
+
+# Counter — procedure-intent extraction outcomes by resolution path.
+# Drives the LLM fallback ROI dashboard:
+#   - "explicit" — caller passed procedure_id, no NLU work done
+#   - "intent"   — deterministic synonym match (free, fast)
+#   - "llm_intent" — LLM fallback fired and resolved
+#   - "unresolved" — neither matched, returned PROCEDURE_UNRESOLVED
+procedure_intent_outcome_total = Counter(
+    "procedure_intent_outcome_total",
+    "How /v1/quote resolved a procedure_id (explicit / intent / llm_intent / unresolved).",
+    labelnames=("resolved_via",),
+)
+
+
 # ─── Setup ─────────────────────────────────────────────────────────
 
 def setup_metrics(app: "FastAPI") -> None:

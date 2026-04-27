@@ -192,7 +192,9 @@ class ParseCapabilitiesSmokeTests(unittest.TestCase):
         self.assertEqual(parse_capabilities(""), frozenset())
 
     def test_known_tokens_flow_through(self):
-        out = parse_capabilities(f"{CAP_CURATED_META},{CAP_EMERGENCY_SPECIALTY}")
+        out = parse_capabilities(
+            ",".join(sorted(KNOWN_CAPABILITIES))
+        )
         self.assertEqual(out, KNOWN_CAPABILITIES)
 
     def test_unknown_tokens_dropped(self):

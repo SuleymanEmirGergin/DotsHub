@@ -20,6 +20,7 @@ from fastapi.testclient import TestClient
 from app.version_gating import (
     CAP_CURATED_META,
     CAP_EMERGENCY_SPECIALTY,
+    CAP_STREAMING_ENVELOPE,
     CURATED_TOP_CONDITION_FIELDS,
     CapabilityGateMiddleware,
     KNOWN_CAPABILITIES,
@@ -96,6 +97,34 @@ def test_filter_envelope_non_mapping_payload_passes_through():
     # Missing payload → skip rewrite.
     data = {"type": "RESULT", "payload": "not-a-dict"}
     assert filter_envelope(data, frozenset()) is data
+
+
+def test_filter_envelope_quote_envelope_passes_through_untouched():
+    """Health-tourism envelopes (QUOTE / ITINERARY) have no curated_meta
+    or emergency_specialty fields to gate. Middleware lets them through
+    so the prometheus envelope counter still bumps for them."""
+    data = {
+        "type": "QUOTE",
+        "payload": {
+            "quote_id": "q-1",
+            "procedure": {"id": "fue_hair_transplant"},
+            "clinics": [{"clinic_id": "c-1"}],
+        },
+    }
+    out = filter_envelope(data, frozenset())
+    assert out is data
+
+
+def test_filter_envelope_itinerary_envelope_passes_through_untouched():
+    data = {
+        "type": "ITINERARY",
+        "payload": {
+            "procedure": {"id": "fue_hair_transplant"},
+            "days": [{"day": 1}],
+        },
+    }
+    out = filter_envelope(data, frozenset())
+    assert out is data
 
 
 def test_filter_envelope_strips_curated_fields_without_cap():
@@ -178,7 +207,35 @@ def test_curated_fields_registry_covers_known_new_keys():
 
 
 def test_known_capabilities_registry_stable():
-    assert {CAP_CURATED_META, CAP_EMERGENCY_SPECIALTY} == set(KNOWN_CAPABILITIES)
+    assert {
+        CAP_CURATED_META,
+        CAP_EMERGENCY_SPECIALTY,
+        CAP_STREAMING_ENVELOPE,
+    } == set(KNOWN_CAPABILITIES)
+
+
+def test_streaming_envelope_token_does_not_gate_result_payload():
+    # `streaming_envelope` is a transport-mode advertisement; it must
+    # not strip any field on its own. A client that advertises only
+    # this token should see the same shape as a client with no caps.
+    env = _result_envelope([
+        {"disease_label": "X", "score_0_1": 0.5, "icd10": "K27"}
+    ])
+    only_streaming = filter_envelope(env, frozenset({CAP_STREAMING_ENVELOPE}))
+    no_caps = filter_envelope(env, frozenset())
+    assert only_streaming == no_caps
+
+
+def test_streaming_envelope_token_does_not_gate_emergency_payload():
+    env = _emergency_envelope()
+    only_streaming = filter_envelope(env, frozenset({CAP_STREAMING_ENVELOPE}))
+    no_caps = filter_envelope(env, frozenset())
+    assert only_streaming == no_caps
+
+
+def test_streaming_envelope_token_parses_via_header():
+    got = parse_capabilities("streaming_envelope")
+    assert got == frozenset({CAP_STREAMING_ENVELOPE})
 
 
 # ─── CapabilityGateMiddleware via FastAPI TestClient ─────────────────
@@ -242,9 +299,16 @@ def test_middleware_strips_curated_fields_when_header_missing(client: TestClient
 
 
 def test_middleware_keeps_curated_fields_with_full_caps(client: TestClient):
+    # Send EVERY known capability — exercises the "fully-capable
+    # client" early return in CapabilityGateMiddleware.dispatch
+    # (caps >= KNOWN_CAPABILITIES → bypass body re-serialisation).
     r = client.get(
         "/v1/result",
-        headers={"X-Client-Capabilities": "curated_meta,emergency_specialty"},
+        headers={
+            "X-Client-Capabilities": (
+                "curated_meta,emergency_specialty,streaming_envelope"
+            ),
+        },
     )
     body = r.json()
     assert body["payload"]["top_conditions"][0]["icd10"] == "I20"

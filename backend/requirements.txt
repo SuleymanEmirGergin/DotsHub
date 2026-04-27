@@ -1,4 +1,10 @@
 fastapi
+# Multipart form parsing (UploadFile, Form()) — used by
+# /v1/patient/upload and /v1/admin/image/generate. Without this
+# package FastAPI raises at route-decoration time, breaking import
+# (CI failures: docker-build, safety-critical-coverage, golden-flow,
+# test, check). Local dev envs may already have it transitively.
+python-multipart>=0.0.20
 uvicorn[standard]
 pydantic>=2.10
 pydantic-settings>=2.7

@@ -10,6 +10,7 @@
 import {
   CAP_CURATED_META,
   CAP_EMERGENCY_SPECIALTY,
+  CAP_STREAMING_ENVELOPE,
   CLIENT_CAPABILITIES,
   CLIENT_CAPABILITIES_SET,
   __testing,
@@ -23,7 +24,7 @@ afterEach(() => {
 describe("capability registry", () => {
   it("default header lists every known capability in declaration order", () => {
     expect(getCapabilitiesHeader()).toBe(
-      `${CAP_CURATED_META},${CAP_EMERGENCY_SPECIALTY}`,
+      `${CAP_CURATED_META},${CAP_EMERGENCY_SPECIALTY},${CAP_STREAMING_ENVELOPE}`,
     );
   });
 
@@ -50,7 +51,7 @@ describe("capability registry", () => {
 
     __testing.reset();
     expect(getCapabilitiesHeader()).toBe(
-      `${CAP_CURATED_META},${CAP_EMERGENCY_SPECIALTY}`,
+      `${CAP_CURATED_META},${CAP_EMERGENCY_SPECIALTY},${CAP_STREAMING_ENVELOPE}`,
     );
   });
 
@@ -58,13 +59,15 @@ describe("capability registry", () => {
     __testing.setCapabilities(new Set());
     __testing.setCapabilities(null);
     expect(getCapabilitiesHeader()).toBe(
-      `${CAP_CURATED_META},${CAP_EMERGENCY_SPECIALTY}`,
+      `${CAP_CURATED_META},${CAP_EMERGENCY_SPECIALTY},${CAP_STREAMING_ENVELOPE}`,
     );
   });
 
   it("serialisation order follows CLIENT_CAPABILITIES, not insertion order of override", () => {
     // Even if the override set reports items in a different iteration
-    // order, the header uses the canonical array order.
+    // order, the header uses the canonical array order. Override
+    // includes only 2 of the 3 known capabilities — the header must
+    // reflect that subset (in canonical order).
     __testing.setCapabilities(
       new Set([CAP_EMERGENCY_SPECIALTY, CAP_CURATED_META]),
     );

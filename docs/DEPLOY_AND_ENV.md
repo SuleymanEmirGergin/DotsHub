@@ -25,9 +25,58 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 | `SUPABASE_URL` | Supabase proje URL | `https://xxx.supabase.co` |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key | — |
 | `CORS_ORIGINS` | İzin verilen origin’ler (virgülle ayrılmış) | `http://localhost:3000,https://app.example.com` |
-| `REDIS_URL` | Rate limit için Redis (opsiyonel). **Çok instance:** Birden fazla API worker/pod kullanıyorsanız paylaşılan limit için tanımlayın; yoksa her instance kendi in-memory limitine sahip olur. | `redis://localhost:6379` |
-| `RATE_LIMIT_WINDOW_SEC` | Rate limit penceresi (sn) | `60` |
-| `RATE_LIMIT_MAX_REQ` | Pencere başına istek | `20` |
+| `REDIS_URL` | Rate limit + idempotency + **quote_summary cache** için Redis (opsiyonel). **Çok instance:** Birden fazla API worker/pod kullanıyorsanız paylaşılan state için tanımlayın; yoksa her instance kendi in-memory limit/cache'ine sahip olur. quote_summary cache `tri:quote_summary:` prefix'i kullanır; transient Redis hatası in-memory fallback'e degrade eder, mid-run auto-reconnect yok (process restart gerekir). | `redis://localhost:6379` |
+| `RATE_LIMIT_WINDOW_SEC` | IP/device rate limit penceresi (sn) | `60` |
+| `RATE_LIMIT_MAX_REQ` | IP/device rate limit — pencere başına istek | `20` |
+| `SESSION_RATE_LIMIT_WINDOW_SEC` | Session bazlı rate limit penceresi (sn). NAT arkasında adil paylaşım için IP bucket'ına ek olarak çalışır; `X-Session-Id` header'ı ile aktif olur. | `3600` |
+| `SESSION_RATE_LIMIT_MAX_REQ` | Session başına pencere başına istek | `30` |
+| `IDEMPOTENCY_TTL_SEC` | `Idempotency-Key` cache TTL (sn) — **triage** (`/v1/triage/turn`) için. Retry timeout/packet-loss network-katmanı; 5 dk yeterli. | `300` |
+| `IDEMPOTENCY_QUOTE_TTL_SEC` | `Idempotency-Key` cache TTL — **quote** (`/v1/quote*`) için. Hasta teklifi okur, dakikalarca düşünür, accept eder; daha uzun pencere lazım. | `900` |
+| `IDEMPOTENCY_MEMORY_MAX` | In-memory idempotency cache azami giriş sayısı (LRU). Redis yoksa kullanılır. | `1024` |
+| `LLM_PROCEDURE_INTENT_ENABLED` | `1` ise sağlık turizmi `/v1/quote` deterministik sinonim eşleyici düşük confidence ya da miss verdiğinde LLM fallback'i çağırır. | `0` |
+| `LLM_PROCEDURE_INTENT_MIN_CONFIDENCE` | Deterministik match'in altında LLM tetiklendiği eşik (0.0–1.0). | `0.40` |
+| `LLM_PROCEDURE_INTENT_QWEN_FALLBACK_ENABLED` | `1` ise primary Gemini Flash boş / parse-error / `id="none"` döndüğünde aynı prompt **Wiro/Qwen3.6-27B** üzerinde tekrar denenir (3. tier). Hem bu flag, hem `WIRO_QWEN_LLM_ENABLED` açık olmalı. Türkçe-tuned Qwen, Gemini Flash'ın `id="none"` dediği temiz Türkçe input'larda daha doğru sonuç vermek için. | `0` |
+| `WIRO_QWEN_LLM_ENABLED` | `1` ise Qwen3.6-27B text generation servisi etkin (`app/services/ai/qwen_llm.py`). Quote summary, doctor-Q&A, multi-language clinic comparison için. WIRO_API_KEY/SECRET aynı kimlik ile auth. | `0` |
+| `WIRO_QWEN_LLM_MODEL` | Wiro model slug; rebrand olursa env ile değiştirilir, kod release gerekmez. | `qwen/qwen3-6-27b` |
+| `WIRO_WHISPER_STT_ENABLED` | `1` ise Whisper-large-v3-turbo-turkish ASR etkin (`app/services/ai/whisper_stt.py`). Hasta sesli mesajının metne dönüşümü. PII redaksiyonu transcript'te uygulanır. | `0` |
+| `WIRO_WHISPER_STT_MODEL` | Wiro model slug. | `openai/whisper-large-v3-turbo-turkish` |
+| `WIRO_COGVLM_CAPTION_ENABLED` | `1` ise CogVLM2 video-to-text caption etkin (`app/services/ai/cogvlm_caption.py`). Hasta video klip → klinik açıklama. Domain-tuned prompt presets `HEALTH_TOURISM_PROMPTS` içinde. | `0` |
+| `WIRO_COGVLM_CAPTION_MODEL` | Wiro model slug. | `thudm/cogvlm2-llama3-caption` |
+| `WIRO_GEMINI_LLM_ENABLED` | `1` ise Gemini-3-Pro multimodal LLM etkin (`app/services/ai/gemini_llm.py`). Tek çağrıda metin + 50 dosya (image/video/audio) işler; quote summary + multi-file medical record interpretation için. | `0` |
+| `WIRO_GEMINI_LLM_MODEL` | Wiro model slug. | `google/gemini-3-pro` |
+| `WIRO_MOONDREAM_VLM_ENABLED` | `1` ise Moondream3-Preview image Q&A etkin (`app/services/ai/moondream_vlm.py`). Tek görsel + soru → JSON cevap; Norwood / smile-line / dermatology preset'leri `HEALTH_TOURISM_PROMPTS` içinde. | `0` |
+| `WIRO_MOONDREAM_VLM_MODEL` | Wiro model slug. | `moondream3-preview/query` |
+| `WIRO_NANO_BANANA_IMAGE_ENABLED` | `1` ise Google nano-banana-pro image gen/edit etkin (`app/services/ai/nano_banana_image.py`). `generate()` CDN URL listesi döner. Pazarlama / klinik karşılaştırma için; **hasta-yüzü tıbbi mockup için kullanma** (KVKK + sağlık reklam mevzuatı). | `0` |
+| `WIRO_NANO_BANANA_IMAGE_MODEL` | Wiro model slug. | `google/nano-banana-pro` |
+| `WIRO_GPT_IMAGE_ENABLED` | `1` ise OpenAI gpt-image-2 etkin (`app/services/ai/gpt_image.py`). nano-banana ile aynı kullanım + inpainting (image + mask) — bölgesel kozmetik mockup için kullanışlı. | `0` |
+| `WIRO_GPT_IMAGE_MODEL` | Wiro model slug. | `openai/gpt-image-2` |
+| `WIRO_GPT5_MINI_LLM_ENABLED` | `1` ise gpt-5-mini multimodal LLM etkin (`app/services/ai/gpt5_mini_llm.py`). Daha ucuz; kısa özet + Q&A drafts. **Temperature/topP/maxTokens YOK** — `reasoning` (minimal/low/medium/high) ve `verbosity` ile cost/quality kontrolü. | `0` |
+| `WIRO_GPT5_MINI_LLM_MODEL` | Wiro model slug. | `openai/gpt-5-mini` |
+| `WIRO_GROK_LLM_ENABLED` | `1` ise xAI grok-4-20 multimodal LLM etkin (`app/services/ai/grok_llm.py`). Gemini-3-Pro alternatifi (vendor-redundancy). Tam sampling controls (`temperature`, `topP`, `maxOutputTokens`). | `0` |
+| `WIRO_GROK_LLM_MODEL` | Wiro model slug. | `xai/grok-4-20` |
+| `WIRO_DOTS_OCR_ENABLED` | `1` ise dots-ocr-1-5 multi-document OCR etkin (`app/services/ai/dots_ocr.py`). Hasta lab sonucu / reçete / panoramik görüntü gibi belgelerin metin/layout çıkarımı. `promptMode` enum'ı ile çıktı şekli (plain OCR vs. layout JSON) seçilir. | `0` |
+| `WIRO_DOTS_OCR_MODEL` | Wiro model slug. | `kristaller486/dots-ocr-1-5` |
+| `WIRO_API_KEY` | Wiro API key. Tüm `app/services/ai/*` ve legacy `llm_nlu_client` kullanır. | — |
+| `WIRO_API_SECRET` | Wiro HMAC signature secret. **`app/services/ai/*` (qwen, whisper, cogvlm, gemini, moondream) için zorunlu** — boşsa `WiroAuthError` ile fail-loud, servis wrapper'ı `None` döner. Legacy `llm_nlu_client` boşsa API-key-only moda düşer (eski Wiro projeleri için). | — |
+| `QUOTE_SUMMARY_LLM_ENABLED` | `1` ise `/v1/quote` cevabında `payload.summary_tr` LLM-üretimi 2-3 cümlelik Türkçe özet alanı doldurulur. **Cold-start UX**: yeni (procedure × clinic × locale) kombinasyonunda **ilk istek** `summary_tr=null` döner ve background task LLM'e generate gönderir; sonraki istek (cache hit) doluyu döner. Cache TTL aşıldığında tekrar yenilenir. Frontend null'ı boşluk veya "Özet hazırlanıyor" chip'i olarak göstermeli. | `0` |
+| `QUOTE_SUMMARY_LLM_PROVIDERS` | Provider zinciri (virgülle ayrılmış, primary first). İlk dolu cevap döndüren kullanılır. Disabled olan provider atlanır. Geçerli adlar: `qwen`, `gpt5_mini`, `gemini`, `grok`. Default sıra: Türkçe-tuned `qwen` primary → 262K-context multimodal `gemini` orta tier → cheaper `gpt5_mini` son tier. | `qwen,gemini,gpt5_mini` |
+| `QUOTE_SUMMARY_LLM_TIMEOUT_SECONDS` | Tek bir provider için submit+poll budget'ı (sn). Worst-case full chain: `len(providers) × timeout`. Background task'ta çalıştığı için kullanıcı latency'sine yansımaz; cost/capacity dial'ı. | `30.0` |
+| `QUOTE_SUMMARY_CACHE_TTL_SECONDS` | Cache entry TTL (sn). Aşıldığında entry düşer, sonraki istekte regenerate. Klinik / fiyat değişimleri buraya doğal olarak yansır. **Backend**: `REDIS_URL` set ise Redis (`SETEX` ile server-side expiry), aksi halde in-memory LRU. | `86400` |
+| `QUOTE_SUMMARY_CACHE_MAX_ENTRIES` | In-memory LRU cache azami giriş sayısı (sadece in-memory backend kullanıldığında etkili — Redis'te entry sayısı sınırı yok, TTL ile yönetilir). | `256` |
+| `PATIENT_UPLOAD_ENABLED` | `1` ise `POST /v1/patient/upload` aktif. Hasta selfie/voice memo/lab scan/video clip'i AI servislere yönlendirir (moondream/whisper/dots-ocr/cogvlm). **Bytes persisted değil** — backend hash + dispatch yapar, sonuç `patient_uploads` tablosunda. `WIRO_*_ENABLED` flag'lerinin de açık olması gerek (kind → servis map'i için). **SQL migration**: `sql/20260427_patient_uploads.sql` uygulanmalı. | `0` |
+| `PATIENT_UPLOAD_RETENTION_DAYS` | Asset row için retention süresi (gün). Aşıldığında nightly cron (gelecek session) tombstone yapar. AI sonucu hasta retrieve edebilsin diye tutulur; KVKK silme isteğinde derhal tombstone. | `30` |
+| `PATIENT_UPLOAD_MAX_IMAGE_BYTES` | Image (jpeg/png/webp) için size cap. Selfie/scalp/dental fotoğrafları için makul. | `10485760` (10MB) |
+| `PATIENT_UPLOAD_MAX_AUDIO_BYTES` | Audio (wav/mp3/mp4/m4a) için size cap. Whisper voice memo için. | `26214400` (25MB) |
+| `PATIENT_UPLOAD_MAX_VIDEO_BYTES` | Video (mp4/webm) için size cap. CogVLM klinik klip için (4K/30s headroom'u). | `104857600` (100MB) |
+| `PATIENT_UPLOAD_MAX_DOCUMENT_BYTES` | Document (pdf/jpeg-scan/png-scan) için size cap. Lab sonucu / reçete fotoğrafı için. | `10485760` (10MB) |
+| `PATIENT_UPLOAD_POLL_INTERVAL_SECONDS` | Client polling interval ipucu (`Retry-After` header). | `5` |
+| `OPERATOR_RATE_LIMIT_WINDOW_SEC` | Operator (dashboard per-user) rate limit penceresi (sn). Her operator kendi bucket'ına sahip — aynı IP'den çoklu operator gelirse karışmaz. Super-admin (`ADMIN_API_KEY`) skip eder. | `60` |
+| `OPERATOR_RATE_LIMIT_MAX_REQ` | Operator başına pencere başına istek. | `60` |
+| `ADMIN_RETENTION_URL` (GitHub secret) | Patient uploads retention sweep cron'u (`POST /v1/admin/retention/patient-uploads/sweep`) bu URL'i çağırır. Production backend'in bu endpoint'ine işaret etmeli (örn. `https://api.example.com/v1/admin/retention/patient-uploads/sweep`). Cron schedule: `0 3 * * *` (03:00 UTC = 06:00 İstanbul). Workflow: `.github/workflows/patient-uploads-retention.yml`. | — |
+| `LEAD_WEBHOOK_URL` | `/v1/quote/lead` kabul edildiğinde JSON POST gönderilen URL. Slack incoming webhook, Make/Zapier veya generic CRM olabilir. Boşsa lead webhook devre dışı; route 200 dönmeye devam eder ama payload `webhook_configured: false` olur. | — |
+| `LEAD_WEBHOOK_AUTH_TOKEN` | Set edilirse `Authorization: Bearer <token>` header'ı gönderilir. | — |
+| `LEAD_WEBHOOK_TIMEOUT_SECONDS` | Tek istek için timeout. | `5.0` |
+| `LEAD_WEBHOOK_MAX_RETRIES` | 5xx ya da network hatasında deneme sayısı (4xx tek deneme). | `3` |
 | `SEND_SUMMARY_RATE_LIMIT_MAX_REQ` | send-summary ve export-summary limiti (örn. 5/dk) | `5` |
 | `SEND_SUMMARY_EMAIL` | `1` ise özet e-postası açık | `0` veya `1` |
 | `RESEND_API_KEY` | Resend API anahtarı (e-posta için) | — |

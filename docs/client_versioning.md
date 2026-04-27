@@ -32,6 +32,7 @@ Defined in [`backend/app/version_gating.py`](../backend/app/version_gating.py):
 |---|---|
 | `curated_meta` | `Envelope.payload.top_conditions[*]` curated fields: `disease_description`, `disease_description_tr`, `icd10`, `source_type`, `disclaimer_tr`, `doktora_sorulacak_sorular_tr`, `izlenecek_belirtiler_tr`, `ne_zaman_tekrar_basvur_tr`, `self_care_tr`, `aciliyet_notu_tr` |
 | `emergency_specialty` | `Envelope.payload.recommended_specialty` **only when `envelope.type == "EMERGENCY"`** |
+| `streaming_envelope` | Transport-mode advertisement: client can parse Server-Sent Events from `POST /v1/triage/stream` (`thinking` → `envelope` → `done`). No payload field is currently gated; the SSE generator applies `filter_envelope` with the same caps set, so field gating is uniform across `/turn` and `/stream`. Registered so future stream-only fields (partial progress, token streaming) have a gate token from day one. |
 
 Routing info (`recommended_specialty_tr`, `urgency`) is **never** gated — every client sees it.
 

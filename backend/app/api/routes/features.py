@@ -22,12 +22,19 @@ The response shape is locked down by
 `backend/tests/test_features_endpoint.py` — the safety-critical CI
 gate treats `app.core.config` as 100%-branch to keep the contract
 from silently drifting.
+
+`GET /v1/config/capabilities` is the discovery counterpart for the
+capability-gating protocol: it returns the canonical token list the
+server understands so mobile builds can detect drift at runtime
+(client log + ops alert) instead of relying solely on the CI-time
+`scripts/check_capability_drift.cjs` check.
 """
 from __future__ import annotations
 
 from fastapi import APIRouter
 
 from app.core.config import settings
+from app.version_gating import KNOWN_CAPABILITIES
 
 router = APIRouter()
 
@@ -44,4 +51,17 @@ async def features() -> dict:
             "update_url_ios": settings.CLIENT_VERSION_UPDATE_URL_IOS or None,
             "update_url_android": settings.CLIENT_VERSION_UPDATE_URL_ANDROID or None,
         },
+    }
+
+
+@router.get("/config/capabilities")
+async def capabilities() -> dict:
+    """Return the server's canonical capability registry.
+
+    The list is sorted so the response body is byte-stable across
+    requests (cache-friendly, easier to diff in client logs).
+    """
+    return {
+        "capabilities": sorted(KNOWN_CAPABILITIES),
+        "count": len(KNOWN_CAPABILITIES),
     }

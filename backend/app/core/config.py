@@ -111,6 +111,177 @@ class Settings(BaseSettings):
     LLM_NLU_LOG_TO_SUPABASE: bool = True
     LLM_EXPLAIN_ENABLED: bool = False        # optional explanation layer (B9)
 
+    # ── Health-tourism: LLM fallback for procedure-intent extraction ─────
+    # When the deterministic synonym matcher (services/procedure_intent.py)
+    # returns confidence below the threshold, fall back to an LLM call
+    # that picks one of the known procedure ids. Off by default —
+    # operators flip this on when they observe a meaningful tail of
+    # PROCEDURE_UNRESOLVED or low-confidence quotes in the analytics.
+    LLM_PROCEDURE_INTENT_ENABLED: bool = False
+    LLM_PROCEDURE_INTENT_MIN_CONFIDENCE: float = 0.40
+
+    # When the primary procedure-intent LLM (Gemini Flash via the legacy
+    # llm_nlu_client) returns no usable answer (network failure, schema
+    # error, ``id="none"``, or hallucinated id), retry the same prompt
+    # against Wiro/Qwen3.6-27B as a last-tier fallback. Off by default —
+    # operators flip this on when they observe Gemini Flash returning
+    # ``id="none"`` for clear Turkish input that Qwen handles better.
+    # Both ``WIRO_QWEN_LLM_ENABLED`` and ``WIRO_API_SECRET`` must also
+    # be set for this fallback to actually run.
+    LLM_PROCEDURE_INTENT_QWEN_FALLBACK_ENABLED: bool = False
+
+    # ── Wiro AI services (health-tourism extensions) ────────────────────
+    # Each service is a thin wrapper around the existing Wiro
+    # submit+poll pattern (HMAC auth from llm_nlu_client). Feature
+    # flags default off — operators opt-in once the credentials are
+    # in env. Models are env-overridable so a Wiro slug change
+    # ("qwen3-6-27b" → "qwen3-7b" etc.) doesn't need a code release.
+
+    # Qwen3.6-27B — text generation (quote summary, doctor-Q&A drafts).
+    WIRO_QWEN_LLM_ENABLED: bool = False
+    WIRO_QWEN_LLM_MODEL: str = "qwen/qwen3-6-27b"
+
+    # Whisper-large-v3-turbo-turkish — speech-to-text (multilingual
+    # patient voice intake). Optimised for Turkish; auto-detects
+    # 50+ languages.
+    WIRO_WHISPER_STT_ENABLED: bool = False
+    WIRO_WHISPER_STT_MODEL: str = "openai/whisper-large-v3-turbo-turkish"
+
+    # CogVLM2-LLaMA3 — video-to-text caption (visual assessment of
+    # hair / smile / skin clips). Domain-tuned prompt presets in
+    # services/ai/cogvlm_caption.py::HEALTH_TOURISM_PROMPTS.
+    WIRO_COGVLM_CAPTION_ENABLED: bool = False
+    WIRO_COGVLM_CAPTION_MODEL: str = "thudm/cogvlm2-llama3-caption"
+
+    # Google Gemini-3-Pro — multimodal LLM (text + up to 50 mixed
+    # files: images / videos / audio in one call). Different from
+    # Qwen LLM: native multimodal, thinking_level dial. Use for
+    # quote summaries that consume profile + procedure + clinic +
+    # patient-uploaded files in one shot. NOTE: every service in
+    # app/services/ai/* requires WIRO_API_SECRET (HMAC signature
+    # auth) — the wiro_client.require_signature_auth() guard will
+    # fail-loud at submit time if it's empty.
+    WIRO_GEMINI_LLM_ENABLED: bool = False
+    WIRO_GEMINI_LLM_MODEL: str = "google/gemini-3-pro"
+
+    # Moondream3-Preview — visual Q&A on a single image with
+    # optional reasoning trace. Faster + cheaper than CogVLM2 video
+    # caption when motion isn't needed (selfie / smile / scalp
+    # photos). Domain-tuned prompt presets in
+    # services/ai/moondream_vlm.py::HEALTH_TOURISM_PROMPTS.
+    WIRO_MOONDREAM_VLM_ENABLED: bool = False
+    WIRO_MOONDREAM_VLM_MODEL: str = "moondream3-preview/query"
+
+    # nano-banana-pro — Google's text-to-image / image-edit model.
+    # Output: list of CDN URLs (PNG). Use case: marketing collateral,
+    # before/after illustrations for clinic comparison flows. NOT for
+    # patient-facing medical visualizations (legal liability).
+    WIRO_NANO_BANANA_IMAGE_ENABLED: bool = False
+    WIRO_NANO_BANANA_IMAGE_MODEL: str = "google/nano-banana-pro"
+
+    # gpt-image-2 — OpenAI's image gen/edit with optional inpaint mask.
+    # Output: list of CDN URLs. Use case: same as nano-banana but with
+    # inpainting (fill a masked region while keeping the rest of the
+    # image identical) — handy for "subtle whitening" or localised
+    # cosmetic edit mockups.
+    WIRO_GPT_IMAGE_ENABLED: bool = False
+    WIRO_GPT_IMAGE_MODEL: str = "openai/gpt-image-2"
+
+    # gpt-5-mini — cheaper text+image LLM. Use case: short summaries,
+    # routine clinic Q&A drafts. No temperature/topP/maxOutputTokens
+    # knobs (per Wiro schema); reasoning + verbosity instead.
+    WIRO_GPT5_MINI_LLM_ENABLED: bool = False
+    WIRO_GPT5_MINI_LLM_MODEL: str = "openai/gpt-5-mini"
+
+    # grok-4-20 — xAI's text+image LLM with full sampling controls
+    # (temperature, topP, maxOutputTokens). Use case: long-form quote
+    # summary alternative to Gemini-3-Pro when a different vendor's
+    # tone is preferred or for vendor-redundancy in production.
+    WIRO_GROK_LLM_ENABLED: bool = False
+    WIRO_GROK_LLM_MODEL: str = "xai/grok-4-20"
+
+    # dots-ocr-1-5 — multi-document OCR / layout extraction. Use case:
+    # patient lab results / prescriptions / prior surgery records. The
+    # ``promptMode`` enum picks layout style (full, layout-only, plain
+    # OCR, web parsing, scene text). Output is JSON-structured layout.
+    WIRO_DOTS_OCR_ENABLED: bool = False
+    WIRO_DOTS_OCR_MODEL: str = "kristaller486/dots-ocr-1-5"
+
+    # ── Health-tourism: LLM-generated quote summary ──────────────────────
+    # Optional patient-facing 2-3 sentence Turkish blurb explaining why
+    # the top-1 clinic ranked first. Generated **out-of-band** via
+    # FastAPI BackgroundTasks because Wiro task latency (5-30s) is too
+    # long to inline in the /v1/quote response without blowing the p95
+    # SLO. UX contract: first request returns ``summary_tr=None``;
+    # subsequent /v1/quote calls (same procedure / city / locale) hit
+    # the in-memory LRU cache and surface the generated text.
+    #
+    # Provider chain is comma-separated, primary first. Each provider's
+    # ``is_enabled()`` is checked at call site — disabled providers
+    # are skipped, the chain advances. If all providers fail / are
+    # disabled, the field stays ``None``.
+    QUOTE_SUMMARY_LLM_ENABLED: bool = False
+    # Default chain order: qwen (Türkçe-tuned, primary) -> gemini
+    # (262K-context multimodal, robust fallback) -> gpt5_mini (cheaper
+    # last-resort for short summaries). All three must have their own
+    # WIRO_*_ENABLED flag on AND a valid WIRO_API_SECRET; the chain
+    # walker silently skips disabled providers.
+    QUOTE_SUMMARY_LLM_PROVIDERS: str = "qwen,gemini,gpt5_mini"
+    # Wall-clock budget for ONE provider's submit+poll. The full chain
+    # may take up to len(providers) * timeout in the worst case — but
+    # since this runs in a background task, that's a cost concern, not
+    # a UX one.
+    QUOTE_SUMMARY_LLM_TIMEOUT_SECONDS: float = 30.0
+    QUOTE_SUMMARY_CACHE_TTL_SECONDS: int = 86400  # 24 h
+    QUOTE_SUMMARY_CACHE_MAX_ENTRIES: int = 256
+
+    # ── Dashboard operators: per-user API key + rate limit ──────────────
+    # Operators authenticate with x-operator-key (sha256-hashed at the
+    # operator_users table). Each operator has its own bucket so a
+    # noisy operator can't deny others. ADMIN_API_KEY (super-admin)
+    # bypasses the operator bucket and uses the existing admin bucket.
+    OPERATOR_RATE_LIMIT_WINDOW_SEC: int = 60
+    OPERATOR_RATE_LIMIT_MAX_REQ: int = 60
+
+    # ── Health-tourism: patient upload + AI dispatcher ───────────────────
+    # Master flag for /v1/patient/upload — when False the route returns
+    # 503; lets operators turn off the entire upload surface during
+    # incident response without redeploying.
+    PATIENT_UPLOAD_ENABLED: bool = False
+
+    # Retention. After this many days, a nightly cron (future) will
+    # tombstone the row in the same shape data_rights uses. AI result
+    # text is the only patient-derivable content held; cleared on
+    # tombstone.
+    PATIENT_UPLOAD_RETENTION_DAYS: int = 30
+
+    # Per-kind size caps (bytes). Selfie / dental / scalp photos sit
+    # comfortably under 10MB; voice memos under 25MB; clinical clips
+    # need headroom for 4K/30s; lab scans rarely exceed 10MB. The
+    # route validates kind + content_type + size before hashing so
+    # malicious 1GB uploads bail at the boundary.
+    PATIENT_UPLOAD_MAX_IMAGE_BYTES: int = 10 * 1024 * 1024
+    PATIENT_UPLOAD_MAX_AUDIO_BYTES: int = 25 * 1024 * 1024
+    PATIENT_UPLOAD_MAX_VIDEO_BYTES: int = 100 * 1024 * 1024
+    PATIENT_UPLOAD_MAX_DOCUMENT_BYTES: int = 10 * 1024 * 1024
+
+    # Polling: how long between status checks the client should wait.
+    # Surfaces in GET /v1/patient/upload/{asset_id} as a hint header
+    # so naive clients don't hammer the endpoint.
+    PATIENT_UPLOAD_POLL_INTERVAL_SECONDS: int = 5
+
+    # ── Health-tourism: lead conversion webhook ──────────────────────────
+    # When LEAD_WEBHOOK_URL is set, /v1/quote/lead dispatches a JSON
+    # POST after accepting the lead. Compatible with Slack incoming
+    # webhooks, Make/Zapier hooks, and any generic HTTP receiver. The
+    # endpoint stays synchronous from the caller's perspective; the
+    # dispatch happens in a background task with bounded retries so
+    # one slow CRM doesn't add seconds to user-facing latency.
+    LEAD_WEBHOOK_URL: str = ""
+    LEAD_WEBHOOK_AUTH_TOKEN: str = ""  # sent as 'Authorization: Bearer ...'
+    LEAD_WEBHOOK_TIMEOUT_SECONDS: float = 5.0
+    LEAD_WEBHOOK_MAX_RETRIES: int = 3
+
     # ── Curated injection score tiers (audit follow-up) ──────────────────
     # triage_engine.py used to hardcode per-injection score_0_1 values
     # scattered across 25+ call sites. They collapse into three tiers.

@@ -1,0 +1,62 @@
+name: OpenAPI drift
+
+# Tripwire job: backend FastAPI route set ↔ docs/openapi_orchestrator.yaml.
+# Adding a public route without documenting it (or vice versa) breaks
+# every third-party integration relying on the contract — this workflow
+# blocks the PR before that happens.
+#
+# Internal paths (admin, /health, /metrics, legacy /v1/session/*) are
+# excluded from the check by INTERNAL_PATH_PREFIXES inside the script.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "backend/app/main.py"
+      - "backend/app/api/routes/**"
+      - "backend/app/admin_api.py"
+      - "backend/app/admin_v5.py"
+      - "backend/app/admin_tenants_api.py"
+      - "backend/app/admin_feedback_api.py"
+      - "docs/openapi_orchestrator.yaml"
+      - "scripts/check_openapi_drift.py"
+      - ".github/workflows/openapi-drift.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "backend/app/main.py"
+      - "backend/app/api/routes/**"
+      - "backend/app/admin_api.py"
+      - "backend/app/admin_v5.py"
+      - "backend/app/admin_tenants_api.py"
+      - "backend/app/admin_feedback_api.py"
+      - "docs/openapi_orchestrator.yaml"
+      - "scripts/check_openapi_drift.py"
+      - ".github/workflows/openapi-drift.yml"
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install backend dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt
+
+      - name: Run OpenAPI drift check
+        env:
+          APP_ENV: test
+        run: python scripts/check_openapi_drift.py

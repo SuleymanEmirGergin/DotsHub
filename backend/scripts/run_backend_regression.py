@@ -22,9 +22,23 @@ STEPS = [
         command=[sys.executable, "-m", "unittest", "tests.test_golden_flows", "-v"],
     ),
     Step(
+        # pytest used to run via `unittest discover` here, but pytest-
+        # only fixtures (autouse cache cleanup in tests/conftest.py,
+        # monkeypatch in pytest-style function tests) only fire when
+        # pytest is the runner. unittest discover left rate-limit
+        # buckets bleeding across tests and skipped pytest-style
+        # tests entirely. Pytest auto-collects unittest.TestCase
+        # subclasses too, so this is a strict superset of the old
+        # behaviour with the fixtures actually firing.
         name="backend_test_suite",
-        command=[sys.executable, "-m", "unittest", "discover", "-s", "tests", "-p", "test_*.py", "-q"],
-        env_override={"REDIS_URL": ""},  # use in-memory rate limit so send-summary/export-summary tests pass
+        command=[
+            sys.executable, "-m", "pytest",
+            "tests/",
+            "-q",
+            "--ignore=tests/test_benchmarks.py",  # benchmark suite is a separate gate
+            "-p", "no:cacheprovider",
+        ],
+        env_override={"REDIS_URL": ""},
     ),
     Step(
         name="kaggle_mapping_guardrails",

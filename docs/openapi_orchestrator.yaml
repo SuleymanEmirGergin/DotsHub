@@ -26,6 +26,11 @@ paths:
     post:
       summary: Run one triage turn (single endpoint, single envelope)
       operationId: triageTurn
+      parameters:
+        - $ref: "#/components/parameters/ClientCapabilitiesHeader"
+        - $ref: "#/components/parameters/ClientVersionHeader"
+        - $ref: "#/components/parameters/IdempotencyKeyHeader"
+        - $ref: "#/components/parameters/SessionIdHeader"
       requestBody:
         required: true
         content:
@@ -305,6 +310,268 @@ paths:
                       update_url_ios: "https://apps.apple.com/app/..."
                       update_url_android: "https://play.google.com/..."
 
+  /v1/config/capabilities:
+    get:
+      summary: Server-known capability registry (drift discovery)
+      operationId: getConfigCapabilities
+      description: |
+        Runtime discovery counterpart to the CI-time
+        `scripts/check_capability_drift.cjs` check. Returns the
+        canonical token list the server understands so a client can
+        compare against its own `CLIENT_CAPABILITIES` constant and log
+        a warning if either side is missing tokens.
+
+        The list is sorted alphabetically and the body is byte-stable
+        across calls — safe to cache aggressively. See
+        `docs/client_versioning.md` for the protocol.
+      responses:
+        "200":
+          description: Current capability registry snapshot.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [capabilities, count]
+                properties:
+                  capabilities:
+                    type: array
+                    items:
+                      type: string
+                    description: Sorted token list.
+                  count:
+                    type: integer
+                    description: Length of `capabilities`; redundant but cheap to verify.
+              examples:
+                current:
+                  summary: 2026-04 registry snapshot
+                  value:
+                    capabilities:
+                      - curated_meta
+                      - emergency_specialty
+                      - streaming_envelope
+                    count: 3
+
+  /v1/quote:
+    post:
+      summary: Generate a non-binding health-tourism quote
+      operationId: quote
+      description: |
+        Resolves a procedure (explicit `procedure_id` or extracted from
+        free-text), runs the fit-to-travel rule engine against the
+        patient profile, and returns a ranked list of partner clinics
+        with indicative price bands.
+
+        Envelope types in the response:
+          - `QUOTE` — clinics ranked best-first; `fit_to_travel_warnings`
+            (severity=`warn`) ride on the payload for the UI to surface.
+          - `EMERGENCY` — at least one fit-to-travel rule of severity
+            `block` triggered; the patient must seek local care first.
+            No clinic list is returned.
+          - `ERROR` — `code=PROCEDURE_UNRESOLVED` (no procedure id
+            provided and intent extraction missed) or
+            `code=NO_PARTNER_CLINIC` (procedure exists but no clinic
+            currently offers it).
+
+        See `docs/HEALTH_TOURISM.md` (forthcoming) for the full
+        contract and clinical-safety rationale.
+      parameters:
+        - $ref: "#/components/parameters/ClientCapabilitiesHeader"
+        - $ref: "#/components/parameters/ClientVersionHeader"
+        - $ref: "#/components/parameters/IdempotencyKeyHeader"
+        - $ref: "#/components/parameters/SessionIdHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                procedure_id:
+                  type: string
+                  description: Explicit procedure id (e.g. "fue_hair_transplant"). Either this or `user_message` is required.
+                user_message:
+                  type: string
+                  description: Free-text user request; intent extraction resolves it to a procedure id.
+                profile:
+                  type: object
+                  description: Patient profile (HealthTourismProfile). Boolean flags drive fit-to-travel rules.
+                locale:
+                  type: string
+                  default: "tr-TR"
+                target_city:
+                  type: string
+                  description: Optional preferred city (e.g. "İstanbul"). Boosts matching clinic scores.
+                top_n:
+                  type: integer
+                  default: 5
+                  minimum: 1
+                  maximum: 20
+            examples:
+              by_procedure_id:
+                summary: Hair transplant quote with target city
+                value:
+                  procedure_id: "fue_hair_transplant"
+                  profile:
+                    age: 35
+                    sex: "male"
+                  locale: "tr-TR"
+                  target_city: "İstanbul"
+                  top_n: 3
+              by_freetext:
+                summary: Free-text input → intent extracts rhinoplasty
+                value:
+                  user_message: "Burnumdan memnun değilim, ameliyat olmak istiyorum"
+                  profile:
+                    age: 28
+                    sex: "female"
+                  locale: "tr-TR"
+              fit_to_travel_block:
+                summary: Recent MI blocks elective surgery
+                value:
+                  procedure_id: "rhinoplasty"
+                  profile:
+                    age: 52
+                    recent_mi: true
+                  locale: "tr-TR"
+      responses:
+        "200":
+          description: Envelope (QUOTE / EMERGENCY / ERROR)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Envelope"
+
+  /v1/quote/lead:
+    post:
+      summary: Patient accepts a quote — lead routed to configured CRM
+      operationId: quoteLead
+      description: |
+        After picking a clinic, the patient submits this request to
+        accept the quote and request follow-up. The backend:
+          - Validates the procedure/clinic pair
+          - Builds a lead payload (with PII gated by `consent_to_share`)
+          - Dispatches the payload to `LEAD_WEBHOOK_URL` (any
+            JSON-accepting receiver: Slack, Make, Zapier, generic CRM)
+          - Returns a `RESULT` envelope with code `LEAD_ACCEPTED`
+
+        Without `consent_to_share=true`, contact details are stripped
+        from the webhook payload before transmission. The lead is
+        still recorded so the operator knows interest exists, but no
+        personal data leaves the backend until consent is recorded.
+        See `docs/HEALTH_TOURISM_COMPLIANCE.md` for the KVKK rationale.
+
+        Webhook delivery is best-effort and **runs in the background
+        AFTER the response is sent** (FastAPI BackgroundTasks). The
+        response payload's `webhook_status` is therefore one of:
+          - `scheduled` — webhook configured, dispatch deferred
+          - `not_configured` — no webhook URL, nothing to dispatch
+        The eventual delivery state machine (`delivered` /
+        `failed_4xx` / `failed_exhausted` / `errored`) lands on the
+        `health_tourism_leads.webhook_status` column and on the
+        `lead_webhook_dispatch_total` Prometheus counter. Operators
+        query the DB row or Grafana to see actual outcomes.
+      parameters:
+        - $ref: "#/components/parameters/SessionIdHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [procedure_id, clinic_id]
+              properties:
+                procedure_id:
+                  type: string
+                clinic_id:
+                  type: string
+                contact:
+                  type: object
+                  properties:
+                    name: { type: string }
+                    email: { type: string, format: email }
+                    phone: { type: string }
+                    preferred_contact:
+                      type: string
+                      enum: [email, phone, whatsapp, any]
+                    best_time: { type: string }
+                consent_to_share:
+                  type: boolean
+                  default: false
+                  description: KVKK/GDPR gate. Without it, contact PII is removed from the webhook payload.
+                locale:
+                  type: string
+                  default: "tr-TR"
+                notes:
+                  type: string
+                quote_id:
+                  type: string
+                  description: |
+                    `payload.quote_id` from the prior `/v1/quote`
+                    response. Optional for backward compat, but new
+                    clients should always send it so the operator can
+                    trace which exact price/clinic combination is
+                    being accepted.
+      responses:
+        "200":
+          description: Envelope (RESULT with code=LEAD_ACCEPTED, or ERROR)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Envelope"
+
+  /v1/quote/itinerary:
+    post:
+      summary: Generate a day-by-day itinerary for a chosen procedure + clinic + date
+      operationId: quoteItinerary
+      description: |
+        After the patient picks a clinic from a `/v1/quote` response,
+        this endpoint produces an illustrative day-by-day plan using
+        a category-keyed template. The fit-to-travel rule engine runs
+        again because the patient's health state may have shifted
+        between quote and itinerary requests.
+
+        Envelope types in the response:
+          - `ITINERARY` — successful plan with `items[]` (day_offset,
+            date, activity_id, label, location, duration_hours),
+            pre-op requirements, post-op no-fly days, follow-up window.
+          - `EMERGENCY` — fit-to-travel block fired (no plan).
+          - `ERROR` — invalid procedure / clinic / date, or
+            clinic-procedure mismatch.
+      parameters:
+        - $ref: "#/components/parameters/ClientCapabilitiesHeader"
+        - $ref: "#/components/parameters/IdempotencyKeyHeader"
+        - $ref: "#/components/parameters/SessionIdHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [procedure_id, clinic_id, arrival_date]
+              properties:
+                procedure_id:
+                  type: string
+                  example: "fue_hair_transplant"
+                clinic_id:
+                  type: string
+                  example: "clinic_istanbul_aesthetics_one"
+                arrival_date:
+                  type: string
+                  format: date
+                  example: "2026-05-15"
+                profile:
+                  type: object
+                locale:
+                  type: string
+                  default: "tr-TR"
+      responses:
+        "200":
+          description: Envelope (ITINERARY / EMERGENCY / ERROR)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Envelope"
+
   /v1/triage/stream:
     post:
       summary: Streaming variant of /v1/triage/turn (Server-Sent Events)
@@ -380,6 +647,50 @@ paths:
         "500":
           description: Tombstone write failed — retryable
 
+  /v1/me/leads/{lead_id}:
+    delete:
+      summary: KVKK silme — tombstone one health-tourism lead
+      operationId: deleteMyLead
+      description: |
+        Soft-delete a health-tourism lead. Required by KVKK Madde 11
+        (silme hakkı); the row itself is **kept** for the 5-year
+        retention window (Sağlık Turizmi Yönetmeliği Madde 10) but
+        contact PII and notes are erased.
+
+        Differs from `/me/sessions/{id}`: triage data uses a 90-day
+        purge after tombstone; lead data must persist 5 years for
+        regulator audits ("we received this lead and handled it"),
+        with PII nulled the moment the user exercises silme.
+
+        - Idempotent: already-deleted lead returns
+          `{ok: true, already_deleted: true}`.
+        - Authentication: possession of the unguessable lead UUID
+          (same model as session delete).
+      parameters:
+        - name: lead_id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Receipt of the soft-delete operation
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, lead_id]
+                properties:
+                  ok: { type: boolean }
+                  lead_id: { type: string }
+                  already_deleted: { type: boolean }
+                  tombstoned: { type: boolean }
+        "400":
+          description: Malformed lead_id
+        "404":
+          description: Lead not found
+        "500":
+          description: Tombstone write failed — retryable
+
   /health:
     get:
       summary: Health check
@@ -394,6 +705,131 @@ paths:
                   status: { type: string }
                   service: { type: string }
                   version: { type: string }
+
+  /v1/patient/upload:
+    post:
+      summary: Submit a patient asset (selfie / voice memo / lab scan / video) for AI analysis
+      operationId: patientUpload
+      description: |
+        Multipart upload that hashes the bytes, records metadata in
+        `patient_uploads`, and schedules a BackgroundTask that pipes
+        the bytes to the appropriate Wiro AI service based on
+        `kind`:
+
+          - `image` → moondream VLM (Norwood / smile / dermatology Q&A)
+          - `audio` → whisper STT (Turkish-tuned transcription)
+          - `video` → cogvlm caption (clinical-style description)
+          - `document` → dots-ocr (lab/prescription text + layout)
+
+        **Bytes are NOT persisted.** Only the metadata + AI result
+        text land on the row. KVKK-friendly: the data-rights tombstone
+        on `DELETE /v1/me/sessions/{id}` cascades to every upload row
+        tied to the session.
+
+        The route returns 201 immediately with `asset_id` + `poll_url`.
+        Wiro task latency is 5-30s typical so the client must poll
+        `GET /v1/patient/upload/{asset_id}` until status flips to
+        `succeeded` or `failed`.
+      parameters:
+        - $ref: "#/components/parameters/SessionIdHeader"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file, kind, consent_to_process]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                kind:
+                  type: string
+                  enum: [image, audio, video, document]
+                consent_to_process:
+                  type: boolean
+                  description: KVKK explicit opt-in. Must be true; route 422s otherwise.
+                consent_text:
+                  type: string
+                  description: Operator-visible reason for processing ("hair-loss estimate", "voice transcription", ...).
+                prompt_preset:
+                  type: string
+                  description: |
+                    Optional steered prompt key. Per-kind whitelist:
+                      - kind=image: hair_loss_norwood | smile_dental |
+                        skin_dermatology | rhinoplasty_profile | general
+                      - kind=video: hair_loss | smile_dental |
+                        skin_dermatology | rhinoplasty_assessment | general
+                      - kind=audio | document: NOT supported (422)
+                    Maps to HEALTH_TOURISM_PROMPTS in moondream_vlm /
+                    cogvlm_caption. Omit to use the wrapper's default
+                    (generic clinical description).
+      responses:
+        "201":
+          description: Asset accepted; AI dispatch scheduled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  asset_id: { type: string, format: uuid }
+                  status: { type: string, enum: [pending] }
+                  poll_url: { type: string }
+        "400": { description: Missing X-Session-Id }
+        "413": { description: Size cap exceeded for the declared kind }
+        "415": { description: content-type not allowed for the declared kind }
+        "422": { description: Validation (consent false, unknown kind, empty file) }
+        "503": { description: PATIENT_UPLOAD_ENABLED is off }
+
+  /v1/patient/upload/{asset_id}:
+    get:
+      summary: Polling endpoint for an in-flight or completed upload
+      operationId: patientUploadStatus
+      description: |
+        Returns the current state of a previously-submitted asset.
+        Pending/processing responses include a `Retry-After` header
+        keyed to `PATIENT_UPLOAD_POLL_INTERVAL_SECONDS`. Terminal
+        states (succeeded / failed) omit the header so a header-
+        respecting client naturally stops polling.
+
+        Tombstoned uploads (KVKK delete) return 404 — same shape as
+        a true not-found, so a deleted asset is indistinguishable
+        from one that never existed.
+      parameters:
+        - in: path
+          name: asset_id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Current status + AI result if available
+          headers:
+            Retry-After:
+              schema: { type: integer }
+              description: Present only on pending/processing.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  asset_id: { type: string, format: uuid }
+                  status:
+                    type: string
+                    enum: [pending, processing, succeeded, failed]
+                  ai_provider: { type: string, nullable: true }
+                  ai_result_text: { type: string, nullable: true }
+                  ai_error: { type: string, nullable: true }
+                  ai_latency_ms: { type: integer, nullable: true }
+                  upload_kind:
+                    type: string
+                    enum: [image, audio, video, document]
+                  content_type: { type: string }
+                  size_bytes: { type: integer }
+                  expires_at: { type: string, format: date-time }
+                  created_at: { type: string, format: date-time }
+                  processed_at: { type: string, format: date-time, nullable: true }
+        "404": { description: Asset not found OR tombstoned }
+        "503": { description: PATIENT_UPLOAD_ENABLED is off }
 
 components:
   parameters:
@@ -420,9 +856,45 @@ components:
         Known tokens (see docs/client_versioning.md):
           - `curated_meta`        — unlocks `Envelope.payload.top_conditions[*]` curated fields (icd10, disease_description_tr, self_care_tr, …).
           - `emergency_specialty` — unlocks `Envelope.payload.recommended_specialty` on EMERGENCY envelopes.
+          - `streaming_envelope`  — transport-mode advertisement for `/v1/triage/stream` (Server-Sent Events).
 
         Unknown tokens are silently ignored (forward-compatible).
-      example: "curated_meta,emergency_specialty"
+      example: "curated_meta,emergency_specialty,streaming_envelope"
+    IdempotencyKeyHeader:
+      name: Idempotency-Key
+      in: header
+      required: false
+      schema:
+        type: string
+      description: |
+        Opaque client-generated identifier that makes `/v1/triage/turn`
+        retry-safe. The server caches the response for
+        `IDEMPOTENCY_TTL_SEC` (default 5 minutes). A retry with the
+        same key + same body returns the cached envelope without
+        re-running the triage engine. Reusing the key with a different
+        body returns an `ERROR` envelope with code
+        `IDEMPOTENCY_KEY_REUSED` — that's a client bug.
+
+        Recommended generation: UUIDv4 per logical user action,
+        persisted on the client until the response is acknowledged so
+        retries reuse it.
+      example: "550e8400-e29b-41d4-a716-446655440000"
+    SessionIdHeader:
+      name: X-Session-Id
+      in: header
+      required: false
+      schema:
+        type: string
+      description: |
+        Per-session rate-limit hint. When present, the server applies
+        an additional per-session bucket on top of the IP/device
+        bucket so users behind shared NAT (cafés, university Wi-Fi,
+        carrier CG-NAT) don't share each other's quota. First-turn
+        requests omit this header and rely on the IP bucket alone.
+
+        Default: 30 turns/hour per session. Override with
+        `SESSION_RATE_LIMIT_MAX_REQ` env var.
+      example: "c2c6e2d3-8d39-4b3d-8e5a-0f2a6e9c8d11"
 
   schemas:
     ConfigFeaturesResponse:
