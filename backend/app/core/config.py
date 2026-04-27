@@ -206,6 +206,30 @@ class Settings(BaseSettings):
     SENTRY_TRACES_SAMPLE_RATE: float = 0.0   # default: error-only, no perf
     SENTRY_RELEASE: str = ""                 # blank → let SDK auto-detect
 
+    # ── Açık rıza ve aydınlatma versiyonu (KVKK Md.6(2) + GDPR Art.9) ────
+    # Açık rıza versiyonlama akışı — bu sabitler, mobil intro ekranındaki
+    # "Anladım, kabul ediyorum" + "Sağlık verilerinin işlenmesine açık
+    # rıza veriyorum" checkbox'larının arkasındaki sözleşme/aydınlatma
+    # metninin sürüm numarasını taşır.
+    #
+    # Bir sürümü artırdığınızda mobil app o `consent_type` için
+    # `consent_records.consent_version` farklı olduğunu görür ve
+    # kullanıcıyı tekrar kabul etmeye yönlendirir. Bu yüzden:
+    #
+    #   - Metin değişti mi? consent_version'ı bump'la.
+    #   - Sadece düzelti mi (typo)? Bump'lama.
+    #   - PRIVACY_NOTICE.md'nin tamamı revize edildi mi?
+    #     PRIVACY_NOTICE_VERSION'ı bump'la (consent versionları sabit
+    #     kalsa bile, audit trail "kullanıcı şu sürümde gördü"yü kayıt
+    #     altına alır — bkz. consent_records.notice_version).
+    #
+    # Aydınlatma metni canonical kaynağı: docs/PRIVACY_NOTICE.md.
+    PRIVACY_NOTICE_VERSION: str = "v0.2"
+    CONSENT_VERSION_TERMS_GENERAL: str = "v1.0"
+    CONSENT_VERSION_HEALTH_DATA: str = "v1.0"
+    CONSENT_VERSION_PUSH_NOTIFICATIONS: str = "v1.0"
+    CONSENT_VERSION_SUMMARY_EMAIL: str = "v1.0"
+
     # ── Veri saklama / retention (KVKK Md.7 + GDPR Art.5(1)(e)) ──────────
     # Single source of truth for retention windows. The full policy +
     # legal rationale lives in `docs/RETENTION_POLICY.md` — DO NOT

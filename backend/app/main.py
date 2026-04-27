@@ -33,6 +33,7 @@ from app.admin_api import router as admin_router
 from app.admin_tenants_api import router as admin_tenants_router
 from app.admin_feedback_api import router as admin_feedback_router
 from app.api.routes.data_rights import router as data_rights_router
+from app.api.routes.consent import router as consent_router
 from app.admin_v5 import router as admin_v5_router
 from app.middleware.security_headers import SecurityHeadersMiddleware
 from app.version_gating import CapabilityGateMiddleware
@@ -345,6 +346,7 @@ app.include_router(admin_router, prefix="/v1", tags=["Admin"])
 app.include_router(admin_tenants_router, prefix="/v1", tags=["Admin Tenants"])
 app.include_router(admin_feedback_router, prefix="/v1", tags=["Admin Feedback"])
 app.include_router(data_rights_router, prefix="/v1", tags=["Data Rights"])
+app.include_router(consent_router, prefix="/v1", tags=["Consent"])
 # admin_v5_router carries its own prefix="/admin"; mounting under /v1
 # places it at /v1/admin/* so the admin_rate_limit_middleware (which
 # gates /v1/admin/*) actually protects these endpoints. Without the
