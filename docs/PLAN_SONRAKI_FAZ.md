@@ -60,6 +60,16 @@
 
 ---
 
+## Faz 3 – Startup hazırlığı (kritik güvenlik yamaları)
+
+Demo ve canlı kullanım öncesi acil-tetikleyici (red flag) kurallarında çıkan bug'ların yamaları. Her madde işaretlendiğinde commit hash ile birlikte not edilir.
+
+| # | Yapılacak | Detay | Durum |
+|---|-----------|--------|--------|
+| C.6 | Türkçe morfoloji: göğüs ağrısı acil tetikleyicileri | `rules.json` chest_pressure_sweating + chest_pain_plus_breathlessness + stroke_signs regex'leri ünlü düşmesi (`göğüs → göğsüm/göğsümde`), 1. tekil iyelik dative (`kola → koluma`) ve çene dative (`çeneme/çeneye`) formlarını yakalayacak şekilde genişletildi. Kol güçsüzlüğünde 1. tekil iyelik (`kolumu kaldıramıyorum`) eklendi. Regression: `backend/tests/test_emergency_rules_turkish_morphology.py` (34 yeni test). ✅ (commit `9f2b2b0`) |
+
+---
+
 ## Faz 4 – Kalan işler planından (sonraki sprint backlog)
 
 Aşağıdaki maddeler “Kalan işler planı” Faz 4 ile eşleşir; sprint planına göre tek tek alınabilir.
