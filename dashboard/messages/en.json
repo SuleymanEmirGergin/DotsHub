@@ -380,8 +380,8 @@
   },
   "privacy": {
     "title": "Privacy Policy",
-    "lastUpdated": "Last updated: April 20, 2026",
-    "intro": "At Triaige we take your privacy seriously. This policy explains what data is collected, how it is processed, how long it is stored, and what rights you have as a user. Triaige complies with Turkey's KVKK (Law No. 6698) and GDPR for EU users.",
+    "lastUpdated": "Last updated: April 27, 2026",
+    "intro": "At Triaige we take your privacy seriously. This policy explains what data is collected, how it is processed, how long it is stored, and what rights you have as a user. Triaige complies with Turkey's KVKK (Law No. 6698) and GDPR for EU users. Because Triaige processes health data, processing relies on your explicit consent.",
     "dataControllerTitle": "Data Controller",
     "dataControllerBody": "The data controller for the Triaige app is: Emir Gergin · Contact: emirgergin21@gmail.com. This email is the only authorised channel for all privacy inquiries and requests.",
     "dataCollectedTitle": "Data We Collect",
@@ -397,7 +397,7 @@
     "notCollectedTitle": "Data We Do NOT Collect",
     "notCollectedBody": "Triaige does NOT collect national ID numbers, date of birth, health insurance details, full name, place of birth, or similar directly-identifying special-category data. Only symptom descriptions are stored as free text.",
     "legalBasisTitle": "Legal Basis",
-    "legalBasisBody": "Processing is necessary for the performance of a contract under GDPR Article 6(1)(b) and KVKK Article 5/2(c). For optional fields (feedback, email), your explicit consent is obtained.",
+    "legalBasisBody": "Triaige processes health-related data, which qualifies as 'special category personal data' under KVKK Article 6 and GDPR Article 9. The lawful basis for processing is your explicit consent under KVKK Article 6(2) and GDPR Article 9(2)(a): we collect this consent separately on the intro screen when you first open the app, and you may withdraw it at any time. Withdrawal does not retroactively invalidate prior processing — it only stops further processing from that moment. Additional consent is collected for optional fields (feedback, summary email, push notifications).",
     "purposeTitle": "Purpose of Processing",
     "purposeBody": "Your data is processed for the following purposes:",
     "purposeList": [
@@ -407,15 +407,20 @@
       "Sending a summary on user request (only if you provided an email)"
     ],
     "storageTitle": "Storage and Location",
-    "storageBody": "Triage sessions are stored in Supabase (EU servers). Retention period is 365 days; after that records are automatically deleted or anonymised. Email addresses for summary delivery are deleted within 7 days after sending.",
+    "storageBody": "Triage sessions are stored in Supabase (EU servers). Retention by data category: session content is anonymised after 90 days (a deletion request triggers the same timer), then physically removed after 90 more days; LLM call logs 30 days; feedback 365 days; push tokens after 90 days of inactivity; summary email addresses are removed within 7 days of sending. Backups are kept for at most 30 days — a deletion request fully clears the backup archive within that window.",
     "sharingTitle": "Third-Party Sharing",
     "sharingBody": "Your data is never sold or shared for advertising. The following service providers have limited access scoped to their processing role:",
     "sharingList": [
       "Supabase: database hosting (EU, GDPR-compliant)",
-      "Fly.io: server hosting (EU region)",
+      "Fly.io: backend server hosting (EU region)",
       "Vercel: dashboard hosting (EU edge)",
-      "Wiro.ai (optional): LLM processing for natural language understanding (only anonymous symptom text; no identity or session mapping is sent)"
+      "Sentry: error tracking + session replay (PII masking active; free-text fields are auto-masked, only anonymous error signals are recorded)",
+      "Resend: summary email delivery (access only at send time; no mailing list retained)",
+      "Expo Push: notification infrastructure (anonymous device token; notification content is not forwarded)",
+      "Wiro.ai (optional): LLM processing for natural language understanding — only anonymised symptom text is sent, with no identity or session correlation"
     ],
+    "dataTransferTitle": "International Data Transfers",
+    "dataTransferBody": "Some service providers operate infrastructure partly or fully outside Turkey / the EU. In particular, when LLM (Wiro.ai) is engaged, anonymised symptom text is sent to the provider's processing servers. Under KVKK Article 9 and GDPR Article 46: (a) we sign a data processing agreement (DPA) and Standard Contractual Clauses (SCCs) with each provider; (b) DPA status is transparent and shared on request; (c) the LLM feature can be disabled in parts of the app where adequate safeguards are not in place.",
     "rightsTitle": "Your Rights",
     "rightsBody": "Under KVKK and GDPR you have the following rights:",
     "rightsList": [
@@ -427,6 +432,8 @@
       "Right to complain: file a complaint with the Data Protection Authority"
     ],
     "rightsContact": "Send rights requests to emirgergin21@gmail.com. We respond within 30 days at the latest.",
+    "automatedDecisionTitle": "Automated Decision-Making and Profiling",
+    "automatedDecisionBody": "Triaige uses deterministic rules and algorithmic scoring to suggest a medical specialty. This suggestion is not a medical diagnosis and does not replace clinician judgement — it is for routing only. The final choice of care is always yours; the system does not force a decision. For this reason GDPR Article 22 'solely automated decision-making' does not apply. On request, an explanation of why a specialty was suggested is available (each result screen has a 'why this specialty?' breakdown); for further information contact emirgergin21@gmail.com.",
     "securityTitle": "Security Measures",
     "securityBody": "Data transmission is encrypted with TLS 1.3. Database access is restricted via role-based authorisation (RLS). Server secrets are managed as environment variables and never embedded in code. Regular security audits are performed.",
     "childrenTitle": "Children",

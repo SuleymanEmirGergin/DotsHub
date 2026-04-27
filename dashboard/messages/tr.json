@@ -380,8 +380,8 @@
   },
   "privacy": {
     "title": "Gizlilik Politikası",
-    "lastUpdated": "Son güncelleme: 20 Nisan 2026",
-    "intro": "Triaige olarak gizliliğinize önem veriyoruz. Bu politika, uygulamayı kullanırken hangi verilerin toplandığını, nasıl işlendiğini, saklandığını ve kullanıcı olarak haklarınızı açıklar. Triaige Türkiye'de KVKK (6698 sayılı Kişisel Verilerin Korunması Kanunu) ve AB kullanıcıları için GDPR ile uyumlu şekilde hazırlanmıştır.",
+    "lastUpdated": "Son güncelleme: 27 Nisan 2026",
+    "intro": "Triaige olarak gizliliğinize önem veriyoruz. Bu politika, uygulamayı kullanırken hangi verilerin toplandığını, nasıl işlendiğini, saklandığını ve kullanıcı olarak haklarınızı açıklar. Triaige Türkiye'de KVKK (6698 sayılı Kişisel Verilerin Korunması Kanunu) ve AB kullanıcıları için GDPR ile uyumlu şekilde hazırlanmıştır. Triaige sağlık verisi işlediği için işleme açık rızaya dayanır.",
     "dataControllerTitle": "Veri Sorumlusu",
     "dataControllerBody": "Triaige uygulamasının veri sorumlusu kimliği: Emir Gergin · İletişim: emirgergin21@gmail.com. Bu e-posta adresi tüm gizlilik sorgulama ve talepleri için tek yetkili kanaldır.",
     "dataCollectedTitle": "Toplanan Veriler",
@@ -397,7 +397,7 @@
     "notCollectedTitle": "Toplanmayan Veriler",
     "notCollectedBody": "Triaige, TC kimlik numarası, doğum tarihi, sağlık sigorta bilgileri, ad-soyad, doğum yeri ve benzeri kimlik tanımlayıcı özel nitelikli verileri TOPLAMAZ. Sadece semptom betimlemeleri metin olarak kaydedilir.",
     "legalBasisTitle": "Hukuki Dayanak",
-    "legalBasisBody": "Veri işleme KVKK Madde 5/2(c) ve GDPR Madde 6(1)(b) kapsamında sözleşmenin ifası için gereklidir. İsteğe bağlı alanlar (geri bildirim, e-posta) için açık rızanız alınır.",
+    "legalBasisBody": "Triaige sağlık verisi işler — bu KVKK Madde 6 ve GDPR Madde 9 kapsamında 'özel nitelikli kişisel veri' sayılır. İşlemenin hukuki dayanağı KVKK Madde 6(2) ve GDPR Madde 9(2)(a) çerçevesinde açık rızanızdır: uygulamayı ilk açtığınızda intro ekranında bu rızayı ayrıca alırız ve dilediğinizde geri çekebilirsiniz. Rızanın geri çekilmesi geçmiş işlemenin hukuka aykırılığını oluşturmaz; yalnızca o andan sonraki işlemeyi durdurur. İsteğe bağlı alanlar (geri bildirim, özet e-postası, push bildirim) için ek rıza alınır.",
     "purposeTitle": "İşleme Amacı",
     "purposeBody": "Verileriniz aşağıdaki amaçlarla işlenir:",
     "purposeList": [
@@ -407,15 +407,20 @@
       "Kullanıcı talebi üzerine özet göndermek (yalnızca e-posta verdiyseniz)"
     ],
     "storageTitle": "Saklama ve Konum",
-    "storageBody": "Triaj oturumları Supabase veritabanında (AB sunucuları) saklanır. Saklama süresi 365 gündür; bu süre sonunda otomatik olarak silinir veya anonimleştirilir. Özet e-postası gönderimi için e-posta adresi gönderim sonrası 7 gün içinde silinir.",
+    "storageBody": "Triaj oturumları Supabase veritabanında (AB sunucuları) saklanır. Veri kategorisine göre saklama süreleri: oturum içeriği 90 gün sonra anonimleştirilir (kullanıcı silme talebiniz aynı süreyi tetikler), ardından 90 gün daha geçtikten sonra fiziksel olarak silinir; LLM çağrı logları 30 gün; geri bildirim 365 gün; push token'lar 90 gün hareketsizlik sonrası; özet e-postası adresleri gönderim sonrası 7 gün içinde silinir. Yedeklemeler en fazla 30 gün saklanır — silme talebiniz yedek arşivinden bu pencere içinde tamamen silinir.",
     "sharingTitle": "Üçüncü Taraflarla Paylaşım",
     "sharingBody": "Verileriniz hiçbir şekilde satılmaz veya reklam amaçlı paylaşılmaz. Aşağıdaki hizmet sağlayıcılar işlem görevleri kapsamında sınırlı erişime sahiptir:",
     "sharingList": [
-      "Supabase: veri tabanı barındırma (AB, GDPR uyumlu)",
-      "Fly.io: sunucu barındırma (EU bölgesi)",
+      "Supabase: veritabanı barındırma (AB, GDPR uyumlu)",
+      "Fly.io: backend sunucu barındırma (EU bölgesi)",
       "Vercel: dashboard barındırma (EU edge)",
-      "Wiro.ai (opsiyonel): doğal dil anlayışı için LLM işlemi (sadece anonim semptom metni gönderilir, kimlik veya oturum eşleştirmesi yapılmaz)"
+      "Sentry: hata izleme + session replay (PII maskeleme aktif; serbest metin alanları otomatik maskelenir, sadece anonim hata sinyalleri kaydedilir)",
+      "Resend: özet e-posta gönderimi (sadece gönderim anında erişim, e-posta listesi tutulmaz)",
+      "Expo Push: bildirim altyapısı (anonim cihaz token'ı; bildirim içeriği gönderilmez)",
+      "Wiro.ai (opsiyonel): doğal dil anlayışı için LLM işlemi — sadece anonim semptom metni gönderilir, kimlik veya oturum eşleştirmesi yapılmaz"
     ],
+    "dataTransferTitle": "Yurt Dışı Aktarım",
+    "dataTransferBody": "Bazı hizmet sağlayıcıların altyapısı kısmen veya tamamen Türkiye/AB dışında olabilir. Özellikle LLM (Wiro.ai) kullanılırken, anonimleştirilmiş semptom metni provider'ın işlem sunucularına gönderilir. KVKK Madde 9 ve GDPR Madde 46 kapsamında: (a) sağlayıcılarla yazılı veri işleme sözleşmesi (DPA) ve standart sözleşme hükümleri (SCC) imzalanır; (b) provider DPA durumu kullanıcı için şeffaftır ve talep üzerine paylaşılır; (c) yeterli korumanın bulunmadığı durumlarda LLM özelliği uygulamanın bir kısmında devre dışı bırakılabilir.",
     "rightsTitle": "Haklarınız",
     "rightsBody": "KVKK ve GDPR kapsamında aşağıdaki haklara sahipsiniz:",
     "rightsList": [
@@ -427,6 +432,8 @@
       "Şikâyet hakkı: Veri Koruma Kurumu'na (KVKK) şikâyette bulunmak"
     ],
     "rightsContact": "Hak taleplerinizi emirgergin21@gmail.com adresine gönderebilirsiniz. Taleplere en geç 30 gün içinde yanıt verilir.",
+    "automatedDecisionTitle": "Otomatik Karar Verme ve Profilleme",
+    "automatedDecisionBody": "Triaige, deterministic kurallar ve algoritmik skorlama ile size bir uzmanlık branşı önerir. Bu öneri tıbbi tanı niteliği taşımaz ve hekim kararının yerine geçmez — yalnızca yönlendirme amacıyladır. Nihai sağlık hizmeti seçimi her zaman size aittir; sistem sizi bir karara zorlamaz. Bu nedenle GDPR Madde 22 anlamında 'yalnızca otomatik karar verme' uygulanmaz. Talep ederseniz sistemin neden o branşı önerdiğine dair açıklama (her sonuç ekranında 'neden bu branş?' başlığı altında) erişilebilirdir; ek bilgi için emirgergin21@gmail.com.",
     "securityTitle": "Güvenlik Önlemleri",
     "securityBody": "Veri aktarımı TLS 1.3 ile şifrelenir. Veritabanı erişimi rol-tabanlı yetkilendirme (RLS) ile kısıtlanır. Sunucu sırları ortam değişkeni olarak yönetilir; koda gömülmez. Düzenli güvenlik denetimi yapılır.",
     "childrenTitle": "Çocuk Kullanıcılar",

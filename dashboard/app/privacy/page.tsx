@@ -87,11 +87,18 @@ export default async function PrivacyPage() {
         bullets={tList("sharingList")}
       />
 
+      <Section title={t("dataTransferTitle")} body={t("dataTransferBody")} />
+
       <Section
         title={t("rightsTitle")}
         body={t("rightsBody")}
         bullets={tList("rightsList")}
         footer={t("rightsContact")}
+      />
+
+      <Section
+        title={t("automatedDecisionTitle")}
+        body={t("automatedDecisionBody")}
       />
 
       <Section title={t("securityTitle")} body={t("securityBody")} />
