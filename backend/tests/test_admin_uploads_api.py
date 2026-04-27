@@ -276,6 +276,114 @@ def test_review_operator_writes_email_as_reviewer(client):
     assert captured["reviewed_by"] == "doctor@clinic.tr"
 
 
+# ─── GET /v1/admin/uploads/{asset_id} ──────────────────────────────
+
+
+def test_get_detail_no_auth_returns_401(client):
+    resp = client.get("/v1/admin/uploads/A1")
+    assert resp.status_code == 401
+
+
+def test_get_detail_returns_full_row(client):
+    full_row = {
+        "asset_id": "A1",
+        "session_id": "S1",
+        "ai_status": "succeeded",
+        "ai_provider": "moondream",
+        "ai_result_text": "norwood:3",
+        "ai_error": None,
+        "review_status": "pending_review",
+        "reviewer_notes": None,
+        "reviewed_at": None,
+        "reviewed_by": None,
+        "sha256_hex": "deadbeef" * 8,
+        "upload_kind": "image",
+        "content_type": "image/png",
+        "size_bytes": 2048,
+        "consent_to_process": True,
+        "consent_text": "Norwood estimate",
+        "expires_at": "2026-05-27T00:00:00Z",
+        "created_at": "2026-04-27T00:00:00Z",
+        "processed_at": "2026-04-27T00:00:05Z",
+        "deleted_at": None,
+    }
+    with patch.object(
+        patient_uploads, "get_for_admin", return_value=full_row,
+    ):
+        resp = client.get(
+            "/v1/admin/uploads/A1",
+            headers={"x-admin-key": _ADMIN_KEY},
+        )
+    assert resp.status_code == 200
+    body = resp.json()
+    # Detail surfaces fields the queue list also has + review_*
+    # columns that the queue shows (we use full row from PG).
+    assert body["asset_id"] == "A1"
+    assert body["sha256_hex"]  # admin/operator can see hash
+    assert body["review_status"] == "pending_review"
+
+
+def test_get_detail_404_when_not_found(client):
+    with patch.object(
+        patient_uploads, "get_for_admin", return_value=None,
+    ):
+        resp = client.get(
+            "/v1/admin/uploads/missing",
+            headers={"x-admin-key": _ADMIN_KEY},
+        )
+    assert resp.status_code == 404
+
+
+def test_get_detail_operator_cannot_see_tombstoned_even_with_flag(client):
+    """include_tombstoned=true is honoured ONLY for super-admin.
+    Operator-tier callers see the same 404 a missing row produces,
+    even when they pass the flag — KVKK contract: deleted means
+    deleted, even from operator dashboards."""
+    op = {
+        "id": "OP-1", "email": "x@y.z", "full_name": "X",
+        "role": "admin",  # even highest operator role -- still blocked
+    }
+    captured = {}
+
+    def _capture(asset_id, *, include_tombstoned):
+        captured["include_tombstoned"] = include_tombstoned
+        return None
+
+    with patch.object(
+        operator_users, "lookup_by_key", return_value=op,
+    ), patch.object(
+        patient_uploads, "get_for_admin", side_effect=_capture,
+    ):
+        resp = client.get(
+            "/v1/admin/uploads/A1?include_tombstoned=true",
+            headers={"x-operator-key": "a" * 64},
+        )
+    # Service called with include_tombstoned=False (operator coerced).
+    assert captured["include_tombstoned"] is False
+    assert resp.status_code == 404
+
+
+def test_get_detail_super_admin_with_tombstoned_flag_works(client):
+    """Super-admin gets to forensic-audit tombstoned rows."""
+    captured = {}
+    fake_row = {"asset_id": "A1", "deleted_at": "2026-04-27"}
+
+    def _capture(asset_id, *, include_tombstoned):
+        captured["include_tombstoned"] = include_tombstoned
+        return fake_row if include_tombstoned else None
+
+    with patch.object(
+        patient_uploads, "get_for_admin", side_effect=_capture,
+    ):
+        resp = client.get(
+            "/v1/admin/uploads/A1?include_tombstoned=true",
+            headers={"x-admin-key": _ADMIN_KEY},
+        )
+    assert captured["include_tombstoned"] is True
+    assert resp.status_code == 200
+    assert resp.json()["asset_id"] == "A1"
+
+
 def test_review_state_reversible_through_endpoint(client):
     """Operator can move pending_review -> approved -> rejected ->
     needs_followup -> pending_review without 4xx. Each call is

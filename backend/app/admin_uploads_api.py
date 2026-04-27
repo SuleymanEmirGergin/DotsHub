@@ -158,3 +158,43 @@ def review_upload(
             status_code=404, detail="asset not found or tombstoned"
         )
     return row
+
+
+# ─── GET /v1/admin/uploads/{asset_id} ──────────────────────────────
+
+
+@router.get("/{asset_id}")
+def get_upload_detail(
+    asset_id: str,
+    include_tombstoned: bool = Query(
+        default=False,
+        description=(
+            "Include tombstoned (KVKK-deleted / retention-swept) rows "
+            "for forensic audit. Default False -- normal operator review "
+            "can't see deleted uploads. Reserved for super-admin use."
+        ),
+    ),
+    auth: dict = Depends(require_admin_or_operator),
+):
+    """Single-asset detail for the dashboard upload-detail page.
+
+    Returns the FULL row (review_* columns + sha256_hex + ai_*).
+    Auth: any role >= reviewer (admin or operator). Read-only — the
+    review state machine PATCH lives at /{asset_id}/review.
+
+    ``include_tombstoned=true`` surfaces deleted rows but only when
+    the caller is super-admin; operators get the same 404 as on a
+    missing row even if they pass include_tombstoned=true. KVKK
+    contract: deleted means deleted, even from operator dashboards.
+    """
+    effective_include = bool(include_tombstoned) and bool(
+        auth.get("is_super_admin")
+    )
+    row = patient_uploads.get_for_admin(
+        asset_id, include_tombstoned=effective_include
+    )
+    if row is None:
+        raise HTTPException(
+            status_code=404, detail="asset not found or tombstoned"
+        )
+    return row

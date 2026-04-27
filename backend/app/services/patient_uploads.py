@@ -323,6 +323,46 @@ def get_upload(asset_id: str) -> Optional[dict]:
     return resp.data
 
 
+def get_for_admin(
+    asset_id: str, *, include_tombstoned: bool = False,
+) -> Optional[dict]:
+    """Fetch a single row for the admin/operator detail page.
+
+    Returns the FULL row including review_* columns, sha256_hex, and
+    deleted_at — operator dashboard needs all of it. Caller (admin
+    endpoint) supplies the auth tier; this helper is auth-agnostic.
+
+    ``include_tombstoned``: True surfaces deleted rows for forensic
+    audit (super-admin only via the route's ``include_tombstoned``
+    query param). Default False -- regular operator review can't see
+    tombstoned uploads.
+
+    Returns None on not-found OR (tombstoned AND
+    include_tombstoned=False).
+    """
+    from app.db import supabase
+
+    try:
+        resp = (
+            supabase.table("patient_uploads")
+            .select("*")
+            .eq("asset_id", asset_id)
+            .maybe_single()
+            .execute()
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.warning(
+            "patient_uploads.get_for_admin_failed asset_id=%s: %s",
+            asset_id, exc,
+        )
+        return None
+    if not resp or not resp.data:
+        return None
+    if resp.data.get("deleted_at") and not include_tombstoned:
+        return None
+    return resp.data
+
+
 # ─── Tombstone (KVKK) ────────────────────────────────────────────────
 
 

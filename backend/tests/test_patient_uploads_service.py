@@ -308,6 +308,57 @@ def test_get_upload_returns_none_on_db_404(fake_supabase):
         assert patient_uploads.get_upload("missing") is None
 
 
+# ─── get_for_admin (admin / operator detail page) ───────────────────
+
+
+def test_get_for_admin_returns_full_row(fake_supabase):
+    """Admin path returns ALL columns (sha256, review_*, etc.) — the
+    polling get_upload was a curated subset."""
+    sb, chain = fake_supabase
+    chain.execute.return_value = MagicMock(
+        data={
+            "asset_id": "A1",
+            "sha256_hex": "deadbeef",
+            "review_status": "pending_review",
+            "deleted_at": None,
+        }
+    )
+    with patch("app.db.supabase", sb):
+        out = patient_uploads.get_for_admin("A1")
+    assert out is not None
+    assert out["sha256_hex"] == "deadbeef"  # included
+    assert out["review_status"] == "pending_review"
+
+
+def test_get_for_admin_default_filters_tombstoned(fake_supabase):
+    sb, chain = fake_supabase
+    chain.execute.return_value = MagicMock(
+        data={"asset_id": "A1", "deleted_at": "2026-04-27"}
+    )
+    with patch("app.db.supabase", sb):
+        assert patient_uploads.get_for_admin("A1") is None
+
+
+def test_get_for_admin_include_tombstoned_returns_row(fake_supabase):
+    sb, chain = fake_supabase
+    chain.execute.return_value = MagicMock(
+        data={"asset_id": "A1", "deleted_at": "2026-04-27"}
+    )
+    with patch("app.db.supabase", sb):
+        out = patient_uploads.get_for_admin(
+            "A1", include_tombstoned=True
+        )
+    assert out is not None
+    assert out["asset_id"] == "A1"
+
+
+def test_get_for_admin_db_blip_returns_none(fake_supabase):
+    sb, chain = fake_supabase
+    chain.execute.side_effect = ConnectionError("supabase down")
+    with patch("app.db.supabase", sb):
+        assert patient_uploads.get_for_admin("A1") is None
+
+
 # ─── KVKK tombstone ──────────────────────────────────────────────────
 
 
