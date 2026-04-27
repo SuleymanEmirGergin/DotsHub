@@ -62,6 +62,18 @@ export default async function RootLayout({
             __html: `(function(){var t=localStorage.getItem("pretriage-dashboard-theme");var d=window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";var v=t||d;document.documentElement.setAttribute("data-theme",v);document.documentElement.classList.toggle("dark",v==="dark");})();`,
           }}
         />
+        {/*
+          Skip-link: visually hidden until focused, then surfaces at
+          the top-left so keyboard users can jump past the sticky
+          header straight into <main>. Pairs with `id="main-content"`
+          on the <main> element below — see docs/A11Y_MANUAL_REVIEW.md.
+        */}
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:px-4 focus:py-2 focus:rounded-md focus:bg-primary focus:text-primary-foreground focus:font-semibold focus:shadow-lg"
+        >
+          {getText(locale, "common.skipToContent")}
+        </a>
         <header className="sticky top-0 z-10 flex justify-end items-center gap-3 py-3 px-6 border-b border-border bg-card">
           <Link
             href="/privacy"
@@ -72,7 +84,9 @@ export default async function RootLayout({
           <LocaleSwitcher initialLocale={locale} />
           <ThemeToggle />
         </header>
-        {children}
+        <main id="main-content" tabIndex={-1}>
+          {children}
+        </main>
       </body>
     </html>
   );

@@ -1,4 +1,4 @@
-# Local monitoring stack — Prometheus + Grafana with the Dotshub
+# Local monitoring stack — Prometheus + Grafana with the TriAIge
 # dashboard pre-provisioned.
 #
 # Why a separate compose file: production observability will run on
@@ -20,7 +20,7 @@
 services:
   prometheus:
     image: prom/prometheus:v2.54.1
-    container_name: dotshub-prometheus
+    container_name: triaige-prometheus
     restart: unless-stopped
     ports:
       - "9090:9090"
@@ -40,7 +40,7 @@ services:
 
   grafana:
     image: grafana/grafana:11.2.2
-    container_name: dotshub-grafana
+    container_name: triaige-grafana
     restart: unless-stopped
     depends_on:
       - prometheus

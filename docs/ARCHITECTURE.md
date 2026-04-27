@@ -1,6 +1,6 @@
 # Mimari özet
 
-Dotshub: ön-triyaj asistanı — backend, mobil (Expo) ve dashboard (Next.js) bileşenleri.
+TriAIge: ön-triyaj asistanı — backend, mobil (Expo) ve dashboard (Next.js) bileşenleri.
 
 ---
 

@@ -74,7 +74,7 @@ export default function RootLayout() {
         <Stack.Screen
           name="index"
           options={{
-            title: "Dotshub",
+            title: "TriAIge",
             headerShown: false,
           }}
         />

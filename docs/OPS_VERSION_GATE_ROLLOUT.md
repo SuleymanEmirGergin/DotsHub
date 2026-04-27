@@ -78,7 +78,7 @@ Flip only when:
 2. Restart / reload.
 3. Verify the block screen renders on an old client (hold a
    pre-1.3.0 build for this).
-4. Announce in #dotshub-ops Slack channel + update the public status
+4. Announce in #triaige-ops Slack channel + update the public status
    page if you have one.
 
 ### Phase 3 — Tidy up

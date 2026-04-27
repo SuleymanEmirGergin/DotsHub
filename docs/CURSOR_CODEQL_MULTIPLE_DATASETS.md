@@ -15,7 +15,7 @@ Bu uyarı **projenin veri setlerinden (Kaggle vb.) kaynaklanmaz.** Cursor/VS Cod
 Projede bu script var; Cursor **kapalıyken** çalıştırın:
 
 ```powershell
-# Proje kökünden (Dotshub klasöründen)
+# Proje kökünden (TriAIge klasöründen)
 .\scripts\clean-codeql-databases.ps1
 ```
 
@@ -43,5 +43,5 @@ Uyarıda gördüğünüz yol Cursor'ın workspace storage'ındadır:
 
 ## Özet
 
-- **Proje verisi:** Dotshub'daki Kaggle/JSON veri kaynakları bu uyarıdan etkilenmez.
+- **Proje verisi:** TriAIge'daki Kaggle/JSON veri kaynakları bu uyarıdan etkilenmez.
 - **CodeQL:** Sadece eklentinin kendi analiz veritabanlarıyla ilgili. Eski/çoklu dataset'leri silip tek bir veritabanı kullanmak uyarıyı giderir.

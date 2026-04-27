@@ -10,7 +10,7 @@ Bu belge, kalan tüm maddeleri tek tek alt adımlara böler. Her madde tamamland
 
 | # | Yapılacak | Dosya / Detay |
 |---|-----------|----------------|
-| 1.1.1 | AsyncStorage key sabiti | `mobile/constants.ts` veya `mobile/i18n/storage.ts`: `LOCALE_STORAGE_KEY = "@dotshub/locale"` |
+| 1.1.1 | AsyncStorage key sabiti | `mobile/constants.ts` veya `mobile/i18n/storage.ts`: `LOCALE_STORAGE_KEY = "@triaige/locale"` |
 | 1.1.2 | Kaydetme | `I18nProvider` içinde `setLocale` çağrıldığında `AsyncStorage.setItem(LOCALE_STORAGE_KEY, next)` (async, fire-and-forget veya await) |
 | 1.1.3 | Okuma | Uygulama açılışında (layout veya I18nProvider mount) `AsyncStorage.getItem(LOCALE_STORAGE_KEY)` → geçerli locale ise state’e yükle |
 | 1.1.4 | Bağımlılık | `expo` ile gelen `@react-native-async-storage/async-storage` veya `expo-secure-store`; yoksa paket ekle |

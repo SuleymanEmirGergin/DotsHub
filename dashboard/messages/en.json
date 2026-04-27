@@ -8,7 +8,8 @@
     "errorTitle": "An error occurred",
     "retry": "Retry",
     "notFound": "Page not found",
-    "notFoundDescription": "The page you are looking for does not exist or may have been moved."
+    "notFoundDescription": "The page you are looking for does not exist or may have been moved.",
+    "skipToContent": "Skip to content"
   },
   "nav": {
     "admin": "Admin",

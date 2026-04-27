@@ -26,7 +26,7 @@
       }
     ]
   },
-  "description": "Dotshub pre-triage backend — HTTP health, capability-gate strips, rate-limit decisions, triage envelope mix, and confidence distribution. Sourced from prometheus_client counters declared in app/observability/metrics.py.",
+  "description": "TriAIge pre-triage backend — HTTP health, capability-gate strips, rate-limit decisions, triage envelope mix, and confidence distribution. Sourced from prometheus_client counters declared in app/observability/metrics.py.",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,

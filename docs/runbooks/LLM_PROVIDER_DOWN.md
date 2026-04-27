@@ -10,7 +10,7 @@
       to a healthy alternative
 - [ ] Redeploy / reload config
 - [ ] Watch rolling-window rate for 10 min — should recover to >80%
-- [ ] Ping #dotshub-ops with timeline
+- [ ] Ping #triaige-ops with timeline
 - [ ] Open a post-incident ticket (see bottom)
 
 ## Symptoms (how you know)

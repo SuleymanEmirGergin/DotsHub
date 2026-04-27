@@ -1,5 +1,5 @@
 /**
- * Design tokens for Dotshub medical pre-triage app.
+ * Design tokens for TriAIge medical pre-triage app.
  * Clean, medical, trustworthy aesthetic.
  */
 

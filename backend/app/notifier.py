@@ -243,7 +243,7 @@ def _send_slack(
         {
             "type": "context",
             "elements": [
-                {"type": "mrkdwn", "text": f"🕐 {info['timestamp']} | DotsHub Triage Alert"},
+                {"type": "mrkdwn", "text": f"🕐 {info['timestamp']} | TriAIge Triage Alert"},
             ],
         },
     ]
@@ -281,7 +281,7 @@ def _send_discord(
             {"name": "Güven", "value": info["confidence"], "inline": True},
             {"name": "Sebep", "value": info["reason"], "inline": False},
         ],
-        "footer": {"text": f"DotsHub Triage Alert • {info['timestamp']}"},
+        "footer": {"text": f"TriAIge Triage Alert • {info['timestamp']}"},
     }
 
     body = {"embeds": [embed], "content": info["title"]}
@@ -355,7 +355,7 @@ def _dispatch_llm_health(
                     {"name": "Gerçekleşen", "value": f"%{success_rate_pct:.1f}", "inline": True},
                     {"name": "En sık hata", "value": (top_error or "-"), "inline": False},
                 ],
-                "footer": {"text": f"DotsHub LLM Health • {now}"},
+                "footer": {"text": f"TriAIge LLM Health • {now}"},
             }
             with httpx.Client(timeout=10) as client:
                 resp = client.post(
@@ -426,7 +426,7 @@ def _dispatch_http_5xx(
                     {"name": "Eşik", "value": f"%{threshold_pct:.0f}", "inline": True},
                     {"name": "En sık 5xx yolu", "value": (top_path or "-"), "inline": False},
                 ],
-                "footer": {"text": f"DotsHub 5xx • {now}"},
+                "footer": {"text": f"TriAIge 5xx • {now}"},
             }
             with httpx.Client(timeout=10) as client:
                 resp = client.post(
@@ -511,7 +511,7 @@ def _dispatch_rate_limit(
                     },
                     {"name": "Top key", "value": (top_key or "-"), "inline": False},
                 ],
-                "footer": {"text": f"DotsHub rate-limit • {now}"},
+                "footer": {"text": f"TriAIge rate-limit • {now}"},
             }
             with httpx.Client(timeout=10) as client:
                 resp = client.post(
@@ -537,7 +537,7 @@ def send_test() -> Dict[str, Any]:
             blocks = [
                 {
                     "type": "header",
-                    "text": {"type": "plain_text", "text": "✅ DotsHub Test Mesajı", "emoji": True},
+                    "text": {"type": "plain_text", "text": "✅ TriAIge Test Mesajı", "emoji": True},
                 },
                 {"type": "divider"},
                 {
@@ -546,7 +546,7 @@ def send_test() -> Dict[str, Any]:
                 },
             ]
             with httpx.Client(timeout=10) as client:
-                resp = client.post(settings.WEBHOOK_SLACK_URL, json={"blocks": blocks, "text": "DotsHub test"})
+                resp = client.post(settings.WEBHOOK_SLACK_URL, json={"blocks": blocks, "text": "TriAIge test"})
                 results["slack"] = {"ok": resp.status_code < 400, "status": resp.status_code}
         except Exception as exc:
             results["slack"] = {"ok": False, "error": str(exc)}
@@ -554,13 +554,13 @@ def send_test() -> Dict[str, Any]:
     if settings.WEBHOOK_DISCORD_URL:
         try:
             embed = {
-                "title": "✅ DotsHub Test Mesajı",
+                "title": "✅ TriAIge Test Mesajı",
                 "color": 0x10B981,
                 "description": "Webhook bağlantısı başarılı!",
-                "footer": {"text": f"DotsHub Test • {now}"},
+                "footer": {"text": f"TriAIge Test • {now}"},
             }
             with httpx.Client(timeout=10) as client:
-                resp = client.post(settings.WEBHOOK_DISCORD_URL, json={"embeds": [embed], "content": "DotsHub test"})
+                resp = client.post(settings.WEBHOOK_DISCORD_URL, json={"embeds": [embed], "content": "TriAIge test"})
                 results["discord"] = {"ok": resp.status_code < 400, "status": resp.status_code}
         except Exception as exc:
             results["discord"] = {"ok": False, "error": str(exc)}

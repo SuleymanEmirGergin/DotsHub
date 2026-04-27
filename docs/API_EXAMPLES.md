@@ -8,7 +8,7 @@ Temel endpoint’ler için `curl` örnekleri. `BASE` olarak API kök adresinizi 
 curl -s "${BASE}/health" | jq .
 ```
 
-Örnek cevap: `{"status":"ok","service":"dotshub-api","version":"4.0.0","supabase":"ok"}`
+Örnek cevap: `{"status":"ok","service":"triaige-api","version":"4.0.0","supabase":"ok"}`
 
 ---
 

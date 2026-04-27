@@ -1,6 +1,6 @@
 # Backend Production Deploy — Fly.io
 
-This doc is the end-to-end recipe for getting the Dotshub FastAPI
+This doc is the end-to-end recipe for getting the TriAIge FastAPI
 backend live on Fly.io, region `ams`, with Upstash Redis for multi-
 instance rate-limit, behind a Fly-managed HTTPS edge.
 
@@ -125,7 +125,7 @@ flyctl apps create triaige-backend --org personal
 # Two: provision Upstash Redis (free-tier — 10K cmd/day, 256 MB).
 # This attaches REDIS_URL as a secret on `triaige-backend`.
 flyctl redis create \
-  --name dotshub-redis \
+  --name triaige-redis \
   --region ams \
   --plan free \
   --no-replicas
@@ -139,7 +139,7 @@ flyctl secrets set \
   WIRO_API_KEY="<paste>" \
   WIRO_API_SECRET="<paste>" \
   ADMIN_API_KEY="<paste>" \
-  CORS_ORIGINS='["http://localhost:3000","https://dotshub.vercel.app"]'
+  CORS_ORIGINS='["http://localhost:3000","https://triaige.vercel.app"]'
   # ↑ Comma-separated JSON. Update the Vercel URL in §5 once you know it.
 
 # Four: first build + deploy. ~3-5 minutes.
@@ -162,7 +162,7 @@ dashboard at the prod backend), refresh the list:
 
 ```bash
 flyctl secrets set \
-  CORS_ORIGINS='["http://localhost:3000","https://<your-dashboard>.vercel.app","https://dashboard.dotshub.com"]'
+  CORS_ORIGINS='["http://localhost:3000","https://<your-dashboard>.vercel.app","https://dashboard.triaige.com"]'
 # Fly will restart the machine with the new env.
 ```
 

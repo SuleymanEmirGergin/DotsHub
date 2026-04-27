@@ -20,12 +20,23 @@ export function LocaleSwitcher({ initialLocale }: { initialLocale: Locale }) {
     router.refresh();
   }
 
+  // role="group" + aria-label gives screen readers a single context
+  // ("Language") so the two TR/EN buttons aren't announced as
+  // disconnected toggle buttons. Each button declares its own `lang`
+  // so the language name is pronounced in its own phonology, not
+  // forced through the document's lang.
   return (
-    <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+    <span
+      role="group"
+      aria-label="Language"
+      style={{ display: "flex", alignItems: "center", gap: 8 }}
+    >
       <button
         type="button"
         onClick={() => switchTo("tr")}
         aria-pressed={initialLocale === "tr"}
+        aria-label="Türkçe"
+        lang="tr"
         title="Türkçe"
         style={{
           padding: "6px 10px",
@@ -44,6 +55,8 @@ export function LocaleSwitcher({ initialLocale }: { initialLocale: Locale }) {
         type="button"
         onClick={() => switchTo("en")}
         aria-pressed={initialLocale === "en"}
+        aria-label="English"
+        lang="en"
         title="English"
         style={{
           padding: "6px 10px",

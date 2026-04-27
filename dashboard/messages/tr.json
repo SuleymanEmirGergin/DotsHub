@@ -8,7 +8,8 @@
     "errorTitle": "Bir hata oluştu",
     "retry": "Yeniden dene",
     "notFound": "Sayfa bulunamadı",
-    "notFoundDescription": "Aradığınız sayfa mevcut değil veya taşınmış olabilir."
+    "notFoundDescription": "Aradığınız sayfa mevcut değil veya taşınmış olabilir.",
+    "skipToContent": "İçeriğe atla"
   },
   "nav": {
     "admin": "Admin",

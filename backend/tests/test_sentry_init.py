@@ -101,7 +101,7 @@ class BeforeSendScrubTests(unittest.TestCase):
                         "Cookie": "session=abc",
                         "X-Admin-Key": "admin-secret",
                         "x-device-id": "dev-12345",
-                        "User-Agent": "DotsHub/1.0",
+                        "User-Agent": "TriAIge/1.0",
                     }
                 }
             }
@@ -112,7 +112,7 @@ class BeforeSendScrubTests(unittest.TestCase):
         self.assertEqual(headers["X-Admin-Key"], "[SCRUBBED]")
         self.assertEqual(headers["x-device-id"], "[SCRUBBED]")
         # Non-sensitive headers pass through.
-        self.assertEqual(headers["User-Agent"], "DotsHub/1.0")
+        self.assertEqual(headers["User-Agent"], "TriAIge/1.0")
 
     def test_scrubs_body_keys(self):
         from app.observability import sentry_init
@@ -185,7 +185,7 @@ class BeforeSendScrubTests(unittest.TestCase):
                 "message": "Something broke",
                 "level": "error",
                 "request": {
-                    "url": "https://api.dotshub.co/v1/triage/turn",
+                    "url": "https://api.triaige.co/v1/triage/turn",
                     "method": "POST",
                     "headers": {"X-Request-ID": "abc"},
                     "data": {"session_id": "s1"},
@@ -193,7 +193,7 @@ class BeforeSendScrubTests(unittest.TestCase):
             }
             out = before_send(event, {})
         self.assertEqual(out["message"], "Something broke")
-        self.assertEqual(out["request"]["url"], "https://api.dotshub.co/v1/triage/turn")
+        self.assertEqual(out["request"]["url"], "https://api.triaige.co/v1/triage/turn")
         self.assertEqual(out["request"]["headers"]["X-Request-ID"], "abc")
         self.assertEqual(out["request"]["data"]["session_id"], "s1")
 

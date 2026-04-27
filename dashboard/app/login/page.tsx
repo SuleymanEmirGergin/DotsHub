@@ -123,7 +123,13 @@ function LoginForm() {
         )}
 
         {sent ? (
+          // role="status" + aria-live="polite" so screen readers
+          // announce the magic-link confirmation without interrupting
+          // — match expectation that the next user action is to
+          // check email rather than re-engage the form.
           <div
+            role="status"
+            aria-live="polite"
             style={{
               padding: 20,
               borderRadius: 12,
@@ -138,11 +144,18 @@ function LoginForm() {
           </div>
         ) : (
           <>
+            <label htmlFor="login-email" className="sr-only">
+              Email
+            </label>
             <input
+              id="login-email"
               type="email"
+              autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="admin@example.com"
+              aria-invalid={error ? true : undefined}
+              aria-describedby={error ? "login-error" : undefined}
               onKeyDown={(e) => e.key === "Enter" && sendMagicLink()}
               style={{
                 width: "100%",
@@ -177,7 +190,14 @@ function LoginForm() {
                 : "Send magic link"}
             </button>
             {error && (
-              <p style={{ color: "#ef4444", marginTop: 12, fontSize: 13 }}>
+              // role="alert" forces immediate announcement of the
+              // server-returned validation message; aria-describedby
+              // on the input above wires the error to the field.
+              <p
+                id="login-error"
+                role="alert"
+                style={{ color: "#ef4444", marginTop: 12, fontSize: 13 }}
+              >
                 {error}
               </p>
             )}

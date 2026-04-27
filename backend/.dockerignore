@@ -20,7 +20,7 @@ env/
 # Local dev artifacts
 *.db
 *.sqlite*
-dotshub.db*
+triaige.db*
 .env
 .env.*
 

@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     WIRO_HTTP_TIMEOUT_SECONDS: float = 60.0
 
     # Database (SQLite default for easy dev; set to postgresql+asyncpg://... for production)
-    DATABASE_URL: str = "sqlite+aiosqlite:///./dotshub.db"
+    DATABASE_URL: str = "sqlite+aiosqlite:///./triaige.db"
 
     # Redis
     REDIS_URL: str = "redis://localhost:6379/0"

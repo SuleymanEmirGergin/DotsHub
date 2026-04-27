@@ -25,8 +25,8 @@ services:
     build:
       context: ./config/grafana-agent
       dockerfile: Dockerfile
-    image: dotshub-grafana-agent:latest
-    container_name: dotshub-grafana-agent
+    image: triaige-grafana-agent:latest
+    container_name: triaige-grafana-agent
     restart: unless-stopped
     environment:
       # Override BACKEND_SCRAPE_TARGET if the backend service is named
@@ -54,5 +54,5 @@ services:
 # If the main stack uses a different network, override here.
 networks:
   default:
-    name: ${COMPOSE_PROJECT_NAME:-dotshub}_default
+    name: ${COMPOSE_PROJECT_NAME:-triaige}_default
     external: true

@@ -31,7 +31,7 @@ docs/
 README.md
 CHANGELOG.md
 CONTRIBUTING.md
-DotsHub\ Wiro.txt
+TriAIge\ Wiro.txt
 
 # ── Python bytecode / build noise ────────────────────────────────
 **/__pycache__/
@@ -47,7 +47,7 @@ DotsHub\ Wiro.txt
 # ── Local DBs / env / secrets (NEVER commit, and NEVER bake in) ──
 **/*.db
 **/*.sqlite*
-**/dotshub.db*
+**/triaige.db*
 **/.env
 **/.env.*
 **/.env.observability
@@ -60,7 +60,7 @@ backend/.pytest_cache/
 backend/reports/
 backend/uvicorn_*.log
 backend/test.db
-backend/dotshub.db
+backend/triaige.db
 
 # ── Editor / OS / CI caches ──────────────────────────────────────
 .DS_Store

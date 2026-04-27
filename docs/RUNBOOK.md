@@ -442,7 +442,7 @@ vercel --prod --force
 ### Grafana Cloud
 
 - Dashboards: `https://<slug>.grafana.net/dashboards`
-- Alerts: `Alerting → Alert rules → dotshub-backend`
+- Alerts: `Alerting → Alert rules → triaige-backend`
 - Explore: `Explore` → query: `up{service="backend"}`
 - Access Policies (token rotate): `My Account → Access Policies`
 

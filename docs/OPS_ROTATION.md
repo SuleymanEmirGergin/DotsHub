@@ -26,7 +26,7 @@ down.
 
 ## Quarterly rotation playbook
 
-Block out a 2-hour window. Announce in #dotshub-ops 24 hours prior.
+Block out a 2-hour window. Announce in #triaige-ops 24 hours prior.
 
 ### 1. `ADMIN_API_KEY`
 
@@ -39,7 +39,7 @@ echo "ADMIN_API_KEY=$NEW_KEY"  # write it down
 #    AND dashboard env (Vercel — server-side envs)
 
 # 3. Canary: hit an admin endpoint with the NEW key
-curl -H "x-admin-key: $NEW_KEY" https://api.dotshub.example/v1/admin/sessions | head -c 200
+curl -H "x-admin-key: $NEW_KEY" https://api.triaige.example/v1/admin/sessions | head -c 200
 
 # 4. Revoke old key by deleting from envs + restarting workers
 ```
@@ -85,7 +85,7 @@ Discord: Server Settings → Integrations → Webhooks → create new
 1. Update `WEBHOOK_SLACK_URL` / `WEBHOOK_DISCORD_URL` in backend env.
 2. Canary: trigger a test alert:
    ```bash
-   curl -X POST https://api.dotshub.example/v1/admin/test-webhook \
+   curl -X POST https://api.triaige.example/v1/admin/test-webhook \
      -H "x-admin-key: $ADMIN_API_KEY"
    ```
 3. Confirm message lands in the right channel.

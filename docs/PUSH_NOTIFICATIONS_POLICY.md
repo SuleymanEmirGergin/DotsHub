@@ -1,6 +1,6 @@
 # Push bildirimleri politika metni
 
-Bu belge, Dotshub mobil uygulamasında push bildirimlerinin ne zaman ve nasıl kullanılacağını tanımlar.
+Bu belge, TriAIge mobil uygulamasında push bildirimlerinin ne zaman ve nasıl kullanılacağını tanımlar.
 
 ---
 

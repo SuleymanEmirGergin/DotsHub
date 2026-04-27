@@ -1,4 +1,4 @@
-# Grafana provisioning — auto-import the Dotshub dashboard on container
+# Grafana provisioning — auto-import the TriAIge dashboard on container
 # start. Mounted into the Grafana container at
 #   /etc/grafana/provisioning/dashboards/dashboards.yml
 # The `path` below matches the bind mount in docker-compose.monitoring.yml

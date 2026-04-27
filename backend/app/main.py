@@ -83,7 +83,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="Dotshub - Ön-Triyaj Asistanı API",
+    title="TriAIge - Ön-Triyaj Asistanı API",
     description="Agentic AI tabanlı akıllı ön-triyaj sistemi (V4 — unified triage turn)",
     version="4.0.0",
     lifespan=lifespan,
@@ -361,7 +361,7 @@ app.include_router(admin_v5_router, prefix="/v1", tags=["Admin V5"])
 @app.get("/health")
 async def health_check():
     """Basic liveness; includes Supabase reachability when configured."""
-    out = {"status": "ok", "service": "dotshub-api", "version": "4.0.0"}
+    out = {"status": "ok", "service": "triaige-api", "version": "4.0.0"}
     if settings.SUPABASE_URL and "xxxx" not in settings.SUPABASE_URL:
         try:
             import httpx

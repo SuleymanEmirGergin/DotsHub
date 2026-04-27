@@ -19,8 +19,8 @@ if (-not (Test-Path $base)) {
     exit 1
 }
 
-# Sadece bu projeye (Dotshub) ait codeql_db'leri temizle
-$projectSlug = "dotshub"
+# Sadece bu projeye (TriAIge) ait codeql_db'leri temizle
+$projectSlug = "triaige"
 $found = @()
 Get-ChildItem -Path $base -Directory -ErrorAction SilentlyContinue | ForEach-Object {
     $ws = $_.FullName

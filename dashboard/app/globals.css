@@ -232,3 +232,22 @@
   color: var(--card-foreground);
   border-color: var(--border);
 }
+
+/*
+ * Honor prefers-reduced-motion (WCAG 2.3.3 / 2.1 AA recommended).
+ * Tailwind's `transition-colors` (used on ThemeToggle hover) and any
+ * future smooth-scroll / animation utilities should collapse to a
+ * near-zero duration for users who request reduced motion. This
+ * matches the browser intent without globally disabling utility
+ * classes — only the time/iteration parameters are forced to 0.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

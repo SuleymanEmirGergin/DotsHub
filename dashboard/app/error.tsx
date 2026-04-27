@@ -28,8 +28,14 @@ export default function Error({
   const title = getText(locale, "common.errorTitle");
   const retryLabel = getText(locale, "common.retry");
 
+  // role="alert" + aria-live="assertive" makes screen readers
+  // interrupt and announce the error immediately when the boundary
+  // re-renders. Without this, a route-transition error stays silent
+  // and the user is left wondering why nothing happened.
   return (
     <div
+      role="alert"
+      aria-live="assertive"
       style={{
         display: "flex",
         flexDirection: "column",

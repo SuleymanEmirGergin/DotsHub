@@ -18,7 +18,7 @@ NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
 DEFAULT_TAGS = ["hospital", "clinic"]
 DEFAULT_CITY = "Istanbul"
 DISCLAIMER_TR = "Bu liste bilgilendirme amaclidir. Tibbi yonlendirme degildir."
-USER_AGENT = "dotshub-pre-triage/1.0"
+USER_AGENT = "triaige-pre-triage/1.0"
 
 
 @lru_cache(maxsize=1)

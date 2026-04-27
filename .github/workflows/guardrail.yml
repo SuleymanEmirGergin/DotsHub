@@ -102,7 +102,7 @@ jobs:
             --deployment-id "${{ steps.decision.outputs.deployment_id }}"
           
           git config --global user.name "Guardrail Bot"
-          git config --global user.email "guardrail-bot@dotshub.com"
+          git config --global user.email "guardrail-bot@triaige.com"
           
           BRANCH_NAME="rollback/deployment-${{ steps.decision.outputs.deployment_id }}"
           git checkout -b "$BRANCH_NAME"

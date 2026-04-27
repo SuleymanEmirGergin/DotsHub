@@ -69,7 +69,7 @@ Auto-increment: `production` profile bumps `ios.buildNumber` + `android.versionC
 
 ### Via GitHub Actions (recommended)
 
-1. https://github.com/SuleymanEmirGergin/DotsHub/actions/workflows/mobile-eas-build.yml
+1. https://github.com/SuleymanEmirGergin/TriAIge/actions/workflows/mobile-eas-build.yml
 2. **Run workflow** button → pick:
    - Branch: `main`
    - Profile: `preview` (start here)

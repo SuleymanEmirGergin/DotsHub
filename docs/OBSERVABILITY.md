@@ -138,7 +138,7 @@ The alert text points ops at both `LLM_PROVIDER_DOWN.md` and
 ## Option A — Grafana Cloud (production)
 
 **Free tier:** 10k active series, 50 GB logs, 14-day retention. More
-than enough for Dotshub's scale.
+than enough for TriAIge's scale.
 
 Everything in this section is GitOps-managed out of the box:
 - Dashboard JSON, alert rules, agent config are all in the repo.
@@ -153,7 +153,7 @@ Everything in this section is GitOps-managed out of the box:
 
 1. **Create Grafana Cloud stack**  
    <https://grafana.com/products/cloud/> → *Start for free*. Note your
-   stack URL (e.g. `https://dotshub.grafana.net`).
+   stack URL (e.g. `https://triaige.grafana.net`).
 
 2. **Get remote_write credentials**  
    Grafana Cloud UI → **My Account → Prometheus → Sending metrics**.  
@@ -255,7 +255,7 @@ Add a second container to the backend Deployment Pod spec:
 
 ```yaml
       - name: grafana-agent
-        image: ghcr.io/<org>/dotshub-grafana-agent:<tag>   # or build on push
+        image: ghcr.io/<org>/triaige-grafana-agent:<tag>   # or build on push
         env:
           - name: BACKEND_SCRAPE_TARGET
             value: "localhost:8000"
@@ -339,7 +339,7 @@ Then open:
   `triaige-backend` target is `UP`.
 - Grafana: <http://localhost:3001> (login `admin` / `admin`, will
   prompt for password change on first login — dismiss with `Skip`).
-  The Dotshub dashboard is auto-imported via provisioning.
+  The TriAIge dashboard is auto-imported via provisioning.
 
 Teardown:
 

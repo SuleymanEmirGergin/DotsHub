@@ -1,6 +1,6 @@
 # Security Policy
 
-DotsHub is a medical pre-triage application that handles patient
+TriAIge is a medical pre-triage application that handles patient
 symptoms, free-text health complaints, and session metadata subject to
 Turkish KVKK (Kişisel Verileri Koruma Kanunu) and, where applicable,
 GDPR obligations. This document describes the project's security
@@ -8,7 +8,7 @@ posture, vulnerability reporting process, and operator expectations.
 
 ## Reporting a vulnerability
 
-Report suspected vulnerabilities to **security@dotshub.example** (or
+Report suspected vulnerabilities to **security@triaige.example** (or
 open a private security advisory on GitHub — not a public issue).
 
 Include, at minimum:

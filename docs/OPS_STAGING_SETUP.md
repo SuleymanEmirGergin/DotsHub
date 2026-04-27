@@ -20,7 +20,7 @@ seed + clean triage sessions, and generate magic links via the
 Service Role key. Production data would be polluted or worse
 deleted.
 
-1. Supabase dashboard → New project → name `dotshub-staging`.
+1. Supabase dashboard → New project → name `triaige-staging`.
 2. Copy from **Settings → API**:
    - `Project URL` → `STAGING_SUPABASE_URL`
    - `anon` public key → `STAGING_SUPABASE_ANON_KEY`
@@ -34,11 +34,11 @@ deleted.
    ```
 4. Create the E2E admin email. The test run auto-provisions it via
    `auth.admin.createUser`, so any valid-shaped address works:
-   - `STAGING_TEST_ADMIN_EMAIL=e2e-admin@dotshub.example`
+   - `STAGING_TEST_ADMIN_EMAIL=e2e-admin@triaige.example`
 
 ### 2. Deploy staging dashboard (Vercel)
 
-1. Vercel → Import GitHub repo → `dotshub` — deploy the `main`
+1. Vercel → Import GitHub repo → `triaige` — deploy the `main`
    branch.
 2. **Settings → Environment Variables** (Preview + Production both):
    - `SUPABASE_URL` (same as `STAGING_SUPABASE_URL`)
@@ -48,7 +48,7 @@ deleted.
    - `ADMIN_API_KEY` (any strong random string; write it down — the
      backend uses the same value)
 3. Copy the deployed preview URL → `STAGING_BASE_URL`
-   (e.g. `https://dotshub-staging.vercel.app`).
+   (e.g. `https://triaige-staging.vercel.app`).
 4. **Optional**: enable Deployment Protection (SSO wall) and create a
    "Protection Bypass for Automation" secret. Copy it to
    `VERCEL_AUTOMATION_BYPASS_SECRET`. Tests attach it as an

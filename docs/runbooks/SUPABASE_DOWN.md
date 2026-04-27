@@ -4,7 +4,7 @@
 
 - [ ] Backend `/health` → check the `supabase` field
 - [ ] Supabase status page (https://status.supabase.com)
-- [ ] If provider-wide: comms on status page + #dotshub-ops
+- [ ] If provider-wide: comms on status page + #triaige-ops
 - [ ] If our project only: Supabase dashboard → Project → Health
 - [ ] Triage `/v1/triage/turn` keeps working (deterministic fallback);
       feedback + admin + send-summary degrade

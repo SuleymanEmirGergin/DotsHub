@@ -1,4 +1,4 @@
-# Dotshub — Kurulum ve Çalıştırma Rehberi
+# TriAIge — Kurulum ve Çalıştırma Rehberi
 
 Bu dokümanda projeyi sıfırdan ortam dosyaları, backend, dashboard, mobil ve Supabase entegrasyonu ile nasıl hazırlayıp çalıştıracağınız adım adım yer alır.
 
@@ -86,7 +86,7 @@ Mobil uygulama varsayılan olarak `http://localhost:8000` kullanır (`app.config
 Rate limiting için Redis kullanmak isterseniz (Docker açıksa):
 
 ```powershell
-docker run -d --name dotshub-redis -p 6379:6379 redis:alpine
+docker run -d --name triaige-redis -p 6379:6379 redis:alpine
 ```
 
 Backend `.env` içinde `REDIS_URL=redis://localhost:6379/0` olsun. Redis çalıştırmazsanız bu satırı boş bırakabilirsiniz; backend in-memory rate limit kullanır.

@@ -87,7 +87,7 @@ Trigger manually: `gh workflow run dashboard-tests.yml --ref <branch> -f include
 
 Per-commit Vercel preview URLs embed the deployment hash and change on every build, so hard-coding one into `STAGING_BASE_URL` means the secret goes stale every push. Fix this **once** in Vercel:
 
-1. Vercel → DotsHub project → Deployments → pick the preview deployment you want the nightly cron to target (usually the one tracking `main`, i.e. the most recent production deployment).
+1. Vercel → TriAIge project → Deployments → pick the preview deployment you want the nightly cron to target (usually the one tracking `main`, i.e. the most recent production deployment).
 2. Click the deployment → **Domains** tab → **Add Domain** → pick a subdomain you control (e.g. `dots-hub-staging.vercel.app` if free, or any custom domain you own). Vercel will promote the alias to always point at the latest deployment for the chosen branch.
 3. Update the `STAGING_BASE_URL` repo secret to that alias — it now stays valid regardless of how many PRs deploy.
 

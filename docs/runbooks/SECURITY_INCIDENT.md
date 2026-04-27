@@ -35,10 +35,10 @@ Anything touching patient input = minimum P1 by default.
 
 | Role | Contact | When |
 |---|---|---|
-| Incident Commander | ops@dotshub.example | Always, first call |
-| Engineering Lead | eng-lead@dotshub.example | P0/P1 within 15 min |
-| Security Lead | security@dotshub.example | P0/P1 within 30 min |
-| Legal / KVKK DPO | legal@dotshub.example | P0/P1 within 1 hour |
+| Incident Commander | ops@triaige.example | Always, first call |
+| Engineering Lead | eng-lead@triaige.example | P0/P1 within 15 min |
+| Security Lead | security@triaige.example | P0/P1 within 30 min |
+| Legal / KVKK DPO | legal@triaige.example | P0/P1 within 1 hour |
 | External counsel | (on-file) | Only Legal escalates |
 
 Don't page outside these channels until the incident commander

@@ -1,6 +1,6 @@
 # Incident Reports
 
-Her **30 dakika+** süren production incident'ı buraya yazılır. Kısa (<30dk) incident'lar için kanal: `#dotshub-ops` Slack log yeterli; formal bir post-mortem gerek yok.
+Her **30 dakika+** süren production incident'ı buraya yazılır. Kısa (<30dk) incident'lar için kanal: `#triaige-ops` Slack log yeterli; formal bir post-mortem gerek yok.
 
 ---
 

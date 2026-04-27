@@ -1,6 +1,6 @@
 # Gizlilik ve güvenlik notu
 
-Bu belge, Dotshub projesinde veri ve güvenlikle ilgili genel prensipleri özetler. Ürün seviyesi gizlilik politikası ve KVKK/GDPR metinleri ayrıca hazırlanmalıdır.
+Bu belge, TriAIge projesinde veri ve güvenlikle ilgili genel prensipleri özetler. Ürün seviyesi gizlilik politikası ve KVKK/GDPR metinleri ayrıca hazırlanmalıdır.
 
 ---
 
