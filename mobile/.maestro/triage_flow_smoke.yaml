@@ -9,12 +9,15 @@ appId: com.triaige.app
     visible:
       text: "Başla"
     timeout: 15000
-# Intro'da "Başla" görünür ama iki onay kutusu işaretlenmedikçe disabled.
+# Intro'da "Başla" görünür ama üç onay kutusu işaretlenmedikçe disabled.
 # TR canonical label'lara tıklıyoruz (mobile/i18n/tr.json:intro.consent*Label).
+# Üçüncü kutu — yaş gate (DPIA R-7) — session 25'te eklendi.
 - tapOn:
     text: "Kullanım koşullarını okudum ve kabul ediyorum"
 - tapOn:
     text: "Sağlık verilerimin işlenmesine açık rıza veriyorum"
+- tapOn:
+    text: "13 yaşında veya daha büyüğüm"
 - tapOn:
     text: "Başla"
 - extendedWaitUntil:

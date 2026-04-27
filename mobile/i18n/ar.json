@@ -26,6 +26,7 @@
     "consentTermsLabel": "لقد قرأت شروط الاستخدام وأوافق عليها",
     "consentHealthLabel": "أمنح موافقتي الصريحة على معالجة بياناتي الصحية",
     "consentHealthHint": "البيانات الصحية فئة خاصة — يتطلب KVKK / GDPR موافقة منفصلة.",
+    "consentAgeLabel": "عمري 13 عامًا أو أكثر",
     "consentSubmitting": "جارٍ تسجيل موافقتك…",
     "consentError": "تعذّر تسجيل موافقتك. يرجى المحاولة مرة أخرى.",
     "start": "ابدأ",

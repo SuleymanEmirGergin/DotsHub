@@ -26,6 +26,7 @@
     "consentTermsLabel": "I have read and accept the Terms of Use",
     "consentHealthLabel": "I give explicit consent to the processing of my health data",
     "consentHealthHint": "Health data is a special category — KVKK / GDPR requires a separate consent.",
+    "consentAgeLabel": "I am 13 years old or older",
     "consentSubmitting": "Recording your consent…",
     "consentError": "Could not record your consent. Please try again.",
     "start": "Start",

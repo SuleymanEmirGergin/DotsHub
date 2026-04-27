@@ -26,6 +26,7 @@
     "consentTermsLabel": "Kullanım koşullarını okudum ve kabul ediyorum",
     "consentHealthLabel": "Sağlık verilerimin işlenmesine açık rıza veriyorum",
     "consentHealthHint": "Sağlık verisi özel kategoridir — KVKK / GDPR gereği ayrı rıza alınır.",
+    "consentAgeLabel": "13 yaşında veya daha büyüğüm",
     "consentSubmitting": "Onay kaydediliyor…",
     "consentError": "Onayınız kaydedilemedi. Lütfen tekrar deneyin.",
     "start": "Başla",

@@ -26,6 +26,7 @@
     "consentTermsLabel": "Ich habe die Nutzungsbedingungen gelesen und akzeptiere sie",
     "consentHealthLabel": "Ich erteile meine ausdrückliche Einwilligung zur Verarbeitung meiner Gesundheitsdaten",
     "consentHealthHint": "Gesundheitsdaten gehören zur besonderen Kategorie — KVKK / DSGVO erfordert eine separate Einwilligung.",
+    "consentAgeLabel": "Ich bin 13 Jahre oder älter",
     "consentSubmitting": "Einwilligung wird gespeichert…",
     "consentError": "Ihre Einwilligung konnte nicht gespeichert werden. Bitte erneut versuchen.",
     "start": "Starten",

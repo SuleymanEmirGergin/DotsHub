@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Linking, Pressable, StyleSheet, Text, View } from "react-native";
 import { router } from "expo-router";
 import { useI18n, RTL_TEXT_STYLE } from "@/i18n/I18nProvider";
@@ -7,6 +7,7 @@ import { PRIVACY_URL } from "@/src/config/runtime";
 import { tokens } from "@/src/ui/designTokens";
 import { getDeviceId } from "@/utils/deviceId";
 import { recordIntroConsents } from "@/src/api/consentClient";
+import { fetchFeatures, type ConsentPolicy } from "@/src/api/featuresClient";
 import {
   Card,
   Divider,
@@ -15,27 +16,54 @@ import {
   ScreenContainer,
 } from "@/src/ui/primitives";
 
-// Versions tracked on the mobile side. Must match backend config:
-//   PRIVACY_NOTICE_VERSION, CONSENT_VERSION_TERMS_GENERAL,
-//   CONSENT_VERSION_HEALTH_DATA in app/core/config.py.
-// When bumping, edit both sides in the same PR.
-const NOTICE_VERSION = "v0.2";
-const TERMS_VERSION = "v1.0";
-const HEALTH_DATA_VERSION = "v1.0";
+// Default consent versions used until /v1/config/features resolves.
+// These match featuresClient.DEFAULT_FEATURES.consent — both sides
+// pin the same fallback so first-launch-offline still records a
+// valid (notice_version, consent_version) pair on the audit row.
+// Backend bumps land here on the next online start (no mobile
+// release needed).
+const DEFAULT_CONSENT_POLICY: ConsentPolicy = {
+  notice_version: "v0.2",
+  versions: {
+    terms_general: "v1.0",
+    health_data_processing: "v1.0",
+    push_notifications: "v1.0",
+    summary_email: "v1.0",
+  },
+};
 
 export default function IntroScreen() {
   const [termsChecked, setTermsChecked] = useState(false);
   const [healthChecked, setHealthChecked] = useState(false);
+  const [ageChecked, setAgeChecked] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // ConsentPolicy starts at the hardcoded default; useEffect below
+  // refreshes it from /v1/config/features. A failed fetch keeps the
+  // default — featuresClient.fetchFeatures handles the fallback.
+  const [consentPolicy, setConsentPolicy] = useState<ConsentPolicy>(
+    DEFAULT_CONSENT_POLICY,
+  );
   const { t, locale, isRTL } = useI18n();
   const setAcceptIntro = useTriageStore((s) => s.setAcceptIntro);
   const rtlText = isRTL ? RTL_TEXT_STYLE : undefined;
 
-  const bothChecked = termsChecked && healthChecked;
+  useEffect(() => {
+    let cancelled = false;
+    fetchFeatures().then((features) => {
+      if (!cancelled) {
+        setConsentPolicy(features.consent);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const allChecked = termsChecked && healthChecked && ageChecked;
 
   const onStart = async () => {
-    if (!bothChecked || submitting) return;
+    if (!allChecked || submitting) return;
     setSubmitting(true);
     setError(null);
     try {
@@ -49,9 +77,9 @@ export default function IntroScreen() {
       await recordIntroConsents({
         device_id: deviceId,
         locale,
-        terms_version: TERMS_VERSION,
-        health_data_version: HEALTH_DATA_VERSION,
-        notice_version: NOTICE_VERSION,
+        terms_version: consentPolicy.versions.terms_general,
+        health_data_version: consentPolicy.versions.health_data_processing,
+        notice_version: consentPolicy.notice_version,
       });
       setAcceptIntro(true);
     } catch {
@@ -90,6 +118,13 @@ export default function IntroScreen() {
             rtlText={rtlText}
           />
 
+          <ConsentCheckbox
+            checked={ageChecked}
+            onToggle={() => setAgeChecked((p) => !p)}
+            label={t("intro.consentAgeLabel")}
+            rtlText={rtlText}
+          />
+
           {error ? (
             <Text style={[styles.errorText, rtlText]} accessibilityRole="alert">
               {error}
@@ -97,7 +132,7 @@ export default function IntroScreen() {
           ) : null}
 
           <PrimaryButton
-            disabled={!bothChecked || submitting}
+            disabled={!allChecked || submitting}
             onPress={onStart}
             style={styles.ctaButton}
             accessibilityRole="button"
