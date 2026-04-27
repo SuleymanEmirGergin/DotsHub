@@ -64,6 +64,11 @@ def _run_coverage() -> int:
     env = os.environ.copy()
     env["REDIS_URL"] = ""
 
+    # Switched from `unittest discover` to pytest for the same reason
+    # the parent regression script did (commit 48f41b4): unittest is
+    # incompatible with the codebase's pytest-only autouse fixtures
+    # for cache cleanup, leading to bucket-bleed-driven failures that
+    # don't reproduce under pytest.
     return subprocess.run(
         [
             sys.executable,
@@ -72,13 +77,12 @@ def _run_coverage() -> int:
             "run",
             "--source=app",
             "-m",
-            "unittest",
-            "discover",
-            "-s",
-            "tests",
-            "-p",
-            "test_*.py",
+            "pytest",
+            "tests/",
             "-q",
+            "--ignore=tests/test_benchmarks.py",
+            "-p",
+            "no:cacheprovider",
         ],
         check=False,
         env=env,
