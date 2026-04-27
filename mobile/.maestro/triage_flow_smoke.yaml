@@ -1,5 +1,7 @@
-# Smoke: Intro -> semptom girişi -> gönder -> QUESTION veya RESULT ekranı
-# Backend erişilebilir olmalı (EXPO_PUBLIC_API_BASE). Run: maestro test .maestro/triage_flow_smoke.yaml
+# Smoke: Intro -> 2-checkbox consent -> semptom girişi -> gönder -> QUESTION veya RESULT
+# Backend erişilebilir olmalı (EXPO_PUBLIC_API_BASE). Consent endpoint
+# (POST /v1/consent) da hayatta olmalı — başlangıçta iki rıza kaydı yazıyor.
+# Run: maestro test .maestro/triage_flow_smoke.yaml
 appId: com.triaige.app
 ---
 - launchApp
@@ -7,6 +9,12 @@ appId: com.triaige.app
     visible:
       text: "Başla"
     timeout: 15000
+# Intro'da "Başla" görünür ama iki onay kutusu işaretlenmedikçe disabled.
+# TR canonical label'lara tıklıyoruz (mobile/i18n/tr.json:intro.consent*Label).
+- tapOn:
+    text: "Kullanım koşullarını okudum ve kabul ediyorum"
+- tapOn:
+    text: "Sağlık verilerimin işlenmesine açık rıza veriyorum"
 - tapOn:
     text: "Başla"
 - extendedWaitUntil:

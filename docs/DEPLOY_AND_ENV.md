@@ -32,6 +32,19 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 | `SEND_SUMMARY_EMAIL` | `1` ise özet e-postası açık | `0` veya `1` |
 | `RESEND_API_KEY` | Resend API anahtarı (e-posta için) | — |
 
+### Compliance ile ilgili flag'ler
+
+Aşağıdaki flag'lerin değiştirilmesi yasal sonuç doğurabilir. Production'da değiştirmeden önce hukuk + DPO onayı şart. Tam liste: [`docs/COMPLIANCE_CHECK_2026_04.md`](COMPLIANCE_CHECK_2026_04.md).
+
+| Flag | Default | Production'da değiştirme koşulu |
+|------|---------|--------------------------------|
+| `LLM_NLU_ENABLED` | `false` | **`true` yapmadan önce:** Wiro.ai (veya seçilen LLM provider) ile yazılı DPA + standart sözleşme hükümleri (SCC, AB→TR transfer için) imzalanmış olmalı; provider'ın zero-retention API politikası teyit edilmeli; [`docs/SUB_PROCESSORS.md`](SUB_PROCESSORS.md) güncellenmeli; aydınlatma metni güncel sub-processor listesini içermeli (Compliance KR-4). `false` iken pipeline tamamen deterministic — tek bir kullanıcı verisi dış servise gitmiyor. |
+| `LLM_NLU_LOG_TO_SUPABASE` | `true` | Yalnızca `LLM_NLU_ENABLED=true` iken anlamlı. LLM çağrı logu `llm_calls` tablosuna yazılır; retention 30 gün ([`RETENTION_POLICY.md`](RETENTION_POLICY.md)). |
+| `LLM_EXPLAIN_ENABLED` | `false` | Aynı DPA gereksinimi `LLM_NLU_ENABLED` ile. Açıklama katmanı da provider'a istek gönderir. |
+| `PRIVACY_NOTICE_VERSION` | `v0.2` | Aydınlatma metni revize edildiğinde bump'la — mobile + dashboard ile lockstep. Bump = mevcut kullanıcılara in-app duyuru gerekir. |
+| `CONSENT_VERSION_*` | `v1.0` | Bireysel rıza metni değiştiğinde bump'la. Bump → mobile bir sonraki açılışta kullanıcıyı yeniden onay almaya yönlendirir. |
+| `IP_HASH_SALT` | — | Production'da rotate ETME — eski hash'lerle eşleşme bozulur, rate-limit ve audit trail kırılır. Yeni proje kurulurken set et, sonra dokunma. |
+
 ### Rollback
 
 1. Önceki sürüm image/artifact’a dön (ör. container tag veya binary).
