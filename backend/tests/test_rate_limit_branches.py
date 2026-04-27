@@ -362,6 +362,86 @@ def test_redis_operator_fail_open_on_exception():
     assert allowed is True
 
 
+# ─── In-memory: check_session_rate_limit + key builder ──────────────
+
+
+def test_build_session_rl_key_variants():
+    """Session bucket is keyed by session_id (NOT IP); 'anon'
+    fallback for missing id keeps the function total but should not
+    be exercised in production paths."""
+    assert rl.build_session_rl_key("S-1") == "sid:S-1"
+    assert rl.build_session_rl_key(None) == "anon"
+    assert rl.build_session_rl_key("") == "anon"
+
+
+def test_in_memory_session_allows_first_request():
+    allowed, remaining, _ = rl.check_session_rate_limit("sid:first")
+    assert allowed is True
+    assert remaining == rl.SESSION_MAX_REQ - 1
+
+
+def test_in_memory_session_denies_at_max():
+    import time as _time
+    now = _time.time()
+    rl._SESSION_BUCKETS["sid:max"] = deque([now] * rl.SESSION_MAX_REQ)
+    allowed, remaining, _ = rl.check_session_rate_limit("sid:max")
+    assert allowed is False
+    assert remaining == 0
+
+
+def test_in_memory_session_empty_queue_edge():
+    """Bucket has one stale timestamp (older than the window cutoff)
+    -- pruned during check, request allowed; reset_in fallback path
+    runs."""
+    rl._SESSION_BUCKETS["sid:edge"] = deque([0.0])
+    allowed, _, reset_in = rl.check_session_rate_limit("sid:edge")
+    assert allowed is True
+    assert reset_in >= 1
+
+
+# ─── Redis: check_session_rate_limit_redis ──────────────────────────
+
+
+def test_redis_session_first_request_sets_ttl():
+    redis = _make_redis(incr_value=1, ttl=60)
+    allowed, remaining, _ = _run(
+        rl.check_session_rate_limit_redis(redis, "sid:1")
+    )
+    assert allowed is True
+    assert remaining == rl.SESSION_MAX_REQ - 1
+    redis.expire.assert_called_once_with(
+        f"{rl.SESSION_REDIS_KEY_PREFIX}sid:1", rl.SESSION_WINDOW_SEC
+    )
+
+
+def test_redis_session_subsequent_request_skips_expire():
+    redis = _make_redis(incr_value=5, ttl=40)
+    _run(rl.check_session_rate_limit_redis(redis, "sid:1"))
+    redis.expire.assert_not_called()
+
+
+def test_redis_session_ttl_zero_falls_back_to_window():
+    redis = _make_redis(incr_value=1, ttl=0)
+    _, _, reset_in = _run(rl.check_session_rate_limit_redis(redis, "sid:1"))
+    assert reset_in == rl.SESSION_WINDOW_SEC
+
+
+def test_redis_session_over_max_denies():
+    redis = _make_redis(incr_value=rl.SESSION_MAX_REQ + 1, ttl=30)
+    allowed, remaining, _ = _run(
+        rl.check_session_rate_limit_redis(redis, "sid:1")
+    )
+    assert allowed is False
+    assert remaining == 0
+
+
+def test_redis_session_fail_open_on_exception():
+    redis = AsyncMock()
+    redis.incr.side_effect = RuntimeError("redis down")
+    allowed, _, _ = _run(rl.check_session_rate_limit_redis(redis, "sid:1"))
+    assert allowed is True
+
+
 # ─── Redis: check_send_summary_rate_limit_redis ─────────────────────
 
 def test_redis_send_summary_first_request_sets_ttl():

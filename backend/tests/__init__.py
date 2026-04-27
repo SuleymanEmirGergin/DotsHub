@@ -38,3 +38,47 @@ _STUB_ENV = {
 }
 for _k, _v in _STUB_ENV.items():
     os.environ[_k] = _v
+
+
+# ─── unittest setUp hook: cache cleanup ─────────────────────────────
+#
+# conftest.py has an autouse pytest fixture that clears in-memory
+# rate-limit / idempotency / clinic-registry caches before every
+# test. unittest discover doesn't fire pytest fixtures, so without
+# this monkey-patch a unittest run accumulates rate-limit bucket
+# state across tests and 429s fire in routes that should be 200.
+#
+# We hook into unittest.TestCase.setUp by wrapping the original (a
+# no-op by default) so every TestCase in the suite picks this up
+# without needing to inherit from a custom base class. Pytest also
+# calls TestCase.setUp on classes derived from TestCase, so this
+# duplicates the autouse fixture's work harmlessly under pytest.
+
+import unittest as _unittest
+
+
+def _clear_process_caches() -> None:
+    try:
+        from app import idempotency as _idem
+        from app import rate_limit as _rl
+        from app.services import clinic_registry as _cr
+    except Exception:  # pragma: no cover — defensive (env not ready)
+        return
+    _idem._memory_clear()
+    _rl._BUCKETS.clear()
+    _rl._SESSION_BUCKETS.clear()
+    _rl._SEND_SUMMARY_BUCKETS.clear()
+    _rl._LLM_NLU_BUCKETS.clear()
+    _rl._REDIS_DEGRADED_WARNED.clear()
+    _cr.clear_cache()
+
+
+_orig_setup = _unittest.TestCase.setUp
+
+
+def _wrapped_setUp(self) -> None:
+    _clear_process_caches()
+    _orig_setup(self)
+
+
+_unittest.TestCase.setUp = _wrapped_setUp  # type: ignore[assignment]
