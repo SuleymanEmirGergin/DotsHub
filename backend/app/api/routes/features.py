@@ -1,7 +1,7 @@
 """Client startup feature-flag + version-gate endpoint.
 
 `GET /v1/config/features` is the first API call every mobile build
-makes. Two jobs:
+makes. Three jobs:
 
 1. Return the UI-gating flags (`llm_nlu_enabled`,
    `llm_explain_enabled`) the app uses before rendering the triage
@@ -12,6 +12,12 @@ makes. Two jobs:
    The three-field contract — `min` / `latest` / `mode` — lets ops
    ship "warn" for a week, read the logs, then flip to "block"
    without a client release.
+3. Return the `consent` block: privacy-notice version + per-type
+   consent versions. The mobile intro screen reads these and
+   compares against the latest stored value in `consent_records`
+   for the device — a mismatch forces re-acceptance without a
+   mobile release. Source of truth lives in `app/core/config.py`
+   (`PRIVACY_NOTICE_VERSION`, `CONSENT_VERSION_*`).
 
 Kept separate from the triage capability header (`X-Client-
 Capabilities`) protocol: capabilities describe wire-shape parsing,
@@ -43,5 +49,14 @@ async def features() -> dict:
             "mode": settings.CLIENT_VERSION_ENFORCEMENT,
             "update_url_ios": settings.CLIENT_VERSION_UPDATE_URL_IOS or None,
             "update_url_android": settings.CLIENT_VERSION_UPDATE_URL_ANDROID or None,
+        },
+        "consent": {
+            "notice_version": settings.PRIVACY_NOTICE_VERSION,
+            "versions": {
+                "terms_general": settings.CONSENT_VERSION_TERMS_GENERAL,
+                "health_data_processing": settings.CONSENT_VERSION_HEALTH_DATA,
+                "push_notifications": settings.CONSENT_VERSION_PUSH_NOTIFICATIONS,
+                "summary_email": settings.CONSENT_VERSION_SUMMARY_EMAIL,
+            },
         },
     }
