@@ -23,7 +23,11 @@
     "title": "Ön Sağlık Değerlendirme",
     "subtitle": "Bu uygulama teşhis koymaz. Şikayetlerini anlamaya ve doğru branşa yönlendirmeye yardımcı olur.",
     "body": "Belirtilerini tarif edeceksin, sana birkaç kısa soru soracağız ve hangi uzmanlık alanına gitmen gerektiğini önereceğiz.",
-    "accept": "Anladım, kabul ediyorum",
+    "consentTermsLabel": "Kullanım koşullarını okudum ve kabul ediyorum",
+    "consentHealthLabel": "Sağlık verilerimin işlenmesine açık rıza veriyorum",
+    "consentHealthHint": "Sağlık verisi özel kategoridir — KVKK / GDPR gereği ayrı rıza alınır.",
+    "consentSubmitting": "Onay kaydediliyor…",
+    "consentError": "Onayınız kaydedilemedi. Lütfen tekrar deneyin.",
     "start": "Başla",
     "emergencyNote": "Acil durumlarda 112'yi arayın.",
     "privacyLink": "Gizlilik politikası"

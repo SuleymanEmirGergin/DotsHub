@@ -23,7 +23,11 @@
     "title": "Gesundheits-Vorbewertung",
     "subtitle": "Diese App stellt keine Diagnosen. Sie hilft, Ihre Symptome zu verstehen und Sie an die richtige Fachrichtung weiterzuleiten.",
     "body": "Beschreiben Sie Ihre Symptome, wir stellen einige kurze Fragen und empfehlen, welche Fachrichtung Sie aufsuchen sollten.",
-    "accept": "Ich verstehe, ich akzeptiere",
+    "consentTermsLabel": "Ich habe die Nutzungsbedingungen gelesen und akzeptiere sie",
+    "consentHealthLabel": "Ich erteile meine ausdrückliche Einwilligung zur Verarbeitung meiner Gesundheitsdaten",
+    "consentHealthHint": "Gesundheitsdaten gehören zur besonderen Kategorie — KVKK / DSGVO erfordert eine separate Einwilligung.",
+    "consentSubmitting": "Einwilligung wird gespeichert…",
+    "consentError": "Ihre Einwilligung konnte nicht gespeichert werden. Bitte erneut versuchen.",
     "start": "Starten",
     "emergencyNote": "Rufen Sie 112 in Notfällen an.",
     "privacyLink": "Datenschutzrichtlinie"

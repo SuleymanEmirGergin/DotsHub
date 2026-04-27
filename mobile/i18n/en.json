@@ -23,7 +23,11 @@
     "title": "Health Pre-Assessment",
     "subtitle": "This app does not diagnose. It helps understand your symptoms and directs you to the right specialty.",
     "body": "You'll describe your symptoms, we'll ask a few short questions, and recommend which specialty to visit.",
-    "accept": "I understand, I accept",
+    "consentTermsLabel": "I have read and accept the Terms of Use",
+    "consentHealthLabel": "I give explicit consent to the processing of my health data",
+    "consentHealthHint": "Health data is a special category — KVKK / GDPR requires a separate consent.",
+    "consentSubmitting": "Recording your consent…",
+    "consentError": "Could not record your consent. Please try again.",
     "start": "Start",
     "emergencyNote": "Call 112 in emergencies.",
     "privacyLink": "Privacy policy"
