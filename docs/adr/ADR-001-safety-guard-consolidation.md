@@ -1,6 +1,6 @@
 # ADR-001: Safety Guard Consolidation
 
-**Status:** Proposed
+**Status:** Accepted (live-path cutover landed; legacy-path follow-up tracked)
 **Date:** 2026-04-27
 **Deciders:** Eng (kod sahibi), Ürün (klinik karar)
 **Risk lineage:** `RISK_REGISTER_2026_04.md:C-2` (Critical)
@@ -168,17 +168,17 @@ class SafetyResult:
 
 ## Action Items
 
-1. [ ] **`app/safety/` paketini oluştur**, `types.py`'da `SafetyResult` dataclass'ı tanımla.
-2. [ ] **`deterministic.py`'a eski `safety_guard.py` mantığını taşı**; behavior preserve.
-3. [ ] **`soft.py`'a `agents/safety_guard.py`'dan soft trigger + age risk mantığını taşı**.
-4. [ ] **`enrichment.py`'a LLM pass'i taşı**, `SAFETY_LLM_ENRICHMENT` env flag.
-5. [ ] **`__init__.py`'da public `check_safety()`** orchestrate eden fonksiyonu yaz.
-6. [ ] **`triage_engine.py:24` import'unu güncelle** → `from app.safety import check_safety`.
-7. [ ] **`agents/orchestrator.py:25` import'unu güncelle**, `SafetyGuardAgent` wrapper'ını `check_safety`'i çağıracak şekilde sadeleştir veya kaldır (`agents/orchestrator` halen live ise).
-8. [ ] **`safety_guard_triggers_total{path=}` counter'ını `observability/metrics.py`'a ekle**, `__init__.py`'da increment et.
-9. [ ] **Test corpus**: `tests/test_safety_guard_consolidated.py` — her path için en az 5 case (hard_keyword, hard_regex, soft_age, llm, none); aynı corpus iki orchestrator path'ini de kapsasın.
-10. [ ] **Eski iki dosyayı sil** (`app/safety_guard.py`, `app/agents/safety_guard.py`); 1 release sonra `archive/` policy'sine göre commit.
+1. [x] **`app/safety/` paketini oluştur**, `types.py`'da `SafetyResult` dataclass'ı tanımla. *(session 17, 76dd0e8)*
+2. [x] **`deterministic.py`'a eski `safety_guard.py` mantığını taşı**; behavior preserve. *(session 17, 76dd0e8)*
+3. [x] **`soft.py`'a `agents/safety_guard.py`'dan soft trigger + age risk mantığını taşı**. *(session 17)*
+4. [ ] **`enrichment.py`'a LLM pass'i taşı**, `SAFETY_LLM_ENRICHMENT` env flag. *(deferred — compliance KR-4 gates this; currently no-op stub OK)*
+5. [x] **`__init__.py`'da public `check_safety()`** orchestrate eden fonksiyonu yaz. *(session 17)*
+6. [x] **`triage_engine.py:24` import'unu güncelle** → `from app.safety import check_safety`. *(this commit)*
+7. [ ] **`agents/orchestrator.py:25` import'unu güncelle**, `SafetyGuardAgent` wrapper'ını `check_safety`'i çağıracak şekilde sadeleştir veya kaldır. **Deferred** — `agents/orchestrator.py` is the legacy in-memory orchestrator (only `_handle_turn_legacy` uses it; live path is `triage_engine.run_orchestrator_turn`). The legacy path uses an async LLM step inside `SafetyGuardAgent.run()` — folding it into the new package is a separate refactor. Agent path retains `agents/safety_guard.py` until then.
+8. [x] **`safety_guard_triggers_total{path=}` counter'ını `observability/metrics.py`'a ekle**, `__init__.py`'da increment et. *(session 17)*
+9. [x] **Test corpus**: `tests/test_safety_consolidated.py` — her path için en az 5 case (hard_keyword, hard_regex, soft_age, none); 22 test, real `rules.json`. *(session 17)*
+10. [x] **Live path için eski dosya sil**: `app/safety_guard.py` deleted along with its branch-coverage test (`tests/test_safety_guard_branches.py`); coverage replaced by the consolidated tests. `app/agents/safety_guard.py` stays until action 7 is complete. *(this commit)*
 11. [ ] **CHANGELOG'a not düş** (breaking change değil, internal refactor).
 12. [ ] **6 ay sonra LLM enrichment review tarihi takvim'e** (2026-10-27).
 
-**Tahmini süre:** 3-4 gün (1 sprint içi). Test corpus kurma maliyeti ana iş.
+**Status:** live path cutover done. Legacy agent-orchestrator path (action 7) tracked as a separate ticket. Risk register C-2 downgraded from Critical to Medium — the duplicate that mattered for the live triage endpoint is gone.

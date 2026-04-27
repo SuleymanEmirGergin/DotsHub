@@ -21,7 +21,7 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 
 from app.runtime import Runtime
 from app.canonical_extract import extract_canonicals_tr
-from app.safety_guard import safety_guard_check
+from app.safety import check_safety
 from app.emergency_router import evaluate_emergency
 from app.confidence import compute_confidence
 from app.stop_eval import should_stop
@@ -755,7 +755,21 @@ def run_orchestrator_turn(
         _safety_canonicals, _text_norm_for_panic
     )
 
-    emergency = safety_guard_check(input_text, answers, runtime.rules_json)
+    # ADR-001 cutover (b51a232 → this commit): the deterministic safety
+    # check now lives in `app.safety`. We adapt the new SafetyResult
+    # back into the legacy dict shape downstream code already understands
+    # (rule_id / reason_tr / instructions_tr); the four softener checks
+    # below and the dict reads further down (line ~865 onward) are
+    # unchanged. Real-rules test corpus: tests/test_safety_consolidated.py.
+    _safety = check_safety(input_text, answers)
+    if _safety.status == "EMERGENCY":
+        emergency = {
+            "rule_id": _safety.rule_id,
+            "reason_tr": _safety.reason_tr,
+            "instructions_tr": list(_safety.instructions_tr),
+        }
+    else:
+        emergency = None
     if (
         emergency
         and _panic_context
