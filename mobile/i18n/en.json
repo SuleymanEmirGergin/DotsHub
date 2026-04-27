@@ -25,7 +25,7 @@
     "body": "You'll describe your symptoms, we'll ask a few short questions, and recommend which specialty to visit.",
     "accept": "I understand, I accept",
     "start": "Start",
-    "emergencyNote": "Call 112 in emergencies.",
+    "emergencyNote": "In emergencies, call your local emergency number.",
     "privacyLink": "Privacy policy"
   },
   "chat": {

@@ -21,11 +21,11 @@
   },
   "intro": {
     "title": "Gesundheits-Vorbewertung",
-    "subtitle": "Diese App stellt keine Diagnosen. Sie hilft, Ihre Symptome zu verstehen und Sie an die richtige Fachrichtung weiterzuleiten.",
+    "subtitle": "Diese App stellt keine Diagnose. Sie hilft, Ihre Symptome zu verstehen und Sie an die richtige Fachrichtung weiterzuleiten.",
     "body": "Beschreiben Sie Ihre Symptome, wir stellen einige kurze Fragen und empfehlen, welche Fachrichtung Sie aufsuchen sollten.",
     "accept": "Ich verstehe, ich akzeptiere",
     "start": "Starten",
-    "emergencyNote": "Rufen Sie 112 in Notfällen an.",
+    "emergencyNote": "Wählen Sie im Notfall die örtliche Notrufnummer.",
     "privacyLink": "Datenschutzrichtlinie"
   },
   "chat": {
@@ -193,9 +193,9 @@
     "bannerDismiss": "Schließen",
     "bannerA11y": "Hinweis auf App-Update",
     "blockTitle": "Update erforderlich",
-    "blockBody": "Version {current} wird nicht mehr unterstützt. Bitte auf {min} oder neuer aktualisieren, um den Vor-Triage-Dienst weiter zu nutzen.",
+    "blockBody": "Version {current} wird nicht mehr unterstützt. Bitte aktualisieren Sie auf {min} oder neuer, um den Vor-Triage-Dienst weiter zu nutzen.",
     "blockUpdate": "Aus dem Store aktualisieren",
     "blockNoLinkHint": "Installieren Sie die neueste Version aus Ihrem App-Store.",
-    "blockFooterHint": "In Notfällen 112 anrufen."
+    "blockFooterHint": "Rufen Sie in Notfällen 112 an."
   }
 }
