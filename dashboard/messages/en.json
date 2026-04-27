@@ -24,7 +24,20 @@
     "privacy": "Privacy",
     "terms": "Terms",
     "home": "Home",
-    "adminEntry": "Admin Login"
+    "adminEntry": "Admin Login",
+    "feedback": "Feedback",
+    "live": "Live",
+    "uploads": "Uploads",
+    "operators": "Operators",
+    "leads": "Leads",
+    "tenants": "Tenants",
+    "sidebar": "Admin navigation",
+    "upcoming": "upcoming",
+    "section": {
+      "triage": "Triage",
+      "track_a": "Operator panel",
+      "ops": "Operations"
+    }
   },
   "landing": {
     "heroTitle": "Triaige",

@@ -24,7 +24,20 @@
     "privacy": "Gizlilik",
     "terms": "Kullanım Koşulları",
     "home": "Ana Sayfa",
-    "adminEntry": "Admin Girişi"
+    "adminEntry": "Admin Girişi",
+    "feedback": "Geri Bildirim",
+    "live": "Canlı",
+    "uploads": "Yüklemeler",
+    "operators": "Operatörler",
+    "leads": "Lead'ler",
+    "tenants": "Tenant'lar",
+    "sidebar": "Yönetim menüsü",
+    "upcoming": "yakında",
+    "section": {
+      "triage": "Triaj",
+      "track_a": "Operatör paneli",
+      "ops": "Operasyon"
+    }
   },
   "landing": {
     "heroTitle": "Triaige",
