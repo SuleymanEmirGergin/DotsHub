@@ -173,9 +173,11 @@ Observability and safety nets:
 - Quarterly PII audit with a local scanner (session 14).
 - `axe-core` accessibility audit blocks on serious / critical WCAG 2.1
   AA violations across light + dark themes (session 16).
-- 23 e2e Playwright specs across `dashboard/e2e/localhost/` and
-  `dashboard/e2e/staging/` (admin, sessions, status, public pages,
-  auth, accessibility — count it: ten files, multiple specs each).
+- Ten Playwright e2e spec files across `dashboard/e2e/localhost/`
+  and `dashboard/e2e/staging/` covering admin flows, sessions,
+  status, public pages, auth, and accessibility — 33 static
+  `test()` cases plus eight more generated at runtime by the
+  a11y theme matrix (4 URLs × light + dark).
 - Pytest-benchmark baseline for hot-path modules.
 - Real-corpus regression climbed from 60.8% → 79.1% across sessions
   (CHANGELOG 4.6.0 + session 8).
