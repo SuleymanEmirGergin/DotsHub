@@ -12,6 +12,11 @@ specialty recommendation, an urgency envelope, a risk level, and a full
 deterministic explanation trace. It is an orchestration layer with rules,
 audit logs, and rollback — not a generic chatbot.
 
+Patients who don't know where to go are an addressable cost driver in every
+healthcare system: unnecessary emergency visits on one side, delayed care on
+the other. A safe pre-triage step sits upstream of the clinician and
+compresses both failure modes.
+
 See [README — What Is This?](../README.md#what-is-this) for the longer
 framing.
 
@@ -38,7 +43,7 @@ ever involved.
 
 ## Why this is different
 
-- **Hard-stop emergency rules, not LLM judgement.** Implemented in
+- **Hard-stop emergency rules, not LLM inference.** Implemented in
   [`backend/app/emergency_router.py`](../backend/app/emergency_router.py)
   and gated before downstream modules. See README's
   [Clinical Safety Layers](../README.md#clinical-safety-layers).
@@ -79,26 +84,35 @@ lines:
 For component-level detail see
 [`docs/ARCHITECTURE.md`](ARCHITECTURE.md).
 
-## What judges should notice
+## What pilot stakeholders should evaluate
 
-- **Hard-stop in action.** Run a chest-pain scenario and watch the trace.
-  The `EMERGENCY` envelope is rule-driven, not LLM-driven; the trace
-  shows which rule fired.
-- **Same-day flow.** Try a non-emergency but urgent flow (e.g. severe
-  one-sided abdominal pain). The agentic question loop kicks in but is
-  budgeted — questioning stops with a deterministic reason in the trace.
-- **Explainability trace.** Every `RESULT` lists extracted canonicals,
-  the top specialty's rationale, why questioning stopped, and the risk
-  level with reasons. No "the model said so" answers.
-- **i18n parity.** Switch the mobile app between Turkish, English,
-  German, Russian, and Arabic. Arabic is right-to-left. The contract
-  test refuses to ship if a key is missing in any locale.
-- **Admin event timeline.** The dashboard's session view replays every
-  envelope and decision in order — useful for safety review and for
-  reproducing user-reported issues.
-- **Health overview.** `GET /health` is a real check (Supabase
-  reachability, not a stubbed `200 OK`). The admin panel surfaces
-  `INFO`/`OK`/`WARN`/`CRIT`.
+The questions clinical, safety, and investment reviewers tend to ask, and
+where each one is answered in the system itself.
+
+- **Emergency hard-stop is rule-driven, not LLM-driven.** Chest-pain and
+  similar high-acuity scenarios short-circuit the flow before any model
+  sees them, and the trace names the rule that fired. This is the bar a
+  safety committee will set; it's already where we built.
+- **Bounded agentic loop, not an open chatbot.** Non-emergency flows run
+  a budgeted question loop with deterministic scoring and a stop reason
+  in the trace. Predictable cost per session, predictable latency,
+  predictable behavior on review.
+- **Explainability per result.** Every `RESULT` ships extracted
+  canonicals, the top specialty's rationale, why questioning stopped,
+  and the risk reasons. There is no "the model said so" output to defend
+  in a clinical review or an audit.
+- **Locale coverage as a contract.** Five locales (TR/EN/DE/RU/AR with
+  Arabic RTL), gated by a CI contract test that fails the build if any
+  key drifts. Same gate exists for the dashboard. Material for any
+  buyer with a multilingual catchment.
+- **Auditability at the session level.** The admin event timeline
+  replays every envelope and decision in order. Safety reviewers
+  reproduce user-reported issues without redeploying anything; ops
+  reviewers see exactly what the system decided and why.
+- **Real health check.** `GET /health` is a live Supabase reachability
+  probe, not a stubbed `200 OK`. The admin panel surfaces
+  `INFO`/`OK`/`WARN`/`CRIT`. CI runs a periodic probe and pages on
+  regression — covered under operational maturity below.
 
 ## Tech stack
 
@@ -123,7 +137,7 @@ Pulled directly from
 - Not a black-box LLM chatbot.
 - Not a treatment decision maker.
 
-## Production-readiness signals
+## Operational maturity
 
 CI workflows currently in `.github/workflows/`:
 
@@ -173,5 +187,5 @@ release-time gate sequence.
 
 - Repo: _(link to be filled in by author for the public landing)_
 - Author: Emir (`emirgergin21@gmail.com`)
-- Status: Hackathon-ready, production-oriented MVP, safety-review
+- Status: production-oriented MVP, pilot-ready, safety-review
   friendly. See [README — Status](../README.md#status).

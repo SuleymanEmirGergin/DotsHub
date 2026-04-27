@@ -1,28 +1,27 @@
 # 90-Second Demo Script — TriAIge
 
-A tight, narrated walkthrough for hackathon judges. Goal: prove three
-things in 90 seconds — emergency hard-stop is rule-driven, the
-explanation trace is real, and the system is multilingual and
-operationally observable.
+A tight, narrated walkthrough for investor demos and clinical-buyer
+walkthroughs. Goal: prove three things in 90 seconds — emergency
+hard-stop is rule-driven, the explanation trace is real, and the system
+is multilingual and operationally observable.
 
-For the surrounding pitch, see
-[`HACKATHON_LANDING.md`](HACKATHON_LANDING.md).
+For the surrounding pitch, see [`PITCH.md`](PITCH.md).
 
 ---
 
 ## Setup (pre-demo)
 
-Get these into a known good state before judges sit down. None of them
-should be touched live.
+Get these into a known good state before the meeting starts. None of
+them should be touched live.
 
 - **Mobile app** running on a simulator or device, language preset to
   Turkish, on the intro screen. Have English locale also reachable
-  via the language picker if a judge asks.
+  via the language picker if asked.
 - **Admin dashboard** open in a separate browser window or second
   display, logged in, on the **Sessions** list view sorted by most
   recent. The session you create live will land at the top.
-- **`/health` tab** open in a third tab to demo on demand if asked
-  about ops. Should currently be green.
+- **`/health` tab** open in a third tab to demo on demand if anyone
+  asks about ops. Should currently be green.
 - **Network**: hard-wired or stable WiFi. The mobile offline banner
   is a feature, not what you want to demo unless someone asks.
 - **Pre-seeded scenarios** memorized verbatim:
@@ -73,40 +72,55 @@ them.
 
 ## Q&A primer
 
-Likely judge questions, with tight answers.
+Four questions investors and clinical buyers actually ask, with tight
+answers anchored to repo artifacts. Hedge where the honest answer is
+"not yet" — do not fabricate.
 
-**Q: Why not just use GPT-4 for this?**
-A: Because you cannot certify a chest-pain hard-stop that depends on
-sampling temperature. The emergency layer is deterministic rules
-running before any model; the LLM-adjacent pieces (NLU extraction)
-are bounded, metered, and have a deterministic fallback.
+**Q (investor): What's the regulatory path / FDA-equivalent posture in
+your target markets?**
+A: No FDA-cleared device today. The system is positioned as
+pre-triage, not diagnosis — the envelope and disclaimer are explicit
+on that line, and the clinician remains the decision-maker. KVKK and
+GDPR posture (PII masking, hashed IDs, user-initiated session
+deletion via `DELETE /v1/me/sessions/{session_id}`) is documented in
+[`PRIVACY_AND_SECURITY.md`](PRIVACY_AND_SECURITY.md). Formal FDA /
+CE-mark conversation is phase-2, after pilot data.
 
-**Q: How do you handle medical liability / KVKK / patient data?**
-A: We do not diagnose — the envelope and disclaimer are explicit. PII
-is masked in logs, IDs are hashed, and there is a documented privacy
-posture in [`PRIVACY_AND_SECURITY.md`](PRIVACY_AND_SECURITY.md). A
-user-initiated `DELETE /v1/me/sessions/{session_id}` endpoint exists.
-Final policy text is for legal — we built the plumbing.
+**Q (investor): What's the wedge for a first paying customer? Unit
+economics at the n=10 hospital scale?**
+A: The wedge is intake — patients self-routing in five locales before
+they hit a clinician, with a deterministic emergency hard-stop and a
+full audit trail per session. Unit economics are bounded by design:
+the agentic loop is turn-budgeted and the LLM-adjacent steps have
+deterministic fallbacks, so cost per session has a hard ceiling rather
+than long-tail risk. First-customer pricing is a pilot conversation,
+not a published rate card.
 
-**Q: What happens when the model is wrong?**
-A: Two layers. First, every result has a deterministic explanation
-trace and a feedback button — feedback flows into a tuning task
-loop with guardrail checks and automatic rollback if a patch
-regresses. Second, the entire system is pre-triage: it routes, it
-does not treat. The clinician remains the decision-maker.
+**Q (customer): How does this integrate with our HIS / EHR? What's
+the liability surface for a misroute?**
+A: Today the surface is the API (`POST /v1/triage/turn`) plus the
+admin event timeline. EHR / HIS integration is bespoke per pilot —
+the result envelope (specialty, urgency, risk, full trace) is shaped
+to drop into a referral or routing record. On liability: the system
+does not diagnose, the disclaimer is explicit on the result screen,
+and the deterministic explanation trace gives a defensible audit
+artifact for any flagged case. The emergency rules path is rule-driven,
+not LLM-driven, which is the question safety committees ask first.
 
-**Q: How does this scale beyond a hackathon demo?**
-A: The backend already supports multi-instance rate limiting via
-Redis, structured JSON logs with request IDs, Prometheus `/metrics`
-with native Supabase counters, and a Grafana dashboard with alerts
-synced as code. EAS build pipeline ships the mobile app. Fly.io
-deploy with always-on suspend-resume is wired. The CI surface
-covers regression, lighthouse, a11y, secret scan, and capability
-drift.
+**Q (customer): What does a pilot look like? What success metric would
+you commit to?**
+A: A scoped pilot is one specialty path or one demographic in one
+locale, run alongside existing intake — shadow mode first, then
+advisory. Useful success metrics that we can measure today from the
+event timeline: agreement rate against clinician routing on the same
+session, time-to-decision, and emergency-rule precision. We would
+commit to a target on agreement rate and emergency-rule precision in
+the pilot agreement; throughput targets depend on volume.
 
 ---
 
 ## Closing line
 
-"This system does not diagnose. It determines — and it shows its
-work, every turn, in five languages, with a hard stop you can audit."
+"This system does not diagnose. It routes — and it shows its work,
+every turn, in five languages, with a hard stop the safety committee
+can audit and an event timeline the operator can replay."
