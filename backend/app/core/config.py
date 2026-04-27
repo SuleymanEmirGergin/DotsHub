@@ -206,6 +206,30 @@ class Settings(BaseSettings):
     SENTRY_TRACES_SAMPLE_RATE: float = 0.0   # default: error-only, no perf
     SENTRY_RELEASE: str = ""                 # blank → let SDK auto-detect
 
+    # ── Veri saklama / retention (KVKK Md.7 + GDPR Art.5(1)(e)) ──────────
+    # Single source of truth for retention windows. The full policy +
+    # legal rationale lives in `docs/RETENTION_POLICY.md` — DO NOT
+    # change these numbers without also updating the privacy notice
+    # (compliance KR-2): users were told a specific window, breaking
+    # that promise = compliance regression.
+    #
+    # The Postgres function `app_retention_purge()` (in
+    # `backend/sql/20260427_retention_purge.sql`) defaults match these.
+    # If you tune via env, also pass overrides to the function call OR
+    # re-deploy the SQL — the cron job won't pick up env changes.
+    #
+    # Sessions follow a two-stage lifecycle: tombstone first (content
+    # NULL'd, row preserved for analytics joins), then full purge after
+    # `RETENTION_DAYS_SESSIONS_PURGE` measured FROM the tombstone time
+    # (not creation), so user-initiated erasure honors the same grace.
+    RETENTION_DAYS_SESSIONS_TOMBSTONE: int = 90
+    RETENTION_DAYS_SESSIONS_PURGE: int = 90      # measured from deleted_at
+    RETENTION_DAYS_EVENTS: int = 90
+    RETENTION_DAYS_LLM_CALLS: int = 30           # tightest — high-PII surface
+    RETENTION_DAYS_FEEDBACK: int = 365
+    RETENTION_DAYS_PUSH_TOKENS: int = 90         # measured from updated_at (last activity)
+    RETENTION_DAYS_AUDIT: int = 730              # informational; not auto-purged
+
     model_config = {
         "env_file": ".env",
         "env_file_encoding": "utf-8",
