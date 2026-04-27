@@ -296,7 +296,7 @@ deployment-page strings — adopted across mobile in Session 12.
 
 ## Status
 
-- Hackathon-ready
+- Pilot-ready
 - Production-oriented MVP
 - Safety-review friendly
 
