@@ -78,8 +78,10 @@ backend/reports/kaggle_mapping_validation_*.json
 backend/.tmp_kaggle_download/
 backend/raw_data/*.csv
 
-# Claude Code session state (worktree-local)
-.claude/
+# Claude Code session state (worktree-local) — ignore everything under
+# .claude/ EXCEPT the shared permission allowlist, which is repo-wide.
+.claude/*
+!.claude/settings.json
 
 # pytest-benchmark machine-specific outputs (lokal only)
 .benchmarks/
