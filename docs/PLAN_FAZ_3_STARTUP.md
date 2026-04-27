@@ -59,8 +59,8 @@ yarın"; hangileri kritik path olduğunu user belirler.
 
 ### C.1 Compliance & regulatory
 
-- [ ] KVKK DPA (Data Processing Agreement) template — pilot hastane sözleşmelerinde first-week ihtiyacı
-- [ ] GDPR DPA template — TR dışına açıldığında
+- [x] KVKK DPA (Data Processing Agreement) template — `docs/templates/KVKK_DPA_TEMPLATE.md` (commit `88a533e`). TR-licensed counsel review still required before signing.
+- [ ] GDPR DPA template — TR dışına açıldığında (KVKK template GDPR-compatible olarak yazıldı, refit gerekli)
 - [ ] FDA-equivalent regulatory path memo — target market'larda cihaz sınıflandırması ve approval path
 - [ ] SOC 2 (veya muadili sağlık) readiness self-audit
 - [ ] BAA (Business Associate Agreement) template — HIPAA territory'ye girişte
@@ -68,9 +68,9 @@ yarın"; hangileri kritik path olduğunu user belirler.
 
 ### C.2 Sales / customer-facing artifacts
 
-- [ ] One-page sales sheet (`PITCH.md`'nin design'lı versiyonu, hastane decision-maker için) — *#6 menu item*
-- [ ] Pilot programme template — success metrics, timeline, exit/extension terms
-- [ ] LOI template — pilot conversion'dan paid customer'a
+- [x] One-page sales sheet — `docs/templates/SALES_SHEET.md` (commit `88a533e`). Markdown only; designer'a verilince 1-page PDF oluşturulacak.
+- [x] LOI template — `docs/templates/LOI_TEMPLATE.md` (commit `88a533e`). Pilot scope + 4 success-metric option + binding clauses.
+- [ ] Pilot programme deeper template — full operational playbook (kickoff, weekly review cadence, support SLAs, churn signals). LOI bunun outline'ı.
 - [ ] Customer reference card — use cases, integration patterns
 - [ ] HIS/EHR integration spec — FHIR? proprietary? hangi sistemler? (Epic, Cerner, NIA, etc.)
 
@@ -92,9 +92,20 @@ yarın"; hangileri kritik path olduğunu user belirler.
 
 ### C.5 Demo & dry-run
 
-- [ ] Demo dry-run completed — `DEMO_SCRIPT.md` walk-through gerçek cihazda + friction notları
+- [x] Demo script static validation — pre-seeded scenarios swapped to proven `demo_chest_emergency.json` / `demo_abdominal.json` text; trace claim corrected; 8-step pre-flight checklist eklendi (commit `88a533e`).
+- [ ] Live device walk-through — actual iOS/Android run on a real device, latency feel, visual rendering, /admin/sessions auth flow. Bunu sadece user yapabilir.
 - [ ] Recorded fallback video — demo script'in 90-saniye kapsamlı kayıt
 - [ ] Investor / customer demo cihaz seti — sim kart, network, hesap, charged device
+
+### C.6 Critical safety patches (queued via spawn_task)
+
+Demo prep validation sırasında **gerçek safety bug'ları** yakalandı.
+İkisi de production code'da; demo'dan bağımsız problem.
+
+- [ ] 🟢 **Turkish chest-pain emergency rule blind spot** — `safety_guard.py` + `rules.json` regex'leri vowel elision (`göğsümde` ≠ `göğüsümde`) ve possessive form (`koluma` ≠ `kola`) kapsamıyor. Doğal kullanıcı ifadesi her iki guard'ı atlatıp downstream'e düşüyor. Spawned chip 1 detaylı patch + regression test ile fix'ler.
+- [ ] 🟢 **Turkish word-boundary gap in `canonical_extract.py`** — `\b` regex Turkish suffixed forms'ı (`karın bölgemde`, `karnım`, `karnımda`) kaçırıyor. Specialty scorer substring fallback ile route etmeye devam ediyor ama explainability trace'in "extracted canonicals" iddiası degraded. Spawned chip 2 fix'ler.
+
+Her iki chip'in commit'i landed olduğunda C.6 ✅'a yakınsar; ana branch'e merge öncesi regression chain (`backend && python scripts/run_backend_regression.py`) confirmation gerekli.
 
 ---
 
