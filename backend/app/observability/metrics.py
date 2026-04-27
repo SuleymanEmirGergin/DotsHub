@@ -138,6 +138,24 @@ supabase_db_latency_seconds = Histogram(
     buckets=(0.05, 0.1, 0.25, 0.5, 1.0, 2.0, 5.0),
 )
 
+# Counter — safety guard triggers, sliced by which evaluation layer
+# fired. Closes the observability gap from ADR-001: the old two
+# safety_guard modules had no shared metric, so we couldn't see
+# divergence. With consolidation in app/safety/, the same counter
+# covers both orchestrator paths once they migrate to `check_safety`.
+#
+# Label cardinality (bounded, 5 values from `SafetyPath` literal):
+#   - hard_keyword: deterministic keyword substring match
+#   - hard_regex:   deterministic compiled regex match
+#   - soft_age:     soft trigger + high-risk age combined match
+#   - llm:          (future) LLM enrichment escalation, ADR-001 step 4
+#   - none:         no trigger fired (layer was traversed but safe)
+safety_guard_triggers_total = Counter(
+    "safety_guard_triggers_total",
+    "Safety guard evaluation outcomes by pipeline layer.",
+    labelnames=("path",),
+)
+
 
 # ─── Setup ─────────────────────────────────────────────────────────
 

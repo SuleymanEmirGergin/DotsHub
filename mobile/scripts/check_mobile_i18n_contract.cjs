@@ -58,6 +58,8 @@ function flatten(obj, prefix = "", out = new Map()) {
   return out;
 }
 
+const PLACEHOLDER_RE = /\{[a-zA-Z_][a-zA-Z0-9_]*\}/g;
+
 // Pulls out every `{token}` placeholder from a string. Order-
 // independent — we compare sets, not lists, because reviewers
 // sometimes reorder in translation ("Hello {name}, you have
@@ -65,7 +67,7 @@ function flatten(obj, prefix = "", out = new Map()) {
 // as both placeholders are present).
 function extractPlaceholders(value) {
   if (typeof value !== "string") return new Set();
-  const matches = value.match(/\{[a-zA-Z_][a-zA-Z0-9_]*\}/g) || [];
+  const matches = value.match(PLACEHOLDER_RE) || [];
   return new Set(matches);
 }
 

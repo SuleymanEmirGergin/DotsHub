@@ -79,28 +79,24 @@ def _timed_supabase(operation: str) -> Iterator[None]:
         supabase_db_calls_total = None  # type: ignore[assignment]
         supabase_db_latency_seconds = None  # type: ignore[assignment]
 
+    def _record(outcome: str, t0: float) -> None:
+        if supabase_db_calls_total is not None:
+            supabase_db_calls_total.labels(
+                operation=operation, outcome=outcome
+            ).inc()
+        if supabase_db_latency_seconds is not None:
+            supabase_db_latency_seconds.labels(
+                operation=operation
+            ).observe(time.monotonic() - t0)
+
     t0 = time.monotonic()
     try:
         yield
     except BaseException:
-        if supabase_db_calls_total is not None:
-            supabase_db_calls_total.labels(
-                operation=operation, outcome="error"
-            ).inc()
-        if supabase_db_latency_seconds is not None:
-            supabase_db_latency_seconds.labels(
-                operation=operation
-            ).observe(time.monotonic() - t0)
+        _record("error", t0)
         raise
     else:
-        if supabase_db_calls_total is not None:
-            supabase_db_calls_total.labels(
-                operation=operation, outcome="success"
-            ).inc()
-        if supabase_db_latency_seconds is not None:
-            supabase_db_latency_seconds.labels(
-                operation=operation
-            ).observe(time.monotonic() - t0)
+        _record("success", t0)
 
 
 def upsert_session(session_id: str, row: Dict[str, Any]) -> None:
