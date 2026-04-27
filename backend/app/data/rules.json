@@ -21,15 +21,19 @@
     "hard_triggers": [
       {
         "id": "breathing_severe",
+        "_comment": "Audit-driven additions (pre-launch Turkish-morphology pass): `nefesim yetmiyor` is the most common natural Turkish phrase for dyspnea and was missing entirely from this trigger (it lived only in chest_pain_plus_breathlessness). `çok zor nefes alıyorum` is a frequent self-description of severe respiratory distress. `soluğum kesildi` is also natural for ER-grade breathlessness. See backend/tests/test_emergency_rules_turkish_morphology.py.",
         "label": "Şiddetli nefes darlığı / boğulma hissi",
         "keywords": [
           "nefes alamıyorum",
+          "nefesim yetmiyor",
+          "çok zor nefes alıyorum",
+          "soluğum kesildi",
           "boğuluyorum",
           "şiddetli nefes darlığı",
           "dudaklarım morardı",
           "morardım"
         ],
-        "regex": "\\b(nefes\\s*alam(ıyorum|iyorum)|boğul(uyorum|uycam)|şiddetli\\s*nefes\\s*darlığı|morard(ı|im|ım))\\b",
+        "regex": "\\b(nefes\\s*alam(ıyorum|iyorum)|nefesim\\s*yetmiyor|çok\\s*zor\\s*nefes\\s*alıyorum|soluğum\\s*kesildi|boğul(uyorum|uycam)|şiddetli\\s*nefes\\s*darlığı|morard(ı|im|ım))\\b",
         "action": "ER_NOW"
       },
       {
@@ -76,14 +80,17 @@
       },
       {
         "id": "syncope",
+        "_comment": "Audit-driven additions (pre-launch Turkish-morphology pass): `kendimden geçtim` is THE most common natural Turkish for fainting and was completely missed. `bilincim gitti` is a frequent self-description of consciousness loss. See backend/tests/test_emergency_rules_turkish_morphology.py.",
         "label": "Bayılma / bilinç kaybı",
         "keywords": [
           "bayıldım",
           "bayildim",
           "bilincimi kaybettim",
-          "bilincim kapandı"
+          "bilincim kapandı",
+          "bilincim gitti",
+          "kendimden geçtim"
         ],
-        "regex": "\\b(bayıl(dım|dim|ma)|bilinc(imi|im)\\s*kayb(ettim|etti)|bilincim\\s*kapandı)\\b",
+        "regex": "\\b(bayıl(dım|dim|ma)|bilinc(imi|im)\\s*kayb(ettim|etti)|bilincim\\s*(kapandı|gitti)|kendimden\\s*geçtim)\\b",
         "action": "ER_NOW"
       },
       {
@@ -98,36 +105,47 @@
       },
       {
         "id": "worst_headache",
+        "_comment": "Audit-driven addition (pre-launch Turkish-morphology pass): users naturally say `en kötü` (the worst) as well as `en şiddetli` (the most severe) — both signal thunderclap headache concern. See backend/tests/test_emergency_rules_turkish_morphology.py.",
         "label": "Hayatımın en şiddetli baş ağrısı",
         "keywords": [
           "hayatımın en şiddetli baş ağrısı",
-          "en şiddetli baş ağrısı"
+          "hayatımın en kötü baş ağrısı",
+          "en şiddetli baş ağrısı",
+          "en kötü baş ağrısı"
         ],
-        "regex": "\\b(hayatımın\\s*en\\s*şiddetli\\s*baş\\s*ağrısı|en\\s*şiddetli\\s*baş\\s*ağrısı)\\b",
+        "regex": "\\b(hayatımın\\s*en\\s*(şiddetli|kötü)\\s*baş\\s*ağrısı|en\\s*(şiddetli|kötü)\\s*baş\\s*ağrısı)\\b",
         "action": "ER_NOW"
       },
       {
         "id": "gi_bleeding",
+        "_comment": "Audit-driven additions (pre-launch Turkish-morphology pass): `siyah dışkı` (no possessive — declarative) is a textbook melena phrase missed by `dışk(ı|im) siyah`. `dışkımda kan` is a 1st-poss locative form for hematochezia. `kanlı kustum`/`kanlı kusma` is the natural reorder of `kan kustum` and was completely missed. See backend/tests/test_emergency_rules_turkish_morphology.py.",
         "label": "Kanama (kan kusma / siyah dışkı)",
         "keywords": [
           "kan kusuyorum",
+          "kanlı kustum",
           "kusmukta kan",
           "dışkım siyah",
+          "siyah dışkı",
+          "dışkımda kan",
           "katran gibi"
         ],
-        "regex": "\\b(kan\\s*kus(uyorum|tum)|kusmuk(ta|umda)\\s*kan|dışk(ı|im)\\s*siyah|katran\\s*gibi)\\b",
+        "regex": "\\b(kan(lı)?\\s*kus(uyorum|tum)|kusmuk(ta|umda)\\s*kan|dışk(ım|ım(da)?|ı|im)\\s*(siyah|kan)|siyah\\s*dışkı|dışkımda\\s*kan|katran\\s*gibi)\\b",
         "action": "ER_NOW"
       },
       {
         "id": "anaphylaxis",
+        "_comment": "Audit-driven additions (pre-launch Turkish-morphology pass): `dilim şişti` (tongue swelling) is a textbook anaphylaxis sign that was missing. `boğazım kapandı` is what patients say when the airway is closing — same clinical meaning as `boğazım daraldı`. False-positive risk acknowledged: `boğazım kapandı` is also an emotional metaphor (overwhelmed, choked up); in a medical-triage context the literal meaning dominates. See backend/tests/test_emergency_rules_turkish_morphology.py.",
         "label": "Şiddetli alerjik reaksiyon",
         "keywords": [
           "dudak şişti",
+          "dudaklarım şişti",
+          "dilim şişti",
           "yüzüm şişti",
+          "boğazım kapandı",
           "hırıltı",
           "anafilaksi"
         ],
-        "regex": "\\b(dudak(larım)?\\s*şiş(ti|iyor)|yüz(üm)?\\s*şiş(ti|iyor)|hırıltı|anafilaksi)\\b",
+        "regex": "\\b(dudak(larım)?\\s*şiş(ti|iyor)|dil(im)?\\s*şiş(ti|iyor)|yüz(üm)?\\s*şiş(ti|iyor)|boğaz(ım)?\\s*(kapandı|kapanıyor|daraldı|daralıyor)|hırıltı|anafilaksi)\\b",
         "action": "ER_NOW"
       },
       {
@@ -163,15 +181,18 @@
       },
       {
         "id": "blood_in_sputum",
+        "_comment": "Audit-driven additions (pre-launch Turkish-morphology pass): `balgamımda kan` is the 1st-poss locative variant of the existing `balgamda kan`. NOTE: a regex addition for `öksürürken kan geliyor` (subordinate-clause + present-tense `gelmek`) was considered but dropped — the existing pulmonology_hemoptysis golden flow tests routes that exact phrasing through the soft pulmonology pathway (TB workup). Past-tense `öksürürken kan geldi` stays as a keyword (no substring match against `geliyor`, so the existing scenario is preserved). See backend/tests/test_emergency_rules_turkish_morphology.py.",
         "label": "Öksürükle kan / kanlı balgam",
         "keywords": [
           "öksürükle kan",
+          "öksürürken kan geldi",
           "kanlı balgam",
           "balgamda kan",
+          "balgamımda kan",
           "kan tükürüyorum",
           "kanlı öksürük"
         ],
-        "regex": "\\b(öksürükle\\s*kan|kanlı\\s*balgam|balgamda\\s*kan|kan\\s*tükür(üyorum|düm)|kanlı\\s*öksürük)\\b",
+        "regex": "\\b(öksürükle\\s*kan|kanlı\\s*balgam|balgam(ım)?da\\s*kan|kan\\s*tükür(üyorum|düm)|kanlı\\s*öksürük)\\b",
         "action": "ER_NOW"
       },
       {

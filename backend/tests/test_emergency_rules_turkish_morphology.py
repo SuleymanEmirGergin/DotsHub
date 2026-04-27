@@ -189,3 +189,150 @@ def test_demo_phrase_via_answers_aggregation(rules_json):
     )
     assert out is not None
     assert out["rule_id"] == "chest_pressure_sweating"
+
+
+# ─── Pre-launch audit pass ────────────────────────────────────────────
+#
+# A second sweep over the remaining hard triggers found more natural
+# Turkish phrasings that fell through. These tests cover:
+#   - breathing_severe: nefesim yetmiyor / soluğum kesildi / çok zor nefes
+#   - syncope: kendimden geçtim / bilincim gitti
+#   - gi_bleeding: siyah dışkı / dışkımda kan / kanlı kustum
+#   - anaphylaxis: dilim şişti / boğazım kapandı
+#   - blood_in_sputum: öksürürken kan geldi / balgamımda kan
+#   - worst_headache: en kötü baş ağrısı
+#
+# Each set includes the new natural form AND an existing form to make
+# sure the regex broadening did not break the original match.
+
+@pytest.mark.parametrize(
+    "phrase",
+    [
+        "nefesim yetmiyor",            # most common Turkish dyspnea phrase — was missed
+        "çok zor nefes alıyorum",
+        "soluğum kesildi",
+        "nefes alamıyorum",            # existing
+        "morardım",                    # existing
+    ],
+)
+def test_breathing_severe_audit_pass(rules_json, phrase):
+    assert _fire(rules_json, phrase) == "breathing_severe"
+
+
+@pytest.mark.parametrize(
+    "phrase",
+    [
+        "kendimden geçtim",            # most common Turkish fainting idiom — was missed
+        "bilincim gitti",
+        "bayıldım",                    # existing
+        "bilincim kapandı",            # existing
+    ],
+)
+def test_syncope_audit_pass(rules_json, phrase):
+    assert _fire(rules_json, phrase) == "syncope"
+
+
+@pytest.mark.parametrize(
+    "phrase",
+    [
+        "en kötü baş ağrısı",          # users say "kötü" as well as "şiddetli"
+        "hayatımın en kötü baş ağrısı",
+        "hayatımın en şiddetli baş ağrısı",   # existing
+    ],
+)
+def test_worst_headache_audit_pass(rules_json, phrase):
+    assert _fire(rules_json, phrase) == "worst_headache"
+
+
+@pytest.mark.parametrize(
+    "phrase",
+    [
+        "siyah dışkı",                 # bare melena phrase, no possessive
+        "dışkımda kan var",            # 1st-poss locative for hematochezia
+        "kanlı kustum",                # word-reorder of "kan kustum"
+        "kan kustum",                  # existing
+        "katran gibi dışkı",           # existing pattern fallback
+    ],
+)
+def test_gi_bleeding_audit_pass(rules_json, phrase):
+    assert _fire(rules_json, phrase) == "gi_bleeding"
+
+
+@pytest.mark.parametrize(
+    "phrase",
+    [
+        "dilim şişti",                 # tongue swelling — textbook anaphylaxis
+        "boğazım kapandı",             # airway closure — primary anaphylaxis sign
+        "boğazım daraldı",
+        "dudaklarım şişti",            # existing
+        "anafilaksi",                  # existing
+    ],
+)
+def test_anaphylaxis_audit_pass(rules_json, phrase):
+    assert _fire(rules_json, phrase) == "anaphylaxis"
+
+
+@pytest.mark.parametrize(
+    "phrase",
+    [
+        "öksürürken kan geldi",        # past-tense subordinate clause — keyword fallback
+        "balgamımda kan var",          # 1st-poss locative — regex
+        "kanlı balgam",                # existing
+        "kan tükürüyorum",             # existing
+    ],
+)
+def test_blood_in_sputum_audit_pass(rules_json, phrase):
+    assert _fire(rules_json, phrase) == "blood_in_sputum"
+
+
+def test_blood_in_sputum_does_not_overfire_pulmonology_hemoptysis_scenario(rules_json):
+    """The golden flow `pulmonology_hemoptysis.json` uses the present-tense
+    `Öksürürken kan geliyor` to test the soft pulmonology (TB-workup) pathway.
+    Adding a regex for that phrasing would route it to ER and break the
+    scenario. We deliberately did NOT add that regex; this test locks the
+    decision so a future "complete the verb forms" PR doesn't silently
+    regress the pulmonology coverage. If you want hemoptysis-as-ER for the
+    `geliyor` form, update tests/golden_flows/pulmonology_hemoptysis.json
+    AND docs/medical/coverage_audit.md in the same PR.
+    """
+    assert _fire(rules_json, "Öksürürken kan geliyor") is None
+
+
+# ─── Audit-pass negatives ─────────────────────────────────────────────
+
+@pytest.mark.parametrize(
+    "phrase",
+    [
+        "biraz nefes nefese kaldım merdivende",  # mild exertional dyspnea, not ER
+        "dilim ısırdım",                          # bit my tongue, not swelling
+        "baş ağrım var",                          # mild headache, not "the worst"
+        "siyah önlük giydim",                     # color word with no GI context
+        "balgam çıkardım",                        # cough w/ phlegm, no blood
+    ],
+)
+def test_audit_pass_no_false_positives(rules_json, phrase):
+    rid = _fire(rules_json, phrase)
+    assert rid is None, (
+        f"unexpected emergency rule {rid!r} fired on benign phrase {phrase!r}"
+    )
+
+
+# ─── Documented accepted false-positive ──────────────────────────────
+#
+# `kendimden geçtim` is also an idiom for emotional/musical ecstasy
+# ("I was lost in music"). In a medical-triage app this metaphorical
+# use is essentially absent — patients open the app to report symptoms,
+# not to comment on music. ER over-recommendation is the safer-side
+# failure mode for safety_guard. We assert the over-trigger here so
+# any future regex tightening that drops it shows up in CI as a
+# behavior change rather than a silent regression.
+
+def test_kendimden_gectim_idiom_overtriggers_safely(rules_json):
+    """Documented over-trigger. If you broaden context to suppress
+    this, please update this test rather than deleting it — we want
+    the change to surface in code review.
+    """
+    rid = _fire(rules_json, "müzikte kendimden geçtim")
+    assert rid == "syncope", (
+        "kendimden geçtim idiom now suppressed — verify this is intentional"
+    )
