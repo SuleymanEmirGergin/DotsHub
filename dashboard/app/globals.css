@@ -119,7 +119,12 @@
     --dash-text: var(--foreground);
     --dash-text-muted: var(--muted-foreground);
     --dash-border: var(--border);
-    --dash-accent: var(--primary);
+    /* AA-pass darker primary for text on light bg (a11y review #3).
+     * E2E test on /, /privacy, /terms uses var(--dash-accent) on
+     * <a> color; --primary at 4.0:1 fails WCAG 1.4.3, --primary-text
+     * at ~5.2:1 passes. Dark theme primary-text is the lighter
+     * shade so dark contrast is unaffected. */
+    --dash-accent: var(--primary-text);
     --dash-accent-bg: var(--accent);
   }
 
@@ -200,7 +205,12 @@
     --dash-text: var(--foreground);
     --dash-text-muted: var(--muted-foreground);
     --dash-border: var(--border);
-    --dash-accent: var(--primary);
+    /* AA-pass darker primary for text on light bg (a11y review #3).
+     * E2E test on /, /privacy, /terms uses var(--dash-accent) on
+     * <a> color; --primary at 4.0:1 fails WCAG 1.4.3, --primary-text
+     * at ~5.2:1 passes. Dark theme primary-text is the lighter
+     * shade so dark contrast is unaffected. */
+    --dash-accent: var(--primary-text);
     --dash-accent-bg: var(--accent);
   }
 

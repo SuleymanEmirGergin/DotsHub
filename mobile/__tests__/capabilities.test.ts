@@ -10,6 +10,7 @@
 import {
   CAP_CURATED_META,
   CAP_EMERGENCY_SPECIALTY,
+  CAP_STREAMING_ENVELOPE,
   CLIENT_CAPABILITIES,
   CLIENT_CAPABILITIES_SET,
   __testing,
@@ -23,7 +24,7 @@ afterEach(() => {
 describe("capability registry", () => {
   it("default header lists every known capability in declaration order", () => {
     expect(getCapabilitiesHeader()).toBe(
-      `${CAP_CURATED_META},${CAP_EMERGENCY_SPECIALTY}`,
+      `${CAP_CURATED_META},${CAP_EMERGENCY_SPECIALTY},${CAP_STREAMING_ENVELOPE}`,
     );
   });
 
@@ -50,7 +51,7 @@ describe("capability registry", () => {
 
     __testing.reset();
     expect(getCapabilitiesHeader()).toBe(
-      `${CAP_CURATED_META},${CAP_EMERGENCY_SPECIALTY}`,
+      `${CAP_CURATED_META},${CAP_EMERGENCY_SPECIALTY},${CAP_STREAMING_ENVELOPE}`,
     );
   });
 
@@ -58,7 +59,7 @@ describe("capability registry", () => {
     __testing.setCapabilities(new Set());
     __testing.setCapabilities(null);
     expect(getCapabilitiesHeader()).toBe(
-      `${CAP_CURATED_META},${CAP_EMERGENCY_SPECIALTY}`,
+      `${CAP_CURATED_META},${CAP_EMERGENCY_SPECIALTY},${CAP_STREAMING_ENVELOPE}`,
     );
   });
 
@@ -69,7 +70,7 @@ describe("capability registry", () => {
       new Set([CAP_EMERGENCY_SPECIALTY, CAP_CURATED_META]),
     );
     expect(getCapabilitiesHeader()).toBe(
-      `${CAP_CURATED_META},${CAP_EMERGENCY_SPECIALTY}`,
+      `${CAP_CURATED_META},${CAP_EMERGENCY_SPECIALTY},${CAP_STREAMING_ENVELOPE}`,
     );
   });
 });
