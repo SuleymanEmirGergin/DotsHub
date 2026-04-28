@@ -110,8 +110,15 @@ def test_build_patterns_compiles_word_boundary_regex():
     out = build_synonym_patterns(syn)
     _, pat = out[0]
     assert isinstance(pat, re.Pattern)
-    # Must be word-boundary — "ateşle" should NOT match "ateş".
-    assert pat.search("ateşle gel") is None
+    # START boundary still strict — "kateş" must NOT match (no in-word
+    # match). Turkish has no prefixes, so leading `\b` stays as-is.
+    assert pat.search("kateşim gel") is None
+    # END boundary now tolerates Turkish trailing suffixes (loc, abl,
+    # poss, etc.) per the morphology fix in canonical_extract.py.
+    # "ateşle" (with fever, instrumental -le) and "ateşim" (1sg poss)
+    # both correctly resolve to canonical "ateş".
+    assert pat.search("ateşle birlikte gel") is not None
+    assert pat.search("ateşim var") is not None
     assert pat.search("yüksek ateş var") is not None
 
 
