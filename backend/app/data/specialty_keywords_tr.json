@@ -265,7 +265,11 @@
         "otururken artıyor",
         "eklem tutukluğu",
         "parmak eklemlerim",
+        "adet dönemi",
         "adet dönemi kramp",
+        "adet ağrısı",
+        "dismenore",
+        "regl",
         "pıhtı parçaları",
         "endometriyoz",
         "gebeyim"
@@ -440,7 +444,13 @@
         "dizime basamıyorum",
         "dizim şişti ve ağrıyor"
       ],
-      "negative_keywords_tr": []
+      "negative_keywords_tr": [
+        "adet dönemi",
+        "adet ağrısı",
+        "dismenore",
+        "regl",
+        "endometriyoz"
+      ]
     },
     {
       "id": "psychiatry",
@@ -530,6 +540,7 @@
         "adet gecikmesi",
         "adetim gecikti",
         "adetim gelmedi",
+        "adet dönemi",
         "düzensiz kanama",
         "düzensiz adet",
         "lekelenme",
