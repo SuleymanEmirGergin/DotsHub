@@ -8,7 +8,11 @@ type ExpoExtra = {
 
 const extra = (Constants.expoConfig?.extra ?? {}) as ExpoExtra;
 
-export const API_BASE = String(extra.API_BASE ?? "http://localhost:8000").replace(/\/+$/, "");
+// Default to the prod Fly backend (matches .env.example) so a fresh
+// clone with no .env still reaches a working API from a real device.
+// Override locally with API_BASE in mobile/.env when developing
+// against a laptop backend (e.g. http://<lan-ip>:8000).
+export const API_BASE = String(extra.API_BASE ?? "https://triaige-backend.fly.dev").replace(/\/+$/, "");
 export const USE_MOCK = String(extra.USE_MOCK ?? "false") === "true";
 /** Dashboard veya statik gizlilik sayfası URL'i; boşsa uygulama içi gizlilik linki gösterilmez. */
 export const PRIVACY_URL = String(extra.PRIVACY_URL ?? "").trim();

@@ -110,13 +110,17 @@ describe("consentClient", () => {
     }
   });
 
-  it("recordIntroConsents rejects if either consent post fails", async () => {
+  it("recordIntroConsents resolves ok=true even if a consent post fails (best-effort)", async () => {
+    // The prod /v1/consent route may be missing on older deploys
+    // (returns 404) or unreachable on first launch. Blocking every
+    // user at the intro screen is a worse outcome than a degraded
+    // audit trail — the failure is logged as a Sentry breadcrumb and
+    // the consent_version is replayed on the first /v1/triage POST.
     let calls = 0;
     server.use(
       http.post("http://api.test/v1/consent", async ({ request }) => {
         calls += 1;
         const body = (await request.json()) as { consent_type: string };
-        // Fail the health-data post; succeed the terms post.
         if (body.consent_type === "health_data_processing") {
           return HttpResponse.json(
             { detail: "fail" },
@@ -128,18 +132,13 @@ describe("consentClient", () => {
     );
 
     const { recordIntroConsents } = require("../../src/api/consentClient");
-    let msg = "";
-    try {
-      await recordIntroConsents({
-        device_id: "device-c1",
-        locale: "tr",
-        terms_version: "v1.0",
-        health_data_version: "v1.0",
-      });
-    } catch (err) {
-      msg = err instanceof Error ? err.message : String(err);
-    }
-    expect(msg).toBe("consent_failed");
+    const out = await recordIntroConsents({
+      device_id: "device-c1",
+      locale: "tr",
+      terms_version: "v1.0",
+      health_data_version: "v1.0",
+    });
+    expect(out.ok).toBe(true);
     expect(calls).toBeGreaterThanOrEqual(1);
   });
 
