@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Pressable,
   ScrollView,
@@ -19,6 +19,9 @@ import {
   SectionTitle,
 } from "@/src/ui/primitives";
 import { useI18n } from "@/i18n/I18nProvider";
+import { MicButton } from "@/src/ui/MicButton";
+import { getDeviceId } from "@/utils/deviceId";
+import { fetchFeatures } from "@/src/api/featuresClient";
 
 export default function QuestionScreen() {
   const { t } = useI18n();
@@ -27,6 +30,23 @@ export default function QuestionScreen() {
   const { appendMessage, setLoading, setLastRequest, applyEnvelope } = useTriageStore();
 
   const [freeText, setFreeText] = useState("");
+  const [asrEnabled, setAsrEnabled] = useState(false);
+  const deviceId = useMemo(() => getDeviceId(), []);
+
+  // Re-fetch /features each time we land on a free-text question.
+  // Cheap (cached/204-friendly) and lets ops flip the asr flag mid-
+  // session without a forced relaunch. No-op for yes_no/multi_choice
+  // because the MicButton render is gated on answer_type below
+  // anyway — this just means we never show a stale "mic available"
+  // affordance if ops just turned the feature off.
+  useEffect(() => {
+    let cancelled = false;
+    if (q.answer_type !== "free_text") return;
+    fetchFeatures().then((f) => {
+      if (!cancelled) setAsrEnabled(Boolean(f.asr_enabled));
+    });
+    return () => { cancelled = true; };
+  }, [q.answer_type]);
 
   async function answer(value: string) {
     const req = {
@@ -87,6 +107,20 @@ export default function QuestionScreen() {
                 accessibilityLabel={t("question.freeTextInputLabel")}
                 accessibilityHint={t("question.freeTextInputHint")}
               />
+              {asrEnabled ? (
+                // Mic only appears under free-text answers — yes_no /
+                // number / multi_choice don't need dictation. Same
+                // append-not-replace behavior as ChatScreen so a
+                // partial typed start survives the dictation.
+                <MicButton
+                  deviceId={deviceId}
+                  onTranscript={(transcript) => {
+                    setFreeText((prev) => (prev.trim()
+                      ? prev.trim() + " " + transcript
+                      : transcript));
+                  }}
+                />
+              ) : null}
               <PrimaryButton
                 style={styles.continueButton}
                 onPress={() => answer(freeText.trim() || "bilmiyorum")}
