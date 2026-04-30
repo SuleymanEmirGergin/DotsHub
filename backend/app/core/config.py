@@ -111,6 +111,28 @@ class Settings(BaseSettings):
     LLM_NLU_LOG_TO_SUPABASE: bool = True
     LLM_EXPLAIN_ENABLED: bool = False        # optional explanation layer (B9)
 
+    # ── ASR (Speech-to-Text) — Wiro.ai whisper-large-v3-turbo-turkish ────
+    # Turkish-fine-tuned Whisper variant. Uses simple x-api-key auth
+    # (NOT the HMAC scheme of LLM_NLU_*) — Wiro's per-project auth
+    # config. Same WIRO_API_KEY value is accepted for both schemes.
+    # Submit: POST /v1/Run/{LLM_ASR_MODEL}  (multipart, inputAudio file)
+    # Poll:   POST /v1/Task/Detail with the returned tasktoken
+    # Typical processing time ~20s; we set a 30s ceiling for the
+    # synchronous submit+poll cycle. Beyond that the route returns
+    # 504 and the mobile UI lets the user retry or fall back to typing.
+    LLM_ASR_ENABLED: bool = False            # feature flag — off by default
+    LLM_ASR_MODEL: str = "openai/whisper-large-v3-turbo-turkish"
+    LLM_ASR_TIMEOUT_SECONDS: float = 30.0
+    LLM_ASR_POLL_INTERVAL_SECONDS: float = 1.0
+    # Cap on uploaded audio bytes — guards against runaway uploads
+    # and pathological cost (Wiro charges per GPU-second). 10MB at
+    # whisper's typical 16kHz mono encoding ≈ 5min audio, plenty
+    # for one symptom dictation.
+    LLM_ASR_MAX_BYTES: int = 10 * 1024 * 1024
+    # Per-device daily call cap (cost guard). At ~$0.03/call this is
+    # ~$1.50/device/day worst case before lockout.
+    LLM_ASR_DAILY_LIMIT_PER_DEVICE: int = 50
+
     # ── Curated injection score tiers (audit follow-up) ──────────────────
     # triage_engine.py used to hardcode per-injection score_0_1 values
     # scattered across 25+ call sites. They collapse into three tiers.

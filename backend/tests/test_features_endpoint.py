@@ -79,6 +79,24 @@ class FeaturesEndpointTests(unittest.TestCase):
             self.assertIsInstance(consent["versions"][consent_type], str)
             self.assertTrue(consent["versions"][consent_type])
 
+    def test_asr_enabled_flag_surfaces(self):
+        """Mobile MicButton renders only when this flag is true.
+
+        Default is False at import time; flipping the setting flips
+        the wire field. Same control surface as llm_nlu_enabled — keep
+        them aligned so ops doesn't need to remember which is which.
+        """
+        with TestClient(app) as client:
+            res = client.get("/v1/config/features")
+        data = res.json()
+        self.assertIn("asr_enabled", data)
+        self.assertIsInstance(data["asr_enabled"], bool)
+
+        with patch("app.main.settings.LLM_ASR_ENABLED", True):
+            with TestClient(app) as client:
+                res = client.get("/v1/config/features")
+        self.assertTrue(res.json()["asr_enabled"])
+
     def test_consent_version_settings_override_surface(self):
         """A bump to CONSENT_VERSION_HEALTH_DATA in settings is reflected
         in the /features payload — the mechanism mobile uses to detect

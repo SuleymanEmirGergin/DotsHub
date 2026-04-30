@@ -43,6 +43,11 @@ async def features() -> dict:
     return {
         "llm_nlu_enabled": settings.LLM_NLU_ENABLED,
         "llm_explain_enabled": settings.LLM_EXPLAIN_ENABLED,
+        # Voice intake (Wiro whisper-large-v3-turbo-turkish). Mobile
+        # uses this to gate the MicButton — when false, the UI hides
+        # the mic and falls back to typed input only. Backend still
+        # rejects with 403 ASR_DISABLED if a request slips through.
+        "asr_enabled": settings.LLM_ASR_ENABLED,
         "client_version": {
             "min": settings.MIN_CLIENT_VERSION,
             "latest": settings.LATEST_CLIENT_VERSION,

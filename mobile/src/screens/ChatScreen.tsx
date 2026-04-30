@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   FlatList,
   KeyboardAvoidingView,
@@ -14,17 +14,32 @@ import { useTriageStore } from "@/src/state/triageStore";
 import { inputHeights, tokens, touchTargetMin } from "@/src/ui/designTokens";
 import { Badge, Card, MutedText, ScreenContainer, SectionTitle } from "@/src/ui/primitives";
 import { useI18n } from "@/i18n/I18nProvider";
+import { MicButton } from "@/src/ui/MicButton";
+import { getDeviceId } from "@/utils/deviceId";
+import { fetchFeatures } from "@/src/api/featuresClient";
 
 const QUICK_CHIPS = ["Baş ağrısı", "Ateş", "Öksürük", "Karın ağrısı", "İdrar yanması"];
 
 export default function ChatScreen() {
   const [text, setText] = useState("");
+  const [asrEnabled, setAsrEnabled] = useState(false);
   const flatListRef = useRef<FlatList>(null);
   const { t } = useI18n();
   const { sessionId, messages, loading, appendMessage, setLoading, setLastRequest, applyEnvelope } =
     useTriageStore();
   const setShowHistory = useTriageStore((s) => s.setShowHistory);
   const setShowSettings = useTriageStore((s) => s.setShowSettings);
+  // deviceId is sync (cached, falls back to a generated id) — read
+  // once per render; MicButton needs it for the daily quota header.
+  const deviceId = useMemo(() => getDeviceId(), []);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchFeatures().then((f) => {
+      if (!cancelled) setAsrEnabled(Boolean(f.asr_enabled));
+    });
+    return () => { cancelled = true; };
+  }, []);
 
   async function onSend(msg?: string) {
     const trimmed = (msg || text).trim();
@@ -144,6 +159,24 @@ export default function ChatScreen() {
         ) : null}
 
         <Card style={styles.inputCard}>
+          {asrEnabled && messages.length === 0 ? (
+            // Mic only on the empty/first-symptom state. Once the
+            // chat starts, per-question free-text answers will get
+            // their own mic in QuestionScreen (commit 2). Keeping
+            // this condition narrow avoids accidentally pushing a
+            // mic into the middle of a typed conversation.
+            <MicButton
+              deviceId={deviceId}
+              onTranscript={(transcript) => {
+                // Append rather than replace so a partial typed
+                // start isn't silently lost when the user dictates.
+                setText((prev) => (prev.trim()
+                  ? prev.trim() + " " + transcript
+                  : transcript));
+              }}
+              accessibilityLabel={t("voice.startHint")}
+            />
+          ) : null}
           <View style={styles.inputRow}>
             <TextInput
               value={text}

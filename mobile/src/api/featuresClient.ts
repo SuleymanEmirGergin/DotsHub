@@ -33,6 +33,11 @@ export interface ConsentPolicy {
 export interface FeaturesConfig {
   llm_nlu_enabled: boolean;
   llm_explain_enabled: boolean;
+  /** Voice intake (Wiro whisper-large-v3-turbo-turkish). When false
+   * the mobile MicButton is hidden — backend also rejects with 403
+   * ASR_DISABLED, but gating here avoids a wasted upload + an error
+   * banner the user can't act on. */
+  asr_enabled: boolean;
   client_version: ClientVersionPolicy;
   consent: ConsentPolicy;
 }
@@ -51,6 +56,7 @@ export interface FeaturesConfig {
 const DEFAULT_FEATURES: FeaturesConfig = {
   llm_nlu_enabled: false,
   llm_explain_enabled: false,
+  asr_enabled: false,
   client_version: {
     min: "0.0.0",
     latest: "0.0.0",
@@ -89,6 +95,7 @@ export async function fetchFeatures(): Promise<FeaturesConfig> {
     return {
       llm_nlu_enabled: Boolean(data.llm_nlu_enabled),
       llm_explain_enabled: Boolean(data.llm_explain_enabled),
+      asr_enabled: Boolean(data.asr_enabled),
       client_version: {
         ...DEFAULT_FEATURES.client_version,
         ...(data.client_version ?? {}),

@@ -49,6 +49,20 @@
     "bubbleAssistant": "Assistent",
     "quickChip": "Schnellantwort"
   },
+  "voice": {
+    "startHint": "Per Sprache erzählen",
+    "stopHint": "Beenden",
+    "processingHint": "Wird transkribiert…",
+    "errPermission": "Mikrofonberechtigung verweigert.",
+    "errDisabled": "Spracheingabe ist derzeit nicht verfügbar.",
+    "errDailyLimit": "Tägliches Spracheingabelimit erreicht.",
+    "errTimeout": "Zeitüberschreitung bei der Transkription.",
+    "errProvider": "Bei der Transkription ist ein Fehler aufgetreten.",
+    "errTooLong": "Aufnahme zu lang. Versuchen Sie einen kürzeren Clip.",
+    "errEmpty": "Leere Aufnahme. Bitte erneut versuchen.",
+    "errNetwork": "Verbindungsfehler. Bitte erneut versuchen.",
+    "errRecorder": "Aufnahme konnte nicht gestartet werden."
+  },
   "question": {
     "whyAsking": "Warum fragen wir?",
     "freeTextPlaceholder": "Kurze Antwort schreiben…",

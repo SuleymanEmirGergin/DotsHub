@@ -49,6 +49,20 @@
     "symptomInputHint": "Belirtinizi yazıp gönderin",
     "emergencyDisclaimer": "Acil durumlarda 112'yi arayın."
   },
+  "voice": {
+    "startHint": "Sesle anlat",
+    "stopHint": "Bitir",
+    "processingHint": "Yazıya dönüştürülüyor…",
+    "errPermission": "Mikrofon izni verilmedi.",
+    "errDisabled": "Sesli giriş şu an kullanılamıyor.",
+    "errDailyLimit": "Günlük sesli giriş sınırına ulaşıldı.",
+    "errTimeout": "Yazıya dönüştürme zaman aşımına uğradı.",
+    "errProvider": "Yazıya dönüştürme sırasında bir sorun oluştu.",
+    "errTooLong": "Ses çok uzun. Daha kısa bir kayıt deneyin.",
+    "errEmpty": "Boş kayıt. Lütfen tekrar deneyin.",
+    "errNetwork": "Bağlantı hatası. Lütfen tekrar deneyin.",
+    "errRecorder": "Kayıt başlatılamadı. Lütfen tekrar deneyin."
+  },
   "question": {
     "whyAsking": "Neden soruyoruz?",
     "freeTextPlaceholder": "Kısa yanıt yaz…",

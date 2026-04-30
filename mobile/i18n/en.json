@@ -49,6 +49,20 @@
     "symptomInputHint": "Type your symptom and send",
     "emergencyDisclaimer": "In emergencies, call your local emergency number."
   },
+  "voice": {
+    "startHint": "Speak symptoms",
+    "stopHint": "Stop",
+    "processingHint": "Transcribing…",
+    "errPermission": "Microphone permission denied.",
+    "errDisabled": "Voice input is currently unavailable.",
+    "errDailyLimit": "Daily voice-input limit reached.",
+    "errTimeout": "Transcription timed out.",
+    "errProvider": "Something went wrong during transcription.",
+    "errTooLong": "Recording too long. Try a shorter clip.",
+    "errEmpty": "Empty recording. Please try again.",
+    "errNetwork": "Connection error. Please try again.",
+    "errRecorder": "Could not start recording. Please try again."
+  },
   "question": {
     "whyAsking": "Why are we asking?",
     "freeTextPlaceholder": "Write a short answer…",
