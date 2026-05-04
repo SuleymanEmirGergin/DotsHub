@@ -1,0 +1,288 @@
+{
+  "version": "1.0",
+  "language": "tr-TR",
+  "count": 40,
+  "items": [
+    {
+      "disease_label": "(vertigo) Paroymsal  Positional Vertigo",
+      "tr_label": "Benign paroksismal pozisyonel vertigo (BPPV)",
+      "specialty_id": "neurology",
+      "specialty_tr": "Nöroloji",
+      "text": "Benign paroksismal pozisyonel vertigo (BPPV). Baş pozisyonu değişikliğiyle tetiklenen kısa süreli dönme hissi. İç kulaktaki otokoni parçacıklarının yer değiştirmesine bağlıdır; tedavisi basit manevralardır. Belirtiler: hazımsızlık, baş ağrısı, bulantı, baş dönmesi, kusma, baş ağrısı süresi. Branş: Nöroloji."
+    },
+    {
+      "disease_label": "AIDS",
+      "tr_label": "AIDS",
+      "specialty_id": "internal_gi",
+      "specialty_tr": "Dahiliye (gerekirse Enfeksiyon)",
+      "text": "AIDS. Acquired immunodeficiency syndrome (AIDS) is a chronic, potentially life-threatening condition caused by the human immunodeficiency virus (HIV). Belirtiler: ateş, kas erimesi, boğaz ağrısı, boğaz ağrısı süresi, ateş derecesi. Branş: Dahiliye (gerekirse Enfeksiyon)."
+    },
+    {
+      "disease_label": "Acne",
+      "tr_label": "Akne",
+      "specialty_id": "dermatology",
+      "specialty_tr": "Dermatoloji",
+      "text": "Akne. Yağ bezlerinin iltihabı. Yüz, sırt ve göğüste sivilce, siyah nokta ve iltihaplı nodüller oluşur; ergenlik ve hormonal değişikliklerle ilişkilidir. Belirtiler: sivilce, döküntü/ürtiker. Branş: Dermatoloji."
+    },
+    {
+      "disease_label": "Alcoholic hepatitis",
+      "tr_label": "Alcoholic hepatitis",
+      "specialty_id": "internal_gi",
+      "specialty_tr": "Dahiliye (gerekirse Gastroenteroloji)",
+      "text": "Alcoholic hepatitis. Alcoholic hepatitis is inflammation of the liver caused by drinking alcohol. It can lead to liver failure and is life-threatening. Belirtiler: karın ağrısı, karın şişliği, ödem, kusma, sarılık, karın ağrısı süresi, karın ağrısı yeri. Branş: Dahiliye (gerekirse Gastroenteroloji)."
+    },
+    {
+      "disease_label": "Allergy",
+      "tr_label": "Alerji",
+      "specialty_id": "dermatology",
+      "specialty_tr": "Dermatoloji",
+      "text": "Alerji. Bir alerjen (polen, gıda, ilaç, hayvan tüyü vs.) karşısında bağışıklık sisteminin aşırı tepkisi. Kaşıntı, döküntü, hapşırık, göz sulanması yaygındır. Belirtiler: titreme/üşüme, burun tıkanıklığı, göz yaşarması. Branş: Dermatoloji."
+    },
+    {
+      "disease_label": "Arthritis",
+      "tr_label": "Artrit",
+      "specialty_id": "orthopedics_rheum",
+      "specialty_tr": "Ortopedi / Romatoloji",
+      "text": "Artrit. Bir veya birden fazla eklemin iltihabı. Ağrı, şişlik, sıcaklık ve sabah tutukluğu yapar; romatoid, enfeksiyöz veya gut tipi olabilir. Belirtiler: eklem tutukluğu, kas ağrısı, yürüme güçlüğü, boyun ağrısı, şişlik. Branş: Ortopedi / Romatoloji."
+    },
+    {
+      "disease_label": "Bronchial Asthma",
+      "tr_label": "Astım",
+      "specialty_id": "pulmonology",
+      "specialty_tr": "Göğüs Hastalıkları",
+      "text": "Astım. Hava yollarının kronik iltihabı; hırıltılı nefes, nefes darlığı, göğüste sıkışma ve öksürük ataklar halinde gelir. Genellikle alerjen veya efor tetikler. Belirtiler: nefes darlığı, öksürük, öksürük süresi, öksürük gece artışı, halsizlik, ateş, nefes darlığı eforla, ateş derecesi, balgam rengi. Branş: Göğüs Hastalıkları."
+    },
+    {
+      "disease_label": "Cervical spondylosis",
+      "tr_label": "Servikal spondiloz",
+      "specialty_id": "orthopedics_rheum",
+      "specialty_tr": "Ortopedi / Romatoloji",
+      "text": "Servikal spondiloz. Boyun omurgasının yaşa bağlı dejenerasyonu. Boyun ağrısı, tutukluk, baş ağrısı ve kollara yayılan uyuşma tipiktir. Belirtiler: bel/sırt ağrısı, baş dönmesi, boyun ağrısı, uzuv güçsüzlüğü. Branş: Ortopedi / Romatoloji."
+    },
+    {
+      "disease_label": "Chicken pox",
+      "tr_label": "Suçiçeği",
+      "specialty_id": "dermatology",
+      "specialty_tr": "Dermatoloji",
+      "text": "Suçiçeği. Varicella-zoster virüsü kaynaklı bulaşıcı hastalık. Kaşıntılı veziküler (içi sıvı dolu) döküntü, ateş ve halsizlik yapar; genellikle çocuklukta görülür. Belirtiler: halsizlik, ateş, baş ağrısı, kaşıntı, kızarıklık, döküntü/ürtiker, lenf bezi şişliği, ateş süresi, baş ağrısı süresi, ateş derecesi. Branş: Dermatoloji."
+    },
+    {
+      "disease_label": "Chronic cholestasis",
+      "tr_label": "Kronik kolestaz",
+      "specialty_id": "internal_gi",
+      "specialty_tr": "Dahiliye (gerekirse Gastroenteroloji)",
+      "text": "Kronik kolestaz. Safra akışının uzun süreli engellenmesi. Sararma, kaşıntı, açık renkli dışkı ve koyu idrar birlikte görülebilir. Belirtiler: karın ağrısı, kaşıntı, iştahsızlık, bulantı, kusma, sarılık, karın ağrısı süresi, karın ağrısı yeri. Branş: Dahiliye (gerekirse Gastroenteroloji)."
+    },
+    {
+      "disease_label": "Common Cold",
+      "tr_label": "Üst solunum yolu enfeksiyonu (ÜSYE)",
+      "specialty_id": "ent",
+      "specialty_tr": "Kulak Burun Boğaz (KBB)",
+      "text": "Üst solunum yolu enfeksiyonu (ÜSYE). Soğuk algınlığı / viral ÜSYE. Burun akıntısı, boğaz ağrısı, hafif ateş ve öksürük ile kendini gösterir; genellikle 7-10 günde kendiliğinden geçer. Belirtiler: titreme/üşüme, burun tıkanıklığı, öksürük, öksürük süresi, halsizlik, baş ağrısı, ateş, kas ağrısı, balgam, sinüs basıncı, boğaz ağrısı, boğaz ağrısı süresi, ateş süresi, baş ağrısı süresi, ateş derecesi, balgam rengi. Branş: Kulak Burun Boğaz (KBB)."
+    },
+    {
+      "disease_label": "Dengue",
+      "tr_label": "Dengue",
+      "specialty_id": "internal_gi",
+      "specialty_tr": "Dahiliye (gerekirse Enfeksiyon)",
+      "text": "Dengue. Dengue fever is a mosquito-borne tropical disease caused by the dengue virus. Symptoms typically begin three to fourteen days after infection. Belirtiler: bel/sırt ağrısı, titreme/üşüme, halsizlik, baş ağrısı, ateş, eklem ağrısı, iştahsızlık, kas ağrısı, bulantı, göz ağrısı, kızarıklık, döküntü/ürtiker, kusma, ateş süresi, baş ağrısı süresi, ateş derecesi. Branş: Dahiliye (gerekirse Enfeksiyon)."
+    },
+    {
+      "disease_label": "Diabetes ",
+      "tr_label": "Tip 2 Diyabet",
+      "specialty_id": "endocrinology",
+      "specialty_tr": "Endokrinoloji",
+      "text": "Tip 2 Diyabet. Vücudun insülini yeterince kullanamaması sonucu kan şekerinin yükselmesi. Aşırı susama, sık idrara çıkma, halsizlik ve yavaş iyileşen yaralar tipik belirtilerdir. Belirtiler: bulanık görme, aşırı açlık, halsizlik, kan şekeri düzensizliği, obezite, sık idrara çıkma, kilo kaybı. Branş: Endokrinoloji."
+    },
+    {
+      "disease_label": "Dimorphic hemmorhoids(piles)",
+      "tr_label": "Hemoroid",
+      "specialty_id": "internal_gi",
+      "specialty_tr": "Dahiliye (gerekirse Genel Cerrahi)",
+      "text": "Hemoroid. Anüs çevresindeki damarların genişleyip şişmesi. Tuvalet sırasında kanama, ağrı ve kaşıntı tipik belirtilerdir; genellikle kabızlık tetikler. Belirtiler: kanlı dışkı, kabızlık, karın ağrısı, anal ağrı. Branş: Dahiliye (gerekirse Genel Cerrahi)."
+    },
+    {
+      "disease_label": "Drug Reaction",
+      "tr_label": "İlaç reaksiyonu",
+      "specialty_id": "dermatology",
+      "specialty_tr": "Dermatoloji",
+      "text": "İlaç reaksiyonu. Bir ilaca bağlı cilt veya sistemik reaksiyon. Döküntü, kaşıntı, kızarıklık yaygındır; bazen ateş ve mukoza tutulumu eşlik edebilir. Belirtiler: kaşıntı, döküntü/ürtiker, karın ağrısı. Branş: Dermatoloji."
+    },
+    {
+      "disease_label": "Fungal infection",
+      "tr_label": "Fungal enfeksiyon",
+      "specialty_id": "dermatology",
+      "specialty_tr": "Dermatoloji",
+      "text": "Fungal enfeksiyon. Ciltte mantar kaynaklı enfeksiyon. En sık ayak parmak araları, kasık ve tırnaklarda görülür; kaşıntı, soyulma ve kızarıklık tipiktir. Belirtiler: leke, kaşıntı, döküntü/ürtiker. Branş: Dermatoloji."
+    },
+    {
+      "disease_label": "GERD",
+      "tr_label": "Gastroözofageal reflu (GER hastalığı)",
+      "specialty_id": "internal_gi",
+      "specialty_tr": "Dahiliye (gerekirse Gastroenteroloji)",
+      "text": "Gastroözofageal reflu (GER hastalığı). Gastroesophageal reflux disease (GERD) is a chronic digestive disease that occurs when stomach acid flows back into the esophagus. Belirtiler: karın ağrısı, hazımsızlık, göğüs ağrısı, göğüs ağrısı süresi, göğüs ağrısı sabit mi, öksürük, bulantı, ağrı şiddeti, ağız yarası, kusma, karın ağrısı süresi, karın ağrısı yeri. Branş: Dahiliye (gerekirse Gastroenteroloji)."
+    },
+    {
+      "disease_label": "Gastroenteritis",
+      "tr_label": "Gastroenterit",
+      "specialty_id": "internal_gi",
+      "specialty_tr": "Dahiliye (gerekirse Gastroenteroloji)",
+      "text": "Gastroenterit. Mide ve bağırsakların viral/bakteriyel iltihabı. İshal, bulantı-kusma, karın ağrısı ve bazen ateş yapar; çoğu vaka 2-5 günde geçer. Belirtiler: dehidrasyon, ishal, kusma, kusma sıklığı, ishal süresi. Branş: Dahiliye (gerekirse Gastroenteroloji)."
+    },
+    {
+      "disease_label": "Heart attack",
+      "tr_label": "Akut koroner sendrom şüphesi",
+      "specialty_id": "cardiology",
+      "specialty_tr": "Kardiyoloji",
+      "text": "Akut koroner sendrom şüphesi. A heart attack occurs when the flow of blood to the heart is severely reduced or blocked. The blockage is usually due to a buildup of fat and cholesterol. Belirtiler: nefes darlığı, göğüs ağrısı, göğüs ağrısı süresi, göğüs ağrısı sabit mi, ağrı şiddeti, terleme, kusma, kusma sıklığı, nefes darlığı eforla. Branş: Kardiyoloji."
+    },
+    {
+      "disease_label": "Hepatitis B",
+      "tr_label": "Hepatitis B",
+      "specialty_id": "internal_gi",
+      "specialty_tr": "Dahiliye (gerekirse Gastroenteroloji)",
+      "text": "Hepatitis B. Hepatitis B is a serious liver infection caused by the hepatitis B virus (HBV). It can become chronic and increase risk of liver failure or cancer. Belirtiler: karın ağrısı, koyu idrar, halsizlik, ateş, eklem ağrısı, iştahsızlık, kas ağrısı, bulantı, sarılık, karın ağrısı süresi, ateş süresi, ateş derecesi, karın ağrısı yeri. Branş: Dahiliye (gerekirse Gastroenteroloji)."
+    },
+    {
+      "disease_label": "Hepatitis C",
+      "tr_label": "Hepatitis C",
+      "specialty_id": "internal_gi",
+      "specialty_tr": "Dahiliye (gerekirse Gastroenteroloji)",
+      "text": "Hepatitis C. Hepatitis C is a viral infection that causes liver inflammation, sometimes leading to serious liver damage. Belirtiler: halsizlik, iştahsızlık, bulantı, sarılık. Branş: Dahiliye (gerekirse Gastroenteroloji)."
+    },
+    {
+      "disease_label": "Hepatitis D",
+      "tr_label": "Hepatitis D",
+      "specialty_id": "internal_gi",
+      "specialty_tr": "Dahiliye (gerekirse Gastroenteroloji)",
+      "text": "Hepatitis D. Hepatitis D (delta) is a liver disease caused by the hepatitis D virus (HDV). It only occurs in people already infected with hepatitis B. Belirtiler: karın ağrısı, koyu idrar, halsizlik, ateş, eklem ağrısı, iştahsızlık, bulantı, kusma, sarılık, karın ağrısı süresi, ateş süresi, ateş derecesi, karın ağrısı yeri. Branş: Dahiliye (gerekirse Gastroenteroloji)."
+    },
+    {
+      "disease_label": "Hepatitis E",
+      "tr_label": "Hepatitis E",
+      "specialty_id": "internal_gi",
+      "specialty_tr": "Dahiliye (gerekirse Gastroenteroloji)",
+      "text": "Hepatitis E. Hepatitis E is a liver disease caused by the hepatitis E virus (HEV). It is usually a self-limiting infection. Belirtiler: karın ağrısı, koyu idrar, dehidrasyon, halsizlik, ateş, eklem ağrısı, iştahsızlık, bulantı, mide kanaması, kusma, sarılık, karın ağrısı süresi, ateş süresi, ishal süresi, ateş derecesi, karın ağrısı yeri. Branş: Dahiliye (gerekirse Gastroenteroloji)."
+    },
+    {
+      "disease_label": "Hyperthyroidism",
+      "tr_label": "Hipertiroidi",
+      "specialty_id": "endocrinology",
+      "specialty_tr": "Endokrinoloji",
+      "text": "Hipertiroidi. Tiroid bezinin aşırı hormon üretmesi. Kilo kaybı, çarpıntı, el titremesi, terleme ve iştah artışı tipik belirtilerdir. Belirtiler: adet düzensizliği, ishal, aşırı açlık, çarpıntı, halsizlik, depresyon/ruh hali, kas ağrısı, terleme, kilo kaybı. Branş: Endokrinoloji."
+    },
+    {
+      "disease_label": "Hypoglycemia",
+      "tr_label": "Hipoglisemi",
+      "specialty_id": "endocrinology",
+      "specialty_tr": "Endokrinoloji",
+      "text": "Hipoglisemi. Kan şekerinin normalin altına düşmesi. Titreme, terleme, açlık, sersemlik, konsantrasyon güçlüğü ve ileri vakada bilinç kaybı yapabilir. Belirtiler: anksiyete, bulanık görme, dudak kuruluğu, aşırı açlık, halsizlik, baş ağrısı, depresyon/ruh hali, bulantı, çarpıntı, terleme, kusma, baş ağrısı süresi. Branş: Endokrinoloji."
+    },
+    {
+      "disease_label": "Hypothyroidism",
+      "tr_label": "Hipotiroidi",
+      "specialty_id": "endocrinology",
+      "specialty_tr": "Endokrinoloji",
+      "text": "Hipotiroidi. Tiroid bezinin yetersiz hormon üretmesi. Yorgunluk, kilo alımı, kuru cilt, üşüme ve saç dökülmesi tipik belirtilerdir. Belirtiler: adet düzensizliği, tırnak kırılganlığı, soğuk el/ayak, depresyon/ruh hali, baş dönmesi, tiroid büyümesi, halsizlik, obezite, uzuv şişliği, kilo artışı. Branş: Endokrinoloji."
+    },
+    {
+      "disease_label": "Impetigo",
+      "tr_label": "Impetigo",
+      "specialty_id": "dermatology",
+      "specialty_tr": "Dermatoloji",
+      "text": "Impetigo. Impetigo is a common and highly contagious skin infection that mainly affects infants and young children, causing red sores on the face. Belirtiler: kabarcık, ateş, burun çevresi yara, döküntü/ürtiker, ateş derecesi. Branş: Dermatoloji."
+    },
+    {
+      "disease_label": "Jaundice",
+      "tr_label": "Sarılık",
+      "specialty_id": "internal_gi",
+      "specialty_tr": "Dahiliye (gerekirse Gastroenteroloji)",
+      "text": "Sarılık. Cilt ve göz akının sararması (bilirübin yüksekliği). Karaciğer/safra yolu sorunlarında veya aşırı hemoliz durumunda oluşur. Belirtiler: karın ağrısı, koyu idrar, halsizlik, ateş, kaşıntı, iştahsızlık, bulantı, kusma, kilo kaybı, sarılık, karın ağrısı süresi, ateş derecesi, karın ağrısı yeri. Branş: Dahiliye (gerekirse Gastroenteroloji)."
+    },
+    {
+      "disease_label": "Malaria",
+      "tr_label": "Malaria",
+      "specialty_id": "internal_gi",
+      "specialty_tr": "Dahiliye (gerekirse Enfeksiyon)",
+      "text": "Malaria. Malaria is a disease caused by a plasmodium parasite, transmitted by the bite of infected mosquitoes. Belirtiler: titreme/üşüme, ishal, baş ağrısı, ateş, kas ağrısı, bulantı, terleme, kusma, ishal süresi, ateş süresi, baş ağrısı süresi, ateş derecesi. Branş: Dahiliye (gerekirse Enfeksiyon)."
+    },
+    {
+      "disease_label": "Migraine",
+      "tr_label": "Migren",
+      "specialty_id": "neurology",
+      "specialty_tr": "Nöroloji",
+      "text": "Migren. Tekrarlayan, sıklıkla tek taraflı, zonklayıcı baş ağrısı atakları. Işık/ses hassasiyeti, bulantı ve kusma eşlik edebilir. Belirtiler: hazımsızlık, bulanık görme, depresyon/ruh hali, aşırı açlık, baş ağrısı, baş ağrısı süresi, baş ağrısı sabah artışı, bulantı, ağrı şiddeti, boyun ağrısı, kusma. Branş: Nöroloji."
+    },
+    {
+      "disease_label": "Osteoarthristis",
+      "tr_label": "Osteoartrit",
+      "specialty_id": "orthopedics_rheum",
+      "specialty_tr": "Ortopedi / Romatoloji",
+      "text": "Osteoartrit. Eklem kıkırdağının yaş ve aşınmaya bağlı yıpranması. Diz, kalça, omurga ve parmaklarda ağrı ve tutukluk yapar; hareketle artar, dinlenmeyle azalır. Belirtiler: eklem ağrısı, eklem tutukluğu, boyun ağrısı, yürüme güçlüğü, şişlik. Branş: Ortopedi / Romatoloji."
+    },
+    {
+      "disease_label": "Paralysis (brain hemorrhage)",
+      "tr_label": "İnme / SVH şüphesi",
+      "specialty_id": "neurology",
+      "specialty_tr": "Nöroloji",
+      "text": "İnme / SVH şüphesi. A brain hemorrhage is a type of stroke caused by an artery in the brain bursting and causing localized bleeding, leading to paralysis. Belirtiler: bilinç değişikliği, baş ağrısı, kusma, tek taraflı güçsüzlük/uyuşma, baş ağrısı süresi. Branş: Nöroloji."
+    },
+    {
+      "disease_label": "Peptic ulcer diseae",
+      "tr_label": "Peptik ülser",
+      "specialty_id": "internal_gi",
+      "specialty_tr": "Dahiliye (gerekirse Gastroenteroloji)",
+      "text": "Peptik ülser. Peptic ulcers are open sores that develop on the inside lining of the stomach and the upper portion of the small intestine. Belirtiler: karın ağrısı, hazımsızlık, iştahsızlık, bulantı, ağrı şiddeti, kusma, kusma sıklığı, karın ağrısı süresi, karın ağrısı yeri. Branş: Dahiliye (gerekirse Gastroenteroloji)."
+    },
+    {
+      "disease_label": "Pneumonia",
+      "tr_label": "Pnömoni",
+      "specialty_id": "pulmonology",
+      "specialty_tr": "Göğüs Hastalıkları",
+      "text": "Pnömoni. Akciğer dokusunun enfeksiyonu. Ateş, öksürük (sıklıkla balgamlı), göğüs ağrısı ve nefes darlığı tipiktir; hastaneye yatış gerektirebilir. Belirtiler: nefes darlığı, göğüs ağrısı, göğüs ağrısı süresi, göğüs ağrısı sabit mi, titreme/üşüme, öksürük, öksürük süresi, öksürük gece artışı, halsizlik, çarpıntı, ateş, balgam, terleme, ateş süresi, nefes darlığı eforla, ateş derecesi, balgam rengi. Branş: Göğüs Hastalıkları."
+    },
+    {
+      "disease_label": "Psoriasis",
+      "tr_label": "Sedef hastalığı (psoriasis)",
+      "specialty_id": "dermatology",
+      "specialty_tr": "Dermatoloji",
+      "text": "Sedef hastalığı (psoriasis). Kronik, otoimmün cilt hastalığı. Gümüş-beyaz kepekli, kırmızı plaklar tipik olarak dirsek, diz, saçlı deri ve tırnakta görülür. Belirtiler: tırnak iltihabı, eklem ağrısı, leke, döküntü/ürtiker, tırnak değişikliği. Branş: Dermatoloji."
+    },
+    {
+      "disease_label": "Tuberculosis",
+      "tr_label": "Tüberküloz",
+      "specialty_id": "pulmonology",
+      "specialty_tr": "Göğüs Hastalıkları",
+      "text": "Tüberküloz. Mycobacterium tuberculosis kaynaklı kronik akciğer enfeksiyonu. 2+ haftadır süren öksürük, gece terlemesi, kilo kaybı ve bazen balgamla kan tipiktir. Belirtiler: nefes darlığı, kanlı balgam, göğüs ağrısı, göğüs ağrısı süresi, göğüs ağrısı sabit mi, titreme/üşüme, öksürük, öksürük süresi, öksürük gece artışı, halsizlik, ateş, iştahsızlık, balgam, terleme, lenf bezi şişliği, kusma, kilo kaybı, sarılık, ateş süresi, nefes darlığı eforla, ateş derecesi, balgam rengi. Branş: Göğüs Hastalıkları."
+    },
+    {
+      "disease_label": "Typhoid",
+      "tr_label": "Typhoid",
+      "specialty_id": "internal_gi",
+      "specialty_tr": "Dahiliye (gerekirse Enfeksiyon)",
+      "text": "Typhoid. Typhoid fever is a bacterial infection caused by Salmonella typhi. It spreads through contaminated food and water. Belirtiler: karın ağrısı, titreme/üşüme, kabızlık, ishal, halsizlik, baş ağrısı, ateş, iştahsızlık, bulantı, kusma, kusma sıklığı, karın ağrısı süresi, ishal süresi, ateş süresi, baş ağrısı süresi, ateş derecesi, karın ağrısı yeri. Branş: Dahiliye (gerekirse Enfeksiyon)."
+    },
+    {
+      "disease_label": "Urinary tract infection",
+      "tr_label": "İdrar yolu enfeksiyonu (İYE)",
+      "specialty_id": "urology_internal",
+      "specialty_tr": "Üroloji (gerekirse Dahiliye)",
+      "text": "İdrar yolu enfeksiyonu (İYE). Mesane, üretra veya böbreklerde bakteriyel enfeksiyon. Sık idrara çıkma, yanma, bulanık/kokulu idrar ve alt karın rahatsızlığı tipiktir. Belirtiler: idrar yanması, sık idrara çıkma. Branş: Üroloji (gerekirse Dahiliye)."
+    },
+    {
+      "disease_label": "Varicose veins",
+      "tr_label": "Varis",
+      "specialty_id": "cardiology",
+      "specialty_tr": "Kardiyoloji (gerekirse Kalp Damar Cerrahisi)",
+      "text": "Varis. Bacak toplardamarlarının genişlemesi ve kıvrımlılaşması. Ayakta durmakla artan ağrı, şişlik ve estetik endişe yaygındır; ileri vakalarda ülser olabilir. Belirtiler: morarma, kas ağrısı, halsizlik, obezite, damar şişliği, bacak şişliği. Branş: Kardiyoloji (gerekirse Kalp Damar Cerrahisi)."
+    },
+    {
+      "disease_label": "hepatitis A",
+      "tr_label": "Hepatit A",
+      "specialty_id": "internal_gi",
+      "specialty_tr": "Dahiliye (gerekirse Gastroenteroloji)",
+      "text": "Hepatit A. Hepatit A virüsüne bağlı karaciğer enfeksiyonu; kontamine gıda/sudan bulaşır. Bulantı, halsizlik, karın ağrısı ve sarılık görülür; çoğu vakada kendini sınırlar. Belirtiler: karın ağrısı, koyu idrar, ishal, ateş, eklem ağrısı, iştahsızlık, kas ağrısı, bulantı, kusma, sarılık, karın ağrısı süresi, ateş süresi, ishal süresi, ateş derecesi, karın ağrısı yeri. Branş: Dahiliye (gerekirse Gastroenteroloji)."
+    }
+  ],
+  "content_hash": "ab3fbef691b02f9c"
+}

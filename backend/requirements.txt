@@ -26,3 +26,9 @@ prometheus-fastapi-instrumentator>=7.0
 # (heavy, GPL-adjacent) and wkhtmltopdf (system-binary dep). fpdf2
 # is MIT, ~1MB, supports UTF-8 + embedded TTF for Turkish text.
 fpdf2>=2.8
+# sentence-transformers — multilingual-e5-base for semantic disease retrieval
+# (Phase 1: shadow mode next to Jaccard candidate_generator). CPU-only torch
+# is sufficient. ~470MB model is auto-downloaded on first run and cached.
+sentence-transformers>=5.0
+numpy>=1.26
+

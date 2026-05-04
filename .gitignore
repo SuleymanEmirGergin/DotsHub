@@ -86,3 +86,6 @@ backend/raw_data/*.csv
 /backend/tests/.benchmarks/
 /backend/tests/benchmark-baseline.json
 /backend/.benchmarks/
+
+# Generated embedding matrices (rebuilt on first request from disease_corpus.json)
+backend/app/data/embedding_cache/

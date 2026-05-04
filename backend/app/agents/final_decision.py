@@ -86,7 +86,22 @@ class FinalDecisionEngine:
                 confidence = mapping["confidence"]
 
             points = PRIOR_POINTS.get(rank, 0)
-            prior_value = points * confidence
+            # Scale prior by the candidate's own confidence so that a
+            # high-scoring rank-1 disease drives the specialty regardless of
+            # what Layer B keywords matched. Without this a single GI-coded
+            # keyword like "bulantı" (+3.0 to internal_gi) can outweigh a
+            # confident Migraine prior and route a clear migraine to GI.
+            #
+            # Tier:
+            #   rank-1 with score ≥ 0.5  → strong boost (1 + 2 * score)
+            #   everyone else            → mild scale (0.5 + score), so weak
+            #                              candidates don't dilute the result
+            candidate_score = float(candidate.get("score_0_1", 0.0))
+            if rank == 1 and candidate_score >= 0.5:
+                score_multiplier = 1.0 + 2.0 * candidate_score
+            else:
+                score_multiplier = 0.5 + candidate_score
+            prior_value = points * confidence * score_multiplier
 
             if specialty_id not in priors:
                 priors[specialty_id] = 0.0

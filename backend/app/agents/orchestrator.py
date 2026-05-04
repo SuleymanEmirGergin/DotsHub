@@ -30,6 +30,7 @@ from app.agents.medical_routing import MedicalRoutingAgent
 from app.agents.specialty_scorer import specialty_scorer
 from app.agents.stop_condition import stop_condition_engine, StopConditionStatus
 from app.agents.candidate_generator import candidate_generator
+from app.agents.embedding_retriever import embedding_retriever
 from app.agents.final_decision import final_decision_engine
 from app.agents.question_selector import question_selector
 from app.agents.red_flag_questions import (
@@ -285,6 +286,43 @@ class Orchestrator:
             f"[Orchestrator] Layer A: {len(state.disease_candidates)} candidates "
             f"from {len(canonical)} canonical symptoms"
         )
+
+        self._run_embedding_shadow(state, canonical)
+
+    def _run_embedding_shadow(self, state: SessionState, canonical: Set[str]):
+        """Phase-1 shadow mode: run embedding retrieval next to Jaccard.
+
+        Logs both top-K lists for offline quality comparison. Does NOT affect
+        scoring or selection. Safe to disable by skipping this call.
+        """
+        try:
+            query_parts: List[str] = []
+            if state.raw_texts:
+                query_parts.extend(state.raw_texts)
+            if canonical:
+                query_parts.append(", ".join(sorted(canonical)))
+            query = " ".join(p.strip() for p in query_parts if p and p.strip())
+            if not query:
+                return
+
+            emb_top = embedding_retriever.retrieve(query, top_k=8)
+            if not emb_top:
+                return
+
+            jaccard_top5 = [
+                {"label": c.get("disease_label"), "score": round(c.get("score_0_1", 0.0), 3)}
+                for c in (state.disease_candidates or [])[:5]
+            ]
+            embedding_top5 = [
+                {"label": r["disease_label"], "tr": r["tr_label"], "score": round(r["score"], 3)}
+                for r in emb_top[:5]
+            ]
+            logger.info(
+                f"[shadow] turn={state.turn_index} jaccard_top5={jaccard_top5} "
+                f"embedding_top5={embedding_top5}"
+            )
+        except Exception as e:
+            logger.warning(f"[shadow] embedding retrieval failed: {e}")
 
     def _run_final_decision(self, state: SessionState):
         """Run A+B merge: combine rules scores + disease priors."""

@@ -148,16 +148,30 @@ def compute_specialty_prior(
             d2s[dl] = entry
 
     prior: Dict[str, float] = defaultdict(float)
-    for c in candidates:
+    for rank, c in enumerate(candidates, start=1):
         dl = c.get("disease_label", "")
         score = float(c.get("score_0_1", 0.0))
+        # Rank-1 amplifier: when the top candidate is strong (score >= 0.5),
+        # multiply its specialty contribution so it can outweigh a single
+        # incidental keyword match in Layer B (e.g. "bulantı" routing a
+        # confident migraine case to GI). Lower-rank or weak top-1
+        # candidates contribute as before.
+        if rank == 1 and score >= 0.5:
+            # Heavy boost: the merge formula uses rules_weight=0.6, prior=0.4,
+            # and Layer B keywords can score +3.0 from a single match — so the
+            # rank-1 prior must reach ~5+ to cross over when its specialty
+            # has no keyword evidence at all (e.g. neurology vs. an
+            # incidental "bulantı" hit on internal_gi).
+            rank_boost = 1.0 + 12.0 * score  # score 0.5 → 7x, 0.85 → 11.2x
+        else:
+            rank_boost = 1.0
         mapping = d2s.get(dl)
         if mapping:
             sid = mapping.get("specialty_id", fallback_id)
             conf = float(mapping.get("confidence", 0.8))
-            prior[sid] += score * conf
+            prior[sid] += score * conf * rank_boost
         else:
-            prior[fallback_id] += score * 0.3
+            prior[fallback_id] += score * 0.3 * rank_boost
 
     return dict(prior)
 

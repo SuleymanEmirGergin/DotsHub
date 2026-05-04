@@ -564,6 +564,83 @@ def _emergency_specialty_for(rule_id: Optional[str]) -> Tuple[str, str]:
 #Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Disease candidate generator (deterministic, Kaggle-based) Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
 
+def _blend_candidates_with_embedding(
+    jaccard_candidates: List[Dict[str, Any]],
+    input_text: str,
+    user_canonicals_tr: List[str],
+    top_n: int = 6,
+) -> List[Dict[str, Any]]:
+    """Merge Jaccard candidates with embedding retrieval into a unified pool.
+
+    Composite scoring:
+      score = 0.5 * jaccard_score + 0.5 * embedding_score
+      + 0.10 agreement bonus if the disease appears in both top lists
+
+    Falls back to the pure Jaccard list (truncated to top_n) when embedding
+    retrieval is unavailable for any reason. Output schema is identical to
+    `_generate_candidates`'s, so downstream code (final_decision, scorer,
+    question selector) stays unchanged.
+    """
+    base = list(jaccard_candidates or [])[:top_n]
+
+    try:
+        from app.agents.embedding_retriever import embedding_retriever
+    except Exception:
+        return base
+
+    parts: List[str] = []
+    if input_text:
+        parts.append(str(input_text))
+    if user_canonicals_tr:
+        parts.append(", ".join(sorted(set(user_canonicals_tr))))
+    query = " ".join(p for p in parts if p and p.strip())
+    if not query:
+        return base
+
+    try:
+        emb_top = embedding_retriever.retrieve(query, top_k=8)
+    except Exception as exc:
+        logger.warning(f"[blend] embedding retrieval failed: {exc}")
+        return base
+
+    if not emb_top:
+        return base
+
+    jaccard_scores: Dict[str, float] = {
+        c["disease_label"]: float(c.get("score_0_1", 0.0)) for c in jaccard_candidates or []
+    }
+    emb_scores: Dict[str, float] = {r["disease_label"]: float(r["score"]) for r in emb_top}
+
+    all_labels = set(jaccard_scores) | set(emb_scores)
+    blended: List[Dict[str, Any]] = []
+    for label in all_labels:
+        j = jaccard_scores.get(label, 0.0)
+        e = emb_scores.get(label, 0.0)
+        score = 0.5 * j + 0.5 * e
+        if label in jaccard_scores and label in emb_scores:
+            score += 0.10
+        score = min(1.0, score)
+        blended.append({
+            "disease_label": label,
+            "score_0_1": round(score, 4),
+            "_jaccard": round(j, 4),
+            "_embedding": round(e, 4),
+        })
+
+    blended.sort(key=lambda c: -c["score_0_1"])
+    top = blended[:top_n]
+    logger.info(
+        "[blend] top5=" + repr([
+            {"label": c["disease_label"],
+             "score": c["score_0_1"],
+             "j": c["_jaccard"],
+             "e": c["_embedding"]}
+            for c in top[:5]
+        ])
+    )
+    return top
+
+
 def _generate_candidates(
     user_canonicals_tr: List[str],
     runtime: Runtime,
@@ -954,7 +1031,18 @@ def run_orchestrator_turn(
     # Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
     # 3) Disease candidate generation
     # Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
-    candidates = _generate_candidates(user_canonicals_tr, runtime, top_n=6)
+    jaccard_candidates = _generate_candidates(user_canonicals_tr, runtime, top_n=8)
+
+    # Phase-1 PRODUCTION: blend embedding retrieval into the candidate pool.
+    # Composite score = 0.5 * jaccard + 0.5 * embedding, with a +0.1 agreement
+    # bonus when both signals surface the same disease. Falls back to pure
+    # Jaccard if embedding retrieval is unavailable.
+    candidates = _blend_candidates_with_embedding(
+        jaccard_candidates=jaccard_candidates,
+        input_text=input_text,
+        user_canonicals_tr=user_canonicals_tr,
+        top_n=6,
+    )
     top1 = candidates[0]["score_0_1"] if len(candidates) > 0 else 0.0
     top2 = candidates[1]["score_0_1"] if len(candidates) > 1 else 0.0
 
@@ -1012,6 +1100,91 @@ def run_orchestrator_turn(
         question_effectiveness_map=runtime.question_effectiveness,
     )
     no_question_available = not bool(q.get("question_tr"))
+
+    # Phase-3 PRODUCTION: information-gain question selector.
+    # When the candidate distribution admits a strictly more discriminative
+    # symptom than the deterministic v3 picker, override `q`. Falls back to
+    # the deterministic pick when info-gain returns nothing or no question
+    # template exists for the picked canonical.
+    try:
+        from app.agents.info_gain_selector import info_gain_selector as _ig
+        _present = {k for k, v in (answers or {}).items() if str(v).lower() in {"yes", "evet", "var"}}
+        _absent = {k for k, v in (answers or {}).items() if str(v).lower() in {"no", "hayır", "yok"}}
+        _weights = [(c["disease_label"], float(c.get("score_0_1", 0.0))) for c in candidates[:8]]
+        _ig_pick = _ig.select(
+            candidate_weights=_weights,
+            already_asked_canonical=set(asked_canonicals or []),
+            confirmed_present=_present,
+            confirmed_absent=_absent,
+        )
+        if _ig_pick and _ig_pick.get("question_tr"):
+            _det_canonical = q.get("canonical")
+            q = {
+                "question_id": "q_igain",
+                "canonical": _ig_pick["canonical_symptom"],
+                "question_tr": _ig_pick["question_tr"],
+                "answer_type": _ig_pick.get("answer_type", "yes_no"),
+                "choices_tr": _ig_pick.get("choices_tr"),
+                "why_asking_tr": (
+                    f"Adayları en çok ayırt eden bulgu (info_gain={_ig_pick['info_gain']})"
+                ),
+                "_info_gain": _ig_pick["info_gain"],
+                "_split": _ig_pick["split"],
+            }
+            no_question_available = False
+            logger.info(
+                f"[igain] override det_pick={_det_canonical!r} -> "
+                f"{_ig_pick['canonical_symptom']!r} gain={_ig_pick['info_gain']}"
+            )
+    except Exception as _ig_exc:
+        logger.warning(f"[igain] failed, keeping deterministic pick: {_ig_exc}")
+
+    # Phase-2 shadow: LLM-clinician reranking on union(jaccard, embedding) top-K.
+    # Gated by CLINICIAN_RERANKER_ENABLED — costs an LLM call per turn.
+    try:
+        from app.agents.clinician_ranker import (
+            clinician_ranker as _cr,
+            is_enabled as _cr_enabled,
+            merge_candidate_pool as _cr_merge,
+        )
+        if _cr_enabled():
+            from app.agents.embedding_retriever import embedding_retriever as _emb
+            _query_parts: list[str] = []
+            if input_text:
+                _query_parts.append(str(input_text))
+            if user_canonicals_tr:
+                _query_parts.append(", ".join(sorted(user_canonicals_tr)))
+            _query = " ".join(p for p in _query_parts if p and p.strip())
+            _emb_top = _emb.retrieve(_query, top_k=8) if _query else []
+            _pool = _cr_merge(candidates, _emb_top, pool_size=8)
+            if _pool:
+                import asyncio as _asyncio
+                from concurrent.futures import ThreadPoolExecutor as _TPE
+
+                def _run() -> Any:
+                    loop = _asyncio.new_event_loop()
+                    try:
+                        return loop.run_until_complete(
+                            _cr.rerank(
+                                user_text=input_text or "",
+                                conversation_history=[],
+                                candidates=_pool,
+                            )
+                        )
+                    finally:
+                        loop.close()
+
+                with _TPE(max_workers=1) as _ex:
+                    _ranking = _ex.submit(_run).result(timeout=20)
+                _ranked5 = [
+                    {"label": r["disease_label"],
+                     "conf": round(r["confidence_0_1"], 3),
+                     "missing": r.get("missing_key_features_tr", [])}
+                    for r in _ranking.ranked[:5]
+                ]
+                logger.info(f"[shadow-clinician] reranked_top5={_ranked5}")
+    except Exception as _cr_exc:
+        logger.warning(f"[shadow-clinician] failed: {_cr_exc}")
 
     # Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
     # 8) Stop decision
