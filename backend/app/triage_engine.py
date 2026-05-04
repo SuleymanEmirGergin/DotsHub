@@ -1175,7 +1175,7 @@ def run_orchestrator_turn(
                         loop.close()
 
                 with _TPE(max_workers=1) as _ex:
-                    _ranking = _ex.submit(_run).result(timeout=20)
+                    _ranking = _ex.submit(_run).result(timeout=60)
                 _ranked5 = [
                     {"label": r["disease_label"],
                      "conf": round(r["confidence_0_1"], 3),
@@ -1184,7 +1184,7 @@ def run_orchestrator_turn(
                 ]
                 logger.info(f"[shadow-clinician] reranked_top5={_ranked5}")
     except Exception as _cr_exc:
-        logger.warning(f"[shadow-clinician] failed: {_cr_exc}")
+        logger.warning(f"[shadow-clinician] failed: {type(_cr_exc).__name__}: {_cr_exc}")
 
     # Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
     # 8) Stop decision
