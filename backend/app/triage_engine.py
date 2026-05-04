@@ -641,6 +641,98 @@ def _blend_candidates_with_embedding(
     return top
 
 
+def _clinician_rerank_candidates(
+    candidates: List[Dict[str, Any]],
+    input_text: str,
+    user_canonicals_tr: List[str],
+) -> List[Dict[str, Any]]:
+    """Run the LLM clinician on the merged pool and replace candidates.
+
+    The clinician picks only from the supplied closed set; its
+    confidence_0_1 becomes the new score_0_1, and per-candidate
+    missing_key_features_tr ride along under `_missing_features_tr` for
+    later fallback questioning. On any failure (network, JSON parse,
+    timeout) the caller's pre-rerank `candidates` are returned unchanged.
+    """
+    if not candidates:
+        return candidates
+
+    try:
+        from app.agents.clinician_ranker import (
+            clinician_ranker as _cr,
+            merge_candidate_pool as _cr_merge,
+        )
+        from app.agents.embedding_retriever import embedding_retriever as _emb
+    except Exception as exc:
+        logger.warning(f"[clinician] import failed: {exc}")
+        return candidates
+
+    parts: List[str] = []
+    if input_text:
+        parts.append(str(input_text))
+    if user_canonicals_tr:
+        parts.append(", ".join(sorted(set(user_canonicals_tr))))
+    query = " ".join(p for p in parts if p and p.strip())
+    if not query:
+        return candidates
+
+    try:
+        emb_top = _emb.retrieve(query, top_k=8)
+    except Exception as exc:
+        logger.warning(f"[clinician] embedding retrieval failed: {exc}")
+        emb_top = []
+
+    pool = _cr_merge(candidates, emb_top, pool_size=8)
+    if not pool:
+        return candidates
+
+    import asyncio
+    from concurrent.futures import ThreadPoolExecutor
+
+    def _run() -> Any:
+        loop = asyncio.new_event_loop()
+        try:
+            return loop.run_until_complete(
+                _cr.rerank(
+                    user_text=input_text or "",
+                    conversation_history=[],
+                    candidates=pool,
+                )
+            )
+        finally:
+            loop.close()
+
+    try:
+        with ThreadPoolExecutor(max_workers=1) as ex:
+            ranking = ex.submit(_run).result(timeout=60)
+    except Exception as exc:
+        logger.warning(
+            f"[clinician] failed, keeping blended candidates: "
+            f"{type(exc).__name__}: {exc}"
+        )
+        return candidates
+
+    if not ranking.ranked:
+        return candidates
+
+    new_candidates: List[Dict[str, Any]] = []
+    for r in ranking.ranked[:6]:
+        new_candidates.append({
+            "disease_label": r["disease_label"],
+            "score_0_1": float(r["confidence_0_1"]),
+            "_source": "clinician",
+            "_missing_features_tr": r.get("missing_key_features_tr", []),
+            "_reasoning_tr": r.get("reasoning_tr", ""),
+        })
+    logger.info(
+        "[clinician] replaced top5=" + repr([
+            {"label": c["disease_label"], "score": round(c["score_0_1"], 3)}
+            for c in new_candidates[:5]
+        ])
+    )
+    return new_candidates
+
+
 def _generate_candidates(
     user_canonicals_tr: List[str],
     runtime: Runtime,
@@ -1043,6 +1135,20 @@ def run_orchestrator_turn(
         user_canonicals_tr=user_canonicals_tr,
         top_n=6,
     )
+
+    # Phase-2 PRODUCTION: LLM-clinician reranks the closed candidate set.
+    # When successful, the clinician's confidence-ordered output replaces
+    # the heuristic-blended candidates so downstream scoring (prior,
+    # merge, info-gain, top_conditions) inherits the sharper distribution
+    # and the per-candidate `missing_key_features_tr` for fallback
+    # questioning. Failures fall back to the blended candidates without
+    # changing behavior.
+    candidates = _clinician_rerank_candidates(
+        candidates=candidates,
+        input_text=input_text,
+        user_canonicals_tr=user_canonicals_tr,
+    )
+
     top1 = candidates[0]["score_0_1"] if len(candidates) > 0 else 0.0
     top2 = candidates[1]["score_0_1"] if len(candidates) > 1 else 0.0
 
@@ -1139,54 +1245,35 @@ def run_orchestrator_turn(
     except Exception as _ig_exc:
         logger.warning(f"[igain] failed, keeping deterministic pick: {_ig_exc}")
 
-    # Phase-2 shadow: LLM-clinician reranking on union(jaccard, embedding) top-K.
-    # Gated by CLINICIAN_RERANKER_ENABLED — costs an LLM call per turn.
-    try:
-        from app.agents.clinician_ranker import (
-            clinician_ranker as _cr,
-            is_enabled as _cr_enabled,
-            merge_candidate_pool as _cr_merge,
-        )
-        if _cr_enabled():
-            from app.agents.embedding_retriever import embedding_retriever as _emb
-            _query_parts: list[str] = []
-            if input_text:
-                _query_parts.append(str(input_text))
-            if user_canonicals_tr:
-                _query_parts.append(", ".join(sorted(user_canonicals_tr)))
-            _query = " ".join(p for p in _query_parts if p and p.strip())
-            _emb_top = _emb.retrieve(_query, top_k=8) if _query else []
-            _pool = _cr_merge(candidates, _emb_top, pool_size=8)
-            if _pool:
-                import asyncio as _asyncio
-                from concurrent.futures import ThreadPoolExecutor as _TPE
+    # Phase-2/3 fallback: when neither v3 nor info-gain produced a question
+    # but the clinician annotated the top candidate with a missing_feature,
+    # ask that as a free-text question. Closes the loop: clinician identifies
+    # what's uncertain → user clarifies → next turn reranks with new info.
+    if not q.get("question_tr") and candidates:
+        _top = candidates[0]
+        _features = _top.get("_missing_features_tr") or []
+        if _features:
+            _feat = str(_features[0]).strip().rstrip("?")
+            if _feat:
+                _question = _feat[0].upper() + _feat[1:] + " hakkında bilgi verebilir misiniz?"
+                q = {
+                    "question_id": "q_clinician_feature",
+                    "canonical": None,
+                    "question_tr": _question,
+                    "answer_type": "free_text",
+                    "choices_tr": None,
+                    "why_asking_tr": (
+                        f"Olası tanıyı ({_top.get('disease_label')}) netleştirmek için"
+                    ),
+                    "_source": "clinician_feature",
+                }
+                no_question_available = False
+                logger.info(
+                    f"[clinician-feature] using missing_feature for "
+                    f"{_top.get('disease_label')!r}: {_feat!r}"
+                )
 
-                def _run() -> Any:
-                    loop = _asyncio.new_event_loop()
-                    try:
-                        return loop.run_until_complete(
-                            _cr.rerank(
-                                user_text=input_text or "",
-                                conversation_history=[],
-                                candidates=_pool,
-                            )
-                        )
-                    finally:
-                        loop.close()
-
-                with _TPE(max_workers=1) as _ex:
-                    _ranking = _ex.submit(_run).result(timeout=60)
-                _ranked5 = [
-                    {"label": r["disease_label"],
-                     "conf": round(r["confidence_0_1"], 3),
-                     "missing": r.get("missing_key_features_tr", [])}
-                    for r in _ranking.ranked[:5]
-                ]
-                logger.info(f"[shadow-clinician] reranked_top5={_ranked5}")
-    except Exception as _cr_exc:
-        logger.warning(f"[shadow-clinician] failed: {type(_cr_exc).__name__}: {_cr_exc}")
-
-    # Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+    #Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
     # 8) Stop decision
     # Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
     max_q = int(runtime.stop_rules.get("max_questions", 6))

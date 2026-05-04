@@ -10,14 +10,15 @@ Hard constraint: LLM may only choose from the supplied disease_labels.
 JSON-schema-validated; on any failure the agent returns empty so callers
 fall back to deterministic ranking.
 
-Activated by env flag CLINICIAN_RERANKER_ENABLED=1 — default OFF.
+Always-on in production: the rerank step is part of the standard turn
+pipeline. Failures (Wiro down, JSON malformed, timeout) gracefully fall
+back to the blended candidate ranking.
 """
 
 from __future__ import annotations
 
 import json
 import logging
-import os
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
@@ -56,10 +57,6 @@ KESİN KURALLAR:
 class ClinicianRanking:
     ranked: List[Dict[str, Any]]  # [{disease_label, confidence_0_1, reasoning_tr, missing_key_features_tr}]
     raw: Optional[Dict[str, Any]] = None
-
-
-def is_enabled() -> bool:
-    return os.getenv("CLINICIAN_RERANKER_ENABLED", "0").strip().lower() in {"1", "true", "yes", "on"}
 
 
 class ClinicianRanker(BaseAgent):
