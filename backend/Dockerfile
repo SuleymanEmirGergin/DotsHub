@@ -33,6 +33,21 @@ WORKDIR /build
 COPY requirements.txt ./
 RUN pip install --prefix=/install -r requirements.txt
 
+# Pre-fetch the multilingual-e5-base model + pre-build the disease
+# embedding cache so cold starts don't pay HF download (~470MB) or
+# corpus encode (~5-10s on CPU). Both artifacts go into stable paths
+# (/opt/hf-cache and the corpus cache dir) and are copied into the
+# runtime stage.
+ENV HF_HOME=/opt/hf-cache \
+    SENTENCE_TRANSFORMERS_HOME=/opt/hf-cache
+RUN PYTHONPATH=/install/lib/python3.11/site-packages \
+    python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('intfloat/multilingual-e5-base')"
+COPY app/ /build/app/
+COPY scripts/ /build/scripts/
+RUN PYTHONPATH=/install/lib/python3.11/site-packages:/build \
+    python /build/scripts/precompute_embeddings.py || \
+    echo "precompute_embeddings: skipped (corpus build step optional in this stage)"
+
 # ── Runtime: copy install dir + app, drop privileges ─────────────────────
 FROM python:3.11-slim AS runtime
 
@@ -50,6 +65,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && useradd --system --uid 10001 --gid 0 --home /app pretriage
 
 COPY --from=builder /install /usr/local
+
+# Pre-fetched HF model cache (multilingual-e5-base) so the runtime
+# never has to download from huggingface.co on a cold start.
+ENV HF_HOME=/opt/hf-cache \
+    SENTENCE_TRANSFORMERS_HOME=/opt/hf-cache
+COPY --from=builder --chown=10001:0 /opt/hf-cache /opt/hf-cache
 
 WORKDIR /app
 # Copy only the app — keep the layer small; the rest of the repo (tests,

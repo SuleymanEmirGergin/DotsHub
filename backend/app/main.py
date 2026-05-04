@@ -76,6 +76,26 @@ async def lifespan(app: FastAPI):
         logger.info("Database initialized successfully")
     except Exception as e:
         logger.warning("Database init failed; API will still start", exc_info=True, extra={"error": str(e)})
+
+    # Warm up the embedding retriever in a background thread so the
+    # first request doesn't pay the model-load + corpus-encode cost
+    # (~5-10s on CPU). Failure is non-fatal — the retriever has its
+    # own lazy-load with the same fallback path.
+    try:
+        import asyncio as _asyncio
+        from app.agents.embedding_retriever import embedding_retriever as _er
+
+        async def _warmup() -> None:
+            await _asyncio.to_thread(_er.ensure_loaded)
+            if _er.is_loaded:
+                logger.info("Embedding retriever warmup complete")
+            else:
+                logger.warning("Embedding retriever warmup did not complete; will retry lazily")
+
+        _asyncio.create_task(_warmup())
+    except Exception as _warmup_exc:
+        logger.warning("Embedding retriever warmup scheduling failed: %s", _warmup_exc)
+
     yield
     if redis_client:
         try:

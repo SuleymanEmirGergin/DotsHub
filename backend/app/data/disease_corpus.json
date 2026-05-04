@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "tr-TR",
-  "count": 40,
+  "count": 48,
   "items": [
     {
       "disease_label": "(vertigo) Paroymsal  Positional Vertigo",
@@ -282,7 +282,71 @@
       "specialty_id": "internal_gi",
       "specialty_tr": "Dahiliye (gerekirse Gastroenteroloji)",
       "text": "Hepatit A. Hepatit A virüsüne bağlı karaciğer enfeksiyonu; kontamine gıda/sudan bulaşır. Bulantı, halsizlik, karın ağrısı ve sarılık görülür; çoğu vakada kendini sınırlar. Belirtiler: karın ağrısı, koyu idrar, ishal, ateş, eklem ağrısı, iştahsızlık, kas ağrısı, bulantı, kusma, sarılık, karın ağrısı süresi, ateş süresi, ishal süresi, ateş derecesi, karın ağrısı yeri. Branş: Dahiliye (gerekirse Gastroenteroloji)."
+    },
+    {
+      "disease_label": "Panik Bozukluk",
+      "tr_label": "Panik Bozukluk",
+      "specialty_id": "psychiatry",
+      "specialty_tr": "Psikiyatri",
+      "text": "Panik Bozukluk. Ataklar halinde ani başlayan, birkaç dakika içinde zirveye ulaşan ve kendiliğinden geçen yoğun korku/kaygı atakları. Bedensel belirtiler (çarpıntı, nefes darlığı) sıktır ama kalp hastalığı değildir. Belirtiler: Atakların sıklığı ve süresi, Atağı tetikleyen durum/yer/düşünce, Atak dışında süregelen kaygı düzeyi, Günlük işlevsellik (iş, sosyal yaşam) üzerindeki etki. Branş: Psikiyatri.",
+      "source": "curated"
+    },
+    {
+      "disease_label": "Majör Depresyon",
+      "tr_label": "Majör Depresyon",
+      "specialty_id": "psychiatry",
+      "specialty_tr": "Psikiyatri",
+      "text": "Majör Depresyon. En az 2 hafta süren belirgin çökkün duygu durumu veya ilgi/zevk kaybı, uyku-iştah-enerji değişiklikleri ve işlevsellikte bozulma ile karakterize bir psikiyatrik durum. Tedavi edilebilir. Belirtiler: Uyku süresi ve kalitesi, İştah ve kilo değişimi, Kendine zarar verme veya intihar düşünceleri (varsa hemen destek), Günlük işlere devam etme kapasitesi. Branş: Psikiyatri.",
+      "source": "curated"
+    },
+    {
+      "disease_label": "Akut Otitis Media",
+      "tr_label": "Akut Otitis Media",
+      "specialty_id": "ent",
+      "specialty_tr": "Kulak Burun Boğaz (KBB)",
+      "text": "Akut Otitis Media. Orta kulak iltihabı. Küçük çocuklarda sıktır; ateş, kulağı çekiştirme, huzursuzluk ve uyku bozukluğu ile belirir. Belirtiler: Ateş (38.5°C üstü veya uzarsa), Kulak akıntısı (şeffaf/sarı/kanlı), Çocuğun genel durumu (uyku, beslenme), Dengesizlik veya işitmede azalma. Branş: Kulak Burun Boğaz (KBB).",
+      "source": "curated"
+    },
+    {
+      "disease_label": "Bronşiolit",
+      "tr_label": "Bronşiolit",
+      "specialty_id": "pulmonology",
+      "specialty_tr": "Göğüs Hastalıkları",
+      "text": "Bronşiolit. Genellikle 2 yaş altındaki bebeklerde viral (sıklıkla RSV) üst solunum yolu enfeksiyonu sonrası küçük hava yollarında daralma. Hırıltılı nefes, hızlı solunum ve beslenmede azalma tipiktir. Belirtiler: Solunum sayısı ve güçlüğü (burun kanatlarının çekilmesi, göğüs çekilmesi), Beslenme miktarı (alışkın olduğunun <%50'si endişe verici), Dudak/tırnak rengi (morarma), Uyku hali ve uyanıklık. Branş: Göğüs Hastalıkları.",
+      "source": "curated"
+    },
+    {
+      "disease_label": "Renal Kolik",
+      "tr_label": "Renal Kolik",
+      "specialty_id": "urology_internal",
+      "specialty_tr": "Üroloji (gerekirse Dahiliye)",
+      "text": "Renal Kolik. Böbrek veya idrar yolundaki taşın yol açtığı dalga tarzı şiddetli yan ağrısı; bulantı ve idrarda kan (hematüri) eşlik edebilir. Belirtiler: Ağrının şiddeti ve sıklığı, İdrarda kan veya taş parçası, Ateş ve titreme (enfeksiyon işareti), Bulantı-kusma ve sıvı alımı. Branş: Üroloji (gerekirse Dahiliye).",
+      "source": "curated"
+    },
+    {
+      "disease_label": "Dismenore",
+      "tr_label": "Dismenore",
+      "specialty_id": "obgyn",
+      "specialty_tr": "Kadın Hastalıkları ve Doğum",
+      "text": "Dismenore. Adet dönemine eşlik eden pelvik kramp. Primer dismenore genç yaşlarda başlar ve altta yatan hastalık yoktur; sekonder dismenore daha geç başlar ve endometriozis gibi bir nedene bağlı olabilir. Belirtiler: Ağrının şiddeti ve günlük işlere etkisi, Adet döngüsünün düzenliliği, Cinsel ilişkide ağrı, Adet dışı pelvik ağrı. Branş: Kadın Hastalıkları ve Doğum.",
+      "source": "curated"
+    },
+    {
+      "disease_label": "PCOS (Polikistik Over Sendromu)",
+      "tr_label": "PCOS (Polikistik Over Sendromu)",
+      "specialty_id": "obgyn",
+      "specialty_tr": "Kadın Hastalıkları ve Doğum",
+      "text": "PCOS (Polikistik Over Sendromu). Adet düzensizliği, androjen fazlalığı (hirsutizm/akne) ve polikistik over görüntüsünden en az ikisinin bulunduğu bir endokrin-jinekolojik sendrom. Metabolik sendrom ve infertilite ile ilişkilidir. Belirtiler: Adet sıklığı ve düzeni, Kilo değişimi ve bel çevresi, Akne ve tüylenme seyri, Kan şekeri belirtileri (aşırı susama, sık idrara çıkma). Branş: Kadın Hastalıkları ve Doğum.",
+      "source": "curated"
+    },
+    {
+      "disease_label": "Alerjik Konjonktivit",
+      "tr_label": "Alerjik Konjonktivit",
+      "specialty_id": "ophthalmology",
+      "specialty_tr": "Göz Hastalıkları",
+      "text": "Alerjik Konjonktivit. Polen, toz akarı veya evcil hayvan gibi alerjenlere bağlı göz iç zarının iltihaplanması. Her iki gözde kaşıntı, sulanma ve kızarıklık tipiktir; genellikle mevsimseldir. Belirtiler: Görme değişikliği (olmamalı; varsa farklı bir durum), Tek taraflı mı, iki taraflı mı?, Sarı-yeşil akıntı (bakteriyel şüphesi), Göz ağrısı veya ışık hassasiyeti (farklı tanıya geçiş). Branş: Göz Hastalıkları.",
+      "source": "curated"
     }
   ],
-  "content_hash": "ab3fbef691b02f9c"
+  "content_hash": "fef65a3ef791682a"
 }

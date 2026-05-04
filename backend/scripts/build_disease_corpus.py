@@ -133,39 +133,66 @@ def main() -> int:
             "text": text,
         })
 
-    # Curated conditions (TR-native, no Kaggle symptom matrix entry)
-    curated_items = curated_doc.get("conditions", []) if isinstance(curated_doc, dict) else []
-    if isinstance(curated_items, dict):
-        curated_items = list(curated_items.values())
+    # Curated conditions (TR-native; not in Kaggle symptom matrix)
+    # Source structure is `conditions: { "TR Label": {icd10, disease_description_tr,
+    # izlenecek_belirtiler_tr, ...} }`. Each entry needs a hand-mapped specialty
+    # since curated_conditions.json itself doesn't carry one.
+    CURATED_SPECIALTY_MAP: Dict[str, Dict[str, str]] = {
+        "Panik Bozukluk":              {"id": "psychiatry",        "tr": "Psikiyatri"},
+        "Majör Depresyon":             {"id": "psychiatry",        "tr": "Psikiyatri"},
+        "Akut Otitis Media":           {"id": "ent",               "tr": "Kulak Burun Boğaz (KBB)"},
+        "Bronşiolit":                  {"id": "pulmonology",       "tr": "Göğüs Hastalıkları"},
+        "Renal Kolik":                 {"id": "urology_internal",  "tr": "Üroloji (gerekirse Dahiliye)"},
+        "Dismenore":                   {"id": "obgyn",             "tr": "Kadın Hastalıkları ve Doğum"},
+        "PCOS (Polikistik Over Sendromu)": {"id": "obgyn",         "tr": "Kadın Hastalıkları ve Doğum"},
+        "Alerjik Konjonktivit":        {"id": "ophthalmology",     "tr": "Göz Hastalıkları"},
+    }
+
+    curated_conditions = curated_doc.get("conditions", {})
+    if not isinstance(curated_conditions, dict):
+        curated_conditions = {}
     curated_added = 0
-    for c in curated_items:
+    curated_unmapped: List[str] = []
+
+    for tr_label, c in curated_conditions.items():
         if not isinstance(c, dict):
             continue
-        disease_label = c.get("disease_label_tr") or c.get("disease_label") or c.get("label_tr")
-        if not disease_label:
+        if any(it["disease_label"] == tr_label or it["tr_label"] == tr_label for it in items):
             continue
-        if any(it["disease_label"] == disease_label or it["tr_label"] == disease_label for it in items):
+
+        spec = CURATED_SPECIALTY_MAP.get(tr_label)
+        if not spec:
+            curated_unmapped.append(tr_label)
             continue
-        spec_id = c.get("specialty_id", "")
-        spec_tr = c.get("specialty_tr", "")
-        desc = c.get("disease_description_tr") or c.get("description_tr") or ""
-        canonical_symptoms = c.get("canonical_symptoms_tr") or c.get("symptoms_tr") or []
-        parts = [str(disease_label).strip() + "."]
+
+        desc = c.get("disease_description_tr") or ""
+        # `izlenecek_belirtiler_tr` is "symptoms to track" — close enough to a
+        # canonical symptom list for retrieval purposes.
+        symptoms_tr = c.get("izlenecek_belirtiler_tr") or []
+        if not isinstance(symptoms_tr, list):
+            symptoms_tr = []
+
+        parts = [tr_label.strip() + "."]
         if desc:
-            parts.append(str(desc).strip())
-        if canonical_symptoms:
-            parts.append("Belirtiler: " + ", ".join(canonical_symptoms) + ".")
-        if spec_tr:
-            parts.append("Branş: " + spec_tr + ".")
+            parts.append(desc.strip())
+        if symptoms_tr:
+            parts.append("Belirtiler: " + ", ".join(str(s) for s in symptoms_tr) + ".")
+        parts.append("Branş: " + spec["tr"] + ".")
+
         items.append({
-            "disease_label": str(disease_label),
-            "tr_label": str(disease_label),
-            "specialty_id": spec_id,
-            "specialty_tr": spec_tr,
+            "disease_label": tr_label,
+            "tr_label": tr_label,
+            "specialty_id": spec["id"],
+            "specialty_tr": spec["tr"],
             "text": " ".join(parts),
             "source": "curated",
         })
         curated_added += 1
+
+    if curated_unmapped:
+        logger.warning(
+            f"Curated entries without specialty mapping (skipped): {curated_unmapped}"
+        )
 
     payload = {
         "version": "1.0",

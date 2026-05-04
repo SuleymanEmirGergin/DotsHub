@@ -122,7 +122,11 @@ def _annotate_and_enrich_top_conditions(
         if not isinstance(c, dict):
             continue
         label = c.get("disease_label") or ""
-        entry = dict(c)
+        # Strip internal-only underscore-prefixed fields (e.g. _source,
+        # _missing_features_tr, _reasoning_tr from the clinician path,
+        # _jaccard / _embedding from the blend) so they never leak to
+        # the API client.
+        entry = {k: v for k, v in c.items() if not k.startswith("_")}
         if label in curated_labels:
             entry["source_type"] = "curated"
             meta = catalog.get(label) or {}
@@ -1242,6 +1246,17 @@ def run_orchestrator_turn(
                 f"[igain] override det_pick={_det_canonical!r} -> "
                 f"{_ig_pick['canonical_symptom']!r} gain={_ig_pick['info_gain']}"
             )
+            try:
+                from app.observability.metrics import question_selector_total
+                question_selector_total.labels(source="info_gain").inc()
+            except Exception:
+                pass
+        else:
+            try:
+                from app.observability.metrics import question_selector_total
+                question_selector_total.labels(source="deterministic_v3").inc()
+            except Exception:
+                pass
     except Exception as _ig_exc:
         logger.warning(f"[igain] failed, keeping deterministic pick: {_ig_exc}")
 
@@ -1272,6 +1287,13 @@ def run_orchestrator_turn(
                     f"[clinician-feature] using missing_feature for "
                     f"{_top.get('disease_label')!r}: {_feat!r}"
                 )
+                try:
+                    from app.observability.metrics import question_selector_total
+                    question_selector_total.labels(
+                        source="clinician_feature"
+                    ).inc()
+                except Exception:
+                    pass
 
     #Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
     # 8) Stop decision

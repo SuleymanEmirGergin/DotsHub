@@ -128,39 +128,69 @@ class EmbeddingRetriever:
                    "score", "rank"}], score in [0, 1] (higher = closer).
         Returns [] if retriever isn't loaded or text is empty.
         """
+        # Lazy import keeps the module test-friendly: prometheus_client only
+        # needs to be present at runtime, not at every import path.
+        try:
+            from app.observability.metrics import (
+                embedding_retrieval_total,
+                embedding_retrieval_seconds,
+            )
+        except Exception:
+            embedding_retrieval_total = None
+            embedding_retrieval_seconds = None
+
+        import time
+        t0 = time.perf_counter()
+
         if not text or not text.strip():
+            if embedding_retrieval_total is not None:
+                embedding_retrieval_total.labels(outcome="empty").inc()
             return []
         if not self.ensure_loaded():
+            if embedding_retrieval_total is not None:
+                embedding_retrieval_total.labels(outcome="error").inc()
             return []
 
-        import numpy as np
+        try:
+            import numpy as np
 
-        q = self._model.encode(
-            [_QUERY_PREFIX + text],
-            normalize_embeddings=True,
-            convert_to_numpy=True,
-            show_progress_bar=False,
-        )[0]
-        sims = self._matrix @ q  # cosine since both are L2-normalized
-        if top_k >= len(sims):
-            order = np.argsort(-sims)
-        else:
-            part = np.argpartition(-sims, top_k)[:top_k]
-            order = part[np.argsort(-sims[part])]
+            q = self._model.encode(
+                [_QUERY_PREFIX + text],
+                normalize_embeddings=True,
+                convert_to_numpy=True,
+                show_progress_bar=False,
+            )[0]
+            sims = self._matrix @ q  # cosine since both are L2-normalized
+            if top_k >= len(sims):
+                order = np.argsort(-sims)
+            else:
+                part = np.argpartition(-sims, top_k)[:top_k]
+                order = part[np.argsort(-sims[part])]
 
-        out: List[Dict[str, Any]] = []
-        for rank, idx in enumerate(order[:top_k], start=1):
-            it = self._items[int(idx)]
-            out.append({
-                "disease_label": it["disease_label"],
-                "tr_label": it.get("tr_label", it["disease_label"]),
-                "specialty_id": it.get("specialty_id", ""),
-                "specialty_tr": it.get("specialty_tr", ""),
-                "text": it.get("text", ""),
-                "score": float(sims[int(idx)]),
-                "rank": rank,
-            })
-        return out
+            out: List[Dict[str, Any]] = []
+            for rank, idx in enumerate(order[:top_k], start=1):
+                it = self._items[int(idx)]
+                out.append({
+                    "disease_label": it["disease_label"],
+                    "tr_label": it.get("tr_label", it["disease_label"]),
+                    "specialty_id": it.get("specialty_id", ""),
+                    "specialty_tr": it.get("specialty_tr", ""),
+                    "text": it.get("text", ""),
+                    "score": float(sims[int(idx)]),
+                    "rank": rank,
+                })
+            if embedding_retrieval_total is not None:
+                embedding_retrieval_total.labels(
+                    outcome="hit" if out else "empty"
+                ).inc()
+            return out
+        except Exception:
+            if embedding_retrieval_total is not None:
+                embedding_retrieval_total.labels(outcome="error").inc()
+            raise
+        finally:
+            if embedding_retrieval_seconds is not None:
+                embedding_retrieval_seconds.observe(time.perf_counter() - t0)
 
     def get_item(self, disease_label: str) -> Optional[Dict[str, Any]]:
         """Look up corpus item by EN disease_label (source-of-truth key)."""

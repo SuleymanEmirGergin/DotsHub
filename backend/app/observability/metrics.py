@@ -156,6 +156,52 @@ safety_guard_triggers_total = Counter(
     labelnames=("path",),
 )
 
+# ─── Phase 1/2/3 retrieval pipeline metrics ────────────────────────
+#
+# Counts every embedding retrieval call. `outcome` ∈ {"hit", "empty",
+# "error"}; "hit" = at least one candidate returned, "empty" = zero
+# (e.g. blank query), "error" = retriever exception. Bounded to 3 values.
+embedding_retrieval_total = Counter(
+    "embedding_retrieval_total",
+    "Embedding-based candidate retrieval calls by outcome.",
+    labelnames=("outcome",),
+)
+
+embedding_retrieval_seconds = Histogram(
+    "embedding_retrieval_seconds",
+    "Wall-clock time for a single embedding retrieval (E5 cosine search).",
+    buckets=(0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5),
+)
+
+# Counter — clinician rerank outcomes. The closed-set guarantee + the
+# Wiro 401/timeout failure modes are operationally distinct, so the
+# label captures all three:
+#   - "ranked": LLM returned a non-empty validated ranked list
+#   - "empty":  call succeeded but produced 0 in-set candidates
+#               (malformed JSON or all out-of-set predictions)
+#   - "error":  network/timeout/exception, falls back to blended
+clinician_rerank_total = Counter(
+    "clinician_rerank_total",
+    "LLM-clinician rerank outcomes (ranked/empty/error).",
+    labelnames=("outcome",),
+)
+
+clinician_rerank_seconds = Histogram(
+    "clinician_rerank_seconds",
+    "End-to-end clinician rerank latency (Wiro task polling included).",
+    buckets=(1.0, 2.5, 5.0, 10.0, 15.0, 20.0, 30.0, 45.0, 60.0),
+)
+
+# Counter — info-gain question selection outcomes. "override" = info-gain
+# produced a question that replaced the deterministic v3 pick. "fallback_v3"
+# = info-gain returned None, kept v3. "fallback_clinician_feature" = neither
+# v3 nor info-gain produced a question, used clinician's missing_feature[0].
+question_selector_total = Counter(
+    "question_selector_total",
+    "Discriminative question selection outcomes by source.",
+    labelnames=("source",),
+)
+
 
 # ─── Setup ─────────────────────────────────────────────────────────
 
