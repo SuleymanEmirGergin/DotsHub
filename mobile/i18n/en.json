@@ -36,6 +36,13 @@
   "chat": {
     "placeholder": "Type your message...",
     "send": "Send",
+    "voiceStartLabel": "Start voice input",
+    "voiceStopLabel": "Stop recording",
+    "voiceBusy": "Transcribing…",
+    "voicePermissionTitle": "Microphone permission required",
+    "voicePermissionBody": "Enable microphone access in device settings to use voice input.",
+    "voiceErrorTitle": "Voice capture failed",
+    "voiceErrorBody": "Voice input didn't work this time. Please try typing instead.",
     "title": "Pre-Assessment",
     "subtitle": "I'll ask a few short questions to guide you better.",
     "locationHint": "Share your location to see nearby healthcare facilities on the result screen (optional).",

@@ -36,6 +36,13 @@
   "chat": {
     "placeholder": "Mesajınızı yazın...",
     "send": "Gönder",
+    "voiceStartLabel": "Sesli giriş başlat",
+    "voiceStopLabel": "Kaydı durdur",
+    "voiceBusy": "Yazıya dökülüyor…",
+    "voicePermissionTitle": "Mikrofon izni gerekli",
+    "voicePermissionBody": "Sesli giriş için cihaz ayarlarından mikrofon iznini açın.",
+    "voiceErrorTitle": "Ses kaydı işlenemedi",
+    "voiceErrorBody": "Sesli giriş bu sefer çalışmadı. Lütfen yazarak deneyin.",
     "title": "Ön Değerlendirme",
     "subtitle": "Birkaç kısa soru soracağım, daha doğru yönlendireceğim.",
     "locationHint": "Konum paylaşırsanız sonuç ekranında yakındaki sağlık kuruluşları listelenir (isteğe bağlı).",

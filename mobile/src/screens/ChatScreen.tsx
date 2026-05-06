@@ -1,5 +1,6 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  Alert,
   FlatList,
   KeyboardAvoidingView,
   Platform,
@@ -9,6 +10,7 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { transcribeAudio } from "@/src/api/asrClient";
 import { triageTurn } from "@/src/api/triageClient";
 import { useTriageStore } from "@/src/state/triageStore";
 import { inputHeights, touchTargetMin } from "@/src/ui/designTokens";
@@ -21,6 +23,12 @@ import {
   SectionTitle,
 } from "@/src/ui/primitives";
 import { useI18n } from "@/i18n/I18nProvider";
+import {
+  abortVoiceCapture,
+  beginVoiceCapture,
+  endVoiceCapture,
+  type VoiceSession,
+} from "@/utils/voice";
 
 const QUICK_CHIPS = [
   "Baş ağrısı",
@@ -30,8 +38,25 @@ const QUICK_CHIPS = [
   "İdrar yanması",
 ];
 
+// Whisper handles ~30s well, ~60s acceptably. Beyond that latency + cost
+// climb without much accuracy gain, and a forgotten mic shouldn't run
+// the device's audio session forever. We auto-stop at this deadline.
+const MAX_RECORDING_MS = 60_000;
+
+type VoiceState = "idle" | "recording" | "transcribing";
+
+function formatDuration(ms: number): string {
+  const totalSec = Math.floor(ms / 1000);
+  const mins = Math.floor(totalSec / 60);
+  const secs = totalSec % 60;
+  return `${mins}:${secs.toString().padStart(2, "0")}`;
+}
+
 export default function ChatScreen() {
   const [text, setText] = useState("");
+  const [voiceState, setVoiceState] = useState<VoiceState>("idle");
+  const [voiceDuration, setVoiceDuration] = useState(0);
+  const sessionRef = useRef<VoiceSession | null>(null);
   const flatListRef = useRef<FlatList>(null);
   const { t } = useI18n();
   const tokens = useTokens();
@@ -46,6 +71,108 @@ export default function ChatScreen() {
   } = useTriageStore();
   const setShowHistory = useTriageStore((s) => s.setShowHistory);
   const setShowSettings = useTriageStore((s) => s.setShowSettings);
+
+  // Stable callback so the auto-stop timer effect doesn't re-fire on
+  // every render. setText is stable via useState; we don't depend on
+  // anything else, so the [] deps are correct.
+  const stopAndTranscribe = useCallback(async () => {
+    const session = sessionRef.current;
+    sessionRef.current = null;
+    if (!session) {
+      setVoiceState("idle");
+      return;
+    }
+    setVoiceState("transcribing");
+    try {
+      const uri = await endVoiceCapture(session);
+      const result = await transcribeAudio(uri);
+      const transcript = result.text.trim();
+      if (transcript.length > 0) {
+        setText((prev) => {
+          const trimmedPrev = prev.trim();
+          return trimmedPrev.length === 0
+            ? transcript
+            : `${trimmedPrev} ${transcript}`;
+        });
+      }
+    } catch (err) {
+      Alert.alert(
+        t("chat.voiceErrorTitle"),
+        err instanceof Error && err.message
+          ? err.message
+          : t("chat.voiceErrorBody"),
+      );
+    } finally {
+      setVoiceState("idle");
+      setVoiceDuration(0);
+    }
+  }, [t]);
+
+  // Tick the duration every 250ms while recording, and auto-fire the
+  // stop+transcribe path when we hit MAX_RECORDING_MS so the user doesn't
+  // accidentally upload a 10-minute audio clip if their phone goes quiet.
+  useEffect(() => {
+    if (voiceState !== "recording" || !sessionRef.current) return;
+    const session = sessionRef.current;
+    let cancelled = false;
+    const tick = () => {
+      if (cancelled) return;
+      const elapsed = Date.now() - session.startedAt;
+      setVoiceDuration(elapsed);
+      if (elapsed >= MAX_RECORDING_MS) {
+        cancelled = true;
+        clearInterval(id);
+        stopAndTranscribe().catch(() => {});
+      }
+    };
+    tick();
+    const id = setInterval(tick, 250);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, [voiceState, stopAndTranscribe]);
+
+  // If the screen unmounts mid-recording (user navigates back, app
+  // backgrounds, etc.), release the audio session so we don't leave
+  // the mic indicator hanging on iOS.
+  useEffect(() => {
+    return () => {
+      if (sessionRef.current) {
+        abortVoiceCapture(sessionRef.current).catch(() => {});
+        sessionRef.current = null;
+      }
+    };
+  }, []);
+
+  async function handleMicPress() {
+    if (voiceState === "transcribing") return;
+    if (voiceState === "recording") {
+      await stopAndTranscribe();
+      return;
+    }
+    // idle → start a new recording.
+    try {
+      const session = await beginVoiceCapture();
+      if (!session) {
+        Alert.alert(
+          t("chat.voicePermissionTitle"),
+          t("chat.voicePermissionBody"),
+        );
+        return;
+      }
+      sessionRef.current = session;
+      setVoiceDuration(0);
+      setVoiceState("recording");
+    } catch (err) {
+      Alert.alert(
+        t("chat.voiceErrorTitle"),
+        err instanceof Error && err.message
+          ? err.message
+          : t("chat.voiceErrorBody"),
+      );
+    }
+  }
 
   async function onSend(msg?: string) {
     const trimmed = (msg || text).trim();
@@ -199,6 +326,47 @@ export default function ChatScreen() {
         sendBtnText: {
           ...tokens.typography.button,
         },
+        micBtn: {
+          minHeight: inputHeights.md,
+          minWidth: inputHeights.md,
+          borderRadius: tokens.radius.md,
+          alignItems: "center",
+          justifyContent: "center",
+          paddingHorizontal: tokens.spacing.sm,
+          flexDirection: "row",
+          gap: tokens.spacing.xs,
+        },
+        micBtnIdle: {
+          backgroundColor: tokens.colors.surfaceAlt,
+          borderWidth: 1,
+          borderColor: tokens.colors.border,
+        },
+        micBtnRecording: {
+          backgroundColor: tokens.colors.error,
+        },
+        micBtnTranscribing: {
+          backgroundColor: tokens.colors.surfaceAlt,
+          opacity: 0.6,
+        },
+        micGlyphIdle: {
+          fontSize: 20,
+          lineHeight: 22,
+          color: tokens.colors.textPrimary,
+        },
+        micGlyphRecording: {
+          color: "#FFFFFF",
+          fontSize: 14,
+          fontWeight: "700",
+        },
+        micTimer: {
+          ...tokens.typography.caption,
+          color: "#FFFFFF",
+          fontWeight: "600",
+        },
+        micBusyLabel: {
+          ...tokens.typography.caption,
+          color: tokens.colors.textSecondary,
+        },
         disclaimer: {
           textAlign: "center",
           marginBottom: tokens.spacing.md,
@@ -319,22 +487,57 @@ export default function ChatScreen() {
               placeholder="Belirtini yaz…"
               placeholderTextColor={tokens.colors.textMuted}
               style={styles.input}
-              editable={!loading}
+              editable={!loading && voiceState === "idle"}
               onSubmitEditing={() => onSend()}
               returnKeyType="send"
               accessibilityLabel={t("chat.symptomInput")}
               accessibilityHint={t("chat.symptomInputHint")}
             />
             <Pressable
+              onPress={handleMicPress}
+              disabled={loading || voiceState === "transcribing"}
+              style={[
+                styles.micBtn,
+                voiceState === "idle" && styles.micBtnIdle,
+                voiceState === "recording" && styles.micBtnRecording,
+                voiceState === "transcribing" && styles.micBtnTranscribing,
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel={
+                voiceState === "recording"
+                  ? t("chat.voiceStopLabel")
+                  : t("chat.voiceStartLabel")
+              }
+              accessibilityState={{
+                disabled: loading || voiceState === "transcribing",
+              }}
+            >
+              {voiceState === "recording" ? (
+                <>
+                  <Text style={styles.micGlyphRecording}>■</Text>
+                  <Text style={styles.micTimer}>
+                    {formatDuration(voiceDuration)}
+                  </Text>
+                </>
+              ) : voiceState === "transcribing" ? (
+                <Text style={styles.micBusyLabel}>{t("chat.voiceBusy")}</Text>
+              ) : (
+                <Text style={styles.micGlyphIdle}>🎤</Text>
+              )}
+            </Pressable>
+            <Pressable
               onPress={() => onSend()}
-              disabled={loading || !text.trim()}
+              disabled={loading || !text.trim() || voiceState !== "idle"}
               style={[
                 styles.sendBtn,
-                (loading || !text.trim()) && styles.sendBtnDisabled,
+                (loading || !text.trim() || voiceState !== "idle") &&
+                  styles.sendBtnDisabled,
               ]}
               accessibilityRole="button"
               accessibilityLabel={t("common.next")}
-              accessibilityState={{ disabled: loading || !text.trim() }}
+              accessibilityState={{
+                disabled: loading || !text.trim() || voiceState !== "idle",
+              }}
             >
               <Text style={styles.sendBtnText}>{t("chat.send")}</Text>
             </Pressable>
