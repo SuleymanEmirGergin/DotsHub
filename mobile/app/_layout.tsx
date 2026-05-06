@@ -17,6 +17,7 @@ import type { Locale } from "@/i18n/index";
 // have Sentry configured.
 import { initSentry } from "@/src/observability/sentry";
 import { useNavigationBreadcrumbs } from "@/src/observability/useNavigationBreadcrumbs";
+import { useThemeStore } from "@/src/state/themeStore";
 
 initSentry();
 
@@ -32,6 +33,14 @@ export default function RootLayout() {
   useEffect(() => {
     const t = requestAnimationFrame(() => setReady(true));
     return () => cancelAnimationFrame(t);
+  }, []);
+
+  // Hydrate the theme preference from AsyncStorage. We don't gate the
+  // splash screen on this — Modern Friendly is the default and matches
+  // first-paint, so a Sade-Medikal user sees at most a single frame of
+  // the default palette before their stored choice applies.
+  useEffect(() => {
+    useThemeStore.getState().hydrate().catch(() => {});
   }, []);
 
   const resolvedRef = useRef(false);

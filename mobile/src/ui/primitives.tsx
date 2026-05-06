@@ -1,4 +1,4 @@
-import React, { type ReactNode } from "react";
+import React, { useMemo, type ReactNode } from "react";
 import {
   Pressable,
   StyleSheet,
@@ -8,7 +8,18 @@ import {
   type TextStyle,
   type ViewStyle,
 } from "react-native";
-import { screenPadding, tokens, touchTargetMin } from "@/src/ui/designTokens";
+import { screenPadding, touchTargetMin } from "@/src/ui/designTokens";
+import { useTokens } from "@/src/ui/useTokens";
+
+// Shared visual primitives. Every component here subscribes to
+// `useTokens()` so flipping the theme in Settings (Modern Friendly ↔
+// Sade Medikal) re-paints the surfaces, cards, badges, dividers and
+// buttons used across every screen — no per-screen migration required.
+//
+// Style objects are built inside the component body (via useMemo so we
+// don't allocate a new object on every render) rather than at module
+// scope. That's the only way to react to theme changes without
+// remounting the tree.
 
 type CommonProps = {
   children: ReactNode;
@@ -37,23 +48,70 @@ type ButtonProps = {
 };
 
 export function ScreenContainer({ children, style }: CommonProps) {
-  return <View style={[styles.screenContainer, style]}>{children}</View>;
+  const t = useTokens();
+  const containerStyle = useMemo<ViewStyle>(
+    () => ({
+      flex: 1,
+      backgroundColor: t.colors.background,
+      paddingHorizontal: screenPadding,
+    }),
+    [t],
+  );
+  return <View style={[containerStyle, style]}>{children}</View>;
 }
 
 export function Card({ children, style }: CommonProps) {
-  return <View style={[styles.card, style]}>{children}</View>;
+  const t = useTokens();
+  const cardStyle = useMemo<ViewStyle>(
+    () => ({
+      backgroundColor: t.colors.surface,
+      borderRadius: t.radius.xl,
+      borderWidth: 1,
+      borderColor: t.colors.border,
+      padding: t.spacing.xl,
+      ...t.shadow.card,
+    }),
+    [t],
+  );
+  return <View style={[cardStyle, style]}>{children}</View>;
 }
 
 export function SectionTitle({ children, style }: TextCommonProps) {
-  return <Text style={[styles.sectionTitle, style]}>{children}</Text>;
+  const t = useTokens();
+  const sectionStyle = useMemo<TextStyle>(
+    () => ({
+      ...t.typography.h2,
+      color: t.colors.textPrimary,
+      marginBottom: t.spacing.md,
+    }),
+    [t],
+  );
+  return <Text style={[sectionStyle, style]}>{children}</Text>;
 }
 
 export function MutedText({ children, style }: TextCommonProps) {
-  return <Text style={[styles.mutedText, style]}>{children}</Text>;
+  const t = useTokens();
+  const mutedStyle = useMemo<TextStyle>(
+    () => ({
+      ...t.typography.caption,
+      color: t.colors.textMuted,
+    }),
+    [t],
+  );
+  return <Text style={[mutedStyle, style]}>{children}</Text>;
 }
 
 export function Divider({ style }: { style?: StyleProp<ViewStyle> }) {
-  return <View style={[styles.divider, style]} />;
+  const t = useTokens();
+  const dividerStyle = useMemo<ViewStyle>(
+    () => ({
+      height: 1,
+      backgroundColor: t.colors.border,
+      marginVertical: t.spacing.lg,
+    }),
+    [t],
+  );
+  return <View style={[dividerStyle, style]} />;
 }
 
 export function Badge({
@@ -65,9 +123,27 @@ export function Badge({
   style?: StyleProp<ViewStyle>;
   textStyle?: StyleProp<TextStyle>;
 }) {
+  const t = useTokens();
+  const { container, text } = useMemo(
+    () => ({
+      container: {
+        alignSelf: "flex-start",
+        borderRadius: t.radius.pill,
+        backgroundColor: t.colors.surfaceAlt,
+        paddingHorizontal: t.spacing.md,
+        paddingVertical: t.spacing.xs,
+      } as ViewStyle,
+      text: {
+        ...t.typography.caption,
+        color: t.colors.textSecondary,
+        fontWeight: "600" as const,
+      } as TextStyle,
+    }),
+    [t],
+  );
   return (
-    <View style={[styles.badge, style]}>
-      <Text style={[styles.badgeText, textStyle]}>{children}</Text>
+    <View style={[container, style]}>
+      <Text style={[text, textStyle]}>{children}</Text>
     </View>
   );
 }
@@ -83,7 +159,25 @@ function BaseButton({
   accessibilityLabel,
   accessibilityState,
 }: ButtonProps & { variant: "primary" | "secondary" | "danger" }) {
-  const variantStyle = tokens.button[variant];
+  const t = useTokens();
+  const variantStyle = t.button[variant];
+
+  const baseStyle = useMemo<ViewStyle>(
+    () => ({
+      minHeight: touchTargetMin,
+      borderRadius: t.radius.md,
+      borderWidth: 1,
+      alignItems: "center",
+      justifyContent: "center",
+      paddingHorizontal: t.spacing.lg,
+      paddingVertical: t.spacing.sm,
+    }),
+    [t],
+  );
+  const textBaseStyle = useMemo<TextStyle>(
+    () => ({ ...t.typography.button }),
+    [t],
+  );
 
   return (
     <Pressable
@@ -94,16 +188,21 @@ function BaseButton({
       // off to an external surface (maps, store listing, etc.).
       accessibilityRole={accessibilityRole ?? "button"}
       accessibilityLabel={accessibilityLabel}
-      accessibilityState={{ disabled: !!disabled, ...(accessibilityState ?? {}) }}
+      accessibilityState={{
+        disabled: !!disabled,
+        ...(accessibilityState ?? {}),
+      }}
       style={({ pressed }) => [
-        styles.buttonBase,
+        baseStyle,
         variantStyle.container,
-        pressed && !disabled ? styles.buttonPressed : null,
-        disabled ? styles.buttonDisabled : null,
+        pressed && !disabled ? STATIC.buttonPressed : null,
+        disabled ? STATIC.buttonDisabled : null,
         style,
       ]}
     >
-      <Text style={[styles.buttonText, variantStyle.text, textStyle]}>{children}</Text>
+      <Text style={[textBaseStyle, variantStyle.text, textStyle]}>
+        {children}
+      </Text>
     </Pressable>
   );
 }
@@ -120,58 +219,10 @@ export function DangerButton(props: ButtonProps) {
   return <BaseButton {...props} variant="danger" />;
 }
 
-const styles = StyleSheet.create({
-  screenContainer: {
-    flex: 1,
-    backgroundColor: tokens.colors.background,
-    paddingHorizontal: screenPadding,
-  },
-  card: {
-    backgroundColor: tokens.colors.surface,
-    borderRadius: tokens.radius.xl,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-    padding: tokens.spacing.xl,
-    ...tokens.shadow.card,
-  },
-  sectionTitle: {
-    ...tokens.typography.h2,
-    color: tokens.colors.textPrimary,
-    marginBottom: tokens.spacing.md,
-  },
-  mutedText: {
-    ...tokens.typography.caption,
-    color: tokens.colors.textMuted,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: tokens.colors.border,
-    marginVertical: tokens.spacing.lg,
-  },
-  badge: {
-    alignSelf: "flex-start",
-    borderRadius: tokens.radius.pill,
-    backgroundColor: tokens.colors.surfaceAlt,
-    paddingHorizontal: tokens.spacing.md,
-    paddingVertical: tokens.spacing.xs,
-  },
-  badgeText: {
-    ...tokens.typography.caption,
-    color: tokens.colors.textSecondary,
-    fontWeight: "600",
-  },
-  buttonBase: {
-    minHeight: touchTargetMin,
-    borderRadius: tokens.radius.md,
-    borderWidth: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: tokens.spacing.lg,
-    paddingVertical: tokens.spacing.sm,
-  },
-  buttonText: {
-    ...tokens.typography.button,
-  },
+// Theme-independent style scraps live in StyleSheet so RN can hand them
+// to the native side as registered IDs. (Anything that depends on the
+// active palette must instead be built per-render with useMemo.)
+const STATIC = StyleSheet.create({
   buttonPressed: {
     opacity: 0.9,
   },

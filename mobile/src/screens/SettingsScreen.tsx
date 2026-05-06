@@ -1,11 +1,21 @@
-import React from "react";
-import { Alert, Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import React, { useMemo } from "react";
+import {
+  Alert,
+  Linking,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import Constants from "expo-constants";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { Locale } from "@/i18n";
 import { SUPPORTED_LOCALES } from "@/i18n";
-import { tokens, screenPadding } from "@/src/ui/designTokens";
+import { useThemeStore } from "@/src/state/themeStore";
+import { palettes, screenPadding, type ThemeName } from "@/src/ui/designTokens";
 import { Card, MutedText, ScreenContainer } from "@/src/ui/primitives";
+import { useTokens } from "@/src/ui/useTokens";
 import { addBreadcrumb } from "@/src/observability/breadcrumb";
 
 /**
@@ -17,14 +27,16 @@ import { addBreadcrumb } from "@/src/observability/breadcrumb";
  *
  * Sections (top to bottom):
  *   1. Language — row per supported locale, tap to set
- *   2. Legal — Privacy + Terms URLs from env (or sensible defaults)
- *   3. About — app version from expo-constants + build id
- *   4. Contact — mailto link to support email
+ *   2. Theme — Modern Friendly (default) / Sade Medikal switcher
+ *   3. Legal — Privacy + Terms URLs from env (or sensible defaults)
+ *   4. About — app version from expo-constants + build id
+ *   5. Contact — mailto link to support email
  *
- * Style note: reused ScreenContainer + Card primitives so the
+ * Style note: reuses ScreenContainer + Card primitives so the
  * chrome (header, safe area padding, shadow) matches History and
- * Intro. No new visual patterns introduced — B6 Skeleton + tokens
- * commit already set the baseline.
+ * Intro. The screen subscribes to `useTokens()` so flipping the
+ * theme applies immediately — including to the screen the user
+ * tapped on, not just the rest of the app.
  */
 
 const PRIVACY_URL_DEFAULT = "https://triaige.vercel.app/privacy";
@@ -37,6 +49,9 @@ type Props = {
 
 export default function SettingsScreen({ onBack }: Props) {
   const { t, locale, setLocale } = useI18n();
+  const tokens = useTokens();
+  const theme = useThemeStore((s) => s.theme);
+  const setTheme = useThemeStore((s) => s.setTheme);
 
   // Expo Constants surfaces the app.config.ts `expo.version` and a
   // build identifier on production binaries. During local dev both
@@ -82,6 +97,112 @@ export default function SettingsScreen({ onBack }: Props) {
     await openLink(`mailto:${CONTACT_EMAIL}`);
   }
 
+  const styles = useMemo(
+    () =>
+      StyleSheet.create({
+        container: {
+          paddingHorizontal: 0,
+        },
+        header: {
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          paddingHorizontal: screenPadding,
+          paddingVertical: tokens.spacing.md,
+          borderBottomWidth: 1,
+          borderBottomColor: tokens.colors.border,
+          backgroundColor: tokens.colors.surface,
+        },
+        backBtn: {
+          width: 72,
+        },
+        backText: {
+          ...tokens.typography.body,
+          color: tokens.colors.primary,
+          fontWeight: "600",
+        },
+        title: {
+          ...tokens.typography.h2,
+          textAlign: "center",
+          flex: 1,
+        },
+        scroll: {
+          padding: screenPadding,
+          paddingBottom: tokens.spacing.xxl,
+        },
+        sectionHeader: {
+          ...tokens.typography.caption,
+          color: tokens.colors.textMuted,
+          textTransform: "uppercase",
+          letterSpacing: 0.6,
+          marginTop: tokens.spacing.lg,
+          marginBottom: tokens.spacing.sm,
+          paddingHorizontal: tokens.spacing.sm,
+        },
+        row: {
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          paddingHorizontal: tokens.spacing.lg,
+          paddingVertical: tokens.spacing.md,
+          minHeight: 52,
+        },
+        rowBorder: {
+          borderBottomWidth: StyleSheet.hairlineWidth,
+          borderBottomColor: tokens.colors.border,
+        },
+        rowPressed: {
+          backgroundColor: tokens.colors.surfaceAlt,
+        },
+        rowLabel: {
+          ...tokens.typography.body,
+          color: tokens.colors.textPrimary,
+          flex: 1,
+        },
+        rowValue: {
+          fontSize: 14,
+        },
+        check: {
+          ...tokens.typography.body,
+          color: tokens.colors.success,
+          fontWeight: "700",
+          marginLeft: tokens.spacing.sm,
+        },
+        chevron: {
+          color: tokens.colors.textMuted,
+          fontSize: 22,
+          lineHeight: 22,
+          marginLeft: tokens.spacing.sm,
+        },
+        supportLine: {
+          fontSize: 13,
+          lineHeight: 18,
+          flex: 1,
+        },
+        themeRowDescription: {
+          ...tokens.typography.caption,
+          color: tokens.colors.textMuted,
+          marginTop: 2,
+        },
+        themeRowMain: {
+          flex: 1,
+        },
+        themeSwatchRow: {
+          flexDirection: "row",
+          gap: 4,
+          marginRight: tokens.spacing.md,
+        },
+        themeSwatch: {
+          width: 16,
+          height: 28,
+          borderRadius: 4,
+          borderWidth: StyleSheet.hairlineWidth,
+          borderColor: "rgba(15,23,42,0.12)",
+        },
+      }),
+    [tokens],
+  );
+
   return (
     <ScreenContainer style={styles.container}>
       {/* Header — mirrors HistoryScreen for consistency. Back button
@@ -105,7 +226,9 @@ export default function SettingsScreen({ onBack }: Props) {
         showsVerticalScrollIndicator={false}
       >
         {/* ─── Language ─── */}
-        <SectionHeader>{t("settings.languageSection")}</SectionHeader>
+        <SectionHeader styles={styles}>
+          {t("settings.languageSection")}
+        </SectionHeader>
         <Card>
           {SUPPORTED_LOCALES.map((code, i) => {
             const isActive = locale === code;
@@ -139,7 +262,55 @@ export default function SettingsScreen({ onBack }: Props) {
                 accessibilityState={{ selected: isActive }}
                 accessibilityLabel={labelForLocale(code as Locale)}
               >
-                <Text style={styles.rowLabel}>{labelForLocale(code as Locale)}</Text>
+                <Text style={styles.rowLabel}>
+                  {labelForLocale(code as Locale)}
+                </Text>
+                {isActive && <Text style={styles.check}>✓</Text>}
+              </Pressable>
+            );
+          })}
+        </Card>
+
+        {/* ─── Theme — Modern / Sade switcher ─── */}
+        <SectionHeader styles={styles}>
+          {t("settings.themeSection")}
+        </SectionHeader>
+        <Card>
+          {(["modern", "sade"] as const).map((name, i) => {
+            const isActive = theme === name;
+            const isLast = i === 1;
+            return (
+              <Pressable
+                key={name}
+                onPress={() => {
+                  if (theme !== name) {
+                    addBreadcrumb(
+                      "settings",
+                      `theme ${theme} -> ${name}`,
+                      { from: theme, to: name },
+                      "info",
+                    );
+                    setTheme(name);
+                  }
+                }}
+                style={({ pressed }) => [
+                  styles.row,
+                  !isLast && styles.rowBorder,
+                  pressed && styles.rowPressed,
+                ]}
+                accessibilityRole="button"
+                accessibilityState={{ selected: isActive }}
+                accessibilityLabel={t(`settings.theme${capitalize(name)}`)}
+              >
+                <ThemeSwatches name={name} styles={styles} />
+                <View style={styles.themeRowMain}>
+                  <Text style={styles.rowLabel}>
+                    {t(`settings.theme${capitalize(name)}`)}
+                  </Text>
+                  <Text style={styles.themeRowDescription}>
+                    {t(`settings.theme${capitalize(name)}Hint`)}
+                  </Text>
+                </View>
                 {isActive && <Text style={styles.check}>✓</Text>}
               </Pressable>
             );
@@ -147,7 +318,9 @@ export default function SettingsScreen({ onBack }: Props) {
         </Card>
 
         {/* ─── Legal (Privacy + Terms) ─── */}
-        <SectionHeader>{t("settings.legalSection")}</SectionHeader>
+        <SectionHeader styles={styles}>
+          {t("settings.legalSection")}
+        </SectionHeader>
         <Card>
           <Pressable
             onPress={() => openLink(privacyUrl)}
@@ -174,7 +347,9 @@ export default function SettingsScreen({ onBack }: Props) {
         </Card>
 
         {/* ─── About ─── */}
-        <SectionHeader>{t("settings.aboutSection")}</SectionHeader>
+        <SectionHeader styles={styles}>
+          {t("settings.aboutSection")}
+        </SectionHeader>
         <Card>
           <View style={[styles.row, styles.rowBorder]}>
             <Text style={styles.rowLabel}>{t("settings.version")}</Text>
@@ -187,7 +362,9 @@ export default function SettingsScreen({ onBack }: Props) {
         </Card>
 
         {/* ─── Contact ─── */}
-        <SectionHeader>{t("settings.contactSection")}</SectionHeader>
+        <SectionHeader styles={styles}>
+          {t("settings.contactSection")}
+        </SectionHeader>
         <Card>
           <Pressable
             onPress={openEmail}
@@ -213,8 +390,46 @@ export default function SettingsScreen({ onBack }: Props) {
   );
 }
 
-function SectionHeader({ children }: { children: React.ReactNode }) {
-  return <Text style={styles.sectionHeader}>{children}</Text>;
+function SectionHeader({
+  children,
+  styles,
+}: {
+  children: React.ReactNode;
+  styles: { sectionHeader: object };
+}) {
+  return <Text style={styles.sectionHeader as never}>{children}</Text>;
+}
+
+/**
+ * Three little swatches showing the theme's surface, accent, and soft
+ * accent tint. Sourced from the SAME `palettes` map that drives every
+ * other surface, so the preview is always in lockstep with what the
+ * theme actually looks like — no separate marketing colours to keep
+ * in sync.
+ */
+function ThemeSwatches({
+  name,
+  styles,
+}: {
+  name: ThemeName;
+  styles: { themeSwatchRow: object; themeSwatch: object };
+}) {
+  const palette = palettes[name].colors;
+  const colors = [palette.background, palette.accent, palette.accentSoft];
+  return (
+    <View style={styles.themeSwatchRow as never}>
+      {colors.map((c) => (
+        <View
+          key={c}
+          style={[styles.themeSwatch as never, { backgroundColor: c }]}
+        />
+      ))}
+    </View>
+  );
+}
+
+function capitalize<S extends string>(s: S): Capitalize<S> {
+  return (s.charAt(0).toUpperCase() + s.slice(1)) as Capitalize<S>;
 }
 
 /**
@@ -238,85 +453,3 @@ function labelForLocale(code: Locale): string {
       return code;
   }
 }
-
-const styles = StyleSheet.create({
-  container: {
-    paddingHorizontal: 0,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: screenPadding,
-    paddingVertical: tokens.spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: tokens.colors.border,
-    backgroundColor: tokens.colors.surface,
-  },
-  backBtn: {
-    width: 72,
-  },
-  backText: {
-    ...tokens.typography.body,
-    color: tokens.colors.primary,
-    fontWeight: "600",
-  },
-  title: {
-    ...tokens.typography.h2,
-    textAlign: "center",
-    flex: 1,
-  },
-  scroll: {
-    padding: screenPadding,
-    paddingBottom: tokens.spacing.xxl,
-  },
-  sectionHeader: {
-    ...tokens.typography.caption,
-    color: tokens.colors.textMuted,
-    textTransform: "uppercase",
-    letterSpacing: 0.6,
-    marginTop: tokens.spacing.lg,
-    marginBottom: tokens.spacing.sm,
-    paddingHorizontal: tokens.spacing.sm,
-  },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: tokens.spacing.lg,
-    paddingVertical: tokens.spacing.md,
-    minHeight: 52,
-  },
-  rowBorder: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: tokens.colors.border,
-  },
-  rowPressed: {
-    backgroundColor: tokens.colors.surfaceAlt,
-  },
-  rowLabel: {
-    ...tokens.typography.body,
-    color: tokens.colors.textPrimary,
-    flex: 1,
-  },
-  rowValue: {
-    fontSize: 14,
-  },
-  check: {
-    ...tokens.typography.body,
-    color: tokens.colors.success,
-    fontWeight: "700",
-    marginLeft: tokens.spacing.sm,
-  },
-  chevron: {
-    color: tokens.colors.textMuted,
-    fontSize: 22,
-    lineHeight: 22,
-    marginLeft: tokens.spacing.sm,
-  },
-  supportLine: {
-    fontSize: 13,
-    lineHeight: 18,
-    flex: 1,
-  },
-});
