@@ -24,6 +24,7 @@ from app.admin_retention_api import router as admin_retention_router
 from app.admin_uploads_api import router as admin_uploads_router
 from app.admin_tenants_api import router as admin_tenants_router
 from app.admin_v5 import router as admin_v5_router
+from app.api.routes.asr import router as asr_router
 from app.api.routes.data_rights import router as data_rights_router
 from app.api.routes.facilities import router as facilities_router
 from app.api.routes.features import router as features_router
@@ -39,6 +40,7 @@ from app.api.routes.triage import router as triage_router
 
 def register_routes(app: FastAPI) -> None:
     app.include_router(triage_router, prefix="/v1", tags=["Triage"])
+    app.include_router(asr_router, prefix="/v1", tags=["ASR"])
     app.include_router(feedback_router, prefix="/v1", tags=["Feedback"])
     app.include_router(facilities_router, prefix="/v1", tags=["Facilities"])
     app.include_router(summary_email_router, prefix="/v1", tags=["Summary Email"])
