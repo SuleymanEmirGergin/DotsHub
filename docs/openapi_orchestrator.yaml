@@ -1174,6 +1174,15 @@ components:
               confidence_label_tr: { type: string }
               confidence_0_1: { type: number }
               stop_reason: { type: string }
+              emergency_reason_tr:
+                type: string
+                nullable: true
+                description: |
+                  Populated only for EMERGENCY rows; mirrors the same
+                  field on the EmergencyPayload that fired the triage
+                  (e.g. "Akut koroner sendrom acil değerlendirme
+                  gerektirebilir."). Mobile History card uses it as
+                  the OLABİLİR. label; null on RESULT / SAME_DAY rows.
 
     SendSummaryRequest:
       type: object
