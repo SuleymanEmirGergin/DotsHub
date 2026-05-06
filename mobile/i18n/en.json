@@ -135,6 +135,24 @@
     "sameDay": "⚡ SAME DAY",
     "confidence": "Confidence"
   },
+  "sessionDetail": {
+    "title": "Assessment Detail",
+    "back": "← Back",
+    "loading": "Loading…",
+    "errorTitle": "Failed to load",
+    "errorLoading": "Could not load the assessment. Please try again.",
+    "notFoundTitle": "Not found",
+    "notFoundBody": "This assessment is no longer accessible.",
+    "recommendedSpecialty": "Recommended Specialty",
+    "confidence": "confidence",
+    "questionCount": "{{count}} questions answered",
+    "possibleConditions": "Possible conditions ({{count}})",
+    "whySpecialty": "Why this specialty?",
+    "originalSymptom": "Original complaint",
+    "unknownSpecialty": "Unknown",
+    "emergencyTitle": "Emergency Routing",
+    "call112": "Call emergency services"
+  },
   "settings": {
     "title": "Settings",
     "back": "← Back",

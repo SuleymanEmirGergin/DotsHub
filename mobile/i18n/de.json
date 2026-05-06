@@ -135,6 +135,24 @@
     "sameDay": "⚡ HEUTE GEHEN",
     "confidence": "Vertrauen"
   },
+  "sessionDetail": {
+    "title": "Bewertungsdetail",
+    "back": "← Zurück",
+    "loading": "Wird geladen…",
+    "errorTitle": "Laden fehlgeschlagen",
+    "errorLoading": "Die Bewertung konnte nicht geladen werden. Bitte erneut versuchen.",
+    "notFoundTitle": "Nicht gefunden",
+    "notFoundBody": "Diese Bewertung ist nicht mehr verfügbar.",
+    "recommendedSpecialty": "Empfohlene Fachrichtung",
+    "confidence": "Vertrauen",
+    "questionCount": "{{count}} Fragen beantwortet",
+    "possibleConditions": "Mögliche Zustände ({{count}})",
+    "whySpecialty": "Warum diese Fachrichtung?",
+    "originalSymptom": "Ursprüngliche Beschwerde",
+    "unknownSpecialty": "Unbekannt",
+    "emergencyTitle": "Notfall-Weiterleitung",
+    "call112": "Notruf wählen"
+  },
   "settings": {
     "title": "Einstellungen",
     "back": "← Zurück",
