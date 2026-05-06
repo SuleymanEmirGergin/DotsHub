@@ -30,6 +30,40 @@ DEFAULT_NEGATIONS = ["yok", "değil", "hayır", "olmuyor", "olmadı", "değilim"
 # negation in the next/previous clause must NOT bleed across.
 _NEGATION_BOUNDARY_RE = re.compile(r"\b(?:ama|fakat|ancak)\b")
 
+# Turkish noun-suffix tail. Appended before the trailing \b of each
+# variant pattern so inflected forms (locative, ablative, possessive,
+# plural, etc.) match the variant stem — e.g. "karnım" matches
+# "karnımda", "ateş" matches "ateşim", "ateşler".
+#
+# The tail folds 26 case/possessive/plural endings into 8 alternatives
+# via Turkish vowel-harmony character classes. Coverage:
+#   nd[ae]n?     → nda, nde, ndan, nden  (3sg poss + loc/abl, w/ buffer)
+#   l[ae]r[ıi]?  → lar, ler, ları, leri  (plural ± 3pl poss)
+#   n?[ıiuü]n    → in, ın, un, ün, nin, nın, nun, nün  (2sg poss / gen)
+#   d[ae]n?      → da, de, dan, den      (locative / ablative)
+#   [ıiuü]m      → im, ım, um, üm        (1sg possessive)
+#   s[ıi]        → sı, si                (3sg possessive)
+#   ki           → ki                    (relativizer)
+#   m            → m                     (1sg poss after vowel)
+#
+# Capped deliberately — we do NOT use `\w*` because short stems like
+# "kol", "el", "göz" would otherwise over-match unrelated words
+# ("kolay", "elma", "gözle"). Verb-only suffixes (-yor, -di, -li, -le)
+# are excluded for the same reason.
+_TURKISH_SUFFIX_TAIL = (
+    r"(?:nd[ae]n?|l[ae]r[ıi]?|n?[ıiuü]n|d[ae]n?|[ıiuü]m|s[ıi]|ki|m)?"
+)
+
+# Memoize compiled patterns keyed on synonym content. The orchestrator
+# calls extract_canonicals_tr 3x per turn; without caching, the suffix-
+# aware regex tail makes ~1300 fresh re.compile calls per invocation
+# and pushes p95 well past the 0.75s perf gate. Cache survives the
+# process lifetime — synonym JSON is stable after startup.
+_PATTERN_CACHE: Dict[
+    Tuple[Tuple[str, Tuple[str, ...]], ...],
+    List[Tuple[str, "re.Pattern[str]"]],
+] = {}
+
 
 def tr_lower(s: str) -> str:
     return s.translate(TR_LOWER_MAP).lower()
@@ -46,6 +80,14 @@ def build_synonym_patterns(
     synonyms_json: Dict[str, Any],
 ) -> List[Tuple[str, "re.Pattern[str]"]]:
     """Build (canonical, compiled_pattern) list sorted by longest phrase first."""
+    cache_key = tuple(
+        (e.get("canonical", ""), tuple(e.get("variants_tr", [])))
+        for e in synonyms_json.get("synonyms", [])
+    )
+    cached = _PATTERN_CACHE.get(cache_key)
+    if cached is not None:
+        return cached
+
     items: List[Tuple[str, str]] = []
 
     for entry in synonyms_json.get("synonyms", []):
@@ -70,9 +112,13 @@ def build_synonym_patterns(
         if key in seen:
             continue
         seen.add(key)
-        pat = re.compile(rf"\b{re.escape(phrase)}\b", flags=re.UNICODE)
+        pat = re.compile(
+            rf"\b{re.escape(phrase)}{_TURKISH_SUFFIX_TAIL}\b",
+            flags=re.UNICODE,
+        )
         patterns.append((canonical, pat))
 
+    _PATTERN_CACHE[cache_key] = patterns
     return patterns
 
 
