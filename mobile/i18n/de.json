@@ -36,6 +36,13 @@
   "chat": {
     "placeholder": "Nachricht eingeben...",
     "send": "Senden",
+    "voiceStartLabel": "Spracheingabe starten",
+    "voiceStopLabel": "Aufnahme stoppen",
+    "voiceBusy": "Wird transkribiert…",
+    "voicePermissionTitle": "Mikrofonzugriff erforderlich",
+    "voicePermissionBody": "Aktivieren Sie den Mikrofonzugriff in den Geräteeinstellungen, um die Spracheingabe zu nutzen.",
+    "voiceErrorTitle": "Sprachaufnahme fehlgeschlagen",
+    "voiceErrorBody": "Spracheingabe hat dieses Mal nicht funktioniert. Bitte tippen Sie stattdessen.",
     "title": "Vorbewertung",
     "subtitle": "Ich stelle einige kurze Fragen, um Sie besser weiterzuleiten.",
     "locationHint": "Teilen Sie Ihren Standort, um nahegelegene Gesundheitseinrichtungen auf dem Ergebnisbildschirm anzuzeigen (optional).",
