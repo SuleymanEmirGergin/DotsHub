@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   Pressable,
   ScrollView,
@@ -9,7 +9,8 @@ import {
 } from "react-native";
 import { triageTurn } from "@/src/api/triageClient";
 import { useTriageStore } from "@/src/state/triageStore";
-import { inputHeights, tokens } from "@/src/ui/designTokens";
+import { inputHeights } from "@/src/ui/designTokens";
+import { useTokens } from "@/src/ui/useTokens";
 import {
   Card,
   MutedText,
@@ -24,7 +25,9 @@ export default function QuestionScreen() {
   const { t } = useI18n();
   const q = useTriageStore((s) => s.pendingQuestion)!;
   const sessionId = useTriageStore((s) => s.sessionId);
-  const { appendMessage, setLoading, setLastRequest, applyEnvelope } = useTriageStore();
+  const { appendMessage, setLoading, setLastRequest, applyEnvelope } =
+    useTriageStore();
+  const tokens = useTokens();
 
   const [freeText, setFreeText] = useState("");
 
@@ -47,6 +50,91 @@ export default function QuestionScreen() {
     applyEnvelope(env);
   }
 
+  const styles = useMemo(
+    () =>
+      StyleSheet.create({
+        scrollContent: {
+          flexGrow: 1,
+          justifyContent: "center",
+          paddingVertical: tokens.spacing.lg,
+        },
+        questionText: {
+          marginBottom: tokens.spacing.md,
+          fontSize: tokens.typography.h1.fontSize,
+          lineHeight: tokens.typography.h1.lineHeight,
+        },
+        whyBox: {
+          backgroundColor: tokens.colors.surfaceAlt,
+          borderRadius: tokens.radius.md,
+          borderWidth: 1,
+          borderColor: tokens.colors.border,
+          padding: tokens.spacing.md,
+          marginBottom: tokens.spacing.lg,
+        },
+        whyLabel: {
+          ...tokens.typography.caption,
+          color: tokens.colors.textSecondary,
+          fontWeight: "700",
+          marginBottom: tokens.spacing.xs,
+          textTransform: "uppercase",
+          letterSpacing: 0.3,
+        },
+        whyText: {
+          color: tokens.colors.textSecondary,
+        },
+        yesNoRow: {
+          flexDirection: "row",
+          gap: tokens.spacing.sm,
+        },
+        flexButton: {
+          flex: 1,
+        },
+        freeTextBox: {
+          marginTop: tokens.spacing.xs,
+        },
+        freeInput: {
+          minHeight: inputHeights.md,
+          borderWidth: 1,
+          borderColor: tokens.colors.border,
+          borderRadius: tokens.radius.md,
+          paddingHorizontal: tokens.spacing.md,
+          paddingVertical: tokens.spacing.sm,
+          backgroundColor: tokens.colors.surface,
+          color: tokens.colors.textPrimary,
+          ...tokens.typography.body,
+        },
+        freeInputMultiline: {
+          minHeight: 88,
+        },
+        continueButton: {
+          marginTop: tokens.spacing.sm,
+        },
+        choicesCol: {
+          gap: tokens.spacing.sm,
+        },
+        choiceButton: {
+          minHeight: inputHeights.md,
+          borderRadius: tokens.radius.md,
+          borderWidth: 1,
+          borderColor: tokens.colors.border,
+          backgroundColor: tokens.colors.surfaceAlt,
+          justifyContent: "center",
+          paddingHorizontal: tokens.spacing.md,
+          paddingVertical: tokens.spacing.sm,
+        },
+        choiceButtonPressed: {
+          opacity: 0.9,
+        },
+        choiceButtonText: {
+          ...tokens.typography.body,
+          color: tokens.colors.textPrimary,
+          fontWeight: "600",
+          textAlign: "center",
+        },
+      }),
+    [tokens],
+  );
+
   return (
     <ScreenContainer>
       <ScrollView
@@ -65,10 +153,16 @@ export default function QuestionScreen() {
 
           {q.answer_type === "yes_no" ? (
             <View style={styles.yesNoRow}>
-              <PrimaryButton style={styles.flexButton} onPress={() => answer("yes")}>
+              <PrimaryButton
+                style={styles.flexButton}
+                onPress={() => answer("yes")}
+              >
                 {t("common.yes")}
               </PrimaryButton>
-              <SecondaryButton style={styles.flexButton} onPress={() => answer("no")}>
+              <SecondaryButton
+                style={styles.flexButton}
+                onPress={() => answer("no")}
+              >
                 {t("common.no")}
               </SecondaryButton>
             </View>
@@ -147,84 +241,3 @@ export default function QuestionScreen() {
     </ScreenContainer>
   );
 }
-
-const styles = StyleSheet.create({
-  scrollContent: {
-    flexGrow: 1,
-    justifyContent: "center",
-    paddingVertical: tokens.spacing.lg,
-  },
-  questionText: {
-    marginBottom: tokens.spacing.md,
-    fontSize: tokens.typography.h1.fontSize,
-    lineHeight: tokens.typography.h1.lineHeight,
-  },
-  whyBox: {
-    backgroundColor: tokens.colors.surfaceAlt,
-    borderRadius: tokens.radius.md,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-    padding: tokens.spacing.md,
-    marginBottom: tokens.spacing.lg,
-  },
-  whyLabel: {
-    ...tokens.typography.caption,
-    color: tokens.colors.textSecondary,
-    fontWeight: "700",
-    marginBottom: tokens.spacing.xs,
-    textTransform: "uppercase",
-    letterSpacing: 0.3,
-  },
-  whyText: {
-    color: tokens.colors.textSecondary,
-  },
-  yesNoRow: {
-    flexDirection: "row",
-    gap: tokens.spacing.sm,
-  },
-  flexButton: {
-    flex: 1,
-  },
-  freeTextBox: {
-    marginTop: tokens.spacing.xs,
-  },
-  freeInput: {
-    minHeight: inputHeights.md,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-    borderRadius: tokens.radius.md,
-    paddingHorizontal: tokens.spacing.md,
-    paddingVertical: tokens.spacing.sm,
-    backgroundColor: tokens.colors.surface,
-    color: tokens.colors.textPrimary,
-    ...tokens.typography.body,
-  },
-  freeInputMultiline: {
-    minHeight: 88,
-  },
-  continueButton: {
-    marginTop: tokens.spacing.sm,
-  },
-  choicesCol: {
-    gap: tokens.spacing.sm,
-  },
-  choiceButton: {
-    minHeight: inputHeights.md,
-    borderRadius: tokens.radius.md,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-    backgroundColor: tokens.colors.surfaceAlt,
-    justifyContent: "center",
-    paddingHorizontal: tokens.spacing.md,
-    paddingVertical: tokens.spacing.sm,
-  },
-  choiceButtonPressed: {
-    opacity: 0.9,
-  },
-  choiceButtonText: {
-    ...tokens.typography.body,
-    color: tokens.colors.textPrimary,
-    fontWeight: "600",
-    textAlign: "center",
-  },
-});

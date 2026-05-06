@@ -1,3 +1,10 @@
+import {
+  Inter_400Regular,
+  Inter_700Bold,
+  useFonts as useInterFonts,
+} from "@expo-google-fonts/inter";
+import { Manrope_700Bold } from "@expo-google-fonts/manrope";
+import { PlusJakartaSans_400Regular } from "@expo-google-fonts/plus-jakarta-sans";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useRef, useState } from "react";
@@ -61,7 +68,19 @@ export default function RootLayout() {
     };
   }, []);
 
-  if (!ready || initialLocale === null) return null;
+  // Google Fonts back the theme's typography (Manrope + Plus Jakarta on
+  // Modern Friendly, Inter on Sade Medikal). We gate the first paint on
+  // these so the user never sees a flash of the system font swapping
+  // out for the brand face — `useFonts` resolves once the .ttf blobs
+  // have been written to the cache directory.
+  const [fontsLoaded] = useInterFonts({
+    Manrope_700Bold,
+    PlusJakartaSans_400Regular,
+    Inter_400Regular,
+    Inter_700Bold,
+  });
+
+  if (!ready || initialLocale === null || !fontsLoaded) return null;
 
   return (
     <I18nProvider defaultLocale={initialLocale}>
