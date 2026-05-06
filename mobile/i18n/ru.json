@@ -144,7 +144,14 @@
     "emergency": "🚨 ЭКСТРЕННО",
     "result": "✅ РЕЗУЛЬТАТ",
     "sameDay": "⚡ СЕГОДНЯ",
-    "confidence": "Уверенность"
+    "confidence": "Уверенность",
+    "emergencyChip": "ЭКСТРЕННО",
+    "emergencyFallback": "Острое состояние",
+    "emergencyFallbackSpecialty": "Скорая помощь",
+    "emergencyOlabilir": "Возможно: {{label}}.",
+    "emergencyHint": "Рекомендуется позвонить в скорую помощь.",
+    "emergencyCall": "Вызвать скорую",
+    "detailCta": "Подробнее"
   },
   "sessionDetail": {
     "title": "Детали оценки",

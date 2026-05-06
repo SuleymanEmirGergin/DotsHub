@@ -144,7 +144,14 @@
     "emergency": "🚨 EMERGENCY",
     "result": "✅ RESULT",
     "sameDay": "⚡ SAME DAY",
-    "confidence": "Confidence"
+    "confidence": "Confidence",
+    "emergencyChip": "EMERGENCY",
+    "emergencyFallback": "Acute health condition",
+    "emergencyFallbackSpecialty": "Emergency Medicine",
+    "emergencyOlabilir": "{{label}} suspected.",
+    "emergencyHint": "Calling local emergency services is recommended.",
+    "emergencyCall": "Call emergency",
+    "detailCta": "View details"
   },
   "sessionDetail": {
     "title": "Assessment Detail",

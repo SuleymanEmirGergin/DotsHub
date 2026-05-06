@@ -144,7 +144,14 @@
     "emergency": "🚨 طوارئ",
     "result": "✅ نتيجة",
     "sameDay": "⚡ اذهب اليوم",
-    "confidence": "الثقة"
+    "confidence": "الثقة",
+    "emergencyChip": "طوارئ",
+    "emergencyFallback": "حالة صحية حادة",
+    "emergencyFallbackSpecialty": "طب الطوارئ",
+    "emergencyOlabilir": "{{label}} محتمل.",
+    "emergencyHint": "يوصى بالاتصال بخدمات الطوارئ.",
+    "emergencyCall": "اتصل بالطوارئ",
+    "detailCta": "عرض التفاصيل"
   },
   "sessionDetail": {
     "title": "تفاصيل التقييم",

@@ -144,7 +144,14 @@
     "emergency": "🚨 ACİL",
     "result": "✅ SONUÇ",
     "sameDay": "⚡ BUGÜN GİT",
-    "confidence": "Güven"
+    "confidence": "Güven",
+    "emergencyChip": "ACİL",
+    "emergencyFallback": "Acil sağlık durumu",
+    "emergencyFallbackSpecialty": "Acil Tıp",
+    "emergencyOlabilir": "{{label}} OLABİLİR.",
+    "emergencyHint": "Bu belirtilerde 112'yi aramanız önerilir.",
+    "emergencyCall": "112'yi Ara",
+    "detailCta": "Detayı gör"
   },
   "sessionDetail": {
     "title": "Değerlendirme Detayı",
