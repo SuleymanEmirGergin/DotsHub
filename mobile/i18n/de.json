@@ -144,7 +144,14 @@
     "emergency": "🚨 NOTFALL",
     "result": "✅ ERGEBNIS",
     "sameDay": "⚡ HEUTE GEHEN",
-    "confidence": "Vertrauen"
+    "confidence": "Vertrauen",
+    "emergencyChip": "NOTFALL",
+    "emergencyFallback": "Akute Gesundheitslage",
+    "emergencyFallbackSpecialty": "Notfallmedizin",
+    "emergencyOlabilir": "{{label}} möglich.",
+    "emergencyHint": "Wir empfehlen, den örtlichen Notruf zu wählen.",
+    "emergencyCall": "Notruf anrufen",
+    "detailCta": "Details anzeigen"
   },
   "settings": {
     "title": "Einstellungen",
