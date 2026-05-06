@@ -26,7 +26,8 @@
     "accept": "فهمت، أوافق",
     "start": "ابدأ",
     "emergencyNote": "اتصل بـ 112 في حالات الطوارئ.",
-    "privacyLink": "سياسة الخصوصية"
+    "privacyLink": "سياسة الخصوصية",
+    "healthTourismCta": "السياحة العلاجية (للمرضى من خارج البلاد)"
   },
   "chat": {
     "placeholder": "اكتب رسالتك...",
@@ -185,6 +186,102 @@
     "de": "الألمانية",
     "ru": "الروسية",
     "ar": "العربية"
+  },
+  "quote": {
+    "browse": {
+      "title": "اختر إجراءً طبيًا",
+      "subtitle": "اختر الإجراء الذي يهمك للمتابعة.",
+      "empty": "لا توجد إجراءات في هذه الفئة.",
+      "recoveryDays": "التعافي",
+      "stayDays": "الإقامة",
+      "indicativeFrom": "يبدأ من"
+    },
+    "category": {
+      "all": "الكل",
+      "hair": "الشعر",
+      "dental": "الأسنان",
+      "plastic_surgery": "الجراحة التجميلية",
+      "eye": "العيون",
+      "obesity": "السمنة",
+      "ivf": "أطفال الأنابيب"
+    },
+    "profile": {
+      "title": "الملف الصحي",
+      "subtitle": "بضعة أسئلة سريعة للتأكد من ملاءمتك للسفر.",
+      "procedureLabel": "الإجراء المختار: {procedure}",
+      "ageLabel": "العمر",
+      "agePlaceholder": "مثال: 38",
+      "bmiLabel": "مؤشر كتلة الجسم (BMI)",
+      "bmiPlaceholder": "مثال: 26.5",
+      "bmiHint": "يُحتسب من الطول والوزن.",
+      "bmiHelp": "اتركه فارغًا إذا كنت لا تعرفه.",
+      "flagsTitle": "التاريخ الصحي",
+      "flagsHelp": "حدد كل ما ينطبق عليك.",
+      "smoker": "أنا مدخن نشط",
+      "anticoagulant": "أتناول مميعات الدم (مضادات التخثر)",
+      "recentMi": "أصبت بنوبة قلبية خلال آخر 3 أشهر",
+      "uncontrolledDiabetes": "أعاني من سكري غير منضبط",
+      "uncontrolledHypertension": "أعاني من ارتفاع ضغط دم غير منضبط",
+      "pregnancy": "الحمل",
+      "activeCancer": "أتلقى علاجًا فعالًا للسرطان",
+      "activeInfection": "لدي عدوى نشطة",
+      "submit": "احصل على عرض"
+    },
+    "result": {
+      "title": "عروض العيادات",
+      "warnings": "ملاحظات حول جاهزية السفر",
+      "summaryLabel": "ملخص",
+      "clinicsTitle": "العيادات الموصى بها",
+      "responseHours": "الرد خلال {hours} ساعة",
+      "whyRecommended": "لماذا هذه العيادة؟",
+      "packageFeatures": "مكونات الباقة",
+      "viewItinerary": "عرض الخطة",
+      "acceptCta": "اختيار هذه العيادة"
+    },
+    "itinerary": {
+      "title": "خطة السفر",
+      "dateLabel": "تاريخ الوصول (YYYY-MM-DD)",
+      "dateHint": "مثال: 2026-05-15. أيام عمل أو عطلة، الخيار لك.",
+      "dateError": "يجب أن يكون التاريخ بصيغة YYYY-MM-DD (مثال: 2026-05-15).",
+      "fetchCta": "إنشاء الخطة",
+      "summary": "{procedure} • {clinic} • {days} أيام",
+      "dayLabel": "اليوم {n}",
+      "preOpTitle": "متطلبات ما قبل العملية"
+    },
+    "lead": {
+      "title": "بيانات الاتصال",
+      "subtitle": "{procedure} • {clinic}",
+      "nameLabel": "الاسم الكامل",
+      "namePlaceholder": "الاسم الكامل",
+      "emailLabel": "البريد الإلكتروني",
+      "phoneLabel": "الهاتف",
+      "notesLabel": "ملاحظات (اختياري)",
+      "notesPlaceholder": "أي معلومة تودّ إخبار العيادة بها.",
+      "consentToggle": "أوافق على مشاركة بياناتي مع العيادة (KVKK / GDPR)",
+      "consentHelp": "بدون الموافقة سيتم حفظ طلبك دون مشاركة بيانات الاتصال مع العيادة، وسنتواصل معك للتنسيق.",
+      "consentRequiredError": "يرجى تفعيل خيار الموافقة للمتابعة.",
+      "contactRequiredError": "الاسم وقناة اتصال واحدة على الأقل (بريد إلكتروني أو هاتف) مطلوبة.",
+      "submitCta": "إرسال الطلب"
+    },
+    "success": {
+      "title": "تم استلام طلبك",
+      "fallback": "سيتواصل معك ممثل العيادة قريبًا.",
+      "procedureLabel": "الإجراء",
+      "clinicLabel": "العيادة",
+      "priceLabel": "السعر التقريبي",
+      "leadIdLabel": "رقم الطلب",
+      "exitCta": "العودة إلى الرئيسية",
+      "newCta": "طلب جديد"
+    },
+    "notFit": {
+      "title": "السفر غير موصى به حاليًا",
+      "reasonLabel": "السبب",
+      "fallbackReason": "يتطلب ملفك الصحي موافقة طبية قبل السفر.",
+      "instructionsLabel": "التوصيات",
+      "disclaimer": "هذا التطبيق لا يقدم موافقات طبية. يرجى استشارة طبيبك أولًا.",
+      "adjustProfile": "تعديل الملف",
+      "exitCta": "العودة إلى الرئيسية"
+    }
   },
   "version": {
     "bannerTitle": "يتوفر تحديث",

@@ -26,7 +26,8 @@
     "accept": "I understand, I accept",
     "start": "Start",
     "emergencyNote": "Call 112 in emergencies.",
-    "privacyLink": "Privacy policy"
+    "privacyLink": "Privacy policy",
+    "healthTourismCta": "Health tourism (international patients)"
   },
   "chat": {
     "placeholder": "Type your message...",
@@ -185,6 +186,102 @@
     "de": "German",
     "ru": "Russian",
     "ar": "Arabic"
+  },
+  "quote": {
+    "browse": {
+      "title": "Choose a procedure",
+      "subtitle": "Select the procedure you're interested in to continue.",
+      "empty": "No procedures in this category.",
+      "recoveryDays": "Recovery",
+      "stayDays": "Stay",
+      "indicativeFrom": "From"
+    },
+    "category": {
+      "all": "All",
+      "hair": "Hair",
+      "dental": "Dental",
+      "plastic_surgery": "Plastic surgery",
+      "eye": "Eye",
+      "obesity": "Obesity",
+      "ivf": "IVF"
+    },
+    "profile": {
+      "title": "Health profile",
+      "subtitle": "A few quick questions so we can confirm you're a fit candidate.",
+      "procedureLabel": "Selected procedure: {procedure}",
+      "ageLabel": "Age",
+      "agePlaceholder": "e.g. 38",
+      "bmiLabel": "Body mass index (BMI)",
+      "bmiPlaceholder": "e.g. 26.5",
+      "bmiHint": "Calculated from height and weight.",
+      "bmiHelp": "Leave blank if you don't know.",
+      "flagsTitle": "Medical history",
+      "flagsHelp": "Check all that apply.",
+      "smoker": "I am an active smoker",
+      "anticoagulant": "I take blood thinners (anticoagulants)",
+      "recentMi": "I had a heart attack in the last 3 months",
+      "uncontrolledDiabetes": "I have uncontrolled diabetes",
+      "uncontrolledHypertension": "I have uncontrolled hypertension",
+      "pregnancy": "Pregnancy",
+      "activeCancer": "I am undergoing active cancer treatment",
+      "activeInfection": "I have an active infection",
+      "submit": "Get a quote"
+    },
+    "result": {
+      "title": "Clinic offers",
+      "warnings": "Travel-readiness notes",
+      "summaryLabel": "Summary",
+      "clinicsTitle": "Recommended clinics",
+      "responseHours": "Response within {hours} hours",
+      "whyRecommended": "Why this clinic?",
+      "packageFeatures": "Package features",
+      "viewItinerary": "View plan",
+      "acceptCta": "Pick this clinic"
+    },
+    "itinerary": {
+      "title": "Travel plan",
+      "dateLabel": "Arrival date (YYYY-MM-DD)",
+      "dateHint": "e.g. 2026-05-15. Weekdays or weekends, your choice.",
+      "dateError": "Date must be in YYYY-MM-DD format (e.g. 2026-05-15).",
+      "fetchCta": "Generate plan",
+      "summary": "{procedure} • {clinic} • {days} days",
+      "dayLabel": "Day {n}",
+      "preOpTitle": "Pre-op requirements"
+    },
+    "lead": {
+      "title": "Contact details",
+      "subtitle": "{procedure} • {clinic}",
+      "nameLabel": "Full name",
+      "namePlaceholder": "Full name",
+      "emailLabel": "Email",
+      "phoneLabel": "Phone",
+      "notesLabel": "Notes (optional)",
+      "notesPlaceholder": "Anything you'd like the clinic to know.",
+      "consentToggle": "I consent to my information being shared with the clinic (KVKK/GDPR)",
+      "consentHelp": "Without consent your request is recorded but personal contact details are not forwarded to the clinic; we will follow up to coordinate.",
+      "consentRequiredError": "Please tick the consent box to continue.",
+      "contactRequiredError": "At least your name and one contact channel (email or phone) are required.",
+      "submitCta": "Submit request"
+    },
+    "success": {
+      "title": "Request received",
+      "fallback": "A clinic representative will get in touch shortly.",
+      "procedureLabel": "Procedure",
+      "clinicLabel": "Clinic",
+      "priceLabel": "Indicative price",
+      "leadIdLabel": "Request ID",
+      "exitCta": "Back to home",
+      "newCta": "New request"
+    },
+    "notFit": {
+      "title": "Travel is not currently recommended",
+      "reasonLabel": "Why",
+      "fallbackReason": "Your profile requires medical clearance before travelling.",
+      "instructionsLabel": "Recommendations",
+      "disclaimer": "This app does not provide medical clearance. Please consult your local doctor first.",
+      "adjustProfile": "Edit profile",
+      "exitCta": "Back to home"
+    }
   },
   "version": {
     "bannerTitle": "Update available",

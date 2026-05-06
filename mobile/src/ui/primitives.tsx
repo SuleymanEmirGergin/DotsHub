@@ -26,9 +26,14 @@ type ButtonProps = {
   disabled?: boolean;
   style?: StyleProp<ViewStyle>;
   textStyle?: StyleProp<TextStyle>;
-  accessibilityRole?: "button";
+  // "link" is allowed for buttons that visually look like buttons but
+  // navigate to an external surface (e.g. ResultScreen's "open in maps"
+  // CTA). Screen readers announce links differently from buttons —
+  // surfacing the right semantic helps blind users predict the
+  // destination behavior.
+  accessibilityRole?: "button" | "link";
   accessibilityLabel?: string;
-  accessibilityState?: { disabled?: boolean };
+  accessibilityState?: { disabled?: boolean; selected?: boolean };
 };
 
 export function ScreenContainer({ children, style }: CommonProps) {
@@ -84,9 +89,12 @@ function BaseButton({
     <Pressable
       onPress={onPress}
       disabled={disabled}
-      accessibilityRole={accessibilityRole}
+      // Default to "button" so screen-readers announce the element as
+      // pressable. Callers can opt into "link" for buttons that hand
+      // off to an external surface (maps, store listing, etc.).
+      accessibilityRole={accessibilityRole ?? "button"}
       accessibilityLabel={accessibilityLabel}
-      accessibilityState={accessibilityState}
+      accessibilityState={{ disabled: !!disabled, ...(accessibilityState ?? {}) }}
       style={({ pressed }) => [
         styles.buttonBase,
         variantStyle.container,

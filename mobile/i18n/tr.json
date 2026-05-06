@@ -26,7 +26,8 @@
     "accept": "Anladım, kabul ediyorum",
     "start": "Başla",
     "emergencyNote": "Acil durumlarda 112'yi arayın.",
-    "privacyLink": "Gizlilik politikası"
+    "privacyLink": "Gizlilik politikası",
+    "healthTourismCta": "Sağlık turizmi (yurt dışından gelen hasta)"
   },
   "chat": {
     "placeholder": "Mesajınızı yazın...",
@@ -185,6 +186,102 @@
     "de": "Almanca",
     "ru": "Rusça",
     "ar": "Arapça"
+  },
+  "quote": {
+    "browse": {
+      "title": "İşlem seçin",
+      "subtitle": "Sağlık turizmi için ilgilendiğiniz işlemi seçerek devam edin.",
+      "empty": "Bu kategoride işlem bulunamadı.",
+      "recoveryDays": "İyileşme",
+      "stayDays": "Kalış",
+      "indicativeFrom": "Yaklaşık fiyat"
+    },
+    "category": {
+      "all": "Tümü",
+      "hair": "Saç",
+      "dental": "Diş",
+      "plastic_surgery": "Plastik cerrahi",
+      "eye": "Göz",
+      "obesity": "Obezite",
+      "ivf": "Tüp bebek"
+    },
+    "profile": {
+      "title": "Sağlık profili",
+      "subtitle": "Hangi işlem için uygun olduğunuzu daha hızlı tespit edebilmemiz için birkaç kısa soru.",
+      "procedureLabel": "Seçilen işlem: {procedure}",
+      "ageLabel": "Yaş",
+      "agePlaceholder": "Örn. 38",
+      "bmiLabel": "Vücut kitle indeksi (BMI)",
+      "bmiPlaceholder": "Örn. 26.5",
+      "bmiHint": "Boy ve kilonuzdan hesaplanır.",
+      "bmiHelp": "Bilmiyorsanız boş bırakın.",
+      "flagsTitle": "Sağlık durumu",
+      "flagsHelp": "Geçerli olan tüm seçenekleri işaretleyin.",
+      "smoker": "Aktif sigara kullanıyorum",
+      "anticoagulant": "Kan sulandırıcı (antikoagülan) kullanıyorum",
+      "recentMi": "Son 3 ay içinde kalp krizi geçirdim",
+      "uncontrolledDiabetes": "Kontrolsüz diyabetim var",
+      "uncontrolledHypertension": "Kontrolsüz yüksek tansiyonum var",
+      "pregnancy": "Hamilelik",
+      "activeCancer": "Aktif kanser tedavisi alıyorum",
+      "activeInfection": "Aktif enfeksiyonum var",
+      "submit": "Teklif al"
+    },
+    "result": {
+      "title": "Klinik teklifleri",
+      "warnings": "Seyahat öncesi dikkat",
+      "summaryLabel": "Özet",
+      "clinicsTitle": "Önerilen klinikler",
+      "responseHours": "{hours} saat içinde dönüş",
+      "whyRecommended": "Neden bu klinik?",
+      "packageFeatures": "Paket içeriği",
+      "viewItinerary": "Plan oluştur",
+      "acceptCta": "Bu kliniği seç"
+    },
+    "itinerary": {
+      "title": "Seyahat planı",
+      "dateLabel": "Varış tarihi (YYYY-MM-DD)",
+      "dateHint": "Örn. 2026-05-15. Tatil veya iş günü farketmez.",
+      "dateError": "Tarih YYYY-MM-DD biçiminde olmalı (örn. 2026-05-15).",
+      "fetchCta": "Plan oluştur",
+      "summary": "{procedure} • {clinic} • {days} gün",
+      "dayLabel": "Gün {n}",
+      "preOpTitle": "İşlem öncesi gerekenler"
+    },
+    "lead": {
+      "title": "İletişim bilgileri",
+      "subtitle": "{procedure} • {clinic}",
+      "nameLabel": "Ad Soyad",
+      "namePlaceholder": "Ad Soyad",
+      "emailLabel": "E-posta",
+      "phoneLabel": "Telefon",
+      "notesLabel": "Notlar (opsiyonel)",
+      "notesPlaceholder": "Klinik için eklemek istediğiniz bir not varsa yazabilirsiniz.",
+      "consentToggle": "Bilgilerimin klinikle paylaşılmasına izin veriyorum (KVKK)",
+      "consentHelp": "Onay vermezseniz başvurunuz alınır ancak iletişim bilgileriniz klinikle paylaşılmaz; geri dönüş için sizinle yeniden iletişime geçeriz.",
+      "consentRequiredError": "Devam etmek için KVKK onayını işaretleyin.",
+      "contactRequiredError": "En az ad ve bir iletişim kanalı (e-posta veya telefon) gerekli.",
+      "submitCta": "Başvuruyu gönder"
+    },
+    "success": {
+      "title": "Başvurunuz alındı",
+      "fallback": "Klinik temsilcisi en kısa sürede sizinle iletişime geçecektir.",
+      "procedureLabel": "İşlem",
+      "clinicLabel": "Klinik",
+      "priceLabel": "Tahmini fiyat",
+      "leadIdLabel": "Başvuru no",
+      "exitCta": "Ana ekrana dön",
+      "newCta": "Yeni başvuru"
+    },
+    "notFit": {
+      "title": "Şu an seyahate uygun değilsiniz",
+      "reasonLabel": "Neden",
+      "fallbackReason": "Profil bilgileriniz seyahat öncesi tıbbi onay gerektiriyor.",
+      "instructionsLabel": "Öneriler",
+      "disclaimer": "Bu uygulama tıbbi onay vermez. Lütfen önce kendi hekiminize başvurun.",
+      "adjustProfile": "Profili düzelt",
+      "exitCta": "Ana ekrana dön"
+    }
   },
   "version": {
     "bannerTitle": "Güncelleme mevcut",

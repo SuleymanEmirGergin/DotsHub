@@ -85,6 +85,15 @@ export default function RootLayout() {
             headerShown: true,
           }}
         />
+        <Stack.Screen
+          name="quote"
+          options={{
+            // Title is rendered by the screen itself (multi-step
+            // flow inside one route — header reuse would be misleading).
+            title: "",
+            headerShown: false,
+          }}
+        />
       </Stack>
             </View>
           </View>

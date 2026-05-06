@@ -11,6 +11,7 @@ import {
   MutedText,
   PrimaryButton,
   ScreenContainer,
+  SecondaryButton,
 } from "@/src/ui/primitives";
 
 export default function IntroScreen() {
@@ -56,6 +57,15 @@ export default function IntroScreen() {
           >
             {t("intro.start")}
           </PrimaryButton>
+
+          <SecondaryButton
+            onPress={() => router.push("/quote")}
+            style={styles.htButton}
+            accessibilityRole="button"
+            accessibilityLabel={t("intro.healthTourismCta")}
+          >
+            {t("intro.healthTourismCta")}
+          </SecondaryButton>
         </Card>
 
         <MutedText style={[styles.footer, rtlText]}>{t("intro.emergencyNote")}</MutedText>
@@ -141,6 +151,10 @@ const styles = StyleSheet.create({
   ctaButton: {
     borderRadius: tokens.radius.lg,
   },
+  htButton: {
+    borderRadius: tokens.radius.lg,
+    marginTop: tokens.spacing.sm,
+  },
   footer: {
     marginTop: tokens.spacing.lg,
     textAlign: "center",
@@ -153,7 +167,6 @@ const styles = StyleSheet.create({
     marginTop: tokens.spacing.md,
   },
   languageLink: {
-    paddingVertical: tokens.spacing.sm,
     paddingVertical: tokens.spacing.sm,
     paddingHorizontal: tokens.spacing.md,
     alignSelf: "center",

@@ -26,7 +26,8 @@
     "accept": "Ich verstehe, ich akzeptiere",
     "start": "Starten",
     "emergencyNote": "Rufen Sie 112 in Notfällen an.",
-    "privacyLink": "Datenschutzrichtlinie"
+    "privacyLink": "Datenschutzrichtlinie",
+    "healthTourismCta": "Gesundheitstourismus (Patienten aus dem Ausland)"
   },
   "chat": {
     "placeholder": "Nachricht eingeben...",
@@ -185,6 +186,102 @@
     "de": "Deutsch",
     "ru": "Russisch",
     "ar": "Arabisch"
+  },
+  "quote": {
+    "browse": {
+      "title": "Eingriff wählen",
+      "subtitle": "Wählen Sie den gewünschten Eingriff, um fortzufahren.",
+      "empty": "In dieser Kategorie sind keine Eingriffe verfügbar.",
+      "recoveryDays": "Erholung",
+      "stayDays": "Aufenthalt",
+      "indicativeFrom": "Ab"
+    },
+    "category": {
+      "all": "Alle",
+      "hair": "Haar",
+      "dental": "Zahn",
+      "plastic_surgery": "Plastische Chirurgie",
+      "eye": "Auge",
+      "obesity": "Adipositas",
+      "ivf": "IVF"
+    },
+    "profile": {
+      "title": "Gesundheitsprofil",
+      "subtitle": "Einige kurze Fragen, damit wir Ihre Reisefähigkeit prüfen können.",
+      "procedureLabel": "Gewählter Eingriff: {procedure}",
+      "ageLabel": "Alter",
+      "agePlaceholder": "z. B. 38",
+      "bmiLabel": "Body-Mass-Index (BMI)",
+      "bmiPlaceholder": "z. B. 26.5",
+      "bmiHint": "Aus Größe und Gewicht berechnet.",
+      "bmiHelp": "Lassen Sie das Feld leer, wenn unbekannt.",
+      "flagsTitle": "Krankengeschichte",
+      "flagsHelp": "Markieren Sie alles Zutreffende.",
+      "smoker": "Ich rauche aktiv",
+      "anticoagulant": "Ich nehme Blutverdünner (Antikoagulanzien)",
+      "recentMi": "Ich hatte in den letzten 3 Monaten einen Herzinfarkt",
+      "uncontrolledDiabetes": "Ich habe unkontrollierten Diabetes",
+      "uncontrolledHypertension": "Ich habe unkontrollierten Bluthochdruck",
+      "pregnancy": "Schwangerschaft",
+      "activeCancer": "Ich befinde mich in einer aktiven Krebsbehandlung",
+      "activeInfection": "Ich habe eine akute Infektion",
+      "submit": "Angebot anfragen"
+    },
+    "result": {
+      "title": "Klinikangebote",
+      "warnings": "Hinweise zur Reisefähigkeit",
+      "summaryLabel": "Zusammenfassung",
+      "clinicsTitle": "Empfohlene Kliniken",
+      "responseHours": "Antwort innerhalb von {hours} Stunden",
+      "whyRecommended": "Warum diese Klinik?",
+      "packageFeatures": "Paketinhalt",
+      "viewItinerary": "Plan anzeigen",
+      "acceptCta": "Diese Klinik wählen"
+    },
+    "itinerary": {
+      "title": "Reiseplan",
+      "dateLabel": "Anreisedatum (JJJJ-MM-TT)",
+      "dateHint": "z. B. 2026-05-15. Wochentag oder Wochenende, Sie entscheiden.",
+      "dateError": "Datum muss im Format JJJJ-MM-TT sein (z. B. 2026-05-15).",
+      "fetchCta": "Plan erstellen",
+      "summary": "{procedure} • {clinic} • {days} Tage",
+      "dayLabel": "Tag {n}",
+      "preOpTitle": "Voraussetzungen vor dem Eingriff"
+    },
+    "lead": {
+      "title": "Kontaktdaten",
+      "subtitle": "{procedure} • {clinic}",
+      "nameLabel": "Vor- und Nachname",
+      "namePlaceholder": "Vor- und Nachname",
+      "emailLabel": "E-Mail",
+      "phoneLabel": "Telefon",
+      "notesLabel": "Anmerkungen (optional)",
+      "notesPlaceholder": "Möchten Sie der Klinik etwas mitteilen?",
+      "consentToggle": "Ich willige ein, dass meine Daten an die Klinik weitergegeben werden (KVKK/DSGVO)",
+      "consentHelp": "Ohne Einwilligung wird Ihre Anfrage erfasst, aber persönliche Kontaktdaten werden nicht weitergegeben; wir melden uns zur Koordination bei Ihnen.",
+      "consentRequiredError": "Bitte aktivieren Sie die Einwilligung, um fortzufahren.",
+      "contactRequiredError": "Mindestens Name und ein Kontaktkanal (E-Mail oder Telefon) sind erforderlich.",
+      "submitCta": "Anfrage senden"
+    },
+    "success": {
+      "title": "Anfrage eingegangen",
+      "fallback": "Ein Klinikvertreter wird sich in Kürze bei Ihnen melden.",
+      "procedureLabel": "Eingriff",
+      "clinicLabel": "Klinik",
+      "priceLabel": "Voraussichtlicher Preis",
+      "leadIdLabel": "Anfrage-ID",
+      "exitCta": "Zurück zum Start",
+      "newCta": "Neue Anfrage"
+    },
+    "notFit": {
+      "title": "Reise wird derzeit nicht empfohlen",
+      "reasonLabel": "Grund",
+      "fallbackReason": "Ihr Profil erfordert vor der Reise eine ärztliche Freigabe.",
+      "instructionsLabel": "Empfehlungen",
+      "disclaimer": "Diese App erteilt keine medizinische Freigabe. Bitte konsultieren Sie zunächst Ihren Hausarzt.",
+      "adjustProfile": "Profil bearbeiten",
+      "exitCta": "Zurück zum Start"
+    }
   },
   "version": {
     "bannerTitle": "Update verfügbar",
