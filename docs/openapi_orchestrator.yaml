@@ -654,6 +654,41 @@ paths:
                     event: <thinking|envelope|done|error>
                     data: <JSON payload>
 
+  /v1/consent/event:
+    post:
+      summary: Record one per-clause consent toggle (KVKK audit log)
+      description: |
+        Mobile clients call this on every checkbox tap during the
+        three-clause onboarding (terms / kvkk / age) so the KVKK
+        Article 6 explicit-consent audit trail captures each
+        deliberation, not just the final state at Başla.
+
+        See `docs/KVKK_CONSENT_AUDIT.md` for the full audit story
+        (latest-state vs. timeline reads, retention policy,
+        right-to-be-forgotten interactions).
+      operationId: recordConsentEvent
+      parameters:
+        - $ref: "#/components/parameters/DeviceIdHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConsentEventIn"
+      responses:
+        "201":
+          description: Event recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConsentEventOut"
+        "400":
+          description: Missing X-Device-Id header
+        "422":
+          description: Invalid clause_id (must be terms / kvkk / age)
+        "503":
+          description: Audit log storage unavailable
+
   /v1/me/sessions/{session_id}:
     delete:
       summary: KVKK/GDPR — delete one triage session and wipe derived rows
@@ -892,6 +927,18 @@ components:
       description: |
         Free-form client version string. Logged for analytics; does NOT
         gate payload shape.
+    DeviceIdHeader:
+      name: X-Device-Id
+      in: header
+      required: true
+      schema:
+        type: string
+      description: |
+        Anonymous, mobile-provisioned device UUID (see
+        `mobile/utils/deviceId.ts`). Used as the audit subject for KVKK
+        consent events and as the scoping key for `/v1/triage/history`
+        and `/v1/me/sessions/*`. Server side only — never logged into
+        analytics, never returned to other clients.
     ClientCapabilitiesHeader:
       name: X-Client-Capabilities
       in: header
@@ -1158,6 +1205,50 @@ components:
           nullable: true
           minimum: 0
           description: Server-measured wall-clock duration of the upstream call.
+
+    ConsentEventIn:
+      type: object
+      required: [clause_id, accepted, notice_version, consent_version]
+      properties:
+        clause_id:
+          type: string
+          enum: [terms, kvkk, age]
+          description: |
+            Which onboarding consent slot the user toggled.
+              - `terms` — Kullanım koşulları
+              - `kvkk`  — Anonim sağlık verileri açık rıza (KVKK 6. madde)
+              - `age`   — 13+ yaş beyanı
+            Server-side validated by Pydantic and the
+            `consent_events.clause_id` CHECK constraint.
+        accepted:
+          type: boolean
+          description: |
+            True on tick, false on un-tick. Both are recorded — the
+            audit value is the *sequence*, not just the latest state.
+        notice_version:
+          type: string
+          maxLength: 64
+          example: "2026-05-01"
+          description: Snapshot of `EXPO_PUBLIC_NOTICE_VERSION` at toggle time.
+        consent_version:
+          type: string
+          maxLength: 32
+          example: "1.0"
+          description: Snapshot of `EXPO_PUBLIC_CONSENT_VERSION` at toggle time.
+
+    ConsentEventOut:
+      type: object
+      required: [ok]
+      properties:
+        ok:
+          type: boolean
+        id:
+          type: integer
+          nullable: true
+          description: |
+            Bigserial id of the inserted row. Informational; clients
+            don't need to track it but it makes individual events
+            grep-able in support tickets.
 
     TriageHistoryResponse:
       type: object

@@ -25,6 +25,7 @@ from app.admin_uploads_api import router as admin_uploads_router
 from app.admin_tenants_api import router as admin_tenants_router
 from app.admin_v5 import router as admin_v5_router
 from app.api.routes.asr import router as asr_router
+from app.api.routes.consent import router as consent_router
 from app.api.routes.data_rights import router as data_rights_router
 from app.api.routes.facilities import router as facilities_router
 from app.api.routes.features import router as features_router
@@ -53,6 +54,8 @@ def register_routes(app: FastAPI) -> None:
     app.include_router(admin_tenants_router, prefix="/v1", tags=["Admin Tenants"])
     app.include_router(admin_feedback_router, prefix="/v1", tags=["Admin Feedback"])
     app.include_router(data_rights_router, prefix="/v1", tags=["Data Rights"])
+    app.include_router(consent_router, prefix="/v1", tags=["Consent"])
+    app.include_router(consent_router, prefix="/v1", tags=["Consent"])
     app.include_router(admin_v5_router, prefix="/v1", tags=["Admin V5"])
     app.include_router(admin_image_router, prefix="/v1", tags=["Admin Image"])
     app.include_router(patient_upload_router, prefix="/v1", tags=["Patient Upload"])
