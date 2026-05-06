@@ -1,6 +1,16 @@
 // ─── V4 Unified Triage Types ───
+//
+// Session 17 (sağlık turizmi pivotu) extended the envelope union with
+// additive QUOTE/ITINERARY types. Existing screens dispatch on the
+// triage subset only; HT screens import HtEnvelope from htTypes.ts.
 
-export type EnvelopeType = "QUESTION" | "RESULT" | "EMERGENCY" | "ERROR";
+export type EnvelopeType =
+  | "QUESTION"
+  | "RESULT"
+  | "EMERGENCY"
+  | "ERROR"
+  | "QUOTE"
+  | "ITINERARY";
 
 export type AnswerType = "yes_no" | "free_text" | "number" | "multi_choice";
 
