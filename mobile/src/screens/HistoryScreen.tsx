@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState, useCallback } from "react";
 import {
   FlatList,
+  Linking,
   Pressable,
   StyleSheet,
   Text,
@@ -224,6 +225,93 @@ export default function HistoryScreen({ onBack, onViewSession }: Props) {
           textAlign: "center",
           paddingVertical: tokens.spacing.lg,
         },
+        // Emergency-variant card. Stitch pattern: red left border + soft
+        // red bg + "ACİL" pill + "X OLABİLİR." body + inline red 112'yi Ara
+        // button. Distinct enough from the normal card that a user
+        // glancing at History can spot the urgent rows without reading.
+        emergencyCard: {
+          borderRadius: tokens.radius.xl,
+          borderWidth: 1,
+          borderColor: tokens.colors.errorBorder,
+          borderLeftWidth: 4,
+          borderLeftColor: tokens.colors.error,
+          backgroundColor: tokens.colors.errorBg,
+          padding: tokens.spacing.lg,
+          ...tokens.shadow.card,
+        },
+        emergencyTitleRow: {
+          flexDirection: "row",
+          alignItems: "center",
+          gap: tokens.spacing.xs,
+          marginBottom: tokens.spacing.xs,
+        },
+        emergencyIcon: {
+          fontSize: 16,
+          color: tokens.colors.error,
+        },
+        emergencyTitle: {
+          ...tokens.typography.h2,
+          color: tokens.colors.textPrimary,
+          flex: 1,
+        },
+        emergencyChip: {
+          backgroundColor: tokens.colors.error,
+          paddingHorizontal: tokens.spacing.sm,
+          paddingVertical: 3,
+          borderRadius: tokens.radius.pill,
+        },
+        emergencyChipText: {
+          fontSize: 11,
+          fontWeight: "700",
+          color: "#FFFFFF",
+          letterSpacing: 0.6,
+        },
+        emergencyDate: {
+          ...tokens.typography.caption,
+          color: tokens.colors.textSecondary,
+          marginBottom: tokens.spacing.sm,
+        },
+        emergencyDivider: {
+          height: 1,
+          backgroundColor: tokens.colors.errorDivider,
+          marginVertical: tokens.spacing.sm,
+        },
+        emergencyOlabilir: {
+          ...tokens.typography.body,
+          fontWeight: "600",
+          color: tokens.colors.textPrimary,
+        },
+        emergencyHint: {
+          ...tokens.typography.bodySmall,
+          color: tokens.colors.textSecondary,
+          marginTop: 2,
+          marginBottom: tokens.spacing.sm,
+        },
+        emergencyCallBtn: {
+          minHeight: 40,
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: tokens.spacing.xs,
+          backgroundColor: tokens.colors.error,
+          borderRadius: tokens.radius.pill,
+          paddingHorizontal: tokens.spacing.lg,
+          marginBottom: tokens.spacing.sm,
+        },
+        emergencyCallBtnText: {
+          ...tokens.typography.button,
+          color: "#FFFFFF",
+        },
+        emergencyMetaRow: {
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+        },
+        emergencyDetailLink: {
+          ...tokens.typography.bodySmall,
+          fontWeight: "600",
+          color: tokens.colors.error,
+        },
       }),
     [tokens],
   );
@@ -240,6 +328,84 @@ export default function HistoryScreen({ onBack, onViewSession }: Props) {
       hour: "2-digit",
       minute: "2-digit",
     });
+
+    if (item.envelope_type === "EMERGENCY") {
+      // Emergency variant matching the Stitch History card spec: red
+      // border + "ACİL" chip + "X OLABİLİR." copy + inline 112'yi Ara
+      // button. Backend doesn't surface an emergency-condition label
+      // yet, so we use the recommended specialty (or a generic
+      // fallback) before the OLABİLİR.; once the field exists we can
+      // swap in the more specific phrasing without UI churn.
+      const emergencyLabel =
+        item.recommended_specialty_tr || t("history.emergencyFallback");
+      return (
+        <Pressable
+          onPress={() => onViewSession?.(item.id)}
+          accessibilityRole="button"
+          accessibilityLabel={`${t("history.emergency")} oturumu, ${dateStr}`}
+          style={({ pressed }) => [
+            styles.emergencyCard,
+            pressed && styles.sessionCardPressed,
+          ]}
+        >
+          <View style={styles.emergencyTitleRow}>
+            <Text style={styles.emergencyIcon}>⚠</Text>
+            <Text style={styles.emergencyTitle}>
+              {item.recommended_specialty_tr ||
+                t("history.emergencyFallbackSpecialty")}
+            </Text>
+            <View style={styles.emergencyChip}>
+              <Text style={styles.emergencyChipText}>
+                {t("history.emergencyChip")}
+              </Text>
+            </View>
+          </View>
+          <Text style={styles.emergencyDate}>
+            {dateStr} • {timeStr}
+          </Text>
+          <View style={styles.emergencyDivider} />
+          <Text style={styles.emergencyOlabilir}>
+            {t("history.emergencyOlabilir").replace(
+              "{{label}}",
+              emergencyLabel,
+            )}
+          </Text>
+          <Text style={styles.emergencyHint}>
+            {t("history.emergencyHint")}
+          </Text>
+          <Pressable
+            onPress={(e) => {
+              // Tapping the call button shouldn't also open the detail
+              // view — stop the event from bubbling to the outer
+              // Pressable. RN's stopPropagation on Pressable nestable
+              // gestures is best-effort; this works in practice on
+              // iOS / Android because the inner Pressable wins focus.
+              e?.stopPropagation?.();
+              Linking.openURL("tel:112").catch(() => {});
+            }}
+            accessibilityRole="button"
+            accessibilityLabel={t("history.emergencyCall")}
+            style={styles.emergencyCallBtn}
+          >
+            <Text style={styles.emergencyCallBtnText}>
+              📞  {t("history.emergencyCall")}
+            </Text>
+          </Pressable>
+          <View style={styles.emergencyMetaRow}>
+            {item.stop_reason ? (
+              <Text style={styles.metaChipText}>
+                {item.stop_reason.replace(/_/g, " ")}
+              </Text>
+            ) : (
+              <View />
+            )}
+            <Text style={styles.emergencyDetailLink}>
+              {t("history.detailCta")} →
+            </Text>
+          </View>
+        </Pressable>
+      );
+    }
 
     return (
       <Pressable
