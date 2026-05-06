@@ -23,10 +23,15 @@ type TriageState = {
   acceptIntro: boolean;
   showHistory: boolean;
   showSettings: boolean;
+  /** Session id of a past triage row the user tapped from
+   *  HistoryScreen — when non-null, the routing hub renders
+   *  SessionDetailScreen on top. Cleared on back. */
+  showSessionDetailId: string | null;
 
   setAcceptIntro: (v: boolean) => void;
   setShowHistory: (v: boolean) => void;
   setShowSettings: (v: boolean) => void;
+  setShowSessionDetailId: (id: string | null) => void;
   appendMessage: (m: Msg) => void;
   setLoading: (v: boolean) => void;
   setLastRequest: (r: TriageTurnRequest | null) => void;
@@ -48,10 +53,12 @@ export const useTriageStore = create<TriageState>((set, get) => ({
   acceptIntro: false,
   showHistory: false,
   showSettings: false,
+  showSessionDetailId: null,
 
   setAcceptIntro: (v) => set({ acceptIntro: v }),
   setShowHistory: (v) => set({ showHistory: v }),
   setShowSettings: (v) => set({ showSettings: v }),
+  setShowSessionDetailId: (id) => set({ showSessionDetailId: id }),
 
   setLoading: (v) => set({ loading: v }),
 

@@ -135,6 +135,24 @@
     "sameDay": "⚡ اذهب اليوم",
     "confidence": "الثقة"
   },
+  "sessionDetail": {
+    "title": "تفاصيل التقييم",
+    "back": "← رجوع",
+    "loading": "جاري التحميل…",
+    "errorTitle": "فشل التحميل",
+    "errorLoading": "تعذر تحميل التقييم. الرجاء المحاولة مرة أخرى.",
+    "notFoundTitle": "غير موجود",
+    "notFoundBody": "هذا التقييم لم يعد متاحاً.",
+    "recommendedSpecialty": "التخصص الموصى به",
+    "confidence": "الثقة",
+    "questionCount": "تم الإجابة على {{count}} سؤال",
+    "possibleConditions": "الحالات المحتملة ({{count}})",
+    "whySpecialty": "لماذا هذا التخصص؟",
+    "originalSymptom": "الشكوى الأصلية",
+    "unknownSpecialty": "غير معروف",
+    "emergencyTitle": "توجيه الطوارئ",
+    "call112": "اتصل بخدمات الطوارئ"
+  },
   "settings": {
     "title": "الإعدادات",
     "back": "← رجوع",

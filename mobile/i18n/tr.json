@@ -135,6 +135,24 @@
     "sameDay": "⚡ BUGÜN GİT",
     "confidence": "Güven"
   },
+  "sessionDetail": {
+    "title": "Değerlendirme Detayı",
+    "back": "← Geri",
+    "loading": "Yükleniyor…",
+    "errorTitle": "Yüklenemedi",
+    "errorLoading": "Değerlendirme yüklenemedi. Lütfen tekrar deneyin.",
+    "notFoundTitle": "Bulunamadı",
+    "notFoundBody": "Bu değerlendirme artık erişilebilir değil.",
+    "recommendedSpecialty": "Önerilen Branş",
+    "confidence": "güven",
+    "questionCount": "{{count}} soru yanıtlandı",
+    "possibleConditions": "Olası durumlar ({{count}})",
+    "whySpecialty": "Neden bu branş?",
+    "originalSymptom": "Belirtilen şikayet",
+    "unknownSpecialty": "Belirsiz",
+    "emergencyTitle": "Acil Sevk",
+    "call112": "112'yi Ara"
+  },
   "settings": {
     "title": "Ayarlar",
     "back": "← Geri",

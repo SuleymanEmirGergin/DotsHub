@@ -135,6 +135,24 @@
     "sameDay": "⚡ СЕГОДНЯ",
     "confidence": "Уверенность"
   },
+  "sessionDetail": {
+    "title": "Детали оценки",
+    "back": "← Назад",
+    "loading": "Загрузка…",
+    "errorTitle": "Не удалось загрузить",
+    "errorLoading": "Не удалось загрузить оценку. Попробуйте ещё раз.",
+    "notFoundTitle": "Не найдено",
+    "notFoundBody": "Эта оценка больше недоступна.",
+    "recommendedSpecialty": "Рекомендуемая специальность",
+    "confidence": "уверенность",
+    "questionCount": "Отвечено вопросов: {{count}}",
+    "possibleConditions": "Возможные состояния ({{count}})",
+    "whySpecialty": "Почему эта специальность?",
+    "originalSymptom": "Исходная жалоба",
+    "unknownSpecialty": "Неизвестно",
+    "emergencyTitle": "Экстренное направление",
+    "call112": "Позвонить в экстренные службы"
+  },
   "settings": {
     "title": "Настройки",
     "back": "← Назад",
