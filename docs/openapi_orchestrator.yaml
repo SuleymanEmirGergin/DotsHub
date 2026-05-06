@@ -183,6 +183,43 @@ paths:
         "503":
           description: ASR disabled by configuration
 
+  /v1/triage/sessions/{session_id}:
+    get:
+      summary: Full detail of one past triage session (device-scoped)
+      description: |
+        Drives the mobile History → Detail drill-down. Returns the
+        original symptom text, full top-conditions list, why-specialty
+        rationale, emergency reason if applicable — everything needed
+        to rebuild the result screen for a past session without
+        keeping it client-side.
+
+        Authorisation is by-possession-of-device-id (same model as
+        `/v1/triage/history` and `/v1/me/sessions/{session_id}`).
+        Wrong device_id returns 404 — not 403 — so the membership of
+        any one device's session set stays private.
+      operationId: triageSessionDetail
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: "#/components/parameters/DeviceIdHeader"
+      responses:
+        "200":
+          description: Session detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TriageSessionDetail"
+        "400":
+          description: Missing X-Device-Id header
+        "404":
+          description: Session not found (or not owned by this device)
+        "503":
+          description: Storage layer unavailable
+
   /v1/triage/history:
     get:
       summary: List recent triage sessions for the device
@@ -1180,6 +1217,7 @@ components:
       properties:
         ok: { type: boolean, default: true }
 
+<<<<<<< HEAD
     TranscriptionResult:
       type: object
       required: [text, language, provider]
@@ -1249,6 +1287,54 @@ components:
             Bigserial id of the inserted row. Informational; clients
             don't need to track it but it makes individual events
             grep-able in support tickets.
+
+    TriageSessionDetail:
+      type: object
+      description: |
+        Subset of `triage_sessions` columns suitable for the mobile
+        detail screen. Heavy debug blobs (specialty_scoring_debug,
+        question_selector_debug, confidence_debug, meta) are
+        intentionally omitted — they live server-side for tuning.
+        `device_id` is also omitted from the response since the
+        caller just confirmed it via the X-Device-Id header.
+      properties:
+        id: { type: string, format: uuid }
+        session_id: { type: string, format: uuid, nullable: true }
+        created_at: { type: string }
+        updated_at: { type: string, nullable: true }
+        envelope_type:
+          type: string
+          enum: [QUESTION, RESULT, EMERGENCY, ERROR]
+        turn_index: { type: integer, minimum: 0 }
+        stop_reason: { type: string, nullable: true }
+        locale: { type: string, nullable: true }
+        recommended_specialty_id: { type: string, nullable: true }
+        recommended_specialty_tr: { type: string, nullable: true }
+        confidence_0_1:
+          type: number
+          nullable: true
+          minimum: 0
+          maximum: 1
+        confidence_label_tr: { type: string, nullable: true }
+        confidence_explain_tr: { type: string, nullable: true }
+        top_conditions:
+          type: array
+          items: { type: object, additionalProperties: true }
+        why_specialty_tr:
+          type: array
+          items: { type: string }
+        emergency_rule_id: { type: string, nullable: true }
+        emergency_reason_tr: { type: string, nullable: true }
+        input_text: { type: string, nullable: true }
+        asked_canonicals:
+          type: array
+          items: { type: string }
+        extracted_canonicals:
+          type: array
+          items: { type: string }
+        user_canonicals_tr:
+          type: array
+          items: { type: string }
 
     TriageHistoryResponse:
       type: object
