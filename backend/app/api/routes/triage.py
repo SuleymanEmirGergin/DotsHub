@@ -313,7 +313,17 @@ def triage_history(
 
     q = (
         sb.table("triage_sessions")
-        .select("id,created_at,envelope_type,recommended_specialty_tr,confidence_label_tr,confidence_0_1,stop_reason")
+        # `emergency_reason_tr` lets the mobile History card render the
+        # suspected condition phrase (e.g. "Akut koroner sendrom acil
+        # değerlendirme gerektirebilir.") instead of falling back to
+        # the routed specialty for EMERGENCY rows. Field is already
+        # populated on insert in triage_engine.py and tombstoned in
+        # data_rights.py — only the read path didn't surface it.
+        .select(
+            "id,created_at,envelope_type,recommended_specialty_tr,"
+            "confidence_label_tr,confidence_0_1,stop_reason,"
+            "emergency_reason_tr"
+        )
         .order("created_at", desc=True)
         .eq("device_id", x_device_id)
         .limit(min(limit, 100))
