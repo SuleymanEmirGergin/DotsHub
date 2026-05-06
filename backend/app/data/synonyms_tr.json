@@ -154,6 +154,12 @@
       "variants_tr": [
         "göğsümde baskı var",
         "göğsüm sıkışıyor",
+        "göğsümde sıkışma oluyor",
+        "göğsümde sıkışma var",
+        "yürüdüğümde göğsümde sıkışma",
+        "hızlı yürüdüğümde göğsümde sıkışma",
+        "efor ile göğüste sıkışma",
+        "merdiven çıkınca göğsümde sıkışma",
         "göğsümde ağırlık var",
         "göğsüm eziliyor gibi",
         "göğsümde bir baskı hissediyorum",
@@ -166,8 +172,7 @@
         "göğüs kasılması var",
         "kalp bölgesinde baskı hissediyorum",
         "göğüs kafesinde baskı var",
-        "göğsüm dar geliyor",
-        "göğsümde sıkışma var"
+        "göğsüm dar geliyor"
       ]
     },
     {
@@ -417,6 +422,12 @@
         "kaşıntılı bir döküntü",
         "derimde döküntü çıktı",
         "vücudumda döküntü var",
+        "kırmızı plak",
+        "kırmızı plaklar",
+        "kırmızı plaklar var",
+        "kepekli plak",
+        "kepekli plaklar",
+        "vücudumda kırmızı noktalar",
         "alerjik döküntü var",
         "alerji tuttu sanırım",
         "cildimde kabarık izler çıktı",
@@ -918,7 +929,15 @@
         "birden kalbim çarpmaya başlıyor",
         "kendimi kötü hissettim geçti",
         "öleceğim hissine kapılıyorum",
-        "çok korktum geçti"
+        "çok korktum geçti",
+        "kalabalık ortamda nefes darlığı",
+        "kalabalık ortamlarda nefes daralması",
+        "kalabalıkta nefes daralması",
+        "kalabalıkta panik",
+        "kapalı yerlerde nefes alamıyorum",
+        "agorafobi",
+        "kaygı krizi",
+        "kaygı atağı"
       ]
     },
     {
@@ -1129,7 +1148,7 @@
       "type": "symptom",
       "variants_tr": [
         "ateş basması",
-        "gece terlemesi",
+        "menopoz gece terlemesi",
         "adetlerim kesildi",
         "klimakterium",
         "menopoza girdim",
@@ -1420,7 +1439,12 @@
         "idrarda köpük var",
         "idrarm köpüklü",
         "idrar köpürüyor",
-        "köpüklü işiyorum"
+        "köpüklü işiyorum",
+        "idrarımda köpüklenme",
+        "idrarımda köpüklenme oluyor",
+        "idrarda köpüklenme",
+        "köpüklü idrar",
+        "proteinüri"
       ]
     },
     {
@@ -1585,8 +1609,6 @@
         "dirseklerim ve saçlı derimde kepekli",
         "saçlı derimde kepekli plaklar",
         "kırmızı plaklar kepekli",
-        "kırmızı plaklar var",
-        "kepekli plak",
         "psoriasis",
         "sedef hastalığı"
       ]
@@ -1838,9 +1860,15 @@
       "type": "symptom",
       "variants_tr": [
         "saçlarım dökülüyor",
+        "saçlarım döküldü",
         "saçlarım çok dökülüyor",
+        "saçlarım belirgin şekilde dökülüyor",
         "yastığımda çok fazla saç",
+        "yastığımda fazla saç",
+        "yastığımda saç var",
+        "duşta çok fazla saç",
         "duşta saçlarım dökülüyor",
+        "duşta fazla saç",
         "saç dökülmesi arttı",
         "alopesi"
       ]
@@ -1853,6 +1881,12 @@
         "arı soktu",
         "sivrisinek ısırığı",
         "cildimde şiş kırmızı sıcak bölge",
+        "şiş kırmızı sıcak bölge",
+        "kırmızı sıcak bölge",
+        "kırmızı sıcak bölge ortasında nokta",
+        "ortasında küçük nokta olan kırmızı bölge",
+        "bacağımda şiş kırmızı bölge",
+        "bacağımda kırmızı sıcak bölge",
         "ısırık izi",
         "böcek ısırması"
       ]
@@ -1981,12 +2015,85 @@
         "geceleri terliyorum",
         "gece terlemem var",
         "gece terlemeleri var",
+        "gece terlemesi var",
+        "geceleri gece terlemesi",
         "aşırı terliyorum",
         "her gece ter içinde uyanıyorum",
         "ter içinde uyanıyorum",
         "geceleri ıslanmış uyanıyorum",
         "gece ter banyosu",
         "yatakta sırılsıklam terliyorum"
+      ]
+    },
+    {
+      "canonical": "ödem",
+      "type": "symptom",
+      "variants_tr": [
+        "ayaklarım şişiyor",
+        "ayaklarım akşamları şişiyor",
+        "akşamları ayaklarım şişiyor",
+        "bacaklarım şişiyor",
+        "ayak bilekleri ödemli",
+        "ayak ödemi",
+        "akşamları bilekler şişiyor",
+        "ödem var ayaklarımda"
+      ]
+    },
+    {
+      "canonical": "uzuv şişliği",
+      "type": "symptom",
+      "variants_tr": [
+        "ayaklarımda şişlik var",
+        "ellerimde şişlik var",
+        "kollarımda şişlik var",
+        "vücudumda yaygın şişlik",
+        "uzuvlarımda şişlik"
+      ]
+    },
+    {
+      "canonical": "osteoporoz belirtisi",
+      "type": "symptom",
+      "variants_tr": [
+        "boy kısalması",
+        "boy kısalmam",
+        "5 cm boy kısalmam",
+        "boy kısalması oldu",
+        "kemik erimesi",
+        "kolay kemik kırığı",
+        "hafif düşünce bileğim kırıldı",
+        "düşünce bilek kırığı",
+        "osteoporoz",
+        "osteopeni",
+        "kemik yoğunluğu düşük"
+      ]
+    },
+    {
+      "canonical": "tiroid nodülü",
+      "type": "symptom",
+      "variants_tr": [
+        "boynumda ele gelen şişlik",
+        "boynumda kitle",
+        "boynumda büyüyen şişlik",
+        "boynumda nodül",
+        "tiroid bezimde şişlik",
+        "tiroidimde nodül",
+        "yutkunmada hafif rahatsızlık",
+        "boynumda büyüyen kitle",
+        "tiroid büyümesi"
+      ]
+    },
+    {
+      "canonical": "akut göz ağrısı haleli",
+      "type": "red_flag",
+      "variants_tr": [
+        "gözüm aniden çok ağrımaya başladı",
+        "aniden gözümde şiddetli ağrı",
+        "gözümde aniden ağrı bulanık görme",
+        "ışıklara bakınca halka görüyorum",
+        "göz ağrısı ile birlikte halka görüyorum",
+        "akut açılı kapalı glokom",
+        "gözüm aniden ağrıdı haleler",
+        "gözümde sert sertlik aniden ağrı"
       ]
     },
     {

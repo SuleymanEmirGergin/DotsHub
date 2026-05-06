@@ -76,7 +76,48 @@ from app.triage_engine import run_orchestrator_turn
 #      tightened to require the "vajinal/aşağı/genital" qualifier so
 #      sinüzit "sarı akıntı" no longer over-matches obgyn. Group B+C
 #      (specialty routing + final_type tuning) is a separate PR.)
-MIN_PASS_RATE = 0.50
+#   commit B7-BC   (148 scenarios): 148/148 = 100%   threshold 0.90
+#     (Group B+C routing + final_type tuning — closed the remaining
+#      22 failures in three layers:
+#       1. Specialty keyword expansions for ent (sinüs phrases, polen
+#          rinit), dermatology (alopecia, insect bite, plaque
+#          variations), internal_gi (rectal bleeding, jaundice cues),
+#          ophthalmology (göz kapağı şişlik, sudden eye pain), nephrology
+#          (proteinüri, idrarda köpüklenme), endocrinology (osteoporoz
+#          markers, thyroid nodule, adrenal cues), cardiology (BP
+#          readings, exertional angina), obgyn (vajinal akıntı boost),
+#          plus removal of the 'yas' substring keyword that false-
+#          matched 'yastığımda' for psychiatry.
+#       2. Engine softeners + injection trigger expansions: Migren
+#          rule now fires on 'ışığa bakınca' / fotofobi canonical /
+#          tek-taraflı / tekrarlayan baş ağrısı; Tip 2 Diyabet rule
+#          accepts the new 'diyabet öyküsü' canonical; Hipotiroidi
+#          rule accepts the new 'kilo artışı' / 'saç dökülmesi'
+#          canonicals; subacute pulmonary softener now also covers
+#          rules.json's blood_in_sputum hard_trigger so 3-week TB-
+#          pattern hemoptysis stays RESULT/pulmonology; panic context
+#          detection broadened to recognize situational dyspnea
+#          ('kalabalık ortamda') and self-attributed anxiety
+#          ('kaygı mı bilemiyorum') even without the panic atak
+#          canonical.
+#       3. Curated-injection plumbing fix: _prepend_if_absent now tags
+#          context-injected labels with source_type='curated', the
+#          dict comprehension building _raw_top preserves that field
+#          through annotation, and _annotate_and_enrich_top_conditions
+#          treats upstream-curated entries as curated even if the
+#          label isn't in the tenant's curated_conditions catalog.
+#          This kept Psoriasis / Tip 2 Diyabet / Hipertansiyon /
+#          Migren / Hipotiroidi injections from being dropped by the
+#          A9 confidence gate. Plus three emergency-rule fixes:
+#          sepsis_suspect now uses keyword_any+require_any_group
+#          (was empty top-level lists, never fired); acute_glaucoma_
+#          crisis adds 'bulanık görüyorum' + 'bulanık görme' canonical
+#          to its require_any_group; petechial_rash_child drops the
+#          generic 'çocukta döküntü ve ateş' canonical_any so it only
+#          fires on petechial-specific markers.
+#      Threshold bumped 0.50 → 0.90 to lock in the regression gate
+#      with 10-point headroom for routine tuning.)
+MIN_PASS_RATE = 0.90
 
 
 class RealCorpusTests(unittest.TestCase):

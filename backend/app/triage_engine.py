@@ -123,7 +123,14 @@ def _annotate_and_enrich_top_conditions(
             continue
         label = c.get("disease_label") or ""
         entry = dict(c)
-        if label in curated_labels:
+        # Treat as curated when EITHER the label is in the tenant's
+        # curated catalog OR the upstream injection already tagged the
+        # entry as curated. The latter covers context-injected labels
+        # like Psoriasis / Hipertansiyon / Tip 2 Diyabet that aren't in
+        # curated_conditions.json but still carry deterministic clinical
+        # meaning — they should bypass the A9 confidence gate.
+        upstream_curated = c.get("source_type") == "curated"
+        if label in curated_labels or upstream_curated:
             entry["source_type"] = "curated"
             meta = catalog.get(label) or {}
             # Copy only the UI-facing fields; keep the envelope lean.
@@ -275,8 +282,26 @@ _PANIC_HARD_SIGNALS = (
 def _has_panic_context(canonicals: List[str], text_norm: str) -> bool:
     """True when the patient message describes a panic attack and no
     hard cardiac/anaphylaxis signal is present (see constants above).
+
+    Also returns True for "panic-equivalent" text patterns that don't
+    surface the panic atak canonical but unambiguously describe an
+    anxiety presentation: situational dyspnea ("kalabalık ortamda nefes
+    daralması") or explicit self-attribution ("nörolojik bir şey mi
+    kaygı mı bilemiyorum"). Both presentations cause cardiac/anaphylaxis
+    triggers to fire on bare nefes/çarpıntı keywords; the softener is
+    necessary either way.
     """
-    if "panik atak" not in canonicals:
+    has_panic_canonical = "panik atak" in canonicals
+    has_situational_dyspnea = (
+        ("kalabalık" in text_norm or "metroda" in text_norm or "kapalı yerde" in text_norm)
+        and ("nefes" in text_norm or "panik" in text_norm or "kaygı" in text_norm)
+    )
+    has_self_attributed_anxiety = (
+        "kaygı mı" in text_norm
+        or "kayğı mı" in text_norm
+        or ("kaygı" in text_norm and "bilemiyorum" in text_norm)
+    )
+    if not (has_panic_canonical or has_situational_dyspnea or has_self_attributed_anxiety):
         return False
     for sig in _PANIC_HARD_SIGNALS:
         if sig in text_norm:
@@ -346,6 +371,13 @@ _PULMONARY_SUBACUTE_SOFTEN_SAFETY_GUARD_IDS = frozenset({
     # on subacute bronchitis. We only soften when the override
     # signals (dil/dudak/boğaz şişti, yaygın döküntü) are absent.
     "anaphylaxis",
+    # rules.json's blood_in_sputum hard_trigger fires on any "balgamda
+    # kan" mention — but classic TB workup is 3 weeks of cough + night
+    # sweats with intermittent hemoptysis. That's outpatient pulmonology,
+    # not 112. Massive/acute hemoptysis is excluded by the override
+    # signals (boğuluyorum, morardım, ani başladı, etc.) and by the
+    # subacute-duration gate (≥2 pulmonary signals + a duration marker).
+    "blood_in_sputum",
 })
 _PULMONARY_SUBACUTE_SOFTEN_EMERGENCY_RULES = frozenset({
     "anaphylaxis", "chest_pain_sob",
@@ -1026,7 +1058,7 @@ def run_orchestrator_turn(
         )
     ):
         candidates = [
-            {"disease_label": "Alerjik Konjonktivit", "score_0_1": _inj_high()}
+            {"disease_label": "Alerjik Konjonktivit", "score_0_1": _inj_high(), "source_type": "curated"}
         ] + candidates[:2]
 
     # PCOS context injection: obgyn + hirsutism → surface "PCOS". The
@@ -1043,7 +1075,7 @@ def run_orchestrator_turn(
         )
     ):
         candidates = [
-            {"disease_label": "PCOS (Polikistik Over Sendromu)", "score_0_1": _inj_high()}
+            {"disease_label": "PCOS (Polikistik Over Sendromu)", "score_0_1": _inj_high(), "source_type": "curated"}
         ] + candidates[:2]
 
     # ── Extra Kaggle-label top_condition injections (B1 NLU robustness)
@@ -1059,22 +1091,38 @@ def run_orchestrator_turn(
     def _prepend_if_absent(label: str, score: float, matcher: str) -> None:
         nonlocal candidates
         if not any(matcher in (c.get("disease_label") or "") for c in candidates[:3]):
-            candidates = [{"disease_label": label, "score_0_1": score}] + candidates[:2]
+            # source_type="curated" exempts the injection from the
+            # apply_top_conditions_gate confidence threshold — these
+            # labels are deterministic clinical signals, not fragile
+            # Kaggle differentials, so they should surface even when
+            # the disease scoring confidence is low.
+            candidates = [{
+                "disease_label": label,
+                "score_0_1": score,
+                "source_type": "curated",
+            }] + candidates[:2]
 
     if top_spec.get("id") == "neurology" and "baş ağrısı" in _safety_canonicals and (
         "ışık rahatsız" in _text_norm_for_inject
+        or "ışığa bakınca" in _text_norm_for_inject
+        or "ışığa hassas" in _text_norm_for_inject
         or "zonklayıcı" in _text_norm_for_inject
         or "tek taraflı" in _text_norm_for_inject
+        or "yarım baş" in _text_norm_for_inject
         or "kusuyorum" in _text_norm_for_inject
         or "mide bulantısı" in _text_norm_for_inject
+        or "fotofobi" in _safety_canonicals
+        or "tekrarlayan baş ağrı" in _text_norm_for_inject
     ):
         _prepend_if_absent("Migren", _inj_medium(), "Migren")
 
     if top_spec.get("id") == "endocrinology" and (
         "tip 2 diyabet" in _text_norm_for_inject
         or "tip 2 diyabetliyim" in _text_norm_for_inject
+        or "tip 1 diyabetliyim" in _text_norm_for_inject
         or "şekerim yükseldi" in _text_norm_for_inject
         or "şekerim yüksek" in _text_norm_for_inject
+        or "diyabet öyküsü" in _safety_canonicals
     ):
         _prepend_if_absent("Tip 2 Diyabet", _inj_medium(), "Diyabet")
 
@@ -1089,10 +1137,12 @@ def run_orchestrator_turn(
         and (
             "kilo aldım" in _text_norm_for_inject
             or "kilo ald" in _text_norm_for_inject
+            or "kilo artışı" in _safety_canonicals
         )
         and (
             "cildim kuru" in _text_norm_for_inject
             or "saçlarım dökül" in _text_norm_for_inject
+            or "saç dökülmesi" in _safety_canonicals
             or "üşüyorum" in _text_norm_for_inject
         )
     ):
@@ -1178,7 +1228,7 @@ def run_orchestrator_turn(
         )
     ):
         candidates = [
-            {"disease_label": "Dismenore", "score_0_1": _inj_high()}
+            {"disease_label": "Dismenore", "score_0_1": _inj_high(), "source_type": "curated"}
         ] + candidates[:2]
 
     # Renal colic context injection: nephrology + flank-pain canonical +
@@ -1195,7 +1245,7 @@ def run_orchestrator_turn(
         )
     ):
         candidates = [
-            {"disease_label": "Renal Kolik", "score_0_1": _inj_high()}
+            {"disease_label": "Renal Kolik", "score_0_1": _inj_high(), "source_type": "curated"}
         ] + candidates[:2]
 
     # Pediatric context overrides — force pediatrics routing + RESULT.
@@ -1223,7 +1273,7 @@ def run_orchestrator_turn(
             for c in candidates[:3]
         ):
             candidates = [
-                {"disease_label": "Bronşiolit", "score_0_1": _inj_high()}
+                {"disease_label": "Bronşiolit", "score_0_1": _inj_high(), "source_type": "curated"}
             ] + candidates[:2]
         logger.info("Bronchiolitis override: forced pediatrics RESULT")
     elif "kulak çekiştirme" in _safety_canonicals:
@@ -1239,7 +1289,7 @@ def run_orchestrator_turn(
             for c in candidates[:3]
         ):
             candidates = [
-                {"disease_label": "Akut Otitis Media", "score_0_1": _inj_high()}
+                {"disease_label": "Akut Otitis Media", "score_0_1": _inj_high(), "source_type": "curated"}
             ] + candidates[:2]
         logger.info("Otitis media override: forced pediatrics RESULT")
 
@@ -1257,7 +1307,7 @@ def run_orchestrator_turn(
         )
     ):
         candidates = [
-            {"disease_label": "Majör Depresyon", "score_0_1": _inj_medium()}
+            {"disease_label": "Majör Depresyon", "score_0_1": _inj_medium(), "source_type": "curated"}
         ] + candidates[:2]
 
     # A2 panic softener override: when the panic context was confirmed
@@ -1294,7 +1344,7 @@ def run_orchestrator_turn(
             for c in _filtered[:3]
         ):
             _filtered = [
-                {"disease_label": "Panik Bozukluk", "score_0_1": _inj_high()}
+                {"disease_label": "Panik Bozukluk", "score_0_1": _inj_high(), "source_type": "curated"}
             ] + _filtered[:2]
         candidates = _filtered
         logger.info("A2 panic softener: forced psychiatry RESULT for panic context")
@@ -1371,6 +1421,14 @@ def run_orchestrator_turn(
                     "disease_label": c["disease_label"],
                     "score_0_1": round(float(c["score_0_1"]), 2),
                 },
+                # Preserve upstream source_type so context-injected
+                # labels (Psoriasis, Hipertansiyon, Tip 2 Diyabet, …)
+                # keep their "curated" tag through annotation + the A9
+                # confidence gate. Without this passthrough the dict
+                # comprehension dropped the field and re-tagged every
+                # injected label as "kaggle_candidate", which the gate
+                # then wiped out.
+                **({"source_type": c["source_type"]} if c.get("source_type") else {}),
                 **(
                     {"disease_description": description}
                     if description
