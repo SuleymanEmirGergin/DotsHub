@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   Alert,
   Linking,
@@ -21,7 +21,8 @@ import {
 } from "@/src/api/facilitiesClient";
 import { useTriageStore } from "@/src/state/triageStore";
 import { computeConfidence } from "@/src/state/confidence";
-import { inputHeights, tokens } from "@/src/ui/designTokens";
+import { inputHeights, type Tokens } from "@/src/ui/designTokens";
+import { useTokens } from "@/src/ui/useTokens";
 import {
   Badge,
   Card,
@@ -42,6 +43,8 @@ export default function ResultScreen() {
   const result = useTriageStore((s) => s.result)!;
   const sessionId = useTriageStore((s) => s.sessionId);
   const resetSession = useTriageStore((s) => s.resetSession);
+  const tokens = useTokens();
+  const styles = useMemo(() => makeStyles(tokens), [tokens]);
 
   usePushRegistration(locale);
 
@@ -458,7 +461,14 @@ export default function ResultScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+// Theme-aware StyleSheet factory. Both ResultScreen and ConditionItem
+// call this through `useMemo(() => makeStyles(tokens), [tokens])` so
+// flipping the palette in Settings re-paints every styled surface on
+// this screen. The function takes the active palette as `tokens` so
+// the existing `tokens.colors.x` references inside the body work
+// unchanged.
+function makeStyles(tokens: Tokens) {
+  return StyleSheet.create({
   scrollContent: {
     paddingVertical: tokens.spacing.lg,
     paddingBottom: tokens.spacing.xxl,
@@ -707,7 +717,8 @@ const styles = StyleSheet.create({
     marginTop: tokens.spacing.xs,
     marginBottom: tokens.spacing.md,
   },
-});
+  });
+}
 
 
 // ────────────────────────────────────────────────────────────────────────
@@ -746,6 +757,8 @@ function ConditionItem({
 }) {
   const { isRTL } = useI18n();
   const [expanded, setExpanded] = useState(false);
+  const tokens = useTokens();
+  const styles = useMemo(() => makeStyles(tokens), [tokens]);
   const curated = condition.source_type === "curated";
   const hasExpandable =
     !!condition.disease_description_tr ||

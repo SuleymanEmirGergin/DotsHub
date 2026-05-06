@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import {
   FlatList,
   Pressable,
@@ -7,7 +7,8 @@ import {
   View,
   RefreshControl,
 } from "react-native";
-import { tokens, screenPadding } from "@/src/ui/designTokens";
+import { screenPadding } from "@/src/ui/designTokens";
+import { useTokens } from "@/src/ui/useTokens";
 import {
   Card,
   MutedText,
@@ -42,6 +43,7 @@ type Props = {
  */
 export default function HistoryScreen({ onBack, onViewSession }: Props) {
   const { t } = useI18n();
+  const tokens = useTokens();
   const [sessions, setSessions] = useState<SessionItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -74,24 +76,157 @@ export default function HistoryScreen({ onBack, onViewSession }: Props) {
       setLoading(false);
       setRefreshing(false);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     fetchSessions();
   }, [fetchSessions]);
 
-  const envelopeColor = (type: string) => {
-    switch (type) {
-      case "EMERGENCY":
-        return { bg: "#FFEBEE", text: tokens.colors.error };
-      case "RESULT":
-        return { bg: "#E8F5E9", text: tokens.colors.success };
-      case "SAME_DAY":
-        return { bg: "#FFF8E1", text: tokens.colors.warning };
-      default:
-        return { bg: tokens.colors.surfaceAlt, text: tokens.colors.textSecondary };
-    }
-  };
+  const envelopeColor = useCallback(
+    (type: string) => {
+      switch (type) {
+        case "EMERGENCY":
+          return { bg: "#FFEBEE", text: tokens.colors.error };
+        case "RESULT":
+          return { bg: "#E8F5E9", text: tokens.colors.success };
+        case "SAME_DAY":
+          return { bg: "#FFF8E1", text: tokens.colors.warning };
+        default:
+          return {
+            bg: tokens.colors.surfaceAlt,
+            text: tokens.colors.textSecondary,
+          };
+      }
+    },
+    [tokens],
+  );
+
+  const styles = useMemo(
+    () =>
+      StyleSheet.create({
+        container: {
+          paddingHorizontal: 0,
+        },
+        header: {
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          paddingHorizontal: screenPadding,
+          paddingVertical: tokens.spacing.md,
+          borderBottomWidth: 1,
+          borderBottomColor: tokens.colors.border,
+          backgroundColor: tokens.colors.surface,
+        },
+        backBtn: {
+          width: 60,
+        },
+        backText: {
+          ...tokens.typography.body,
+          color: tokens.colors.primary,
+          fontWeight: "600",
+        },
+        title: {
+          ...tokens.typography.h2,
+          textAlign: "center",
+          flex: 1,
+        },
+        center: {
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          paddingHorizontal: screenPadding,
+        },
+        errorText: {
+          ...tokens.typography.body,
+          color: tokens.colors.error,
+          textAlign: "center",
+          marginBottom: tokens.spacing.lg,
+        },
+        emptyIcon: {
+          fontSize: 48,
+          marginBottom: tokens.spacing.md,
+        },
+        emptyTitle: {
+          ...tokens.typography.h1,
+          marginBottom: tokens.spacing.sm,
+        },
+        emptySubtitle: {
+          textAlign: "center",
+          paddingHorizontal: tokens.spacing.xl,
+        },
+        list: {
+          padding: screenPadding,
+          gap: tokens.spacing.md,
+          paddingBottom: tokens.spacing.xxl,
+        },
+        sessionCard: {
+          backgroundColor: tokens.colors.surface,
+          borderRadius: tokens.radius.xl,
+          borderWidth: 1,
+          borderColor: tokens.colors.border,
+          padding: tokens.spacing.lg,
+          ...tokens.shadow.card,
+        },
+        sessionCardPressed: {
+          opacity: 0.85,
+          transform: [{ scale: 0.985 }],
+        },
+        sessionHeader: {
+          flexDirection: "row",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: tokens.spacing.sm,
+        },
+        typeBadge: {
+          paddingHorizontal: tokens.spacing.md,
+          paddingVertical: tokens.spacing.xs,
+          borderRadius: tokens.radius.sm,
+        },
+        typeBadgeText: {
+          fontSize: 12,
+          fontWeight: "700",
+          letterSpacing: 0.5,
+        },
+        dateText: {
+          fontSize: 12,
+        },
+        specialtyRow: {
+          flexDirection: "row",
+          alignItems: "center",
+          marginBottom: tokens.spacing.sm,
+          gap: tokens.spacing.xs,
+        },
+        specialtyIcon: {
+          fontSize: 18,
+        },
+        specialtyText: {
+          ...tokens.typography.body,
+          fontWeight: "600",
+          color: tokens.colors.textPrimary,
+        },
+        metaRow: {
+          flexDirection: "row",
+          flexWrap: "wrap",
+          gap: tokens.spacing.xs,
+        },
+        metaChip: {
+          backgroundColor: tokens.colors.surfaceAlt,
+          paddingHorizontal: tokens.spacing.sm,
+          paddingVertical: 3,
+          borderRadius: tokens.radius.pill,
+        },
+        metaChipText: {
+          ...tokens.typography.caption,
+          fontWeight: "500",
+        },
+        footer: {
+          textAlign: "center",
+          paddingVertical: tokens.spacing.lg,
+        },
+      }),
+    [tokens],
+  );
 
   const renderItem = ({ item }: { item: SessionItem }) => {
     const ec = envelopeColor(item.envelope_type);
@@ -117,12 +252,7 @@ export default function HistoryScreen({ onBack, onViewSession }: Props) {
         accessibilityLabel={`${item.envelope_type} oturumu, ${dateStr}`}
       >
         <View style={styles.sessionHeader}>
-          <View
-            style={[
-              styles.typeBadge,
-              { backgroundColor: ec.bg },
-            ]}
-          >
+          <View style={[styles.typeBadge, { backgroundColor: ec.bg }]}>
             <Text style={[styles.typeBadgeText, { color: ec.text }]}>
               {item.envelope_type === "EMERGENCY"
                 ? t("history.emergency")
@@ -209,7 +339,10 @@ export default function HistoryScreen({ onBack, onViewSession }: Props) {
           <MutedText style={styles.emptySubtitle}>
             {t("history.emptySubtitle")}
           </MutedText>
-          <PrimaryButton onPress={onBack} style={{ marginTop: tokens.spacing.lg }}>
+          <PrimaryButton
+            onPress={onBack}
+            style={{ marginTop: tokens.spacing.lg }}
+          >
             {t("history.startNew")}
           </PrimaryButton>
         </View>
@@ -229,7 +362,10 @@ export default function HistoryScreen({ onBack, onViewSession }: Props) {
           }
           ListFooterComponent={
             <MutedText style={styles.footer}>
-              {t("history.showingCount").replace("{{count}}", String(sessions.length))}
+              {t("history.showingCount").replace(
+                "{{count}}",
+                String(sessions.length),
+              )}
             </MutedText>
           }
         />
@@ -237,125 +373,3 @@ export default function HistoryScreen({ onBack, onViewSession }: Props) {
     </ScreenContainer>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    paddingHorizontal: 0,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: screenPadding,
-    paddingVertical: tokens.spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: tokens.colors.border,
-    backgroundColor: tokens.colors.surface,
-  },
-  backBtn: {
-    width: 60,
-  },
-  backText: {
-    ...tokens.typography.body,
-    color: tokens.colors.primary,
-    fontWeight: "600",
-  },
-  title: {
-    ...tokens.typography.h2,
-    textAlign: "center",
-    flex: 1,
-  },
-  center: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: screenPadding,
-  },
-  errorText: {
-    ...tokens.typography.body,
-    color: tokens.colors.error,
-    textAlign: "center",
-    marginBottom: tokens.spacing.lg,
-  },
-  emptyIcon: {
-    fontSize: 48,
-    marginBottom: tokens.spacing.md,
-  },
-  emptyTitle: {
-    ...tokens.typography.h1,
-    marginBottom: tokens.spacing.sm,
-  },
-  emptySubtitle: {
-    textAlign: "center",
-    paddingHorizontal: tokens.spacing.xl,
-  },
-  list: {
-    padding: screenPadding,
-    gap: tokens.spacing.md,
-    paddingBottom: tokens.spacing.xxl,
-  },
-  sessionCard: {
-    backgroundColor: tokens.colors.surface,
-    borderRadius: tokens.radius.xl,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-    padding: tokens.spacing.lg,
-    ...tokens.shadow.card,
-  },
-  sessionCardPressed: {
-    opacity: 0.85,
-    transform: [{ scale: 0.985 }],
-  },
-  sessionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: tokens.spacing.sm,
-  },
-  typeBadge: {
-    paddingHorizontal: tokens.spacing.md,
-    paddingVertical: tokens.spacing.xs,
-    borderRadius: tokens.radius.sm,
-  },
-  typeBadgeText: {
-    fontSize: 12,
-    fontWeight: "700",
-    letterSpacing: 0.5,
-  },
-  dateText: {
-    fontSize: 12,
-  },
-  specialtyRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: tokens.spacing.sm,
-    gap: tokens.spacing.xs,
-  },
-  specialtyIcon: {
-    fontSize: 18,
-  },
-  specialtyText: {
-    ...tokens.typography.body,
-    fontWeight: "600",
-    color: tokens.colors.textPrimary,
-  },
-  metaRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: tokens.spacing.xs,
-  },
-  metaChip: {
-    backgroundColor: tokens.colors.surfaceAlt,
-    paddingHorizontal: tokens.spacing.sm,
-    paddingVertical: 3,
-    borderRadius: tokens.radius.pill,
-  },
-  metaChipText: {
-    ...tokens.typography.caption,
-    fontWeight: "500",
-  },
-  footer: {
-    textAlign: "center",
-    paddingVertical: tokens.spacing.lg,
-  },
-});

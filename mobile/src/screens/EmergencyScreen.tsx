@@ -1,7 +1,7 @@
-﻿import React from "react";
+import React, { useMemo } from "react";
 import { Linking, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useTriageStore } from "@/src/state/triageStore";
-import { tokens } from "@/src/ui/designTokens";
+import { useTokens } from "@/src/ui/useTokens";
 import {
   Card,
   DangerButton,
@@ -16,6 +16,7 @@ export default function EmergencyScreen() {
   const emergency = useTriageStore((s) => s.emergency)!;
   const resetSession = useTriageStore((s) => s.resetSession);
   const { t } = useI18n();
+  const tokens = useTokens();
 
   function call112() {
     Linking.openURL("tel:112");
@@ -25,6 +26,54 @@ export default function EmergencyScreen() {
     const msg = `ACİL: ${emergency.reason_tr}\n\n${emergency.instructions_tr.join("\n")}`;
     Linking.openURL(`sms:?body=${encodeURIComponent(msg)}`);
   }
+
+  const styles = useMemo(
+    () =>
+      StyleSheet.create({
+        scrollContent: {
+          flexGrow: 1,
+          justifyContent: "center",
+          paddingVertical: tokens.spacing.xl,
+        },
+        alertCard: {
+          borderColor: tokens.colors.errorBorder,
+          backgroundColor: tokens.colors.errorBg,
+          marginBottom: tokens.spacing.lg,
+        },
+        iconWrap: {
+          alignItems: "center",
+          marginBottom: tokens.spacing.sm,
+        },
+        icon: {
+          fontSize: 42,
+          lineHeight: 46,
+        },
+        title: {
+          color: tokens.colors.error,
+          textAlign: "center",
+        },
+        reason: {
+          ...tokens.typography.body,
+          color: tokens.colors.textPrimary,
+          textAlign: "center",
+          marginBottom: tokens.spacing.sm,
+        },
+        divider: {
+          height: 1,
+          backgroundColor: tokens.colors.errorDivider,
+          marginVertical: tokens.spacing.md,
+        },
+        instruction: {
+          ...tokens.typography.body,
+          color: tokens.colors.textSecondary,
+          marginBottom: tokens.spacing.xs,
+        },
+        buttonSpacing: {
+          marginBottom: tokens.spacing.sm,
+        },
+      }),
+    [tokens],
+  );
 
   return (
     <ScreenContainer>
@@ -53,52 +102,10 @@ export default function EmergencyScreen() {
           {t("emergency.notifyContact")}
         </PrimaryButton>
 
-        <SecondaryButton onPress={resetSession}>{t("common.newAssessment")}</SecondaryButton>
+        <SecondaryButton onPress={resetSession}>
+          {t("common.newAssessment")}
+        </SecondaryButton>
       </ScrollView>
     </ScreenContainer>
   );
 }
-
-const styles = StyleSheet.create({
-  scrollContent: {
-    flexGrow: 1,
-    justifyContent: "center",
-    paddingVertical: tokens.spacing.xl,
-  },
-  alertCard: {
-    borderColor: tokens.colors.errorBorder,
-    backgroundColor: tokens.colors.errorBg,
-    marginBottom: tokens.spacing.lg,
-  },
-  iconWrap: {
-    alignItems: "center",
-    marginBottom: tokens.spacing.sm,
-  },
-  icon: {
-    fontSize: 42,
-    lineHeight: 46,
-  },
-  title: {
-    color: tokens.colors.error,
-    textAlign: "center",
-  },
-  reason: {
-    ...tokens.typography.body,
-    color: tokens.colors.textPrimary,
-    textAlign: "center",
-    marginBottom: tokens.spacing.sm,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: tokens.colors.errorDivider,
-    marginVertical: tokens.spacing.md,
-  },
-  instruction: {
-    ...tokens.typography.body,
-    color: tokens.colors.textSecondary,
-    marginBottom: tokens.spacing.xs,
-  },
-  buttonSpacing: {
-    marginBottom: tokens.spacing.sm,
-  },
-});
