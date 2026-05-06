@@ -14,12 +14,40 @@ import {
   SecondaryButton,
 } from "@/src/ui/primitives";
 
+// Consent gate. The Stitch design requires three independent acknowledgments
+// before the user enters the triage flow: terms, KVKK explicit consent for
+// processing health data (KVKK 6. madde — özel kategori), and age (13+).
+//
+// Internally the triageStore still tracks a single `acceptIntro` boolean —
+// we surface three switches in the UI for transparency + KVKK compliance,
+// but only call `setAcceptIntro(true)` once all three are checked. Future
+// work can split the store flag into a per-clause record if Privacy team
+// asks for individual audit trails.
+
+type ConsentSlot = {
+  key: "terms" | "kvkk" | "age";
+  labelKey: string;
+  hintKey?: string;
+};
+
+const CONSENTS: ConsentSlot[] = [
+  { key: "terms", labelKey: "intro.acceptTerms" },
+  { key: "kvkk", labelKey: "intro.acceptKvkk", hintKey: "intro.acceptKvkkHint" },
+  { key: "age", labelKey: "intro.acceptAge" },
+];
+
 export default function IntroScreen() {
-  const [checked, setChecked] = useState(false);
+  const [checked, setChecked] = useState<Record<ConsentSlot["key"], boolean>>({
+    terms: false,
+    kvkk: false,
+    age: false,
+  });
   const { t, isRTL } = useI18n();
   const setAcceptIntro = useTriageStore((s) => s.setAcceptIntro);
   const tokens = useTokens();
   const rtlText = isRTL ? RTL_TEXT_STYLE : undefined;
+
+  const allAccepted = checked.terms && checked.kvkk && checked.age;
 
   const styles = useMemo(
     () =>
@@ -47,10 +75,10 @@ export default function IntroScreen() {
           color: tokens.colors.textSecondary,
           marginBottom: tokens.spacing.lg,
         },
-        checkRow: {
+        consentRow: {
           flexDirection: "row",
-          alignItems: "center",
-          marginBottom: tokens.spacing.lg,
+          alignItems: "flex-start",
+          marginBottom: tokens.spacing.md,
         },
         checkbox: {
           width: 24,
@@ -61,6 +89,7 @@ export default function IntroScreen() {
           alignItems: "center",
           justifyContent: "center",
           marginRight: tokens.spacing.sm,
+          marginTop: 2, // align with first line of multi-line label
           backgroundColor: tokens.colors.surface,
         },
         checkboxChecked: {
@@ -73,11 +102,20 @@ export default function IntroScreen() {
           lineHeight: 14,
           fontWeight: "700",
         },
-        checkLabel: {
+        consentTextWrap: {
+          flex: 1,
+        },
+        consentLabel: {
           ...tokens.typography.bodySmall,
           color: tokens.colors.textPrimary,
         },
+        consentHint: {
+          ...tokens.typography.caption,
+          color: tokens.colors.textMuted,
+          marginTop: 2,
+        },
         ctaButton: {
+          marginTop: tokens.spacing.sm,
           borderRadius: tokens.radius.lg,
         },
         htButton: {
@@ -120,21 +158,43 @@ export default function IntroScreen() {
 
           <Text style={[styles.body, rtlText]}>{t("intro.body")}</Text>
 
-          <Pressable
-            style={styles.checkRow}
-            onPress={() => setChecked((prev) => !prev)}
-            accessibilityRole="checkbox"
-            accessibilityState={{ checked }}
-            accessibilityLabel={t("intro.accept")}
-          >
-            <View style={[styles.checkbox, checked && styles.checkboxChecked]}>
-              {checked ? <Text style={styles.checkmark}>✓</Text> : null}
-            </View>
-            <Text style={[styles.checkLabel, rtlText]}>{t("intro.accept")}</Text>
-          </Pressable>
+          {CONSENTS.map((slot) => {
+            const isChecked = checked[slot.key];
+            return (
+              <Pressable
+                key={slot.key}
+                style={styles.consentRow}
+                onPress={() =>
+                  setChecked((prev) => ({ ...prev, [slot.key]: !prev[slot.key] }))
+                }
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: isChecked }}
+                accessibilityLabel={t(slot.labelKey)}
+              >
+                <View
+                  style={[
+                    styles.checkbox,
+                    isChecked && styles.checkboxChecked,
+                  ]}
+                >
+                  {isChecked ? <Text style={styles.checkmark}>✓</Text> : null}
+                </View>
+                <View style={styles.consentTextWrap}>
+                  <Text style={[styles.consentLabel, rtlText]}>
+                    {t(slot.labelKey)}
+                  </Text>
+                  {slot.hintKey ? (
+                    <Text style={[styles.consentHint, rtlText]}>
+                      {t(slot.hintKey)}
+                    </Text>
+                  ) : null}
+                </View>
+              </Pressable>
+            );
+          })}
 
           <PrimaryButton
-            disabled={!checked}
+            disabled={!allAccepted}
             onPress={() => setAcceptIntro(true)}
             style={styles.ctaButton}
             accessibilityRole="button"
