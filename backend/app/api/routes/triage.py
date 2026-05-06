@@ -341,6 +341,117 @@ def triage_history(
     return {"items": rows}
 
 
+# Columns surfaced on the session-detail endpoint. Kept tight (no debug
+# blobs, no PII text) so a curious user with the right device id can
+# rebuild their result screen without leaking the ML internals (rule
+# scoring, selector debug, etc.) we keep server-side for tuning.
+_SESSION_DETAIL_COLUMNS = (
+    "id,session_id,device_id,created_at,updated_at,"
+    "envelope_type,turn_index,stop_reason,locale,"
+    "recommended_specialty_id,recommended_specialty_tr,"
+    "confidence_0_1,confidence_label_tr,confidence_explain_tr,"
+    "top_conditions,why_specialty_tr,"
+    "emergency_rule_id,emergency_reason_tr,"
+    "input_text,asked_canonicals,extracted_canonicals,user_canonicals_tr"
+)
+
+
+@router.get("/triage/sessions/{session_id}")
+def triage_session_detail(
+    session_id: str,
+    x_device_id: str | None = Header(default=None),
+):
+    """Return the full detail of one past triage session, scoped to the
+    requesting device.
+
+    The mobile History screen drills into this when the user taps a
+    card — it lets us show the original symptom text, the full top-
+    conditions list (rather than only the score-leader), the doctor-
+    ready summary, and emergency instructions for EMERGENCY rows
+    without forcing the client to keep large blobs in local storage.
+
+    Authorisation is by-possession-of-device-id, matching how
+    `/v1/triage/history` and `/v1/me/sessions/{session_id}` (DELETE)
+    already work. We refuse to return a row whose `device_id` doesn't
+    match the header — anti-IDOR — and we return 404 (not 403) on
+    mismatch so the response shape is the same as "no such session,"
+    keeping the membership of any one device's session set private.
+
+    Failure modes:
+      - 400 missing X-Device-Id (we can't ownership-check without it).
+      - 404 session not found OR not owned by this device.
+      - 503 when Supabase is unavailable (loud-fail; mobile retries).
+    """
+    if not x_device_id:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "code": "missing_device_id",
+                "message_tr": (
+                    "Cihaz kimliği eksik — geçmiş değerlendirme açılamıyor."
+                ),
+            },
+        )
+    if not _has_supabase():
+        # Same shape as a real 404 so dev-without-Supabase doesn't leak
+        # "the storage layer is off" to the client.
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "code": "not_found",
+                "message_tr": "Değerlendirme bulunamadı.",
+            },
+        )
+
+    from app.supabase_client import get_supabase as _get_sb
+
+    try:
+        sb = _get_sb()
+        resp = (
+            sb.table("triage_sessions")
+            .select(_SESSION_DETAIL_COLUMNS)
+            .eq("id", session_id)
+            .eq("device_id", x_device_id)
+            .limit(1)
+            .execute()
+        )
+        rows = getattr(resp, "data", None) or []
+    except Exception as exc:  # noqa: BLE001
+        logger.warning(
+            "triage.session_detail_failed session=%s device=%s: %s",
+            session_id,
+            x_device_id,
+            exc,
+        )
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "code": "session_detail_unavailable",
+                "message_tr": (
+                    "Değerlendirme şu an yüklenemiyor. Lütfen birazdan "
+                    "tekrar deneyin."
+                ),
+            },
+        )
+
+    if not rows:
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "code": "not_found",
+                "message_tr": "Değerlendirme bulunamadı.",
+            },
+        )
+
+    row = rows[0]
+    # Strip device_id from the response — the client just confirmed
+    # they know it via the header, no need to echo. Keeps the wire
+    # surface a hair smaller and keeps device-id off any debug log
+    # that captures responses verbatim.
+    row.pop("device_id", None)
+    return row
+
+
 @router.post("/triage/turn", response_model=Envelope)
 async def triage_turn(http_request: Request, request: TriageTurnRequest):
     """Run one triage turn — unified single endpoint.
