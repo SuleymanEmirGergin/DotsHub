@@ -133,6 +133,56 @@ paths:
         "404":
           description: session_id not found
 
+  /v1/asr/transcribe:
+    post:
+      summary: Transcribe a short audio clip via Wiro/Whisper
+      description: |
+        Accepts a multipart upload (m4a/mp3/wav, ≤5 MB) and returns a
+        transcript via Wiro's Whisper-large-v3-turbo-turkish model.
+        Mobile clients send m4a from expo-av's HIGH_QUALITY preset.
+
+        Failure modes:
+          - 400 `empty_audio`        — no bytes uploaded
+          - 413 `audio_too_large`    — over 5 MB
+          - 502 `asr_failed`         — upstream Wiro/Whisper error
+          - 503 `asr_disabled`       — `WIRO_WHISPER_STT_ENABLED` off
+      operationId: asrTranscribe
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [audio]
+              properties:
+                audio:
+                  type: string
+                  format: binary
+                  description: Audio file (m4a / mp3 / wav, max 5 MB).
+                language:
+                  type: string
+                  default: tr
+                  enum: [auto, tr, en, de, ru, ar]
+                  description: |
+                    ISO 639-1 code or "auto". Mapped server-side to Whisper's
+                    language enum (Turkish/English/German/Russian/Arabic).
+                    Unknown codes degrade silently to "auto".
+      responses:
+        "200":
+          description: Transcript
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TranscriptionResult"
+        "400":
+          description: Empty audio body
+        "413":
+          description: Audio too large (>5 MB)
+        "502":
+          description: Upstream Whisper failure
+        "503":
+          description: ASR disabled by configuration
+
   /v1/triage/history:
     get:
       summary: List recent triage sessions for the device
@@ -1082,6 +1132,32 @@ components:
       type: object
       properties:
         ok: { type: boolean, default: true }
+
+    TranscriptionResult:
+      type: object
+      required: [text, language, provider]
+      properties:
+        text:
+          type: string
+          description: Transcribed text. PII-redacted on the server before return.
+        language:
+          type: string
+          description: |
+            ISO code echoed back from the request. "auto" passes through.
+            Mobile uses this only to round-trip the language hint, not as
+            authoritative metadata.
+        provider:
+          type: string
+          example: wiro_whisper
+        model:
+          type: string
+          nullable: true
+          example: openai/whisper-large-v3-turbo-turkish
+        duration_ms:
+          type: integer
+          nullable: true
+          minimum: 0
+          description: Server-measured wall-clock duration of the upstream call.
 
     TriageHistoryResponse:
       type: object
