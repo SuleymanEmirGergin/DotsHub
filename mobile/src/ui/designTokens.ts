@@ -147,20 +147,70 @@ const SHARED_NON_COLOR = {
   },
 };
 
-function buildPalette(c: Tokens["colors"]): Tokens {
-  // Typography colour bakes into the text style so legacy spreads like
-  // `...tokens.typography.title` keep producing a complete style.
+// Per-theme font families. The string values must match what
+// `useFonts()` registers in `app/_layout.tsx` — typoing the family
+// name will silently fall back to the system font.
+//
+// Modern Friendly pairs Manrope (headline) + Plus Jakarta Sans (body)
+// for warmth + readability. Sade Medikal uses Inter throughout for the
+// classic clinical look. Fonts are bundled lazy by @expo-google-fonts
+// so we only ship the four weights actually referenced here.
+type FontConfig = {
+  headline: string;
+  body: string;
+};
+
+const MODERN_FONTS: FontConfig = {
+  headline: "Manrope_700Bold",
+  body: "PlusJakartaSans_400Regular",
+};
+
+const SADE_FONTS: FontConfig = {
+  headline: "Inter_700Bold",
+  body: "Inter_400Regular",
+};
+
+function buildPalette(c: Tokens["colors"], fonts: FontConfig): Tokens {
+  // Typography colour AND fontFamily bake into the text style so legacy
+  // spreads like `...tokens.typography.title` keep producing a complete
+  // style — every screen that imports the typography spreads gets the
+  // theme's fontFamily for free.
   const typography: Tokens["typography"] = {
-    title: { ...SHARED_NON_COLOR.typography.title, color: c.textPrimary },
-    h1: { ...SHARED_NON_COLOR.typography.h1, color: c.textPrimary },
-    h2: { ...SHARED_NON_COLOR.typography.h2, color: c.textPrimary },
-    body: { ...SHARED_NON_COLOR.typography.body, color: c.textSecondary },
+    title: {
+      ...SHARED_NON_COLOR.typography.title,
+      color: c.textPrimary,
+      fontFamily: fonts.headline,
+    },
+    h1: {
+      ...SHARED_NON_COLOR.typography.h1,
+      color: c.textPrimary,
+      fontFamily: fonts.headline,
+    },
+    h2: {
+      ...SHARED_NON_COLOR.typography.h2,
+      color: c.textPrimary,
+      fontFamily: fonts.headline,
+    },
+    body: {
+      ...SHARED_NON_COLOR.typography.body,
+      color: c.textSecondary,
+      fontFamily: fonts.body,
+    },
     bodySmall: {
       ...SHARED_NON_COLOR.typography.bodySmall,
       color: c.textSecondary,
+      fontFamily: fonts.body,
     },
-    caption: { ...SHARED_NON_COLOR.typography.caption, color: c.textMuted },
-    button: { ...SHARED_NON_COLOR.typography.button, color: "#FFFFFF" },
+    caption: {
+      ...SHARED_NON_COLOR.typography.caption,
+      color: c.textMuted,
+      fontFamily: fonts.body,
+    },
+    button: {
+      ...SHARED_NON_COLOR.typography.button,
+      color: "#FFFFFF",
+      fontFamily: fonts.body,
+    },
   };
 
   const button: Tokens["button"] = {
@@ -254,8 +304,8 @@ const SADE_COLORS: Tokens["colors"] = {
 };
 
 export const palettes: Record<ThemeName, Tokens> = {
-  modern: buildPalette(MODERN_COLORS),
-  sade: buildPalette(SADE_COLORS),
+  modern: buildPalette(MODERN_COLORS, MODERN_FONTS),
+  sade: buildPalette(SADE_COLORS, SADE_FONTS),
 };
 
 /**
