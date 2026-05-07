@@ -64,18 +64,6 @@ from app.triage_engine import run_orchestrator_turn
 #      poisoning, trauma, burn, pericarditis, seborrheic derm,
 #      adrenal, ADHD, + 10 new ambiguous cases. New cases untuned;
 #      same "coverage before tuning" pattern as C2 expansion.)
-#   commit B7-A    (148 scenarios): 126/148 = 85.1%  threshold 0.50
-#     (Group A synonym expansion — fixed 9 "top_condition: missing"
-#      failures by adding TR variants that surface the expected
-#      Kaggle-mapped canonicals. Net: +9 passes (Fungal, Diyabet ×1,
-#      Sarılık, BPPV, Dismenore, Artrit, Otitis ×2, Tüberküloz). New
-#      canonicals added for kilo artışı, sarılık, koyu idrar,
-#      terleme, karıncalanma, diyabet öyküsü, bulanık görme — all
-#      align with kaggle_to_canonical.json keys so they actually
-#      count toward disease-symptom overlap. vajinal akıntı variants
-#      tightened to require the "vajinal/aşağı/genital" qualifier so
-#      sinüzit "sarı akıntı" no longer over-matches obgyn. Group B+C
-#      (specialty routing + final_type tuning) is a separate PR.)
 MIN_PASS_RATE = 0.50
 
 

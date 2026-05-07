@@ -16,12 +16,6 @@
         "başım dönüyor",
         "başım döndü",
         "oda dönüyor",
-        "dünya dönüyor",
-        "yataktan kalkınca dünya dönüyor",
-        "yataktan kalkınca baş dönüyor",
-        "pozisyonel baş dönmesi",
-        "belirli pozisyonlarda baş dönmesi",
-        "pozisyonlarda tetiklenen baş dönmesi",
         "dengem bozuldu",
         "sersemledim",
         "gözüm kararıyor",
@@ -232,11 +226,6 @@
       "type": "symptom",
       "variants_tr": [
         "ateşim var",
-        "ateşi var",
-        "ateşi yüksek",
-        "ateşi 38",
-        "ateşi 39",
-        "yüksek ateşi var",
         "ateşlendim",
         "titremem var",
         "üşüme terleme",
@@ -323,12 +312,9 @@
         "başım zonk zonk ağrıyor",
         "baş ağrısından uyuyamıyorum",
         "tekrarlayan şiddetli baş ağrıları",
-        "tekrarlayan baş ağrıları",
         "ayda birkaç kez şiddetli baş ağrısı",
         "zonklayıcı baş ağrısı",
         "tek taraflı zonklayıcı",
-        "tek taraflı baş ağrısı",
-        "yarım baş ağrısı",
         "başım ağrıyor ve halsizlik"
       ]
     },
@@ -411,10 +397,6 @@
         "ürtiker",
         "vücudum kabardı",
         "kaşıntılı döküntü",
-        "soyulan döküntü",
-        "döküntü var",
-        "döküntüm var",
-        "kaşıntılı bir döküntü",
         "derimde döküntü çıktı",
         "vücudumda döküntü var",
         "alerjik döküntü var",
@@ -482,7 +464,6 @@
       "type": "symptom",
       "variants_tr": [
         "çok sık idrara çıkıyorum",
-        "çok idrara çıkıyorum",
         "sık idrarım geliyor",
         "idrarım sürekli varmış gibi",
         "sık sık tuvalete gidiyorum",
@@ -546,7 +527,6 @@
       "type": "symptom",
       "variants_tr": [
         "kaşıntım var",
-        "kaşıntılı",
         "çok kaşınıyorum",
         "cildim kaşınıyor",
         "ciltten kaşınma var",
@@ -700,14 +680,8 @@
         "mafsallarım sertleşti",
         "sabahları eklemlerim tutuk",
         "sabah tutukluğu",
-        "sabah kalktığımda parmak eklemlerim tutuk",
-        "parmak eklemlerim tutuk",
-        "parmak eklemlerim tutuk ve şiş",
-        "eklemlerim tutuk ve şiş",
         "ellerim şişiyor ve ağrıyor",
         "1 saatten fazla tutukluk",
-        "1 saatten fazla tutuk",
-        "1 saatten fazla geçmiyor tutukluk",
         "sabah sertliği"
       ]
     },
@@ -717,7 +691,6 @@
       "variants_tr": [
         "makatta ağrı var",
         "anal bölgede ağrı var",
-        "anal bölgede ağrı",
         "dışkılarken ağrı oluyor",
         "anüste ağrı var",
         "makat bölgesinde ağrı var",
@@ -726,11 +699,7 @@
         "anüste yanma var",
         "hemoroid gibi ağrı var",
         "makatta kanama var",
-        "tuvalet sırasında kanama",
-        "tuvalette kanama",
         "tuvalette kan gördüm",
-        "tuvalet sırasında kan",
-        "rektal kanama",
         "anal bölgede yanma var",
         "anüs bölgesinde rahatsızlık var",
         "tuvalet sonrası ağrı devam ediyor",
@@ -746,9 +715,6 @@
         "kanlı balgam çıkarıyorum",
         "öksürürken kan geliyor",
         "öksürünce kan görüyorum",
-        "balgamımda kan görüyorum",
-        "balgamımda kan var",
-        "balgamımda zaman zaman kan",
         "ağzımdan kanlı balgam geliyor",
         "balgamımda kırmızılık var",
         "kanlı öksürük var",
@@ -1059,12 +1025,8 @@
         "karnıma bıçak saplanıyor",
         "karnıma bıçak saplanıyormuş gibi",
         "adet döneminde şiddetli kramp",
-        "her adet döneminde şiddetli kramp",
-        "her adet döneminde o kadar şiddetli kramp",
         "adet ağrısı bel ağrısı",
         "şiddetli kramp ve bel ağrım",
-        "şiddetli kramptan işe gidemiyorum",
-        "adet kramplarından işe gidemiyorum",
         "her adet dönemimde çok şiddetli kramp"
       ]
     },
@@ -1099,18 +1061,14 @@
       "type": "symptom",
       "variants_tr": [
         "vajinal akıntı var",
-        "vajinal akıntım var",
         "aşağıdan akıntı geliyor",
-        "kötü kokulu vajinal akıntı",
-        "vajinal beyaz akıntı",
-        "vajinal sarı akıntı",
-        "vajinada sarı akıntı",
-        "aşağıdan sarı akıntı",
-        "aşağıdan beyaz akıntı",
-        "aşağıdan köpüklü akıntı",
-        "aşağıdan kötü kokulu akıntı",
+        "beyaz akıntı",
+        "sarı akıntı",
+        "kötü kokulu akıntı",
+        "köpüklü akıntı",
         "peynir kıvamında akıntı",
-        "vajinal pıhtılı akıntı"
+        "akıntım arttı",
+        "pıhtılı akıntı"
       ]
     },
     {
@@ -1163,18 +1121,11 @@
       "type": "symptom",
       "variants_tr": [
         "ışığa bakamıyorum",
-        "ışığa bakınca",
-        "ışığa bakınca kötüleşiyor",
-        "ışığa bakınca daha kötüleşiyor",
-        "ışığa bakınca daha da kötüleşiyor",
-        "ışıkta artıyor",
-        "ışıkta kötüleşiyor",
         "ışık gözümü rahatsız ediyor",
         "ışıktan rahatsız oluyorum",
         "parlak ışık acı veriyor",
         "güneşe bakamıyorum",
         "ışığa hassasiyetim var",
-        "ışığa hassasım",
         "fotofobim var"
       ]
     },
@@ -1306,14 +1257,11 @@
       "type": "symptom",
       "variants_tr": [
         "kulağını çekiştiriyor",
-        "kulağını çekiyor",
-        "kulağını çekip ağlıyor",
         "kulağına dokunuyor sürekli",
         "kulağından rahatsız",
         "kulağını ovuşturuyor",
         "kulak ağrısı çocukta",
-        "bebeğim kulağını tutuyor",
-        "bebek kulağını çekiyor"
+        "bebeğim kulağını tutuyor"
       ]
     },
     {
@@ -1429,8 +1377,6 @@
       "variants_tr": [
         "çok su içiyorum",
         "sürekli susuyorum",
-        "susuyorum",
-        "çok susuyorum",
         "ağzım kuruyor",
         "polidipsi",
         "aşırı susama hissediyorum",
@@ -1564,13 +1510,8 @@
       "variants_tr": [
         "ayak parmaklarımın arasında kaşıntılı",
         "ayak parmakları arası kaşıntı",
-        "ayak parmakları arası kaşıntılı",
-        "ayak parmakları arasında soyulma",
-        "ayak parmakları arası soyulan döküntü",
         "ayakta soyulan döküntü",
         "havuza gittikten sonra kaşıntı",
-        "havuzdan sonra başlayan kaşıntı",
-        "havuza gittikten sonra başladı",
         "atlet ayağı"
       ]
     },
@@ -1579,14 +1520,9 @@
       "type": "symptom",
       "variants_tr": [
         "gümüş beyaz kepekli plaklar",
-        "gümüş beyaz kepekli kırmızı plaklar",
-        "saçlı derimde gümüş beyaz kepekli",
         "dirseklerim gümüş kepekli",
-        "dirseklerim ve saçlı derimde kepekli",
         "saçlı derimde kepekli plaklar",
         "kırmızı plaklar kepekli",
-        "kırmızı plaklar var",
-        "kepekli plak",
         "psoriasis",
         "sedef hastalığı"
       ]
@@ -1606,19 +1542,9 @@
       "type": "symptom",
       "variants_tr": [
         "yüzümde basınç",
-        "yüzümde basınç hissi",
         "alın ve yanak bölgesinde basınç",
         "yüzümde alın ve yanak basınç",
-        "alnım ve yüzümde baskı hissi",
-        "yüzümün ön kısmında baskı",
-        "yüzümün ön kısmında baskı hissi",
-        "alnım baskı hissi",
-        "alın bölgesinde baskı",
         "burnum tıkalı ve akıyor",
-        "burnum tıkalı sarı akıntı",
-        "burnum tıkalı ve sarı akıntı",
-        "burun tıkalı sarı akıntı",
-        "sarı burun akıntısı",
         "sinüzit"
       ]
     },
@@ -1927,111 +1853,6 @@
         "artrit",
         "romatoid artrit",
         "artrit şikayeti"
-      ]
-    },
-    {
-      "canonical": "kilo artışı",
-      "type": "symptom",
-      "variants_tr": [
-        "kilo aldım",
-        "kilom arttı",
-        "kilo alıyorum",
-        "fazla kilo aldım",
-        "5 kilo aldım",
-        "10 kilo aldım",
-        "son zamanlarda kilo aldım",
-        "kilom arttı son zamanlarda"
-      ]
-    },
-    {
-      "canonical": "sarılık",
-      "type": "symptom",
-      "variants_tr": [
-        "cildim sarardı",
-        "cildim sarı",
-        "gözlerim sarardı",
-        "göz akım sarardı",
-        "göz aklarım sarı",
-        "cildim ve gözlerim sarı",
-        "cildim ve göz akım sarı",
-        "tenim sarardı",
-        "sarılık var",
-        "sarı görünüyorum",
-        "sklerası sarı"
-      ]
-    },
-    {
-      "canonical": "koyu idrar",
-      "type": "symptom",
-      "variants_tr": [
-        "idrarım koyu",
-        "idrarım koyulaştı",
-        "idrar rengi koyu",
-        "idrar rengi koyulaştı",
-        "kola rengi idrar",
-        "koyu renkli idrar",
-        "idrarım çok koyu"
-      ]
-    },
-    {
-      "canonical": "terleme",
-      "type": "symptom",
-      "variants_tr": [
-        "geceleri çok terliyorum",
-        "geceleri terliyorum",
-        "gece terlemem var",
-        "gece terlemeleri var",
-        "aşırı terliyorum",
-        "her gece ter içinde uyanıyorum",
-        "ter içinde uyanıyorum",
-        "geceleri ıslanmış uyanıyorum",
-        "gece ter banyosu",
-        "yatakta sırılsıklam terliyorum"
-      ]
-    },
-    {
-      "canonical": "karıncalanma",
-      "type": "symptom",
-      "variants_tr": [
-        "karıncalanma var",
-        "ellerimde karıncalanma",
-        "ayaklarımda karıncalanma",
-        "bacaklarımda karıncalanma",
-        "uzuvlarımda karıncalanma",
-        "parmaklarımda karıncalanma",
-        "ellerim uyuşuyor karıncalanıyor",
-        "el ayak uyuşması",
-        "uyuşma karıncalanma var"
-      ]
-    },
-    {
-      "canonical": "diyabet öyküsü",
-      "type": "symptom",
-      "variants_tr": [
-        "tip 2 diyabetliyim",
-        "tip 2 diyabet hastasıyım",
-        "tip 1 diyabetliyim",
-        "diyabetim var",
-        "diyabet hastasıyım",
-        "şeker hastasıyım",
-        "şekerim yüksek",
-        "şekerim yüksek seyrediyor",
-        "şekerim yükseldi",
-        "diyabet teşhisi aldım",
-        "diabetes mellitus tanım var",
-        "diyabetliyim son kontroller iyi"
-      ]
-    },
-    {
-      "canonical": "bulanık görme",
-      "type": "symptom",
-      "variants_tr": [
-        "gözlerim bulanık",
-        "bulanık görüyorum",
-        "görüşüm bulanıklaştı",
-        "net göremiyorum",
-        "görme bulanıklığı var",
-        "puslu görüyorum"
       ]
     }
   ]
